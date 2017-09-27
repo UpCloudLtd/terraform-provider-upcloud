@@ -43,5 +43,10 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
+update-deps:
+	govendor add +outside
+	govendor update +outside +vendor
+	govendor remove +unused
+
 .PHONY: build test testacc vet fmt fmtcheck errcheck vendor-status test-compile
 
