@@ -144,13 +144,13 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("os_disk_uuid", osDisk.UUID)
 
 	for _, ip := range server.IPAddresses {
-		if ip.Access == "private" && ip.Family == "IPv4" {
+		if ip.Access == upcloud.IPAddressAccessPrivate && ip.Family == upcloud.IPAddressFamilyIPv4 {
 			d.Set("ipv4_address_private", ip.Address)
 		}
-		if ip.Access == "public" && ip.Family == "IPv4" {
+		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv4 {
 			d.Set("ipv4_address", ip.Address)
 		}
-		if ip.Access == "public" && ip.Family == "IPv6" {
+		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv6 {
 			d.Set("ipv6_address", ip.Address)
 		}
 	}
@@ -250,7 +250,7 @@ func buildStorageOpts(d *schema.ResourceData, meta interface{}) ([]upcloud.Creat
 	if err != nil {
 		client := meta.(*service.Service)
 		r := &request.GetStoragesRequest{
-			Type: "template",
+			Type: upcloud.StorageTypeTemplate,
 		}
 		l, err := client.GetStorages(r)
 		if err != nil {
@@ -280,9 +280,9 @@ func buildStorageOpts(d *schema.ResourceData, meta interface{}) ([]upcloud.Creat
 	if attr, ok := d.GetOk("os_disk_tier"); ok {
 		tier := attr.(string)
 		switch tier {
-		case "maxiops":
+		case upcloud.StorageTierMaxIOPS:
 			osDisk.Tier = upcloud.StorageTierMaxIOPS
-		case "hdd":
+		case upcloud.StorageTierHDD:
 			osDisk.Tier = upcloud.StorageTierHDD
 		default:
 			return nil, fmt.Errorf("Invalid disk tier '%s'", tier)
@@ -339,11 +339,8 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	// If state is 'started' then the instance must be stopped
-	// before trying to delete
-	if server.State != "stopped" {
-		// Soft stop with 2 minute timeout, after which
-		// hard stop occurs
+	if server.State != upcloud.ServerStateStopped {
+		// Soft stop with 2 minute timeout, after which hard stop occurs
 		stopRequest := &request.StopServerRequest{
 			UUID:     d.Id(),
 			StopType: "soft",
@@ -376,11 +373,8 @@ func verifyServerStarted(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	// If state is 'started' then the instance must be stopped
-	// before trying to delete
-	if server.State != "started" {
-		// Soft stop with 2 minute timeout, after which
-		// hard stop occurs
+	if server.State != upcloud.ServerStateStarted {
+		// Soft stop with 2 minute timeout, after which hard stop occurs
 		startRequest := &request.StartServerRequest{
 			UUID:    d.Id(),
 			Timeout: time.Minute * 2,
