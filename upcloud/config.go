@@ -17,15 +17,22 @@ type Config struct {
 func (c *Config) Client() (*service.Service, error) {
 	client := client.New(c.Username, c.Password)
 	svc := service.New(client)
-	res, err := svc.GetAccount()
+	res, err := c.checkLogin(svc)
 	if err != nil {
-		if serviceError, ok := err.(*upcloud.Error); ok {
-			errMsg := fmt.Errorf("Error creating Service object. Error code: %s, Error message: %s",
-				serviceError.ErrorCode, serviceError.ErrorMessage)
-			return nil, errMsg
-		}
+		return nil, err
 	}
-
 	log.Printf("[INFO] UpCloud Client configured for user: %s", res.UserName)
 	return svc, nil
+}
+
+func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
+	res, err := svc.GetAccount()
+	if err != nil {
+		svcErr, ok := err.(*upcloud.Error)
+		if ok {
+			return nil, fmt.Errorf("Error %s: '%s'", svcErr.ErrorCode, svcErr.ErrorMessage)
+		}
+		return nil, fmt.Errorf("Unspecified error")
+	}
+	return res, nil
 }
