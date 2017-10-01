@@ -223,7 +223,7 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	if attr, ok := d.GetOk("mem"); ok {
 		r.MemoryAmount = attr.(int)
 	}
-	if attr, ok := d.GetOk("userdata"); ok {
+	if attr, ok := d.GetOk("user_data"); ok {
 		r.UserData = attr.(string)
 	}
 
