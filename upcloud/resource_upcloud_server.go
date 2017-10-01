@@ -9,8 +9,8 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
+	uuid "github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform/helper/schema"
-	uuid "github.com/satori/go.uuid"
 )
 
 func resourceUpCloudServer() *schema.Resource {
@@ -245,7 +245,7 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 func buildStorageOpts(d *schema.ResourceData, meta interface{}) ([]upcloud.CreateServerStorageDevice, error) {
 	storageCfg := make([]upcloud.CreateServerStorageDevice, 0)
 	source := d.Get("template").(string)
-	_, err := uuid.FromString(source)
+	_, err := uuid.ParseUUID(source)
 	// Assume template name is given and map name to UUID
 	if err != nil {
 		client := meta.(*service.Service)
