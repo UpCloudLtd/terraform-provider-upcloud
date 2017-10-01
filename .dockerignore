@@ -1,5 +1,6 @@
-.terraform
-terraform.tfstate*
 terraform-provider-upcloud
 crash.log
 *.tf
+terraform.tfstate*
+.git
+Dockerfile
