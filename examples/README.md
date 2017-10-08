@@ -1,8 +1,14 @@
 # Examples for terraform-provider-upcloud
 
+This is a full example which shows how you can set up your own UpCloud instance by using Terraform.
+
+## Initializing local environment
+
 First install this provider and initialize Terraform in this directory.
 
 ```
+$ git clone https://github.com/vtorhonen/terraform-upcloud-provider
+$ cd terraform-upcloud-provider/examples
 $ go install github.com/vtorhonen/terraform-upcloud-provider
 $ terraform init
 
@@ -10,6 +16,12 @@ Initializing provider plugins...
 
 Terraform has been successfully initialized!
 ```
+
+## Configuring the plan
+
+Set up your credentials to `01_server.tf`. Modify `login` block accordingly and set up your own SSH keys.
+In this example you can also remove `keys` parameter, since UpCloud will auto generate a password for you
+and deliver it via SMS.
 
 Plan your changes.
 
@@ -37,6 +49,12 @@ Terraform will perform the following actions:
       ipv4_address_private: <computed>
       ipv6:                 "true"
       ipv6_address:         <computed>
+      login.#:                           "1"
+      login.868081814.create_password:   "true"
+      login.868081814.keys.#:            "1"
+      login.868081814.keys.0:            "ssh-rsa <snip>"
+      login.868081814.password_delivery: "sms"
+      login.868081814.user:              "tf"
       mem:                  "2048"
       os_disk_size:         "20"
       os_disk_tier:         "maxiops"
@@ -49,32 +67,48 @@ Terraform will perform the following actions:
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
-Then apply the plan.
+## Applying the plan
+
+Apply the plan by running `terraform apply`.
 
 ```
 $ terraform apply
 upcloud_server.test: Creating...
-  cpu:                  "" => "2"
-  hostname:             "" => "my-awesome-hostname"
-  ipv4:                 "" => "true"
-  ipv4_address:         "" => "<computed>"
-  ipv4_address_private: "" => "<computed>"
-  ipv6:                 "" => "true"
-  ipv6_address:         "" => "<computed>"
-  mem:                  "" => "2048"
-  os_disk_size:         "" => "20"
-  os_disk_tier:         "" => "maxiops"
-  os_disk_uuid:         "" => "<computed>"
-  private_networking:   "" => "true"
-  template:             "" => "CentOS 7.0"
-  title:                "" => "<computed>"
-  zone:                 "" => "fi-hel1"
+  cpu:                               "" => "2"
+  hostname:                          "" => "my-awesome-hostname"
+  ipv4:                              "" => "true"
+  ipv4_address:                      "" => "<computed>"
+  ipv4_address_private:              "" => "<computed>"
+  ipv6:                              "" => "true"
+  ipv6_address:                      "" => "<computed>"
+  login.#:                           "" => "1"
+  login.868081814.create_password:   "" => "true"
+  login.868081814.keys.#:            "" => "1"
+  login.868081814.keys.0:            "" => "<snip>"
+  login.868081814.password_delivery: "" => "sms"
+  login.868081814.user:              "" => "tf"
+  mem:                               "" => "2048"
+  os_disk_size:                      "" => "20"
+  os_disk_tier:                      "" => "maxiops"
+  os_disk_uuid:                      "" => "<computed>"
+  private_networking:                "" => "true"
+  template:                          "" => "CentOS 7.0"
+  title:                             "" => "<computed>"
+  zone:                              "" => "fi-hel1"
 upcloud_server.test: Still creating... (10s elapsed)
 upcloud_server.test: Still creating... (20s elapsed)
 upcloud_server.test: Still creating... (30s elapsed)
 upcloud_server.test: Still creating... (40s elapsed)
 upcloud_server.test: Creation complete after 46s (ID: <snip>)
+
+Outputs:
+
+ip = <SOME IP ADDRESS>
 ```
+
+You can then log in to the server by running `ssh tf@<SOME IP ADDRESS>`. Check your SMS messages if you didn't specify any SSH keys.
+
+## Modifying the plan
 
 Next, increase memory config from 2 GB to 4 GB by changing resource
 config to `mem = 4096`. Then run `terraform plan` again.
@@ -104,7 +138,16 @@ upcloud_server.test: Still modifying... (ID: <snip>, 20s elapsed)
 upcloud_server.test: Still modifying... (ID: <snip>, 30s elapsed)
 upcloud_server.test: Still modifying... (ID: <snip>, 40s elapsed)
 upcloud_server.test: Modifications complete after 40s (ID: <snip>)
+
+Outputs:
+
+ip = <SOME IP ADDRESS>
 ```
+
+Again, log in to the server and verify that memory has been increased.
+
+
+## Cleaning up the environment
 
 You can then destroy the instance by running `terraform destroy`. NOTE: You will lose all data.
 
