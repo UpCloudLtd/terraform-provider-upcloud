@@ -95,6 +95,35 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"login": {
+				Type:     schema.TypeSet,
+				Required: true,
+				ForceNew: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"user": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"keys": &schema.Schema{
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+						"create_password": &schema.Schema{
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"password_delivery": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "none",
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -227,6 +256,13 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		r.UserData = attr.(string)
 	}
 
+	loginOpts, deliveryMethod, err := buildLoginOpts(d, meta)
+	if err != nil {
+		return nil, err
+	}
+	r.LoginUser = loginOpts
+	r.PasswordDelivery = deliveryMethod
+
 	storageOpts, err := buildStorageOpts(d, meta)
 	if err != nil {
 		return nil, err
@@ -327,6 +363,43 @@ func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.Creat
 		}
 	}
 	return ifaceCfg, nil
+}
+
+func buildLoginOpts(d *schema.ResourceData, meta interface{}) (*request.LoginUser, string, error) {
+	v, ok := d.GetOk("login")
+	if !ok {
+		return nil, "", fmt.Errorf("Failed to read 'login'")
+	}
+
+	// Construct LoginUser struct from the schema
+	r := &request.LoginUser{}
+	e := v.(*schema.Set).List()[0]
+	m := e.(map[string]interface{})
+
+	// Set username as is
+	r.Username = m["user"].(string)
+
+	// Set 'create_password' to "yes" or "no" depending on the bool value.
+	// Would be nice if the API would just get a standard bool str.
+	createPassword := "no"
+	b := m["create_password"].(bool)
+	if b {
+		createPassword = "yes"
+	}
+	r.CreatePassword = createPassword
+
+	// Handle SSH keys one by one
+	keys := make([]string, 0)
+	for _, k := range m["keys"].([]interface{}) {
+		key := k.(string)
+		keys = append(keys, key)
+	}
+	r.SSHKeys = keys
+
+	// Define password delivery method none/email/sms
+	deliveryMethod := m["password_delivery"].(string)
+
+	return r, deliveryMethod, nil
 }
 
 func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
