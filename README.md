@@ -22,7 +22,7 @@ Requirements
 Building The Provider
 ---------------------
 
-Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-aws`
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-upcloud`
 
 ```sh
 $ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
