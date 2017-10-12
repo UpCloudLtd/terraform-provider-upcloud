@@ -38,7 +38,17 @@ $ make build
 
 Using the provider
 ----------------------
-## Fill in for each provider
+
+You need to set UpCloud credentials in shell environment variable (.bashrc, .zshrc or similar) to be able to use the provider:
+
+* ``export UPCLOUD_USERNAME="Username for Upcloud API user"`` - Your API access enabled users username
+* ``export UPCLOUD_PASSWORD="Password for Upcloud API user"`` - Your API access enabled users password
+
+
+To allow API access to your UpCloud account, you first need to enable the API permissions by visiting [My Account -> User accounts](https://my.upcloud.com/account) in your UpCloud Control Panel. We recommend you to set up a sub-account specifically for the API usage with its own username and password, as it allows you to assign specific permissions for increased security.
+
+Click **Add user** and fill in the required details, and check the “**Allow API connections**” checkbox to enable API for the user. You can also limit the API connections to a specific IP address or address range for additional security. Once you are done entering the user information, hit the **Save** button at the bottom of the page to create the new username.
+
 
 Developing the Provider
 ---------------------------
