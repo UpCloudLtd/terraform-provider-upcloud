@@ -1,6 +1,8 @@
 provider "upcloud" {
-    username = "foo"
-    password = "bar"
+    # You need to set UpCloud credentials in shell environment variable
+    # using .bashrc, .zshrc or similar
+    # export UPCLOUD_USERNAME="Username for Upcloud API user"
+    # export UPCLOUD_PASSWORD="Password for Upcloud API user"
 }
 
 resource "upcloud_server" "test" {
