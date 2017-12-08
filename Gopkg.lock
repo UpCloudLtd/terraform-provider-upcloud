@@ -2,7 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
   name = "github.com/UpCloudLtd/upcloud-go-api"
   packages = ["upcloud","upcloud/client","upcloud/request","upcloud/service"]
   revision = "0cb65aa6ddcddc8d021e5a2abc7e8400be8587d0"
@@ -267,6 +266,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9a28be0f9208fc8f977005896f374a1d8087b6ebf3877b8bf16caa5e5f533b51"
+  inputs-digest = "76557fd3931e37a49def2afb237454ce8ad854f5de0fe61ab68908047cc83995"
   solver-name = "gps-cdcl"
   solver-version = 1
