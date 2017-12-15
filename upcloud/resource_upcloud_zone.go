@@ -6,16 +6,23 @@ import (
 
 func resourceUpCloudZone() *schema.Resource {
 	return &schema.Resource{
+		Read: resourceUpCloudPriceRead,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
-			"amount": {
-				Type: schema.TypeInt,
+			"id": {
+				Type:     schema.TypeString,
+				Required: true,
 			},
-			"price": {
-				Type: schema.TypeFloat,
+			"description": {
+				Type:     schema.TypeString,
+				Required: true,
 			},
 		},
 	}
+}
+
+func resourceUpCloudZoneRead(d *schema.ResourceData, meta interface{}) error {
+	return nil
 }

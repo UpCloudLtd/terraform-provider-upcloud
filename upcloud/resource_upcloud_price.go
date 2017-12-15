@@ -19,71 +19,71 @@ func resourceUpCloudPrice() *schema.Resource {
 					},
 					"firewall": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"io_request_backup": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"io_request_hdd": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"io_request_maxiops": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"ipv4_address": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"ipv6_address": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"public_ipv4_bandwidth_in": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"public_ipv4_bandwidth_out": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"public_ipv6_bandwidth_in": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"public_ipv6_bandwidth_out": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"server_core": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"server_memory": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"storage_backup": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"storage_hdd": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"storage_maxiops": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"server_plan_1xCPU-1GB": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 					"server_plan_2xCPU-2GB": {
 						Type: schema.TypeMap,
-						Elem: resourceUpCloudZone(),
+						Elem: resourceUpCloudPriceZone(),
 					},
 				},
 			},
