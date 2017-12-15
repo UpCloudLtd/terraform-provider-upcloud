@@ -9,6 +9,7 @@ func resourceUpCloudTimezone() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+		Read: resourceUpCloudTimezoneRead,
 		Schema: map[string]*schema.Schema{
 			"timezone": {
 				Type: schema.TypeList,
@@ -19,4 +20,8 @@ func resourceUpCloudTimezone() *schema.Resource {
 			},
 		},
 	}
+}
+
+func resourceUpCloudTimezoneRead(d *schema.ResourceData, meta interface{}) error {
+	return nil
 }
