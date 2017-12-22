@@ -3,6 +3,8 @@ package upcloud
 import (
 	"fmt"
 	"log"
+	"reflect"
+	"sort"
 	"strconv"
 	"time"
 
@@ -39,29 +41,17 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"cpu": {
 				Type:     schema.TypeInt,
-				Required: true,
+				Optional: true,
+				Default:  1,
 			},
 			"mem": {
 				Type:     schema.TypeInt,
-				Required: true,
-			},
-			"os_disk_size": {
-				Type:     schema.TypeInt,
-				Required: true,
-			},
-			"os_disk_uuid": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"os_disk_tier": {
-				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "maxiops",
 			},
 			"template": {
 				Type:     schema.TypeString,
-				Required: true,
 				ForceNew: true,
+				Optional: true,
 			},
 			"private_networking": {
 				Type:     schema.TypeBool,
@@ -95,11 +85,53 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"storage_devices": {
+				Type:     schema.TypeList,
+				Required: true,
+				MinItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"address": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"action": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"size": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  -1,
+						},
+						"tier": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"title": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"storage": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"type": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
 			"login": {
 				Type:     schema.TypeSet,
-				Required: true,
 				ForceNew: true,
 				MaxItems: 1,
+				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"user": &schema.Schema{
@@ -163,31 +195,115 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("hostname", server.Hostname)
 	d.Set("title", server.Title)
-	d.Set("region", server.Zone)
+	d.Set("zone", server.Zone)
 	d.Set("cpu", server.CoreNumber)
-	d.Set("mem", server.MemoryAmount)
-
-	// TODO: Handle additional disks
-	osDisk := server.StorageDevices[0]
-	d.Set("os_disk_size", osDisk.Size)
-	d.Set("os_disk_uuid", osDisk.UUID)
-
-	for _, ip := range server.IPAddresses {
-		if ip.Access == upcloud.IPAddressAccessPrivate && ip.Family == upcloud.IPAddressFamilyIPv4 {
-			d.Set("ipv4_address_private", ip.Address)
-		}
-		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv4 {
-			d.Set("ipv4_address", ip.Address)
-		}
-		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv6 {
-			d.Set("ipv6_address", ip.Address)
-		}
+	storageDevices := d.Get("storage_devices").([]interface{})
+	log.Print(storageDevices)
+	log.Print(server.StorageDevices)
+	for i, storageDevice := range storageDevices {
+		storageDevice := storageDevice.(map[string]interface{})
+		storageDevice["id"] = server.StorageDevices[i].UUID
+		storageDevice["address"] = server.StorageDevices[i].Address
 	}
+	d.Set("storage_devices", storageDevices)
+
 	return nil
 }
 
 func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
+	if d.HasChange("storage_devices") {
+		storageDevicesI, oldStorageDevicesI := d.GetChange("storage_devices")
+		d.Set("storage_devices", storageDevicesI)
+		storageDevices := storageDevicesI.([]interface{})
+		oldStorageDevices := oldStorageDevicesI.([]interface{})
+		log.Printf("New devices: %v\nOld devices: %v\n", storageDevices, oldStorageDevices)
+		for i, storageDevice := range storageDevices {
+			storageDevice := storageDevice.(map[string]interface{})
+			oldStorageDeviceN := sort.Search(len(oldStorageDevices), func(i int) bool {
+				return oldStorageDevices[i].(map[string]interface{})["id"] == storageDevice["id"]
+			})
+			var oldStorageDevice map[string]interface{}
+			if oldStorageDeviceN < len(oldStorageDevices) {
+				oldStorageDevice = oldStorageDevices[oldStorageDeviceN].(map[string]interface{})
+			}
+			log.Printf("New device: %v\n", storageDevice)
+			log.Printf("Old device: %v\n", oldStorageDevice)
+			if oldStorageDevice == nil {
+				var newStorageDeviceID string
+				switch storageDevice["action"] {
+				case upcloud.CreateServerStorageDeviceActionCreate:
+					storage, err := buildStorage(storageDevice, i, meta)
+					if err != nil {
+						return err
+					}
+					newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
+						Size:  storage.Size,
+						Tier:  storage.Tier,
+						Title: storage.Title,
+						Zone:  d.Get("zone").(string),
+					})
+					if err != nil {
+						return err
+					}
+					newStorageDeviceID = newStorage.UUID
+					break
+				case upcloud.CreateServerStorageDeviceActionClone:
+					// storage, err := buildStorage(storageDevice, i, meta)
+					// if err != nil {
+					// 	return err
+					// }
+					// newStorage, err := client.CloneStorage(&request.CloneStorageRequest{
+					// 	UUID:  storageDevice["storage"].(string),
+					// 	Tier:  storage.Tier,
+					// 	Title: storage.Title,
+					// 	Zone:  d.Get("zone").(string),
+					// })
+					// if err != nil {
+					// 	return err
+					// }
+					newStorageDeviceID = storageDevice["storage"].(string)
+					break
+				case upcloud.CreateServerStorageDeviceActionAttach:
+					newStorageDeviceID = storageDevice["storage"].(string)
+					break
+				}
+
+				attachStorageRequest := request.AttachStorageRequest{
+					ServerUUID:  d.Id(),
+					StorageUUID: newStorageDeviceID,
+				}
+
+				if storageType := storageDevice["type"].(string); storageType != "" {
+					attachStorageRequest.Type = storageType
+				}
+
+				client.AttachStorage(&attachStorageRequest)
+			} else {
+				if !reflect.DeepEqual(oldStorageDevice, storageDevice) {
+					client.ModifyStorage(&request.ModifyStorageRequest{
+						Size:  storageDevice["size"].(int),
+						Title: storageDevice["title"].(string),
+					})
+				}
+
+				oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
+			}
+		}
+		log.Printf("Old devices: %v\n", oldStorageDevices)
+		for _, oldStorageDevice := range oldStorageDevices {
+			oldStorageDevice := oldStorageDevice.(map[string]interface{})
+			client.DetachStorage(&request.DetachStorageRequest{
+				ServerUUID: d.Id(),
+				Address:    oldStorageDevice["address"].(string),
+			})
+			if oldStorageDevice["action"] != upcloud.CreateServerStorageDeviceActionAttach {
+				client.DeleteStorage(&request.DeleteStorageRequest{
+					UUID: oldStorageDevice["id"].(string),
+				})
+			}
+		}
+	}
 	if d.HasChange("mem") || d.HasChange("cpu") {
 		_, newCPU := d.GetChange("cpu")
 		_, newMem := d.GetChange("mem")
@@ -226,16 +342,25 @@ func resourceUpCloudServerDelete(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return err
 	}
-	// Delete server root disk
-	rootDiskUUID := d.Get("os_disk_uuid").(string)
-	deleteStorageRequest := &request.DeleteStorageRequest{
-		UUID: rootDiskUUID,
+
+	storageDevices := d.Get("storage_devices").([]interface{})
+	for _, storageDevice := range storageDevices {
+		// Delete server root disk
+		storageDevice := storageDevice.(map[string]interface{})
+		id := storageDevice["id"].(string)
+		action := storageDevice["action"].(string)
+		if action != upcloud.CreateServerStorageDeviceActionAttach {
+			deleteStorageRequest := &request.DeleteStorageRequest{
+				UUID: id,
+			}
+			log.Printf("[INFO] Deleting server storage (storage UUID: %s)", id)
+			err = client.DeleteStorage(deleteStorageRequest)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	log.Printf("[INFO] Deleting server root disk (storage UUID: %s)", rootDiskUUID)
-	err = client.DeleteStorage(deleteStorageRequest)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -255,15 +380,17 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	if attr, ok := d.GetOk("user_data"); ok {
 		r.UserData = attr.(string)
 	}
-
-	loginOpts, deliveryMethod, err := buildLoginOpts(d, meta)
-	if err != nil {
-		return nil, err
+	if login, ok := d.GetOk("login"); ok {
+		loginOpts, deliveryMethod, err := buildLoginOpts(login, meta)
+		if err != nil {
+			return nil, err
+		}
+		r.LoginUser = loginOpts
+		r.PasswordDelivery = deliveryMethod
 	}
-	r.LoginUser = loginOpts
-	r.PasswordDelivery = deliveryMethod
 
-	storageOpts, err := buildStorageOpts(d, meta)
+	storageDevices := d.Get("storage_devices").([]interface{})
+	storageOpts, err := buildStorageOpts(storageDevices, meta)
 	if err != nil {
 		return nil, err
 	}
@@ -278,55 +405,66 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	return r, nil
 }
 
-func buildStorageOpts(d *schema.ResourceData, meta interface{}) ([]upcloud.CreateServerStorageDevice, error) {
-	storageCfg := make([]upcloud.CreateServerStorageDevice, 0)
-	source := d.Get("template").(string)
-	_, err := uuid.ParseUUID(source)
-	// Assume template name is given and map name to UUID
-	if err != nil {
-		client := meta.(*service.Service)
-		r := &request.GetStoragesRequest{
-			Type: upcloud.StorageTypeTemplate,
-		}
-		l, err := client.GetStorages(r)
+func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}) (*upcloud.CreateServerStorageDevice, error) {
+	osDisk := upcloud.CreateServerStorageDevice{
+		Action: storageDevice["action"].(string),
+	}
+
+	if source := storageDevice["storage"].(string); source != "" {
+		_, err := uuid.ParseUUID(source)
+		// Assume template name is given and map name to UUID
 		if err != nil {
-			return nil, err
-		}
-		for _, s := range l.Storages {
-			if s.Title == source {
-				source = s.UUID
-				break
+			client := meta.(*service.Service)
+			r := &request.GetStoragesRequest{
+				Type: upcloud.StorageTypeTemplate,
+			}
+			l, err := client.GetStorages(r)
+			if err != nil {
+				return nil, err
+			}
+			for _, s := range l.Storages {
+				if s.Title == source {
+					source = s.UUID
+					break
+				}
 			}
 		}
-	}
-	osDisk := upcloud.CreateServerStorageDevice{
-		Action:  upcloud.CreateServerStorageDeviceActionClone,
-		Storage: source,
+
+		osDisk.Storage = source
 	}
 
 	// Set size or use the one defined by target template
-	if attr, ok := d.GetOk("os_disk_size"); ok {
-		osDisk.Size = attr.(int)
+	if size := storageDevice["size"]; size != -1 {
+		osDisk.Size = size.(int)
 	}
 
 	// Autogenerate disk title
-	osDisk.Title = fmt.Sprintf("terraform-os-disk")
+	osDisk.Title = fmt.Sprintf("terraform-os-disk-%d", i)
 
 	// Set disk tier or use the one defined by target template
-	if attr, ok := d.GetOk("os_disk_tier"); ok {
-		tier := attr.(string)
-		switch tier {
-		case upcloud.StorageTierMaxIOPS:
-			osDisk.Tier = upcloud.StorageTierMaxIOPS
-		case upcloud.StorageTierHDD:
-			osDisk.Tier = upcloud.StorageTierHDD
-		default:
-			return nil, fmt.Errorf("Invalid disk tier '%s'", tier)
-		}
+	if tier := storageDevice["tier"]; tier != "" {
+		osDisk.Tier = tier.(string)
 	}
-	storageCfg = append(storageCfg, osDisk)
 
-	// TODO: Handle additional disks
+	if storageType := storageDevice["type"].(string); storageType != "" {
+		osDisk.Type = storageType
+	}
+
+	return &osDisk, nil
+}
+
+func buildStorageOpts(storageDevices []interface{}, meta interface{}) ([]upcloud.CreateServerStorageDevice, error) {
+	storageCfg := make([]upcloud.CreateServerStorageDevice, 0)
+	for i, storageDevice := range storageDevices {
+		storageDevice, err := buildStorage(storageDevice.(map[string]interface{}), i, meta)
+
+		if err != nil {
+			return nil, err
+		}
+
+		storageCfg = append(storageCfg, *storageDevice)
+	}
+
 	return storageCfg, nil
 }
 
@@ -365,12 +503,7 @@ func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.Creat
 	return ifaceCfg, nil
 }
 
-func buildLoginOpts(d *schema.ResourceData, meta interface{}) (*request.LoginUser, string, error) {
-	v, ok := d.GetOk("login")
-	if !ok {
-		return nil, "", fmt.Errorf("Failed to read 'login'")
-	}
-
+func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string, error) {
 	// Construct LoginUser struct from the schema
 	r := &request.LoginUser{}
 	e := v.(*schema.Set).List()[0]
