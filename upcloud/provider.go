@@ -22,8 +22,9 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server":  resourceUpCloudServer(),
-			"upcloud_storage": resourceUpCloudStorage(),
+			"upcloud_server":        resourceUpCloudServer(),
+			"upcloud_storage":       resourceUpCloudStorage(),
+			"upcloud_firewall_rule": resourceUpCloudFirewallRule(),
 		},
 
 		ConfigureFunc: providerConfigure,

@@ -49,6 +49,7 @@ func resourceUpCloudIP() *schema.Resource {
 }
 
 func resourceUpCloudIPCreate(d *schema.ResourceData, meta interface{}) error {
+
 	return nil
 }
 
