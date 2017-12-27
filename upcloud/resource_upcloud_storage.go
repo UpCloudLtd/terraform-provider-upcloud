@@ -129,6 +129,7 @@ func resourceUpCloudStorageRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceUpCloudStorageUpdate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*service.Service)
 	r := &request.ModifyStorageRequest{}
 
 	if d.HasChange("size") {
@@ -139,6 +140,12 @@ func resourceUpCloudStorageUpdate(d *schema.ResourceData, meta interface{}) erro
 	if d.HasChange("title") {
 		_, newTitle := d.GetChange("title")
 		r.Title = newTitle.(string)
+	}
+
+	_, err := client.ModifyStorage(r)
+
+	if err != nil {
+		return err
 	}
 
 	return nil

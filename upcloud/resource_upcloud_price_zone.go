@@ -11,10 +11,14 @@ func resourceUpCloudPriceZone() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"amount": {
-				Type: schema.TypeInt,
+				Type:     schema.TypeInt,
+				ForceNew: true,
+				Optional: true,
 			},
 			"price": {
-				Type: schema.TypeFloat,
+				Type:     schema.TypeFloat,
+				ForceNew: true,
+				Optional: true,
 			},
 		},
 	}

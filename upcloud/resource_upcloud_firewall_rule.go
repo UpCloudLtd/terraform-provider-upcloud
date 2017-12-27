@@ -18,9 +18,10 @@ func resourceUpCloudFirewallRule() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
-			"serverId": {
+			"server_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"direction": {
 				Type:     schema.TypeString,
@@ -105,7 +106,7 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 	client := meta.(*service.Service)
 
 	createFirewallRuleRequest := &request.CreateFirewallRuleRequest{
-		ServerUUID: d.Get("serverId").(string),
+		ServerUUID: d.Get("server_id").(string),
 		FirewallRule: upcloud.FirewallRule{
 			Direction: d.Get("direction").(string),
 			Action:    d.Get("action").(string),
@@ -177,7 +178,7 @@ func resourceUpCloudFirewallRuleRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	r := &request.GetFirewallRuleDetailsRequest{
-		ServerUUID: d.Get("serverId").(string),
+		ServerUUID: d.Get("server_id").(string),
 		Position:   position,
 	}
 
@@ -216,7 +217,7 @@ func resourceUpCloudFirewallRuleDelete(d *schema.ResourceData, meta interface{})
 	}
 
 	deleteFirewallRuleRequest := &request.DeleteFirewallRuleRequest{
-		ServerUUID: d.Get("serverId").(string),
+		ServerUUID: d.Get("server_id").(string),
 		Position:   position,
 	}
 

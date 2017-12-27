@@ -25,6 +25,10 @@ func Provider() *schema.Provider {
 			"upcloud_server":        resourceUpCloudServer(),
 			"upcloud_storage":       resourceUpCloudStorage(),
 			"upcloud_firewall_rule": resourceUpCloudFirewallRule(),
+			"upcloud_plan":          resourceUpCloudPlan(),
+			"upcloud_price":         resourceUpCloudPrice(),
+			"upcloud_price_zone":    resourceUpCloudPriceZone(),
+			"upcloud_tag":           resourceUpCloudTag(),
 		},
 
 		ConfigureFunc: providerConfigure,
