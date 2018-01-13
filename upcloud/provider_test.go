@@ -1,9 +1,9 @@
 package upcloud
 
 import (
+	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/terraform-providers/terraform-provider-template/template"
@@ -32,12 +32,14 @@ func init() {
 }
 
 func testAccPreCheck(t *testing.T) {
-	err := testAccProvider.Configure(terraform.NewResourceConfig(&config.RawConfig{
-		Raw: map[string]interface{}{
-			"username": "toughbyte",
-			"password": "whf-CMf-4Ax-gWw",
-		},
-	}))
+	if v := os.Getenv("UPCLOUD_USERNAME"); v == "" {
+		t.Fatal("UPCLOUD_USERNAME must be set for acceptance tests")
+	}
+	if v := os.Getenv("UPCLOUD_PASSWORD"); v == "" {
+		t.Fatal("UPCLOUD_PASSWORD must be set for acceptance tests")
+	}
+
+	err := testAccProvider.Configure(terraform.NewResourceConfig(nil))
 	if err != nil {
 		t.Fatal(err)
 	}
