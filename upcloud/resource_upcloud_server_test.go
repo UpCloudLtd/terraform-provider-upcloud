@@ -17,7 +17,6 @@ func TestUpcloudServer_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "zone"),
 					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "hostname"),
-					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "storage_devices"),
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "zone", "fi-hel1"),
 					resource.TestCheckResourceAttr(

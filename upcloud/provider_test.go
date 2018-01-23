@@ -31,6 +31,12 @@ func init() {
 	}
 }
 
+func TestProvider(t *testing.T) {
+	if err := Provider().InternalValidate(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
 func testAccPreCheck(t *testing.T) {
 	if v := os.Getenv("UPCLOUD_USERNAME"); v == "" {
 		t.Fatal("UPCLOUD_USERNAME must be set for acceptance tests")
