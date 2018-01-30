@@ -5,6 +5,7 @@ default: build
 
 build: fmtcheck
 	dep ensure
+	go install
 
 test: fmtcheck
 	go test -i $(TEST) || exit 1
