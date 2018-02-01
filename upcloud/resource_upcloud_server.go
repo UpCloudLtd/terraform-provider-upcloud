@@ -85,6 +85,10 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"plan": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"storage_devices": {
 				Type:     schema.TypeList,
 				Required: true,
@@ -114,7 +118,7 @@ func resourceUpCloudServer() *schema.Resource {
 						},
 						"title": {
 							Type:     schema.TypeString,
-							Computed: true,
+							Optional: true,
 						},
 						"storage": {
 							Type:     schema.TypeString,
@@ -380,6 +384,9 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	if attr, ok := d.GetOk("user_data"); ok {
 		r.UserData = attr.(string)
 	}
+	if attr, ok := d.GetOk("plan"); ok {
+		r.Plan = attr.(string)
+	}
 	if login, ok := d.GetOk("login"); ok {
 		loginOpts, deliveryMethod, err := buildLoginOpts(login, meta)
 		if err != nil {
@@ -439,7 +446,11 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{})
 	}
 
 	// Autogenerate disk title
-	osDisk.Title = fmt.Sprintf("terraform-os-disk-%d", i)
+	if title := storageDevice["title"].(string); title != "" {
+		osDisk.Title = title
+	} else {
+		osDisk.Title = fmt.Sprintf("terraform-os-disk-%d", i)
+	}
 
 	// Set disk tier or use the one defined by target template
 	if tier := storageDevice["tier"]; tier != "" {
