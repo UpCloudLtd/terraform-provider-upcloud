@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
@@ -47,6 +48,7 @@ func resourceUpCloudFirewallRule() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+				Default:  "tcp",
 			},
 			"icmp_type": {
 				Type:     schema.TypeString,
@@ -115,7 +117,11 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 	}
 
 	if position, ok := d.GetOk("position"); ok {
-		createFirewallRuleRequest.Position = position.(int)
+		position, err := strconv.Atoi(position.(string))
+		if err != nil {
+			return err
+		}
+		createFirewallRuleRequest.Position = position
 	}
 
 	if protocol, ok := d.GetOk("protocol"); ok {
@@ -127,10 +133,12 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 	}
 
 	if destinationAddressStart, ok := d.GetOk("destination_address_start"); ok {
+		log.Print("Destination address start: ", destinationAddressStart)
 		createFirewallRuleRequest.DestinationAddressStart = destinationAddressStart.(string)
 	}
 
 	if destinationAddressEnd, ok := d.GetOk("destination_address_end"); ok {
+		log.Print("Destination address end: ", destinationAddressEnd)
 		createFirewallRuleRequest.DestinationAddressEnd = destinationAddressEnd.(string)
 	}
 
@@ -138,8 +146,8 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 		createFirewallRuleRequest.DestinationPortStart = destinationPortStart.(string)
 	}
 
-	if destinationAddressStart, ok := d.GetOk("destination_port_end"); ok {
-		createFirewallRuleRequest.DestinationAddressStart = destinationAddressStart.(string)
+	if destinationPortEnd, ok := d.GetOk("destination_port_end"); ok {
+		createFirewallRuleRequest.DestinationPortEnd = destinationPortEnd.(string)
 	}
 
 	if sourceAddressStart, ok := d.GetOk("source_address_start"); ok {
@@ -157,6 +165,8 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 	if sourcePortEnd, ok := d.GetOk("source_port_end"); ok {
 		createFirewallRuleRequest.SourcePortEnd = sourcePortEnd.(string)
 	}
+
+	log.Printf("Firewall rule: %v", createFirewallRuleRequest)
 
 	firewallRule, err := client.CreateFirewallRule(createFirewallRuleRequest)
 

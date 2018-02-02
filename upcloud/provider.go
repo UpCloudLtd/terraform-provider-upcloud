@@ -1,6 +1,10 @@
 package upcloud
 
 import (
+	"time"
+
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -41,5 +45,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Password: d.Get("password").(string),
 	}
 
-	return config.Client()
+	client := client.New(d.Get("username").(string), d.Get("password").(string))
+	client.SetTimeout(time.Second * 30)
+
+	service := service.New(client)
+
+	_, err := config.checkLogin(service)
+
+	return service, err
 }

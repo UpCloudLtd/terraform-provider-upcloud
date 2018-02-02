@@ -42,7 +42,6 @@ func resourceUpCloudServer() *schema.Resource {
 			"cpu": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  1,
 			},
 			"mem": {
 				Type:     schema.TypeInt,
@@ -127,6 +126,26 @@ func resourceUpCloudServer() *schema.Resource {
 						"type": {
 							Type:     schema.TypeString,
 							Optional: true,
+						},
+						"backup_rule": {
+							Type:     schema.TypeMap,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"interval": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"time": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"retention": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -237,7 +256,7 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 				var newStorageDeviceID string
 				switch storageDevice["action"] {
 				case upcloud.CreateServerStorageDeviceActionCreate:
-					storage, err := buildStorage(storageDevice, i, meta)
+					storage, err := buildStorage(storageDevice, i, meta, d.Get("zone").(string))
 					if err != nil {
 						return err
 					}
@@ -397,7 +416,7 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	}
 
 	storageDevices := d.Get("storage_devices").([]interface{})
-	storageOpts, err := buildStorageOpts(storageDevices, meta)
+	storageOpts, err := buildStorageOpts(storageDevices, meta, d.Get("zone").(string))
 	if err != nil {
 		return nil, err
 	}
@@ -412,10 +431,9 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	return r, nil
 }
 
-func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}) (*upcloud.CreateServerStorageDevice, error) {
-	osDisk := upcloud.CreateServerStorageDevice{
-		Action: storageDevice["action"].(string),
-	}
+func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, zone string) (*upcloud.CreateServerStorageDevice, error) {
+	client := meta.(*service.Service)
+	osDisk := upcloud.CreateServerStorageDevice{}
 
 	if source := storageDevice["storage"].(string); source != "" {
 		_, err := uuid.ParseUUID(source)
@@ -461,13 +479,46 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{})
 		osDisk.Type = storageType
 	}
 
+	osDisk.Action = storageDevice["action"].(string)
+
+	log.Printf("Disk: %v", osDisk)
+
+	if backupRule := storageDevice["backup_rule"]; backupRule != nil {
+
+		backupRule := backupRule.(map[string]interface{})
+		retention, err := strconv.Atoi(backupRule["retention"].(string))
+		if err != nil {
+
+			return nil, err
+		}
+
+		newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
+			Size:  osDisk.Size,
+			Tier:  osDisk.Tier,
+			Title: osDisk.Title,
+			Zone:  zone,
+			BackupRule: &upcloud.BackupRule{
+				Interval:  backupRule["interval"].(string),
+				Retention: retention,
+				Time:      backupRule["time"].(string),
+			},
+		})
+		if err != nil {
+
+			return nil, err
+		}
+
+		osDisk.Action = "attach"
+		osDisk.Storage = newStorage.UUID
+	}
+
 	return &osDisk, nil
 }
 
-func buildStorageOpts(storageDevices []interface{}, meta interface{}) ([]upcloud.CreateServerStorageDevice, error) {
+func buildStorageOpts(storageDevices []interface{}, meta interface{}, zone string) ([]upcloud.CreateServerStorageDevice, error) {
 	storageCfg := make([]upcloud.CreateServerStorageDevice, 0)
 	for i, storageDevice := range storageDevices {
-		storageDevice, err := buildStorage(storageDevice.(map[string]interface{}), i, meta)
+		storageDevice, err := buildStorage(storageDevice.(map[string]interface{}), i, meta, zone)
 
 		if err != nil {
 			return nil, err
