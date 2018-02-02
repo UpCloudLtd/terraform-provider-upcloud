@@ -235,8 +235,11 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
+	if err := verifyServerStopped(d, meta); err != nil {
+		return err
+	}
 	if d.HasChange("storage_devices") {
-		storageDevicesI, oldStorageDevicesI := d.GetChange("storage_devices")
+		oldStorageDevicesI, storageDevicesI := d.GetChange("storage_devices")
 		d.Set("storage_devices", storageDevicesI)
 		storageDevices := storageDevicesI.([]interface{})
 		oldStorageDevices := oldStorageDevicesI.([]interface{})
@@ -301,6 +304,8 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 					attachStorageRequest.Type = storageType
 				}
 
+				log.Printf("Attach storage: %v", attachStorageRequest)
+
 				client.AttachStorage(&attachStorageRequest)
 			} else {
 				if !reflect.DeepEqual(oldStorageDevice, storageDevice) {
@@ -330,22 +335,26 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 	if d.HasChange("mem") || d.HasChange("cpu") {
 		_, newCPU := d.GetChange("cpu")
 		_, newMem := d.GetChange("mem")
-		if err := verifyServerStopped(d, meta); err != nil {
-			return err
-		}
-		r := &request.ModifyServerRequest{
-			UUID:         d.Id(),
-			CoreNumber:   strconv.Itoa(newCPU.(int)),
-			MemoryAmount: strconv.Itoa(newMem.(int)),
-		}
-		_, err := client.ModifyServer(r)
-		if err != nil {
-			return err
-		}
-		if err := verifyServerStarted(d, meta); err != nil {
-			return err
-		}
 
+		if newCPU != 0 || newMem != 0 {
+			log.Printf("Modifying server, cpu = %v, mem = %v", newCPU, newMem)
+			r := &request.ModifyServerRequest{
+				UUID: d.Id(),
+			}
+			if newCPU != 0 {
+				r.CoreNumber = strconv.Itoa(newCPU.(int))
+			}
+			if newMem != 0 {
+				r.MemoryAmount = strconv.Itoa(newMem.(int))
+			}
+			_, err := client.ModifyServer(r)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if err := verifyServerStarted(d, meta); err != nil {
+		return err
 	}
 	return resourceUpCloudServerRead(d, meta)
 }
@@ -483,9 +492,8 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 
 	log.Printf("Disk: %v", osDisk)
 
-	if backupRule := storageDevice["backup_rule"]; backupRule != nil {
-
-		backupRule := backupRule.(map[string]interface{})
+	if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
+		log.Println("Backup rule create")
 		retention, err := strconv.Atoi(backupRule["retention"].(string))
 		if err != nil {
 
