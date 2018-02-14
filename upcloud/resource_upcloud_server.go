@@ -3,8 +3,6 @@ package upcloud
 import (
 	"fmt"
 	"log"
-	"reflect"
-	"sort"
 	"strconv"
 	"time"
 
@@ -39,8 +37,13 @@ func resourceUpCloudServer() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"firewall": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 			"cpu": {
 				Type:     schema.TypeInt,
+				Computed: true,
 				Optional: true,
 			},
 			"mem": {
@@ -101,6 +104,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"address": {
 							Type:     schema.TypeString,
 							Computed: true,
+							Optional: true,
 						},
 						"action": {
 							Type:     schema.TypeString,
@@ -118,6 +122,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"title": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Computed: true,
 						},
 						"storage": {
 							Type:     schema.TypeString,
@@ -227,6 +232,7 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 		storageDevice := storageDevice.(map[string]interface{})
 		storageDevice["id"] = server.StorageDevices[i].UUID
 		storageDevice["address"] = server.StorageDevices[i].Address
+		storageDevice["title"] = server.StorageDevices[i].Title
 	}
 	d.Set("storage_devices", storageDevices)
 
@@ -246,9 +252,19 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 		log.Printf("New devices: %v\nOld devices: %v\n", storageDevices, oldStorageDevices)
 		for i, storageDevice := range storageDevices {
 			storageDevice := storageDevice.(map[string]interface{})
-			oldStorageDeviceN := sort.Search(len(oldStorageDevices), func(i int) bool {
-				return oldStorageDevices[i].(map[string]interface{})["id"] == storageDevice["id"]
-			})
+			log.Printf("Len: %v\n", len(oldStorageDevices))
+			var oldStorageDeviceN int
+			for i, oldStorageDevice := range oldStorageDevices {
+				id1 := oldStorageDevice.(map[string]interface{})["id"].(string)
+				id2 := storageDevice["id"].(string)
+				log.Printf("Id 1: %v, Id 2: %v, Equal: %v", id1, id2, id1 == id2)
+				if id1 == id2 {
+					oldStorageDeviceN = i
+					break
+				}
+			}
+
+			log.Printf("Old storage device number: %v\n", oldStorageDeviceN)
 			var oldStorageDevice map[string]interface{}
 			if oldStorageDeviceN < len(oldStorageDevices) {
 				oldStorageDevice = oldStorageDevices[oldStorageDeviceN].(map[string]interface{})
@@ -308,12 +324,31 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 
 				client.AttachStorage(&attachStorageRequest)
 			} else {
-				if !reflect.DeepEqual(oldStorageDevice, storageDevice) {
-					client.ModifyStorage(&request.ModifyStorageRequest{
-						Size:  storageDevice["size"].(int),
-						Title: storageDevice["title"].(string),
-					})
+				log.Printf("Try to modify...\n")
+				log.Printf("Modify %v", storageDevice)
+				modifyStorage := &request.ModifyStorageRequest{
+					UUID:  storageDevice["id"].(string),
+					Size:  storageDevice["size"].(int),
+					Title: storageDevice["title"].(string),
 				}
+
+				if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
+					log.Println("Backup rule create")
+					retention, err := strconv.Atoi(backupRule["retention"].(string))
+					if err != nil {
+						return err
+					}
+
+					modifyStorage.BackupRule = &upcloud.BackupRule{
+						Interval:  backupRule["interval"].(string),
+						Retention: retention,
+						Time:      backupRule["time"].(string),
+					}
+				}
+
+				log.Printf("Request: %v\n", modifyStorage)
+
+				client.ModifyStorage(modifyStorage)
 
 				oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
 			}
@@ -403,6 +438,13 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		Title:    fmt.Sprintf("%s (managed by terraform)", d.Get("hostname").(string)),
 	}
 
+	if attr, ok := d.GetOk("firewall"); ok {
+		if attr.(bool) {
+			r.Firewall = "on"
+		} else {
+			r.Firewall = "off"
+		}
+	}
 	if attr, ok := d.GetOk("cpu"); ok {
 		r.CoreNumber = attr.(int)
 	}
@@ -486,6 +528,10 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 
 	if storageType := storageDevice["type"].(string); storageType != "" {
 		osDisk.Type = storageType
+	}
+
+	if address := storageDevice["address"].(string); address != "" {
+		osDisk.Address = address
 	}
 
 	osDisk.Action = storageDevice["action"].(string)
@@ -620,7 +666,7 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 		stopRequest := &request.StopServerRequest{
 			UUID:     d.Id(),
 			StopType: "soft",
-			Timeout:  time.Minute * 2,
+			Timeout:  time.Second * 10,
 		}
 		log.Printf("[INFO] Stopping server (server UUID: %s)", d.Id())
 		_, err := client.StopServer(stopRequest)

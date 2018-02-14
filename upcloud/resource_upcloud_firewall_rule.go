@@ -166,6 +166,10 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 		createFirewallRuleRequest.SourcePortEnd = sourcePortEnd.(string)
 	}
 
+	if comment, ok := d.GetOk("comment"); ok {
+		createFirewallRuleRequest.Comment = comment.(string)
+	}
+
 	log.Printf("Firewall rule: %v", createFirewallRuleRequest)
 
 	firewallRule, err := client.CreateFirewallRule(createFirewallRuleRequest)
@@ -174,14 +178,14 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 		return err
 	}
 
-	d.SetId(strconv.Itoa(firewallRule.Position))
+	d.SetId(createFirewallRuleRequest.ServerUUID + strconv.Itoa(firewallRule.Position))
 
-	return nil
+	return resourceUpCloudFirewallRuleRead(d, meta)
 }
 
 func resourceUpCloudFirewallRuleRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
-	position, err := strconv.Atoi(d.Id())
+	position, err := strconv.Atoi(d.Get("position").(string))
 
 	if err != nil {
 		return err
@@ -198,6 +202,7 @@ func resourceUpCloudFirewallRuleRead(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
+	d.SetId(d.Get("server_id").(string) + strconv.Itoa(firewallRule.Position))
 	d.Set("action", firewallRule.Action)
 	d.Set("comment", firewallRule.Comment)
 	d.Set("destination_address_end", firewallRule.DestinationAddressEnd)
