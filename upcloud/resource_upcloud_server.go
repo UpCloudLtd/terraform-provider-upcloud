@@ -346,6 +346,19 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 					}
 				}
 
+				if oldStorageDevice["address"] != storageDevice["address"] {
+					log.Printf("Trying to change address from %v to %v", oldStorageDevice["address"], storageDevice["address"])
+					client.DetachStorage(&request.DetachStorageRequest{
+						ServerUUID: d.Id(),
+						Address:    oldStorageDevice["address"].(string),
+					})
+					client.AttachStorage(&request.AttachStorageRequest{
+						ServerUUID:  d.Id(),
+						StorageUUID: storageDevice["id"].(string),
+						Address:     storageDevice["address"].(string),
+					})
+				}
+
 				log.Printf("Request: %v\n", modifyStorage)
 
 				client.ModifyStorage(modifyStorage)
@@ -367,25 +380,33 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 	}
-	if d.HasChange("mem") || d.HasChange("cpu") {
+	if d.HasChange("mem") || d.HasChange("cpu") || d.HasChange("firewall") {
 		_, newCPU := d.GetChange("cpu")
 		_, newMem := d.GetChange("mem")
+		_, newFirewall := d.GetChange("firewall")
+
+		r := &request.ModifyServerRequest{
+			UUID: d.Id(),
+		}
+
+		if newFirewall.(bool) {
+			r.Firewall = "on"
+		} else {
+			r.Firewall = "off"
+		}
 
 		if newCPU != 0 || newMem != 0 {
 			log.Printf("Modifying server, cpu = %v, mem = %v", newCPU, newMem)
-			r := &request.ModifyServerRequest{
-				UUID: d.Id(),
-			}
 			if newCPU != 0 {
 				r.CoreNumber = strconv.Itoa(newCPU.(int))
 			}
 			if newMem != 0 {
 				r.MemoryAmount = strconv.Itoa(newMem.(int))
 			}
-			_, err := client.ModifyServer(r)
-			if err != nil {
-				return err
-			}
+		}
+		_, err := client.ModifyServer(r)
+		if err != nil {
+			return err
 		}
 	}
 	if err := verifyServerStarted(d, meta); err != nil {
@@ -666,7 +687,7 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 		stopRequest := &request.StopServerRequest{
 			UUID:     d.Id(),
 			StopType: "soft",
-			Timeout:  time.Second * 10,
+			Timeout:  time.Second * 60,
 		}
 		log.Printf("[INFO] Stopping server (server UUID: %s)", d.Id())
 		_, err := client.StopServer(stopRequest)

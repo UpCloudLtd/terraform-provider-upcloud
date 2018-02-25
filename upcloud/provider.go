@@ -46,7 +46,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	client := client.New(d.Get("username").(string), d.Get("password").(string))
-	client.SetTimeout(time.Second * 30)
+	client.SetTimeout(time.Second * 60)
 
 	service := service.New(client)
 
