@@ -14,7 +14,7 @@ resource "upcloud_server" "test" {
     zone = "fi-hel1"
 
     # Template name or UUID
-    template = "CentOS 7.0"
+    template = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
 
     # Number of vCPUs
     cpu = 2
@@ -34,4 +34,8 @@ resource "upcloud_server" "test" {
         create_password = true
         password_delivery = "sms"
     }
+}
+
+output "ipv4_address" {
+    value = "${upcloud_server.test.ipv4_address}"
 }
