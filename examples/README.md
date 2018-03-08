@@ -154,7 +154,7 @@ upcloud_server.test: Modifications complete after 40s (ID: <snip>)
 
 Outputs:
 
-ip = <SOME IP ADDRESS>
+ipv4_address = <SOME IP ADDRESS>
 ```
 
 Again, log in to the server and verify that memory has been increased.
