@@ -22,18 +22,18 @@ Requirements
 Building The Provider
 ---------------------
 
-Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-upcloud`
+Get and install the provider:
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
-$ git clone git@github.com:vtorhonen/terraform-provider-upcloud.git
+$ go get github.com/vtorhonen/terraform-provider-upcloud
+$ go install github.com/vtorhonen/terraform-provider-upcloud
 ```
 
-Enter the provider directory and build the provider
+Symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
-$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-upcloud
-$ make build
+$ mkdir -p $HOME/.terraform.d/plugins
+$ ln -s $GOPATH/bin/terraform-provider-upcloud $HOME/.terraform.d/plugins/terraform-provider-upcloud
 ```
 
 Using the provider
