@@ -133,12 +133,12 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 	}
 
 	if destinationAddressStart, ok := d.GetOk("destination_address_start"); ok {
-		log.Print("Destination address start: ", destinationAddressStart)
+		log.Printf("[DEBUG] Destination address start: %+v", destinationAddressStart)
 		createFirewallRuleRequest.DestinationAddressStart = destinationAddressStart.(string)
 	}
 
 	if destinationAddressEnd, ok := d.GetOk("destination_address_end"); ok {
-		log.Print("Destination address end: ", destinationAddressEnd)
+		log.Printf("[DEBUG] Destination address end: %+v", destinationAddressEnd)
 		createFirewallRuleRequest.DestinationAddressEnd = destinationAddressEnd.(string)
 	}
 
@@ -170,7 +170,7 @@ func resourceUpCloudFirewallRuleCreate(d *schema.ResourceData, meta interface{})
 		createFirewallRuleRequest.Comment = comment.(string)
 	}
 
-	log.Printf("Firewall rule: %v", createFirewallRuleRequest)
+	log.Printf("[DEBUG] Firewall rule: %v", createFirewallRuleRequest)
 
 	firewallRule, err := client.CreateFirewallRule(createFirewallRuleRequest)
 

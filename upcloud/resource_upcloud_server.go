@@ -226,8 +226,8 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("zone", server.Zone)
 	d.Set("cpu", server.CoreNumber)
 	storageDevices := d.Get("storage_devices").([]interface{})
-	log.Print(storageDevices)
-	log.Print(server.StorageDevices)
+	log.Printf("[DEBUG] Configured storage devices in state: %v", storageDevices)
+	log.Printf("[DEBUG] Actual storage devices on server: %v", server.StorageDevices)
 	for i, storageDevice := range storageDevices {
 		storageDevice := storageDevice.(map[string]interface{})
 		storageDevice["id"] = server.StorageDevices[i].UUID
@@ -249,28 +249,29 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 		d.Set("storage_devices", storageDevicesI)
 		storageDevices := storageDevicesI.([]interface{})
 		oldStorageDevices := oldStorageDevicesI.([]interface{})
-		log.Printf("New devices: %v\nOld devices: %v\n", storageDevices, oldStorageDevices)
+		log.Printf("[DEBUG] New storage devices: %v", storageDevices)
+		log.Printf("[DEBUG] Current storage devices: %v", oldStorageDevices)
 		for i, storageDevice := range storageDevices {
 			storageDevice := storageDevice.(map[string]interface{})
-			log.Printf("Len: %v\n", len(oldStorageDevices))
+			log.Printf("[DEBUG] Number of current storage devices: %v\n", len(oldStorageDevices))
 			var oldStorageDeviceN int
 			for i, oldStorageDevice := range oldStorageDevices {
 				id1 := oldStorageDevice.(map[string]interface{})["id"].(string)
 				id2 := storageDevice["id"].(string)
-				log.Printf("Id 1: %v, Id 2: %v, Equal: %v", id1, id2, id1 == id2)
+				log.Printf("[DEBUG] Storage device Id 1: %v, Id 2: %v, Equal: %v", id1, id2, id1 == id2)
 				if id1 == id2 {
 					oldStorageDeviceN = i
 					break
 				}
 			}
 
-			log.Printf("Old storage device number: %v\n", oldStorageDeviceN)
+			log.Printf("[DEBUG] Old storage device number: %v\n", oldStorageDeviceN)
 			var oldStorageDevice map[string]interface{}
 			if oldStorageDeviceN < len(oldStorageDevices) {
 				oldStorageDevice = oldStorageDevices[oldStorageDeviceN].(map[string]interface{})
 			}
-			log.Printf("New device: %v\n", storageDevice)
-			log.Printf("Old device: %v\n", oldStorageDevice)
+			log.Printf("[DEBUG] New storage device: %v\n", storageDevice)
+			log.Printf("[DEBUG] Current storage device: %v\n", oldStorageDevice)
 			if oldStorageDevice == nil {
 				var newStorageDeviceID string
 				switch storageDevice["action"] {
@@ -320,12 +321,11 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 					attachStorageRequest.Type = storageType
 				}
 
-				log.Printf("Attach storage: %v", attachStorageRequest)
+				log.Printf("[DEBUG] Attach storage request: %v", attachStorageRequest)
 
 				client.AttachStorage(&attachStorageRequest)
 			} else {
-				log.Printf("Try to modify...\n")
-				log.Printf("Modify %v", storageDevice)
+				log.Printf("[DEBUG] Try to modify storage device %v", storageDevice)
 				modifyStorage := &request.ModifyStorageRequest{
 					UUID:  storageDevice["id"].(string),
 					Size:  storageDevice["size"].(int),
@@ -333,7 +333,7 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 				}
 
 				if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-					log.Println("Backup rule create")
+					log.Println("[DEBUG] Backup rule create")
 					retention, err := strconv.Atoi(backupRule["retention"].(string))
 					if err != nil {
 						return err
@@ -347,7 +347,7 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 				}
 
 				if oldStorageDevice["address"] != storageDevice["address"] {
-					log.Printf("Trying to change address from %v to %v", oldStorageDevice["address"], storageDevice["address"])
+					log.Printf("[DEBUG] Trying to change address from %v to %v", oldStorageDevice["address"], storageDevice["address"])
 					client.DetachStorage(&request.DetachStorageRequest{
 						ServerUUID: d.Id(),
 						Address:    oldStorageDevice["address"].(string),
@@ -359,14 +359,14 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 					})
 				}
 
-				log.Printf("Request: %v\n", modifyStorage)
+				log.Printf("[DEBUG] Storage modify request: %v\n", modifyStorage)
 
 				client.ModifyStorage(modifyStorage)
 
 				oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
 			}
 		}
-		log.Printf("Old devices: %v\n", oldStorageDevices)
+		log.Printf("[DEBUG] Current storage devices: %v\n", oldStorageDevices)
 		for _, oldStorageDevice := range oldStorageDevices {
 			oldStorageDevice := oldStorageDevice.(map[string]interface{})
 			client.DetachStorage(&request.DetachStorageRequest{
@@ -396,7 +396,7 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 
 		if newCPU != 0 || newMem != 0 {
-			log.Printf("Modifying server, cpu = %v, mem = %v", newCPU, newMem)
+			log.Printf("[DEBUG] Modifying server, cpu = %v, mem = %v", newCPU, newMem)
 			if newCPU != 0 {
 				r.CoreNumber = strconv.Itoa(newCPU.(int))
 			}
@@ -557,10 +557,10 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 
 	osDisk.Action = storageDevice["action"].(string)
 
-	log.Printf("Disk: %v", osDisk)
+	log.Printf("[DEBUG] Disk: %v", osDisk)
 
 	if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-		log.Println("Backup rule create")
+		log.Printf("[DEBUG] Backup rule create")
 		retention, err := strconv.Atoi(backupRule["retention"].(string))
 		if err != nil {
 
