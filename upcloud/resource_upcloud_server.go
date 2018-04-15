@@ -290,7 +290,7 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 				var newStorageDeviceID string
 				switch storageDevice["action"] {
 				case upcloud.CreateServerStorageDeviceActionCreate:
-					storage, err := buildStorage(storageDevice, i, meta, d.Get("zone").(string))
+					storage, err := buildStorage(storageDevice, i, meta, d.Get("hostname").(string), d.Get("zone").(string))
 					if err != nil {
 						return err
 					}
@@ -502,7 +502,7 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	}
 
 	storageDevices := d.Get("storage_devices").([]interface{})
-	storageOpts, err := buildStorageOpts(storageDevices, meta, d.Get("zone").(string))
+	storageOpts, err := buildStorageOpts(storageDevices, meta, d.Get("hostname").(string), d.Get("zone").(string))
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +517,7 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	return r, nil
 }
 
-func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, zone string) (*upcloud.CreateServerStorageDevice, error) {
+func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*upcloud.CreateServerStorageDevice, error) {
 	client := meta.(*service.Service)
 	osDisk := upcloud.CreateServerStorageDevice{}
 
@@ -553,7 +553,7 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 	if title := storageDevice["title"].(string); title != "" {
 		osDisk.Title = title
 	} else {
-		osDisk.Title = fmt.Sprintf("terraform-os-disk-%d", i)
+		osDisk.Title = fmt.Sprintf("terraform-%s-disk-%d", hostname, i)
 	}
 
 	// Set disk tier or use the one defined by target template
@@ -604,10 +604,10 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 	return &osDisk, nil
 }
 
-func buildStorageOpts(storageDevices []interface{}, meta interface{}, zone string) ([]upcloud.CreateServerStorageDevice, error) {
+func buildStorageOpts(storageDevices []interface{}, meta interface{}, hostname, zone string) ([]upcloud.CreateServerStorageDevice, error) {
 	storageCfg := make([]upcloud.CreateServerStorageDevice, 0)
 	for i, storageDevice := range storageDevices {
-		storageDevice, err := buildStorage(storageDevice.(map[string]interface{}), i, meta, zone)
+		storageDevice, err := buildStorage(storageDevice.(map[string]interface{}), i, meta, hostname, zone)
 
 		if err != nil {
 			return nil, err
