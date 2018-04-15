@@ -225,6 +225,7 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("title", server.Title)
 	d.Set("zone", server.Zone)
 	d.Set("cpu", server.CoreNumber)
+	d.Set("mem", server.MemoryAmount)
 
 	// Store server addresses into state
 	for _, ip := range server.IPAddresses {
