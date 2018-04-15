@@ -23,27 +23,17 @@ This provider is currently under active development. It is not production-ready 
 Get and install the provider:
 
 ```sh
-<<<<<<< HEAD
-$ go get github.com/vtorhonen/terraform-provider-upcloud
-$ go install github.com/vtorhonen/terraform-provider-upcloud
-=======
 $ mkdir -p $GOPATH/src/github.com/vtorhonen; cd $GOPATH/src/github.com/vtorhonen
 $ git clone git@github.com:vtorhonen/terraform-provider-upcloud.git
 $ cd terraform-provider-upcloud
 $ dep ensure
->>>>>>> meafmira-master/master
 ```
 
 Symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
-<<<<<<< HEAD
-$ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $GOPATH/bin/terraform-provider-upcloud $HOME/.terraform.d/plugins/terraform-provider-upcloud
-=======
 $ cd $GOPATH/src/github.com/vtorhonen/terraform-provider-upcloud
 $ make build
->>>>>>> meafmira-master/master
 ```
 
 ## Using the provider
