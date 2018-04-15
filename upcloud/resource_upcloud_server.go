@@ -687,7 +687,7 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 		stopRequest := &request.StopServerRequest{
 			UUID:     d.Id(),
 			StopType: "soft",
-			Timeout:  time.Second * 60,
+			Timeout:  time.Minute * 2,
 		}
 		log.Printf("[INFO] Stopping server (server UUID: %s)", d.Id())
 		_, err := client.StopServer(stopRequest)
@@ -717,12 +717,11 @@ func verifyServerStarted(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	if server.State != upcloud.ServerStateStarted {
-		// Soft stop with 2 minute timeout, after which hard stop occurs
 		startRequest := &request.StartServerRequest{
 			UUID:    d.Id(),
 			Timeout: time.Minute * 2,
 		}
-		log.Printf("[INFO] Stopping server (server UUID: %s)", d.Id())
+		log.Printf("[INFO] Starting server (server UUID: %s)", d.Id())
 		_, err := client.StartServer(startRequest)
 		if err != nil {
 			return err
