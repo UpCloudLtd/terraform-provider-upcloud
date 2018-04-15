@@ -225,7 +225,7 @@ func resourceUpCloudFirewallRuleRead(d *schema.ResourceData, meta interface{}) e
 func resourceUpCloudFirewallRuleDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
 
-	position, err := strconv.Atoi(d.Id())
+	position, err := strconv.Atoi(d.Get("position").(string))
 
 	if err != nil {
 		return err
