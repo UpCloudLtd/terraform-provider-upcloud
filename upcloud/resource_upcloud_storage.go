@@ -49,6 +49,7 @@ func resourceUpCloudStorage() *schema.Resource {
 			"tier": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"title": {
 				Type:     schema.TypeString,
@@ -101,7 +102,7 @@ func resourceUpCloudStorageCreate(d *schema.ResourceData, meta interface{}) erro
 
 	d.SetId(storage.UUID)
 
-	return nil
+	return resourceUpCloudStorageRead(d, meta)
 }
 
 func resourceUpCloudStorageRead(d *schema.ResourceData, meta interface{}) error {
