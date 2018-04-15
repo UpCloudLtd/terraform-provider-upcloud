@@ -8,6 +8,10 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+const (
+	upcloudAPITimeout = time.Second * 60
+)
+
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -46,7 +50,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	client := client.New(d.Get("username").(string), d.Get("password").(string))
-	client.SetTimeout(time.Second * 60)
+	client.SetTimeout(upcloudAPITimeout)
 
 	service := service.New(client)
 
