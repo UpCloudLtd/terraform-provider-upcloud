@@ -225,6 +225,20 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("title", server.Title)
 	d.Set("zone", server.Zone)
 	d.Set("cpu", server.CoreNumber)
+
+	// Store server addresses into state
+	for _, ip := range server.IPAddresses {
+		if ip.Access == upcloud.IPAddressAccessPrivate && ip.Family == upcloud.IPAddressFamilyIPv4 {
+			d.Set("ipv4_address_private", ip.Address)
+		}
+		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv4 {
+			d.Set("ipv4_address", ip.Address)
+		}
+		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv6 {
+			d.Set("ipv6_address", ip.Address)
+		}
+	}
+
 	storageDevices := d.Get("storage_devices").([]interface{})
 	log.Printf("[DEBUG] Configured storage devices in state: %v", storageDevices)
 	log.Printf("[DEBUG] Actual storage devices on server: %v", server.StorageDevices)
