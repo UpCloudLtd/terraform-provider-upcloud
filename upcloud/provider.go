@@ -1,11 +1,18 @@
 package upcloud
 
 import (
+	"time"
+
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
 )
 
-func Provider() terraform.ResourceProvider {
+const (
+	upcloudAPITimeout = time.Second * 60
+)
+
+func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"username": {
@@ -23,7 +30,13 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server": resourceUpCloudServer(),
+			"upcloud_server":        resourceUpCloudServer(),
+			"upcloud_storage":       resourceUpCloudStorage(),
+			"upcloud_firewall_rule": resourceUpCloudFirewallRule(),
+			"upcloud_plan":          resourceUpCloudPlan(),
+			"upcloud_price":         resourceUpCloudPrice(),
+			"upcloud_price_zone":    resourceUpCloudPriceZone(),
+			"upcloud_tag":           resourceUpCloudTag(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -36,5 +49,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Password: d.Get("password").(string),
 	}
 
-	return config.Client()
+	client := client.New(d.Get("username").(string), d.Get("password").(string))
+	client.SetTimeout(upcloudAPITimeout)
+
+	service := service.New(client)
+
+	_, err := config.checkLogin(service)
+
+	return service, err
 }

@@ -54,28 +54,43 @@ Resource actions are indicated with the following symbols:
 Terraform will perform the following actions:
 
   + upcloud_server.test
-      id:                   <computed>
-      cpu:                  "2"
-      hostname:             "my-awesome-hostname"
-      ipv4:                 "true"
-      ipv4_address:         <computed>
-      ipv4_address_private: <computed>
-      ipv6:                 "true"
-      ipv6_address:         <computed>
+      id:                                <computed>
+      cpu:                               <computed>
+      hostname:                          "ubuntu.example.tld"
+      ipv4:                              "true"
+      ipv4_address:                      <computed>
+      ipv4_address_private:              <computed>
+      ipv6:                              "true"
+      ipv6_address:                      <computed>
       login.#:                           "1"
-      login.868081814.create_password:   "true"
-      login.868081814.keys.#:            "1"
-      login.868081814.keys.0:            "ssh-rsa <snip>"
-      login.868081814.password_delivery: "sms"
-      login.868081814.user:              "tf"
-      mem:                  "2048"
-      os_disk_size:         "20"
-      os_disk_tier:         "maxiops"
-      os_disk_uuid:         <computed>
-      private_networking:   "true"
-      template:             "CentOS 7.0"
-      title:                <computed>
-      zone:                 "fi-hel1"
+      login.123878037.create_password:   "true"
+      login.123878037.keys.#:            "1"
+      login.123878037.keys.0:            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCYn6VuEgiH3//qpSa/b3Khrjy3Z4Q4fvvhRNRDrZaJqddLvQLCtoL2ktoke7+0jTcR4Vydi8bk8csUQlZxpWC6SIfif+tB8HjwusbUfLT5I5fJEI/O7gtktvtWkK4GnePFXYIdgKlXKRJ92xFnNOGV+el2zug78QahsrzsyV0Cucfjb7twPyojh5iPl3gf6f7NBHVnsqNELhJqmpo4uY+vSTfHx0siyIGP0U/Jz9dB64kbnoG6GL2fh3CEQ950Ll2luY/cfX52SO+WX/nl156A2VVCozkOSE3wbZ501Gd1508KY7ctuaqOue4DF8ZuQ1uzv4Lf9sfg4Bv4jBMTu4tvB"
+      login.123878037.password_delivery: "sms"
+      login.123878037.user:              "tf"
+      private_networking:                "true"
+      storage_devices.#:                 "3"
+      storage_devices.0.action:          "clone"
+      storage_devices.0.address:         <computed>
+      storage_devices.0.id:              <computed>
+      storage_devices.0.size:            "50"
+      storage_devices.0.storage:         "Ubuntu Server 16.04 LTS (Xenial Xerus)"
+      storage_devices.0.title:           <computed>
+      storage_devices.1.action:          "attach"
+      storage_devices.1.address:         <computed>
+      storage_devices.1.id:              <computed>
+      storage_devices.1.size:            "-1"
+      storage_devices.1.storage:         "01000000-0000-4000-8000-000020010301"
+      storage_devices.1.title:           <computed>
+      storage_devices.1.type:            "cdrom"
+      storage_devices.2.action:          "create"
+      storage_devices.2.address:         <computed>
+      storage_devices.2.id:              <computed>
+      storage_devices.2.size:            "25"
+      storage_devices.2.tier:            "maxiops"
+      storage_devices.2.title:           <computed>
+      title:                             <computed>
+      zone:                              "fi-hel1"
 
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
@@ -87,25 +102,40 @@ Apply the plan by running `terraform apply`.
 ```
 $ terraform apply
 upcloud_server.test: Creating...
-  cpu:                               "" => "2"
-  hostname:                          "" => "my-awesome-hostname"
+  cpu:                               "" => "<computed>"
+  hostname:                          "" => "ubuntu.example.tld"
   ipv4:                              "" => "true"
   ipv4_address:                      "" => "<computed>"
   ipv4_address_private:              "" => "<computed>"
   ipv6:                              "" => "true"
   ipv6_address:                      "" => "<computed>"
   login.#:                           "" => "1"
-  login.868081814.create_password:   "" => "true"
-  login.868081814.keys.#:            "" => "1"
-  login.868081814.keys.0:            "" => "<snip>"
-  login.868081814.password_delivery: "" => "sms"
-  login.868081814.user:              "" => "tf"
-  mem:                               "" => "2048"
-  os_disk_size:                      "" => "20"
-  os_disk_tier:                      "" => "maxiops"
-  os_disk_uuid:                      "" => "<computed>"
+  login.123878037.create_password:   "" => "true"
+  login.123878037.keys.#:            "" => "1"
+  login.123878037.keys.0:            "" => "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCYn6VuEgiH3//qpSa/b3Khrjy3Z4Q4fvvhRNRDrZaJqddLvQLCtoL2ktoke7+0jTcR4Vydi8bk8csUQlZxpWC6SIfif+tB8HjwusbUfLT5I5fJEI/O7gtktvtWkK4GnePFXYIdgKlXKRJ92xFnNOGV+el2zug78QahsrzsyV0Cucfjb7twPyojh5iPl3gf6f7NBHVnsqNELhJqmpo4uY+vSTfHx0siyIGP0U/Jz9dB64kbnoG6GL2fh3CEQ950Ll2luY/cfX52SO+WX/nl156A2VVCozkOSE3wbZ501Gd1508KY7ctuaqOue4DF8ZuQ1uzv4Lf9sfg4Bv4jBMTu4tvB"
+  login.123878037.password_delivery: "" => "sms"
+  login.123878037.user:              "" => "tf"
   private_networking:                "" => "true"
-  template:                          "" => "CentOS 7.0"
+  storage_devices.#:                 "" => "3"
+  storage_devices.0.action:          "" => "clone"
+  storage_devices.0.address:         "" => "<computed>"
+  storage_devices.0.id:              "" => "<computed>"
+  storage_devices.0.size:            "" => "50"
+  storage_devices.0.storage:         "" => "Ubuntu Server 16.04 LTS (Xenial Xerus)"
+  storage_devices.0.title:           "" => "<computed>"
+  storage_devices.1.action:          "" => "attach"
+  storage_devices.1.address:         "" => "<computed>"
+  storage_devices.1.id:              "" => "<computed>"
+  storage_devices.1.size:            "" => "-1"
+  storage_devices.1.storage:         "" => "01000000-0000-4000-8000-000020010301"
+  storage_devices.1.title:           "" => "<computed>"
+  storage_devices.1.type:            "" => "cdrom"
+  storage_devices.2.action:          "" => "create"
+  storage_devices.2.address:         "" => "<computed>"
+  storage_devices.2.id:              "" => "<computed>"
+  storage_devices.2.size:            "" => "25"
+  storage_devices.2.tier:            "" => "maxiops"
+  storage_devices.2.title:           "" => "<computed>"
   title:                             "" => "<computed>"
   zone:                              "" => "fi-hel1"
 upcloud_server.test: Still creating... (10s elapsed)
@@ -119,12 +149,17 @@ Outputs:
 ip = <SOME IP ADDRESS>
 ```
 
-You can then log in to the server by running `ssh tf@<SOME IP ADDRESS>`. Check your SMS messages if you didn't specify any SSH keys.
+You can then log in to the server by running `ssh tf@<SOME IP ADDRESS>`. Check your SMS messages if you didn't specify any SSH keys. You can print out the server details at any point by running the following
+command:
+
+```
+$ terraform state show upcloud_server.test
+```
 
 ## Modifying the plan
 
-Next, increase memory config from 2 GB to 4 GB by changing resource
-config to `mem = 4096`. Then run `terraform plan` again.
+Next we increase the CPU amount from 1 (default) to 2 and memory amount from 512 MB (default) to 1024 MB.
+Do this by uncommenting relevant lines from the Terraform config file and run `terraform plan` again.
 
 
 ```
@@ -136,7 +171,8 @@ Resource actions are indicated with the following symbols:
 Terraform will perform the following actions:
 
   ~ upcloud_server.test
-      mem: "2048" => "4096"
+      cpu: "1" => "2"
+      mem: "512" => "1024"
 ```
 
 Then `terraform apply`.
@@ -145,7 +181,8 @@ Then `terraform apply`.
 $ terraform apply
 upcloud_server.test: Refreshing state... (ID: <snip>)
 upcloud_server.test: Modifying... (ID: <snip>)
-  mem: "2048" => "4096"
+  cpu: "1" => "2"
+  mem: "512" => "1024"
 upcloud_server.test: Still modifying... (ID: <snip>, 10s elapsed)
 upcloud_server.test: Still modifying... (ID: <snip>, 20s elapsed)
 upcloud_server.test: Still modifying... (ID: <snip>, 30s elapsed)
@@ -186,4 +223,5 @@ Destroy complete! Resources: 1 destroyed.
 ```
 
 You can then verify that `terraform.tfstate` does not include the test server anymore.
-Also, you can log in to UpCloud control panel and see that the instance has been deleted.
+Also, you can log in to UpCloud control panel and see that the instance and all disk resources created
+by Terraform have been deleted.
