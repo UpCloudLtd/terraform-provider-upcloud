@@ -49,6 +49,7 @@ func resourceUpCloudServer() *schema.Resource {
 			"mem": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 			},
 			"template": {
 				Type:     schema.TypeString,
