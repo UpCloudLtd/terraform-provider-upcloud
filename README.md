@@ -29,11 +29,13 @@ $ cd terraform-provider-upcloud
 $ dep ensure
 ```
 
-Symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
+Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
 $ cd $GOPATH/src/github.com/vtorhonen/terraform-provider-upcloud
 $ make build
+$ mkdir -p $HOME/.terraform.d/plugins
+$ ln -s $GOPATH/bin/terraform-provider-upcloud $HOME/.terraform.d/plugins/terraform-provider-upcloud
 ```
 
 ## Using the provider
