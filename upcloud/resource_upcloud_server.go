@@ -425,6 +425,20 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 			return err
 		}
 	}
+	if d.HasChange("plan") {
+		_, newPlan := d.GetChange("plan")
+
+		r := &request.ModifyServerRequest{
+			UUID: d.Id(),
+		}
+
+		r.Plan = newPlan.(string)
+
+		_, err := client.ModifyServer(r)
+		if err != nil {
+			return err
+		}
+	}
 	if err := verifyServerStarted(d, meta); err != nil {
 		return err
 	}
