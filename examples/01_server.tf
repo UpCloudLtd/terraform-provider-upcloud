@@ -14,13 +14,7 @@ resource "upcloud_server" "test" {
   # firewall = false
   plan = "2xCPU-4GB"
 
-  # ipv4           = true
-  # ipv4_address22   = "185.26.49.169"
-  # ipv4_address_private = "10.1.12.25"
-  # ipv6           = true
-  # ipv6_address   = "2a04:3540:1000:310:307f:e5ff:fe3c:14a4"
-
-  user_data = "echo asd"
+  user_data = "echo upcloud-tf"
 
   # Login details
   login {
