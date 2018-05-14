@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	upcloudAPITimeout = time.Second * 60
+	upcloudAPITimeout = time.Second * 240
 )
 
 func Provider() *schema.Provider {
