@@ -23,8 +23,8 @@ This provider is currently under active development. It is not production-ready 
 Get and install the provider:
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/vtorhonen; cd $GOPATH/src/github.com/vtorhonen
-$ git clone git@github.com:vtorhonen/terraform-provider-upcloud.git
+$ mkdir -p $GOPATH/src/github.com/UpCloudLtd; cd $GOPATH/src/github.com/UpCloudLtd
+$ git clone git@github.com:UpCloudLtd/terraform-provider-upcloud.git
 $ cd terraform-provider-upcloud
 $ dep ensure
 ```
@@ -32,7 +32,7 @@ $ dep ensure
 Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
-$ cd $GOPATH/src/github.com/vtorhonen/terraform-provider-upcloud
+$ cd $GOPATH/src/github.com/UpCloudLtd/terraform-provider-upcloud
 $ make build
 $ mkdir -p $HOME/.terraform.d/plugins
 $ ln -s $GOPATH/bin/terraform-provider-upcloud $HOME/.terraform.d/plugins/terraform-provider-upcloud
