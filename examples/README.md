@@ -7,8 +7,8 @@ This is a full example which shows how you can set up your own UpCloud instance 
 First install this provider:
 
 ```sh
-$ go get github.com/vtorhonen/terraform-provider-upcloud
-$ go install github.com/vtorhonen/terraform-provider-upcloud
+$ go get github.com/UpCloudLtd/terraform-provider-upcloud
+$ go install github.com/UpCloudLtd/terraform-provider-upcloud
 ```
 
 Symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
@@ -21,7 +21,7 @@ $ ln -s $GOPATH/bin/terraform-provider-upcloud $HOME/.terraform.d/plugins/terraf
 Clone this example and init Terraform in the example folder:
 
 ```sh
-$ git clone https://github.com/vtorhonen/terraform-upcloud-provider
+$ git clone https://github.com/UpCloudLtd/terraform-upcloud-provider
 $ cd terraform-upcloud-provider/examples
 $ terraform init
 
