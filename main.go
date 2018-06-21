@@ -1,9 +1,9 @@
-package main // import "github.com/vtorhonen/terraform-provider-upcloud"
+package main // import "github.com/UpCloudLtd/terraform-provider-upcloud"
 
 import (
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/vtorhonen/terraform-provider-upcloud/upcloud"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 func main() {
