@@ -36,7 +36,7 @@ func resourceUpCloudFirewallRule() *schema.Resource {
 			},
 			"position": {
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 				ForceNew: true,
 			},
 			"family": {
