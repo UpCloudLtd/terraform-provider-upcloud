@@ -12,8 +12,6 @@ resource "upcloud_server" "test" {
   #cpu = "2"
   #mem = "1024"
 
-  ipv6 = false
-
   # Login details
   login {
     user = "tf"
@@ -32,10 +30,7 @@ resource "upcloud_server" "test" {
       size    = 50
       action  = "clone"
       tier    = "maxiops"
-      storage = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
-      # storage = "01000000-0000-4000-8000-000020040100"
-
-      #storage = "01ed68b5-ec65-44ec-8e98-0a9ddc187195"
+      storage = "01000000-0000-4000-8000-000020040100"
 
       backup_rule = {
         interval = "daily"

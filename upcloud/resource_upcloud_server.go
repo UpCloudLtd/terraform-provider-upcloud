@@ -640,36 +640,6 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 
 	log.Printf("[DEBUG] Disk: %v", osDisk)
 
-	/*
-		if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-			log.Printf("[DEBUG] Backup rule create")
-			retention, err := strconv.Atoi(backupRule["retention"].(string))
-			if err != nil {
-				return nil, err
-			}
-
-			newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
-				Size:  osDisk.Size,
-				Tier:  osDisk.Tier,
-				Title: osDisk.Title,
-				Zone:  zone,
-				BackupRule: &upcloud.BackupRule{
-					Interval:  backupRule["interval"].(string),
-					Retention: retention,
-					Time:      backupRule["time"].(string),
-				},
-			})
-			if err != nil {
-
-				return nil, err
-			}
-
-			osDisk.Action = "attach"
-			osDisk.Storage = newStorage.UUID
-			log.Printf("[DEBUG] newStorage.UUID %s)", newStorage.UUID)
-		}
-	*/
-
 	return &osDisk, nil
 }
 
