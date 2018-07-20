@@ -199,6 +199,7 @@ func resourceUpCloudServerCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return err
 	}
+
 	d.SetId(server.UUID)
 	log.Printf("[INFO] Server %s with UUID %s created", server.Title, server.UUID)
 
@@ -210,6 +211,12 @@ func resourceUpCloudServerCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return err
 	}
+
+	err = buildAfterServerCreationOps(d, client)
+	if err != nil {
+		return err
+	}
+
 	return resourceUpCloudServerRead(d, meta)
 }
 
@@ -519,8 +526,66 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	return r, nil
 }
 
-func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*upcloud.CreateServerStorageDevice, error) {
+func buildAfterServerCreationOps(d *schema.ResourceData, meta interface{}) error {
+	/*
+		Some of the operations such as backup_rule for storage device can only be done after
+		the server creation.
+	*/
+
+	if err := verifyServerStopped(d, meta); err != nil {
+		return err
+	}
+
+	err := buildStorageBackupRuleOps(d, meta)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyServerStarted(d, meta); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildStorageBackupRuleOps(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
+
+	storageDevices := d.Get("storage_devices").([]interface{})
+
+	r := &request.GetServerDetailsRequest{
+		UUID: d.Id(),
+	}
+	server, err := client.GetServerDetails(r)
+	if err != nil {
+		return err
+	}
+
+	for i, storageDevice := range storageDevices {
+		storageDevice := storageDevice.(map[string]interface{})
+
+		if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
+			retention, err := strconv.Atoi(backupRule["retention"].(string))
+			if err != nil {
+				return err
+			}
+			modifyStorage := &request.ModifyStorageRequest{
+				UUID: server.StorageDevices[i].UUID,
+			}
+
+			modifyStorage.BackupRule = &upcloud.BackupRule{
+				Interval:  backupRule["interval"].(string),
+				Retention: retention,
+				Time:      backupRule["time"].(string),
+			}
+			client.ModifyStorage(modifyStorage)
+		}
+	}
+
+	return nil
+}
+
+func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*upcloud.CreateServerStorageDevice, error) {
 	osDisk := upcloud.CreateServerStorageDevice{}
 
 	if source := storageDevice["storage"].(string); source != "" {
@@ -575,33 +640,35 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 
 	log.Printf("[DEBUG] Disk: %v", osDisk)
 
-	if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-		log.Printf("[DEBUG] Backup rule create")
-		retention, err := strconv.Atoi(backupRule["retention"].(string))
-		if err != nil {
+	/*
+		if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
+			log.Printf("[DEBUG] Backup rule create")
+			retention, err := strconv.Atoi(backupRule["retention"].(string))
+			if err != nil {
+				return nil, err
+			}
 
-			return nil, err
+			newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
+				Size:  osDisk.Size,
+				Tier:  osDisk.Tier,
+				Title: osDisk.Title,
+				Zone:  zone,
+				BackupRule: &upcloud.BackupRule{
+					Interval:  backupRule["interval"].(string),
+					Retention: retention,
+					Time:      backupRule["time"].(string),
+				},
+			})
+			if err != nil {
+
+				return nil, err
+			}
+
+			osDisk.Action = "attach"
+			osDisk.Storage = newStorage.UUID
+			log.Printf("[DEBUG] newStorage.UUID %s)", newStorage.UUID)
 		}
-
-		newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
-			Size:  osDisk.Size,
-			Tier:  osDisk.Tier,
-			Title: osDisk.Title,
-			Zone:  zone,
-			BackupRule: &upcloud.BackupRule{
-				Interval:  backupRule["interval"].(string),
-				Retention: retention,
-				Time:      backupRule["time"].(string),
-			},
-		})
-		if err != nil {
-
-			return nil, err
-		}
-
-		osDisk.Action = "attach"
-		osDisk.Storage = newStorage.UUID
-	}
+	*/
 
 	return &osDisk, nil
 }
