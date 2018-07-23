@@ -25,29 +25,31 @@ resource "upcloud_server" "test" {
   }
 
   storage_devices = [
-    {
+  {
       # You can use both storage template names and UUIDs
       size    = 50
       action  = "clone"
-      storage = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
+      tier    = "maxiops"
+      storage = "01000000-0000-4000-8000-000020040100"
 
-      #storage = "01ed68b5-ec65-44ec-8e98-0a9ddc187195"
-    },
-    {
-      # Debian GNU/Linux 6.0.1 (Squeeze) (netinst)
-      # Just to show you can attach different kinds of
-      # resources to the instance
-      action = "attach"
+      backup_rule = {
+        interval = "daily"
+        time = "0100"
+        retention = 8
+      }
+  },
+  {
+      # You can use both storage template names and UUIDs
+      size    = 30
+      action  = "create"
+      tier    = "maxiops"
 
-      storage = "01000000-0000-4000-8000-000020010301"
-      type    = "cdrom"
-    },
-    {
-      # Additional 25 GB disk
-      action = "create"
-      size   = 25
-      tier   = "maxiops"
-    },
+      backup_rule = {
+        interval = "mon"
+        time = "0000"
+        retention = 7
+      }
+  },
   ]
 }
 
