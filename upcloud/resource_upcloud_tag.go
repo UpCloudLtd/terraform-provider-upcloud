@@ -28,14 +28,10 @@ func resourceUpCloudTag() *schema.Resource {
 				ForceNew: true,
 			},
 			"servers": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem: map[string]*schema.Schema{
-					"server": {
-						Type:     schema.TypeList,
-						Required: true,
-						Elem:     schema.TypeString,
-					},
+				Type:     schema.TypeList,
+				Required: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
 			},
 		},
@@ -58,8 +54,12 @@ func resourceUpCloudTagCreate(d *schema.ResourceData, meta interface{}) error {
 		createTagRequest.Description = description.(string)
 	}
 	if servers, ok := d.GetOk("servers"); ok {
-		servers := servers.(map[string]interface{})
-		createTagRequest.Servers = servers["server"].([]string)
+		servers := servers.([]interface{})
+		serversList := make([]string, len(servers))
+		for i := range serversList {
+			serversList[i] = servers[i].(string)
+		}
+		createTagRequest.Servers = serversList
 	}
 
 	tag, err := client.CreateTag(createTagRequest)
