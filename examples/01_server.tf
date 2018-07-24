@@ -86,7 +86,10 @@ resource "upcloud_tag" "My-tag" {
   ]
 }
 
-output "ipv4_address" {
+output "test ipv4_address" {
   value = "${upcloud_server.test.ipv4_address}"
+}
+
+output "test2 ipv4_address" {
   value = "${upcloud_server.test2.ipv4_address}"
 }
