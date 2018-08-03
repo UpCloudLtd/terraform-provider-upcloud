@@ -256,6 +256,7 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 		storageDevice["id"] = server.StorageDevices[i].UUID
 		storageDevice["address"] = server.StorageDevices[i].Address
 		storageDevice["title"] = server.StorageDevices[i].Title
+		storageDevice["size"] = server.StorageDevices[i].Size
 	}
 	d.Set("storage_devices", storageDevices)
 
@@ -384,7 +385,11 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 
 				log.Printf("[DEBUG] Storage modify request: %v\n", modifyStorage)
 
-				client.ModifyStorage(modifyStorage)
+				_, err := client.ModifyStorage(modifyStorage)
+
+				if err != nil {
+					return err
+				}
 
 				oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
 			}
