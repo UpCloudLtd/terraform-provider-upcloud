@@ -75,15 +75,24 @@ func resourceUpCloudTagCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceUpCloudTagUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
-	r := &request.ModifyTagRequest{}
+	r := &request.ModifyTagRequest{
+		Name: d.Id(),
+	}
 
+	r.Tag.Name = d.Id()
 	if d.HasChange("description") {
 		_, newDescription := d.GetChange("description")
-		r.Description = newDescription.(string)
+		r.Tag.Description = newDescription.(string)
 	}
 	if d.HasChange("servers") {
 		_, newServers := d.GetChange("servers")
-		r.Servers = newServers.([]string)
+
+		servers := newServers.([]interface{})
+		serversList := make([]string, len(servers))
+		for i := range serversList {
+			serversList[i] = servers[i].(string)
+		}
+		r.Tag.Servers = serversList
 	}
 
 	_, err := client.ModifyTag(r)
