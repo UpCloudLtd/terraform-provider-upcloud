@@ -339,6 +339,7 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 				attachStorageRequest := request.AttachStorageRequest{
 					ServerUUID:  d.Id(),
 					StorageUUID: newStorageDeviceID,
+					Address:     storageDevice["address"].(string),
 				}
 
 				if storageType := storageDevice["type"].(string); storageType != "" {
