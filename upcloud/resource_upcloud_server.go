@@ -236,12 +236,14 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("mem", server.MemoryAmount)
 
 	// Store server addresses into state
+	conn_ip := ""
 	for _, ip := range server.IPAddresses {
 		if ip.Access == upcloud.IPAddressAccessPrivate && ip.Family == upcloud.IPAddressFamilyIPv4 {
 			d.Set("ipv4_address_private", ip.Address)
 		}
 		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv4 {
 			d.Set("ipv4_address", ip.Address)
+			conn_ip = ip.Address
 		}
 		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv6 {
 			d.Set("ipv6_address", ip.Address)
@@ -259,6 +261,14 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 		storageDevice["size"] = server.StorageDevices[i].Size
 	}
 	d.Set("storage_devices", storageDevices)
+
+	// Initialize the connection information.
+	d.SetConnInfo(map[string]string{
+		"host":     conn_ip,
+		"password": "",
+		"type":     "ssh",
+		"user":     "root",
+	})
 
 	return nil
 }
