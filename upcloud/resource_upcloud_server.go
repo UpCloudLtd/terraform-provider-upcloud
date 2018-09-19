@@ -350,7 +350,6 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 
 				client.AttachStorage(&attachStorageRequest)
 			} else {
-				var newStorageDeviceID string
 				log.Printf("[DEBUG] Try to modify storage device %v", storageDevice)
 				modifyStorage := &request.ModifyStorageRequest{
 					UUID:  storageDevice["id"].(string),
@@ -401,12 +400,12 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 
 					switch storageDevice["action"] {
 					case upcloud.CreateServerStorageDeviceActionAttach:
-						err = updateStorageAttach(d, meta, i)
+						err = updateStorageAttach(d, meta, i, oldStorageDevice["id"].(string), storageDevice)
 						if err != nil {
 							return err
 						}
 					case upcloud.CreateServerStorageDeviceActionClone:
-						err = updateStorageClone(d, meta)
+						err = updateStorageClone(d, meta, storageDevice)
 						if err != nil {
 							return err
 						}
@@ -624,12 +623,12 @@ func buildStorageBackupRuleOps(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func updateStorageAttach(d *schema.ResourceData, meta interface{}, i int) (error) {
+func updateStorageAttach(d *schema.ResourceData, meta interface{}, i int, oldStorageDeviceId string, storageDevice map[string]interface{}) error {
 	log.Printf("[DEBUG] ATTACH")
 
 	client := meta.(*service.Service)
 	client.DeleteStorage(&request.DeleteStorageRequest{
-		UUID: oldStorageDevice["id"].(string),
+		UUID: oldStorageDeviceId,
 	})
 
 	storage, err := buildStorage(storageDevice, i, meta, d.Get("hostname").(string), d.Get("zone").(string))
@@ -645,25 +644,28 @@ func updateStorageAttach(d *schema.ResourceData, meta interface{}, i int) (error
 	if err != nil {
 		return err
 	}
-	newStorageDeviceID := newStorage.UUID
 
-	if err := verifyStorageOnline(d, meta, newStorageDeviceID); err != nil {
+	if err := verifyStorageOnline(d, meta, newStorage.UUID); err != nil {
 		return err
 	}
 
 	_, err = client.AttachStorage(&request.AttachStorageRequest{
 		ServerUUID:  d.Id(),
-		StorageUUID: newStorageDeviceID,
+		StorageUUID: newStorage.UUID,
 		Address:     storageDevice["address"].(string),
 	})
 
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
-func updateStorageClone(d *schema.ResourceData, meta interface{}) (error) {
+func updateStorageClone(d *schema.ResourceData, meta interface{}, storageDevice map[string]interface{}) error {
 	log.Printf("[DEBUG] CLONE")
+
+	client := meta.(*service.Service)
 
 	newStorage, err := client.CloneStorage(&request.CloneStorageRequest{
 		UUID:  storageDevice["storage"].(string),
@@ -676,11 +678,9 @@ func updateStorageClone(d *schema.ResourceData, meta interface{}) (error) {
 		return err
 	}
 
-	newStorageDeviceID = newStorage.UUID
-
 	attachStorageRequest := request.AttachStorageRequest{
 		ServerUUID:  d.Id(),
-		StorageUUID: newStorageDeviceID,
+		StorageUUID: newStorage.UUID,
 		Address:     storageDevice["address"].(string),
 	}
 
@@ -699,6 +699,8 @@ func updateStorageClone(d *schema.ResourceData, meta interface{}) (error) {
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
 func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*upcloud.CreateServerStorageDevice, error) {
