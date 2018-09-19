@@ -406,7 +406,7 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 							return err
 						}
 					case upcloud.CreateServerStorageDeviceActionClone:
-						err = updateStorageClone(d, meta, i)
+						err = updateStorageClone(d, meta)
 						if err != nil {
 							return err
 						}
