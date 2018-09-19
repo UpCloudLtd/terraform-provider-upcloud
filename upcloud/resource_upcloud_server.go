@@ -401,69 +401,12 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 
 					switch storageDevice["action"] {
 					case upcloud.CreateServerStorageDeviceActionAttach:
-						log.Printf("[DEBUG] ATTACH")
-
-						client.DeleteStorage(&request.DeleteStorageRequest{
-							UUID: oldStorageDevice["id"].(string),
-						})
-
-						storage, err := buildStorage(storageDevice, i, meta, d.Get("hostname").(string), d.Get("zone").(string))
+						err = updateStorageAttach(d, meta, i)
 						if err != nil {
 							return err
 						}
-						newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
-							Size:  storage.Size,
-							Tier:  storage.Tier,
-							Title: storage.Title,
-							Zone:  d.Get("zone").(string),
-						})
-						if err != nil {
-							return err
-						}
-						newStorageDeviceID := newStorage.UUID
-
-						if err := verifyStorageOnline(d, meta, newStorageDeviceID); err != nil {
-							return err
-						}
-
-						client.AttachStorage(&request.AttachStorageRequest{
-							ServerUUID:  d.Id(),
-							StorageUUID: newStorageDeviceID,
-							Address:     storageDevice["address"].(string),
-						})
-
 					case upcloud.CreateServerStorageDeviceActionClone:
-						log.Printf("[DEBUG] CLONE")
-						newStorage, err := client.CloneStorage(&request.CloneStorageRequest{
-							UUID:  storageDevice["storage"].(string),
-							Tier:  storageDevice["tier"].(string),
-							Title: storageDevice["title"].(string),
-							Zone:  d.Get("zone").(string),
-						})
-
-						if err != nil {
-							return err
-						}
-
-						newStorageDeviceID = newStorage.UUID
-
-						attachStorageRequest := request.AttachStorageRequest{
-							ServerUUID:  d.Id(),
-							StorageUUID: newStorageDeviceID,
-							Address:     storageDevice["address"].(string),
-						}
-
-						if storageType := storageDevice["type"].(string); storageType != "" {
-							attachStorageRequest.Type = storageType
-						}
-
-						if err := verifyStorageOnline(d, meta, newStorage.UUID); err != nil {
-							return err
-						}
-
-						log.Printf("[DEBUG] Attach storage request: %v", attachStorageRequest)
-
-						_, err = client.AttachStorage(&attachStorageRequest)
+						err = updateStorageClone(d, meta, i)
 						if err != nil {
 							return err
 						}
@@ -679,6 +622,83 @@ func buildStorageBackupRuleOps(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
+}
+
+func updateStorageAttach(d *schema.ResourceData, meta interface{}, i int) (error) {
+	log.Printf("[DEBUG] ATTACH")
+
+	client := meta.(*service.Service)
+	client.DeleteStorage(&request.DeleteStorageRequest{
+		UUID: oldStorageDevice["id"].(string),
+	})
+
+	storage, err := buildStorage(storageDevice, i, meta, d.Get("hostname").(string), d.Get("zone").(string))
+	if err != nil {
+		return err
+	}
+	newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
+		Size:  storage.Size,
+		Tier:  storage.Tier,
+		Title: storage.Title,
+		Zone:  d.Get("zone").(string),
+	})
+	if err != nil {
+		return err
+	}
+	newStorageDeviceID := newStorage.UUID
+
+	if err := verifyStorageOnline(d, meta, newStorageDeviceID); err != nil {
+		return err
+	}
+
+	_, err = client.AttachStorage(&request.AttachStorageRequest{
+		ServerUUID:  d.Id(),
+		StorageUUID: newStorageDeviceID,
+		Address:     storageDevice["address"].(string),
+	})
+
+	if err != nil {
+		return err
+	}
+}
+
+func updateStorageClone(d *schema.ResourceData, meta interface{}) (error) {
+	log.Printf("[DEBUG] CLONE")
+
+	newStorage, err := client.CloneStorage(&request.CloneStorageRequest{
+		UUID:  storageDevice["storage"].(string),
+		Tier:  storageDevice["tier"].(string),
+		Title: storageDevice["title"].(string),
+		Zone:  d.Get("zone").(string),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	newStorageDeviceID = newStorage.UUID
+
+	attachStorageRequest := request.AttachStorageRequest{
+		ServerUUID:  d.Id(),
+		StorageUUID: newStorageDeviceID,
+		Address:     storageDevice["address"].(string),
+	}
+
+	if storageType := storageDevice["type"].(string); storageType != "" {
+		attachStorageRequest.Type = storageType
+	}
+
+	if err := verifyStorageOnline(d, meta, newStorage.UUID); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] Attach storage request: %v", attachStorageRequest)
+
+	_, err = client.AttachStorage(&attachStorageRequest)
+
+	if err != nil {
+		return err
+	}
 }
 
 func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*upcloud.CreateServerStorageDevice, error) {
