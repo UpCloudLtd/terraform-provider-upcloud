@@ -402,16 +402,15 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 							return err
 						}
 					case upcloud.CreateServerStorageDeviceActionClone:
+						client.DetachStorage(&request.DetachStorageRequest{
+							ServerUUID: d.Id(),
+							Address:    oldStorageDevice["address"].(string),
+						})
 						err = updateStorageClone(d, meta, storageDevice)
 						if err != nil {
 							return err
 						}
 					}
-
-					client.DetachStorage(&request.DetachStorageRequest{
-						ServerUUID: d.Id(),
-						Address:    oldStorageDevice["address"].(string),
-					})
 
 				}
 			}
