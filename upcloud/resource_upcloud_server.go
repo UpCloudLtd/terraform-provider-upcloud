@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -393,10 +394,6 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 
 				if oldStorageDevice["storage"] != storageDevice["storage"] {
 					log.Printf("[DEBUG] Trying to change strorage from %v to %v", oldStorageDevice["storage"], storageDevice["storage"])
-					client.DetachStorage(&request.DetachStorageRequest{
-						ServerUUID: d.Id(),
-						Address:    oldStorageDevice["address"].(string),
-					})
 
 					switch storageDevice["action"] {
 					case upcloud.CreateServerStorageDeviceActionAttach:
@@ -410,6 +407,12 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 							return err
 						}
 					}
+
+					client.DetachStorage(&request.DetachStorageRequest{
+						ServerUUID: d.Id(),
+						Address:    oldStorageDevice["address"].(string),
+					})
+
 				}
 			}
 		}
@@ -626,40 +629,9 @@ func buildStorageBackupRuleOps(d *schema.ResourceData, meta interface{}) error {
 func updateStorageAttach(d *schema.ResourceData, meta interface{}, i int, oldStorageDeviceId string, storageDevice map[string]interface{}) error {
 	log.Printf("[DEBUG] ATTACH")
 
-	client := meta.(*service.Service)
-	client.DeleteStorage(&request.DeleteStorageRequest{
-		UUID: oldStorageDeviceId,
-	})
+	err1 := errors.New("Attach operation not allowed when updating storage template.")
 
-	storage, err := buildStorage(storageDevice, i, meta, d.Get("hostname").(string), d.Get("zone").(string))
-	if err != nil {
-		return err
-	}
-	newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
-		Size:  storage.Size,
-		Tier:  storage.Tier,
-		Title: storage.Title,
-		Zone:  d.Get("zone").(string),
-	})
-	if err != nil {
-		return err
-	}
-
-	if err := verifyStorageOnline(d, meta, newStorage.UUID); err != nil {
-		return err
-	}
-
-	_, err = client.AttachStorage(&request.AttachStorageRequest{
-		ServerUUID:  d.Id(),
-		StorageUUID: newStorage.UUID,
-		Address:     storageDevice["address"].(string),
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err1
 }
 
 func updateStorageClone(d *schema.ResourceData, meta interface{}, storageDevice map[string]interface{}) error {
