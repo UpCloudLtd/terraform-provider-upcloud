@@ -46,7 +46,7 @@ func testUpcloudServerInstanceConfig() string {
 				},
 				{
 					action = "create"
-					size   = 700
+					size   = 70
 					tier   = "maxiops"
 				},
 			]
@@ -96,7 +96,7 @@ resource "upcloud_server" "my-server" {
 				},
 				{
 					action = "create"
-					size   = 700
+					size   = 70
 					tier   = "maxiops"
 				},
 			]
@@ -122,7 +122,7 @@ resource "upcloud_server" "my-server" {
 				},
 				{
 					action = "create"
-					size   = 700
+					size   = 70
 					tier   = "maxiops"
 				},
 			]
