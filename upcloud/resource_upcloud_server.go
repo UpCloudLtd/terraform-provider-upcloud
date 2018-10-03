@@ -546,19 +546,33 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	return r, nil
 }
 
+func serverRestartIsRequired(storageDevices []interface{}) bool {
+	for _, storageDevice := range storageDevices {
+		storageDevice := storageDevice.(map[string]interface{})
+		if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
 func buildAfterServerCreationOps(d *schema.ResourceData, meta interface{}) error {
 	/*
 		Some of the operations such as backup_rule for storage device can only be done after
 		the server creation.
 	*/
 
-	if err := verifyServerStopped(d, meta); err != nil {
-		return err
-	}
+	storageDevices := d.Get("storage_devices").([]interface{})
+	if serverRestartIsRequired(storageDevices) {
+		if err := verifyServerStopped(d, meta); err != nil {
+			return err
+		}
 
-	err := buildStorageBackupRuleOps(d, meta)
-	if err != nil {
-		return err
+		err := buildStorageBackupRuleOps(d, meta)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := verifyServerStarted(d, meta); err != nil {

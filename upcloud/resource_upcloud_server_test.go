@@ -128,3 +128,24 @@ resource "upcloud_server" "my-server" {
 			]
 		}
 `
+
+func Test_serverRestartIsRequired(t *testing.T) {
+	type args struct {
+		storageDevices []interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"without storages", args{}, false},
+		//TODO add terst with storage devices
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := serverRestartIsRequired(tt.args.storageDevices); got != tt.want {
+				t.Errorf("serverRestartIsRequired() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
