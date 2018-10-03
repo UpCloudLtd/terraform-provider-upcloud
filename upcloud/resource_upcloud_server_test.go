@@ -133,15 +133,35 @@ func Test_serverRestartIsRequired(t *testing.T) {
 	type args struct {
 		storageDevices []interface{}
 	}
-	tests := []struct {
+	cases := []struct {
 		name string
 		args args
 		want bool
 	}{
-		{"without storages", args{}, false},
-		//TODO add terst with storage devices
+		{"server reboot is not required without backup rules", args{
+			storageDevices: []interface{}{
+				map[string]interface{}{
+					"id":          "123",
+					"action":      "clone",
+					"backup_rule": map[string]interface{}{},
+				},
+			},
+		}, false},
+		{"server reboot required with backup rules", args{
+			storageDevices: []interface{}{
+				map[string]interface{}{
+					"id":     "123",
+					"action": "clone",
+					"backup_rule": map[string]interface{}{
+						"interval":  "test-interval",
+						"time":      "test-time",
+						"retention": "test-retention",
+					},
+				},
+			},
+		}, true},
 	}
-	for _, tt := range tests {
+	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := serverRestartIsRequired(tt.args.storageDevices); got != tt.want {
 				t.Errorf("serverRestartIsRequired() = %v, want %v", got, tt.want)
