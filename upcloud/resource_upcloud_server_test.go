@@ -138,19 +138,33 @@ func Test_serverRestartIsRequired(t *testing.T) {
 		args args
 		want bool
 	}{
-		{"server reboot is not required without backup rules", args{
+		{"Server reboot is not required if there's not any valid backup rules", args{
 			storageDevices: []interface{}{
 				map[string]interface{}{
-					"id":          "123",
+					"id":          "1",
 					"action":      "clone",
 					"backup_rule": map[string]interface{}{},
 				},
 			},
 		}, false},
-		{"server reboot required with backup rules", args{
+		{"Server reboot is required if there's at least one valid backup rule", args{
 			storageDevices: []interface{}{
 				map[string]interface{}{
-					"id":     "123",
+					"id":     "1",
+					"action": "clone",
+					"backup_rule": map[string]interface{}{
+						"interval":  "test-interval",
+						"time":      "test-time",
+						"retention": "test-retention",
+					},
+				},
+				map[string]interface{}{
+					"id":          "2",
+					"action":      "clone",
+					"backup_rule": map[string]interface{}{},
+				},
+				map[string]interface{}{
+					"id":     "3",
 					"action": "clone",
 					"backup_rule": map[string]interface{}{
 						"interval":  "test-interval",
