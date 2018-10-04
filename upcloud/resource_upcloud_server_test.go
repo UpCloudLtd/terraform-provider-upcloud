@@ -35,7 +35,7 @@ func testUpcloudServerInstanceConfig() string {
 		
 		
 			storage_devices = [{
-				size    = 50
+				size    = 10
 				action  = "clone"
 				storage = "01000000-0000-4000-8000-000020030100"
 			},
@@ -46,7 +46,7 @@ func testUpcloudServerInstanceConfig() string {
 				},
 				{
 					action = "create"
-					size   = 70
+					size   = 10
 					tier   = "maxiops"
 				},
 			]
@@ -85,7 +85,7 @@ resource "upcloud_server" "my-server" {
 		
 		
 			storage_devices = [{
-				size    = 50
+				size    = 10
 				action  = "clone"
 				storage = "01000000-0000-4000-8000-000020030100"
 			},
@@ -96,7 +96,7 @@ resource "upcloud_server" "my-server" {
 				},
 				{
 					action = "create"
-					size   = 70
+					size   = 10
 					tier   = "maxiops"
 				},
 			]
@@ -111,7 +111,7 @@ resource "upcloud_server" "my-server" {
 		
 		
 			storage_devices = [{
-				size    = 50
+				size    = 10
 				action  = "clone"
 				storage = "01000000-0000-4000-8000-000020030100"
 			},
@@ -122,7 +122,7 @@ resource "upcloud_server" "my-server" {
 				},
 				{
 					action = "create"
-					size   = 70
+					size   = 10
 					tier   = "maxiops"
 				},
 			]

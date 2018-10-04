@@ -42,14 +42,16 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional: true,
 			},
 			"cpu": {
-				Type:     schema.TypeInt,
-				Computed: true,
-				Optional: true,
+				Type:         schema.TypeInt,
+				Computed:     true,
+				Optional:     true,
+				ValidateFunc: validateCPUCount,
 			},
 			"mem": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validateSoregeSize,
 			},
 			"template": {
 				Type:     schema.TypeString,
@@ -112,9 +114,9 @@ func resourceUpCloudServer() *schema.Resource {
 							Required: true,
 						},
 						"size": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  -1,
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validateSoregeSize,
 						},
 						"tier": {
 							Type:     schema.TypeString,
@@ -646,8 +648,8 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 	}
 
 	// Set size or use the one defined by target template
-	if size := storageDevice["size"]; size != -1 {
-		osDisk.Size = size.(int)
+	if size := storageDevice["size"].(int); size > 0 {
+		osDisk.Size = size
 	}
 
 	// Autogenerate disk title
