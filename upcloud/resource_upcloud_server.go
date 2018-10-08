@@ -51,7 +51,7 @@ func resourceUpCloudServer() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validateSoregeSize,
+				ValidateFunc: validateStorageSize,
 			},
 			"template": {
 				Type:     schema.TypeString,
@@ -116,7 +116,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"size": {
 							Type:         schema.TypeInt,
 							Optional:     true,
-							ValidateFunc: validateSoregeSize,
+							ValidateFunc: validateStorageSize,
 						},
 						"tier": {
 							Type:     schema.TypeString,

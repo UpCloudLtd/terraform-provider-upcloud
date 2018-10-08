@@ -45,7 +45,7 @@ func resourceUpCloudStorage() *schema.Resource {
 			"size": {
 				Type:         schema.TypeInt,
 				Required:     true,
-				ValidateFunc: validateSoregeSize,
+				ValidateFunc: validateStorageSize,
 			},
 			"tier": {
 				Type:     schema.TypeString,
