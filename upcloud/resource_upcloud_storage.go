@@ -64,6 +64,10 @@ func resourceUpCloudStorage() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
