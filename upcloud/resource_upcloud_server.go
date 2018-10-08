@@ -258,7 +258,7 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 		storageDevice["id"] = server.StorageDevices[i].UUID
 		storageDevice["address"] = server.StorageDevices[i].Address
 		storageDevice["title"] = server.StorageDevices[i].Title
-		storageDevice["size"] = server.StorageDevices[i].Size
+		storageDevice["size"] = getStorageSize(storageDevice)
 	}
 	d.Set("storage_devices", storageDevices)
 
@@ -460,6 +460,13 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 	return resourceUpCloudServerRead(d, meta)
 }
 
+func getStorageSize(storageDevice map[string]interface{}) int {
+	if size := storageDevice["size"].(int); size < 10 {
+		return 0
+	}
+	return storageDevice["size"].(int)
+}
+
 func resourceUpCloudServerDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
 	// Verify server is stopped before deletion
@@ -648,7 +655,7 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 	}
 
 	// Set size or use the one defined by target template
-	if size := storageDevice["size"].(int); size > 0 {
+	if size := storageDevice["size"].(int); size != 0 {
 		osDisk.Size = size
 	}
 
