@@ -315,19 +315,6 @@ func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 				newStorageDeviceID = newStorage.UUID
 				break
 			case upcloud.CreateServerStorageDeviceActionClone:
-				// storage, err := buildStorage(storageDevice, i, meta)
-				// if err != nil {
-				// 	return err
-				// }
-				// newStorage, err := client.CloneStorage(&request.CloneStorageRequest{
-				// 	UUID:  storageDevice["storage"].(string),
-				// 	Tier:  storage.Tier,
-				// 	Title: storage.Title,
-				// 	Zone:  d.Get("zone").(string),
-				// })
-				// if err != nil {
-				// 	return err
-				// }
 				newStorageDeviceID = storageDevice["storage"].(string)
 				break
 			case upcloud.CreateServerStorageDeviceActionAttach:
