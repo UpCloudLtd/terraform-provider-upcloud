@@ -396,6 +396,11 @@ func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 					}
 
 					if err := updateStorageClone(d, meta, storageDevice, storageDeviceDetails.UUID); err != nil {
+						client.AttachStorage(&request.AttachStorageRequest{
+							ServerUUID:  d.Id(),
+							StorageUUID: storageDevice["id"].(string),
+							Address:     storageDevice["address"].(string),
+						})
 						return err
 					}
 				}
