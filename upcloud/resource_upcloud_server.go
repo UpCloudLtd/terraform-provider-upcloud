@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -373,6 +374,8 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 					}
 				}
 
+				oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
+
 				if oldStorageDevice["address"] != storageDevice["address"] {
 					log.Printf("[DEBUG] Trying to change address from %v to %v", oldStorageDevice["address"], storageDevice["address"])
 					client.DetachStorage(&request.DetachStorageRequest{
@@ -386,15 +389,35 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 					})
 				}
 
-				log.Printf("[DEBUG] Storage modify request: %v\n", modifyStorage)
+				if oldStorageDevice["storage"] != storageDevice["storage"] {
+					log.Printf("[DEBUG] Trying to change strorage from %v to %v", oldStorageDevice["storage"], storageDevice["storage"])
 
-				_, err := client.ModifyStorage(modifyStorage)
+					switch storageDevice["action"] {
+					case upcloud.CreateServerStorageDeviceActionAttach:
+						err := updateStorageAttach(d, meta, i, oldStorageDevice["id"].(string), storageDevice)
+						if err != nil {
+							return err
+						}
+					case upcloud.CreateServerStorageDeviceActionClone:
+						storageDeviceDetails, err := createStorageClone(d, meta, storageDevice)
+						if err != nil {
+							return err
+						}
 
-				if err != nil {
-					return err
+						r := &request.DetachStorageRequest{
+							ServerUUID: d.Id(),
+							Address:    oldStorageDevice["address"].(string),
+						}
+						if _, err = client.DetachStorage(r); err != nil {
+							return err
+						}
+
+						if err := updateStorageClone(d, meta, storageDevice, storageDeviceDetails.UUID); err != nil {
+							return err
+						}
+					}
 				}
 
-				oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
 			}
 		}
 		log.Printf("[DEBUG] Current storage devices: %v\n", oldStorageDevices)
@@ -830,6 +853,86 @@ func verifyServerStarted(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func updateStorageAttach(d *schema.ResourceData, meta interface{}, i int, oldStorageDeviceID string, storageDevice map[string]interface{}) error {
+	log.Printf("[DEBUG] ATTACH")
+
+	err1 := errors.New("Attach operation not allowed when updating storage template.")
+
+	return err1
+}
+
+func createStorageClone(d *schema.ResourceData, meta interface{}, storageDevice map[string]interface{}) (*upcloud.StorageDetails, error) {
+	log.Printf("[DEBUG] CREATE CLONE")
+
+	client := meta.(*service.Service)
+
+	newStorage, err := client.CloneStorage(&request.CloneStorageRequest{
+		UUID:  storageDevice["storage"].(string),
+		Tier:  storageDevice["tier"].(string),
+		Title: storageDevice["title"].(string),
+		Zone:  d.Get("zone").(string),
+	})
+
+	if err := verifyStorageOnline(d, meta, newStorage.UUID); err != nil {
+		return nil, err
+	}
+
+	return newStorage, err
+}
+
+func updateStorageClone(d *schema.ResourceData, meta interface{}, storageDevice map[string]interface{}, NewStorageDeviceUUID string) error {
+	log.Printf("[DEBUG] UPDATE CLONE")
+
+	client := meta.(*service.Service)
+
+	attachStorageRequest := request.AttachStorageRequest{
+		ServerUUID:  d.Id(),
+		StorageUUID: NewStorageDeviceUUID,
+		Address:     storageDevice["address"].(string),
+	}
+
+	if storageType := storageDevice["type"].(string); storageType != "" {
+		attachStorageRequest.Type = storageType
+	}
+
+	if err := verifyStorageOnline(d, meta, NewStorageDeviceUUID); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] Attach storage request: %v", attachStorageRequest)
+
+	_, err := client.AttachStorage(&attachStorageRequest)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func verifyStorageOnline(d *schema.ResourceData, meta interface{}, UUID string) error {
+	client := meta.(*service.Service)
+	r := &request.GetStorageDetailsRequest{
+		UUID: UUID,
+	}
+	storage, err := client.GetStorageDetails(r)
+
+	if err != nil {
+		return err
+	}
+
+	if storage.State != upcloud.StorageStateOnline {
+		log.Printf("Waiting for storage %s to come online ...", storage.UUID)
+		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+			UUID:         storage.UUID,
+			DesiredState: upcloud.StorageStateOnline,
+			Timeout:      time.Minute * 15,
+		})
+		return err
 	}
 	return nil
 }
