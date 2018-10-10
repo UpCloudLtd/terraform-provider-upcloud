@@ -26,8 +26,8 @@ func resourceUpCloudServer() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(20 * time.Minute),
-			Update: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(40 * time.Minute),
+			Update: schema.DefaultTimeout(40 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
@@ -820,68 +820,69 @@ func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string
 
 func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
-	// Get current server state
-	r := &request.GetServerDetailsRequest{
-		UUID: d.Id(),
-	}
-	server, err := client.GetServerDetails(r)
-	if err != nil {
-		return err
-	}
-	if server.State != upcloud.ServerStateStopped {
-		// Soft stop with 2 minute timeout, after which hard stop occurs
-		stopRequest := &request.StopServerRequest{
-			UUID:     d.Id(),
-			StopType: "soft",
-			Timeout:  time.Minute * 2,
-		}
-		log.Printf("[INFO] Stopping server (server UUID: %s)", d.Id())
-		_, err := client.StopServer(stopRequest)
-		if err != nil {
-			return err
-		}
-		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         d.Id(),
-			DesiredState: upcloud.ServerStateStopped,
-			Timeout:      time.Minute * 5,
+
+	// Soft stop with 5 minute timeout, after which hard stop occurs
+	return resource.Retry(time.Minute*5, func() *resource.RetryError {
+		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+			UUID: d.Id(),
 		})
+
 		if err != nil {
-			return err
+			return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
 		}
-	}
-	return nil
+
+		switch serverDetails.State {
+		case "started":
+			stopRequest := &request.StopServerRequest{
+				UUID:     d.Id(),
+				StopType: "soft",
+			}
+			log.Printf("[INFO] Stopping server (server UUID: %s)", d.Id())
+			_, err := client.StopServer(stopRequest)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
+			}
+			return resource.RetryableError(fmt.Errorf("Expected instance to be stopped but was in state started"))
+		default:
+			if serverDetails.State != "stopped" {
+				time.Sleep(time.Second * 5)
+				return resource.RetryableError(fmt.Errorf("Expected instance to be stopped but was in state %s", serverDetails.State))
+			}
+		}
+		return nil
+	})
 }
 
 func verifyServerStarted(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
-	// Get current server state
-	r := &request.GetServerDetailsRequest{
-		UUID: d.Id(),
-	}
-	server, err := client.GetServerDetails(r)
-	if err != nil {
-		return err
-	}
-	if server.State != upcloud.ServerStateStarted {
-		startRequest := &request.StartServerRequest{
-			UUID:    d.Id(),
-			Timeout: time.Minute * 2,
-		}
-		log.Printf("[INFO] Starting server (server UUID: %s)", d.Id())
-		_, err := client.StartServer(startRequest)
-		if err != nil {
-			return err
-		}
-		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         d.Id(),
-			DesiredState: upcloud.ServerStateStarted,
-			Timeout:      time.Minute * 5,
+
+	return resource.Retry(time.Minute*5, func() *resource.RetryError {
+		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+			UUID: d.Id(),
 		})
+
 		if err != nil {
-			return err
+			return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
 		}
-	}
-	return nil
+
+		switch serverDetails.State {
+		case "stopped":
+			startRequest := &request.StartServerRequest{
+				UUID: d.Id(),
+			}
+			log.Printf("[INFO] Starting server (server UUID: %s)", d.Id())
+			_, err := client.StartServer(startRequest)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
+			}
+			return resource.RetryableError(fmt.Errorf("Expected instance to be started but was in state stopped"))
+		default:
+			if serverDetails.State != "started" {
+				return resource.RetryableError(fmt.Errorf("Expected instance to be started but was in state %s", serverDetails.State))
+			}
+		}
+		return nil
+	})
 }
 
 func updateStorageAttach(d *schema.ResourceData, meta interface{}, i int, oldStorageDeviceID string, storageDevice map[string]interface{}) error {
