@@ -11,6 +11,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	uuid "github.com/hashicorp/go-uuid"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -22,6 +23,12 @@ func resourceUpCloudServer() *schema.Resource {
 		Delete: resourceUpCloudServerDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(20 * time.Minute),
+			Update: schema.DefaultTimeout(20 * time.Minute),
+			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
 			"hostname": {
@@ -203,24 +210,26 @@ func resourceUpCloudServerCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	d.SetId(server.UUID)
-	log.Printf("[INFO] Server %s with UUID %s created", server.Title, server.UUID)
+	return resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+			UUID: server.UUID,
+		})
 
-	server, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-		UUID:         server.UUID,
-		DesiredState: upcloud.ServerStateStarted,
-		Timeout:      time.Minute * 5,
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
+		}
+
+		if serverDetails.State != "started" {
+			return resource.RetryableError(fmt.Errorf("Expected instance to be created but was in state %s", serverDetails.State))
+		}
+
+		d.SetId(serverDetails.UUID)
+		err = buildAfterServerCreationOps(d, client)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
+		}
+		return resource.NonRetryableError(resourceUpCloudServerRead(d, meta))
 	})
-	if err != nil {
-		return err
-	}
-
-	err = buildAfterServerCreationOps(d, client)
-	if err != nil {
-		return err
-	}
-
-	return resourceUpCloudServerRead(d, meta)
 }
 
 func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
