@@ -216,7 +216,11 @@ func resourceUpCloudServerCreate(d *schema.ResourceData, meta interface{}) error
 		})
 
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
+			return resource.NonRetryableError(fmt.Errorf("Get server details error: %s", err))
+		}
+
+		if serverDetails.State == "error" {
+			return resource.NonRetryableError(fmt.Errorf("Instance on the error state: %s", err))
 		}
 
 		if serverDetails.State != "started" {
@@ -831,6 +835,10 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 			return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
 		}
 
+		if serverDetails.State == "error" {
+			return resource.NonRetryableError(fmt.Errorf("Instance on the error state: %s", err))
+		}
+
 		switch serverDetails.State {
 		case "started":
 			stopRequest := &request.StopServerRequest{
@@ -863,6 +871,10 @@ func verifyServerStarted(d *schema.ResourceData, meta interface{}) error {
 
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error describing instance: %s", err))
+		}
+
+		if serverDetails.State == "error" {
+			return resource.NonRetryableError(fmt.Errorf("Instance on the error state: %s", err))
 		}
 
 		switch serverDetails.State {
