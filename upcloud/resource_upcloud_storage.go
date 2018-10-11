@@ -1,6 +1,9 @@
 package upcloud
 
 import (
+	"log"
+	"time"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -169,5 +172,44 @@ func resourceUpCloudStorageDelete(d *schema.ResourceData, meta interface{}) erro
 		return err
 	}
 
+	return nil
+}
+
+func canModifyStorage(d *schema.ResourceData, meta interface{}, UUID string) (bool, error) {
+	client := meta.(*service.Service)
+	r := &request.GetStorageDetailsRequest{
+		UUID: UUID,
+	}
+	storage, err := client.GetStorageDetails(r)
+	if err != nil {
+		return false, err
+	}
+
+	if canModifyAccess := storage.Access; canModifyAccess == "private" {
+		return true, nil
+	}
+	return false, nil
+}
+
+func verifyStorageOnline(d *schema.ResourceData, meta interface{}, UUID string) error {
+	client := meta.(*service.Service)
+	r := &request.GetStorageDetailsRequest{
+		UUID: UUID,
+	}
+	storage, err := client.GetStorageDetails(r)
+
+	if err != nil {
+		return err
+	}
+
+	if storage.State != upcloud.StorageStateOnline {
+		log.Printf("Waiting for storage %s to come online ...", storage.UUID)
+		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+			UUID:         storage.UUID,
+			DesiredState: upcloud.StorageStateOnline,
+			Timeout:      time.Minute * 15,
+		})
+		return err
+	}
 	return nil
 }
