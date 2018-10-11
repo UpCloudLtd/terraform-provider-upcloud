@@ -1,12 +1,14 @@
 package upcloud
 
 import (
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -193,23 +195,23 @@ func canModifyStorage(d *schema.ResourceData, meta interface{}, UUID string) (bo
 
 func verifyStorageOnline(d *schema.ResourceData, meta interface{}, UUID string) error {
 	client := meta.(*service.Service)
-	r := &request.GetStorageDetailsRequest{
-		UUID: UUID,
-	}
-	storage, err := client.GetStorageDetails(r)
-
-	if err != nil {
-		return err
-	}
-
-	if storage.State != upcloud.StorageStateOnline {
+	return resource.Retry(time.Minute*15, func() *resource.RetryError {
+		r := &request.GetStorageDetailsRequest{
+			UUID: UUID,
+		}
+		storage, err := client.GetStorageDetails(r)
 		log.Printf("Waiting for storage %s to come online ...", storage.UUID)
-		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
-			UUID:         storage.UUID,
-			DesiredState: upcloud.StorageStateOnline,
-			Timeout:      time.Minute * 15,
-		})
-		return err
-	}
-	return nil
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("Get server details error: %s", err))
+		}
+
+		if storage.State == "error" {
+			return resource.NonRetryableError(fmt.Errorf("Storage on the error state: %s", err))
+		}
+
+		if storage.State != "online" {
+			return resource.RetryableError(fmt.Errorf("Expected storaeg to be created but was in state %s", storage.State))
+		}
+		return nil
+	})
 }
