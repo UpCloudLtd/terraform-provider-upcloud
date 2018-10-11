@@ -353,31 +353,8 @@ func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 
 			client.AttachStorage(&attachStorageRequest)
 		} else {
-			if canModify, err := canModifyStorage(d, meta, storageDevice["id"].(string)); canModify {
-				log.Printf("[DEBUG] Try to modify storage device %v", storageDevice)
-				modifyStorage := &request.ModifyStorageRequest{
-					UUID:  storageDevice["id"].(string),
-					Size:  storageDevice["size"].(int),
-					Title: storageDevice["title"].(string),
-				}
-				if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-					log.Println("[DEBUG] Backup rule create")
-					retention, err := strconv.Atoi(backupRule["retention"].(string))
-					if err != nil {
-						return err
-					}
 
-					modifyStorage.BackupRule = &upcloud.BackupRule{
-						Interval:  backupRule["interval"].(string),
-						Retention: retention,
-						Time:      backupRule["time"].(string),
-					}
-				}
-				log.Printf("[DEBUG] Storage modify request: %v\n", modifyStorage)
-				if _, err := client.ModifyStorage(modifyStorage); err != nil {
-					return err
-				}
-			} else if err != nil {
+			if err := modifyStorage(d, meta, storageDevice); err != nil {
 				return err
 			}
 
