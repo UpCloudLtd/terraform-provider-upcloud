@@ -272,7 +272,9 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 		storageDevice["id"] = server.StorageDevices[i].UUID
 		storageDevice["address"] = server.StorageDevices[i].Address
 		storageDevice["title"] = server.StorageDevices[i].Title
-		storageDevice["size"] = getStorageSize(storageDevice)
+		if storageDevice["size"] != 0 {
+			storageDevice["size"] = server.StorageDevices[i].Size
+		}
 	}
 	d.Set("storage_devices", storageDevices)
 
@@ -282,6 +284,8 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
 	oldStorageDevicesI, storageDevicesI := d.GetChange("storage_devices")
+	log.Printf("[DEBUG] JEEEE: %v", oldStorageDevicesI)
+	log.Printf("[DEBUG] JOOOO: %v", storageDevicesI)
 	d.Set("storage_devices", storageDevicesI)
 	storageDevices := storageDevicesI.([]interface{})
 	oldStorageDevices := oldStorageDevicesI.([]interface{})
@@ -349,25 +353,32 @@ func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 
 			client.AttachStorage(&attachStorageRequest)
 		} else {
-			log.Printf("[DEBUG] Try to modify storage device %v", storageDevice)
-			modifyStorage := &request.ModifyStorageRequest{
-				UUID:  storageDevice["id"].(string),
-				Size:  storageDevice["size"].(int),
-				Title: storageDevice["title"].(string),
-			}
+			if canModify, err := canModifyStorage(d, meta, storageDevice["id"].(string)); canModify {
+				log.Printf("[DEBUG] Try to modify storage device %v", storageDevice)
+				modifyStorage := &request.ModifyStorageRequest{
+					UUID:  storageDevice["id"].(string),
+					Size:  storageDevice["size"].(int),
+					Title: storageDevice["title"].(string),
+				}
+				if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
+					log.Println("[DEBUG] Backup rule create")
+					retention, err := strconv.Atoi(backupRule["retention"].(string))
+					if err != nil {
+						return err
+					}
 
-			if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-				log.Println("[DEBUG] Backup rule create")
-				retention, err := strconv.Atoi(backupRule["retention"].(string))
-				if err != nil {
+					modifyStorage.BackupRule = &upcloud.BackupRule{
+						Interval:  backupRule["interval"].(string),
+						Retention: retention,
+						Time:      backupRule["time"].(string),
+					}
+				}
+				log.Printf("[DEBUG] Storage modify request: %v\n", modifyStorage)
+				if _, err := client.ModifyStorage(modifyStorage); err != nil {
 					return err
 				}
-
-				modifyStorage.BackupRule = &upcloud.BackupRule{
-					Interval:  backupRule["interval"].(string),
-					Retention: retention,
-					Time:      backupRule["time"].(string),
-				}
+			} else if err != nil {
+				return err
 			}
 
 			oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
@@ -512,13 +523,6 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 	return resourceUpCloudServerRead(d, meta)
-}
-
-func getStorageSize(storageDevice map[string]interface{}) int {
-	if size := storageDevice["size"].(int); size < 10 {
-		return 0
-	}
-	return storageDevice["size"].(int)
 }
 
 func resourceUpCloudServerDelete(d *schema.ResourceData, meta interface{}) error {
@@ -709,7 +713,7 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 	}
 
 	// Set size or use the one defined by target template
-	if size := storageDevice["size"].(int); size != 0 {
+	if size := storageDevice["size"].(int); size > 0 {
 		osDisk.Size = size
 	}
 
@@ -952,6 +956,22 @@ func updateStorageClone(d *schema.ResourceData, meta interface{}, storageDevice 
 	}
 
 	return nil
+}
+
+func canModifyStorage(d *schema.ResourceData, meta interface{}, UUID string) (bool, error) {
+	client := meta.(*service.Service)
+	r := &request.GetStorageDetailsRequest{
+		UUID: UUID,
+	}
+	storage, err := client.GetStorageDetails(r)
+	if err != nil {
+		return false, err
+	}
+
+	if canModifyAccess := storage.Access; canModifyAccess == "private" {
+		return true, nil
+	}
+	return false, nil
 }
 
 func verifyStorageOnline(d *schema.ResourceData, meta interface{}, UUID string) error {
