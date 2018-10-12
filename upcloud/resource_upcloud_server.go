@@ -477,30 +477,49 @@ func updateInstanceHarwarePlan(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error {
+	d.Partial(true)
 	if err := verifyServerStopped(d, meta); err != nil {
 		return err
 	}
 
 	if d.HasChange("storage_devices") {
 		if err := updateStorageDevices(d, meta); err != nil {
+			if err := verifyServerStarted(d, meta); err != nil {
+				return err
+			}
 			return err
+		} else {
+			d.SetPartial("storage_devices")
 		}
 	}
 
 	if d.HasChange("mem") || d.HasChange("cpu") || d.HasChange("firewall") {
 		if err := updateInstanceHarware(d, meta); err != nil {
+			if err := verifyServerStarted(d, meta); err != nil {
+				return err
+			}
 			return err
+		} else {
+			d.SetPartial("mem")
+			d.SetPartial("cpu")
+			d.SetPartial("firewall")
 		}
 	}
 	if d.HasChange("plan") {
 		if err := updateInstanceHarwarePlan(d, meta); err != nil {
+			if err := verifyServerStarted(d, meta); err != nil {
+				return err
+			}
 			return err
+		} else {
+			d.SetPartial("storage_devices")
 		}
 	}
 
 	if err := verifyServerStarted(d, meta); err != nil {
 		return err
 	}
+	d.Partial(false)
 	return resourceUpCloudServerRead(d, meta)
 }
 
