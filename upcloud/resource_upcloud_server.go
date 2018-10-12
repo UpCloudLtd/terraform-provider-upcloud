@@ -394,17 +394,24 @@ func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 						ServerUUID: d.Id(),
 						Address:    oldStorageDevice["address"].(string),
 					}
-					if _, err = client.DetachStorage(r); err != nil {
+					if _, err := client.DetachStorage(r); err != nil {
 						return err
 					}
 
 					if err := updateStorageClone(d, meta, storageDevice, storageDeviceDetails.UUID); err != nil {
 						client.AttachStorage(&request.AttachStorageRequest{
 							ServerUUID:  d.Id(),
-							StorageUUID: storageDevice["id"].(string),
-							Address:     storageDevice["address"].(string),
+							StorageUUID: oldStorageDevice["id"].(string),
+							Address:     oldStorageDevice["address"].(string),
 						})
 						return err
+					} else {
+						r := &request.DeleteStorageRequest{
+							UUID: oldStorageDevice["id"].(string),
+						}
+						if err := client.DeleteStorage(r); err != nil {
+							return err
+						}
 					}
 				}
 			}
