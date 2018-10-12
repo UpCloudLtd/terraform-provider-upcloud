@@ -284,8 +284,6 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
 	oldStorageDevicesI, storageDevicesI := d.GetChange("storage_devices")
-	log.Printf("[DEBUG] JEEEE: %v", oldStorageDevicesI)
-	log.Printf("[DEBUG] JOOOO: %v", storageDevicesI)
 	d.Set("storage_devices", storageDevicesI)
 	storageDevices := storageDevicesI.([]interface{})
 	oldStorageDevices := oldStorageDevicesI.([]interface{})
@@ -383,6 +381,10 @@ func updateStorageDevices(d *schema.ResourceData, meta interface{}) error {
 						return err
 					}
 				case upcloud.CreateServerStorageDeviceActionClone:
+					if err := storageUpdateAllowed(meta, storageDevice["storage"].(string)); err != nil {
+						return err
+					}
+
 					storageDeviceDetails, err := createStorageClone(d, meta, storageDevice)
 					if err != nil {
 						return err

@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -246,5 +247,25 @@ func modifyStorage(d *schema.ResourceData, meta interface{}, storageDevice map[s
 	} else if err != nil {
 		return err
 	}
+	return nil
+}
+
+func storageUpdateAllowed(meta interface{}, cloneStorageDeviceID string) error {
+	//Allowed use cases from public to private or from private to private (Restricted by the UPC API)
+	client := meta.(*service.Service)
+	newStorageDevice, err := client.GetStorageDetails(
+		&request.GetStorageDetailsRequest{
+			UUID: cloneStorageDeviceID,
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if newStorageDevice.Access != "private" {
+		return errors.New("template update allowed only from public to private or from private to private access storages")
+	}
+
 	return nil
 }
