@@ -63,6 +63,7 @@ $ $GOPATH/bin/terraform-provider-upcloud
 ```
 
 In order to test the provider, you can simply run `make test`.
+Obs. This command runs only unit tests for the provider and acceptance tests will be skipped as a default if environment variable TF_ACC hasn't set
 
 ```sh
 $ make test
