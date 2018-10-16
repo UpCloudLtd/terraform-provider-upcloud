@@ -835,7 +835,7 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*service.Service)
 
 	// Soft stop with 5 minute timeout, after which hard stop occurs
-	return resource.Retry(time.Minute*5, func() *resource.RetryError {
+	return resource.Retry(time.Minute*15, func() *resource.RetryError {
 		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 			UUID: d.Id(),
 		})
