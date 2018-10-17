@@ -78,33 +78,32 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 $ make testacc
 ```
 
-## Observations related on Upcloud API https://www.upcloud.com/api/1.2.6/
+## Observations related on Upcloud API 
+* API documentation https://www.upcloud.com/api/1.2.6/
 * Check the server(instance) creation limitations https://www.upcloud.com/api/1.2.6/8-servers/ `SERVER_CREATING_LIMIT_REACHED`
   * Can be resolved by using the Terraform --parallelism flag https://www.terraform.io/docs/commands/apply.html#parallelism-n
-* False positive instance status (maintenance) response can cause some unexpected functionality with the provider
-  * Terraform might give an error response because of that but it can be seen as a false positive error message
+* False positive instance status (maintenance) response can cause some unexpected functionality with the provider (false positive error messages)
 
-## TODO
-- [X]  Update a storage which has been templatized. Depedent on the storage access levels (private or public)
+## Improve provider
+* Template update feature
+  - [X]  Update a storage which has been templatized. Depedent on the storage access levels (private or public)
   - [ ] Write an acceptance test case for the template update (need a storage templatize support at first)
-
-- [X]  Fix timeout problems e.g. when an instance processing takes more time than 5 minutes
+  - [X]  Fix timeout issues e.g. when an instance processing takes more time than 5 minutes
 
 * Testing
   - [ ] Write unit tests (table) for the functions
-    * Might require some mockups related on the Upcloud API responses so that those tests are really valid ones
   - [ ] Write more valid Terraform acceptance test cases for the resources
 
 * Restructuring
-  - [ ]  Rename the upcloud_server resource into instance (more clear)
+  - [ ] Rename the upcloud_server resource into instance (more clear)
   - [ ] Move all storage functionalities from the upcloud_server resource into the storage resource
-	* Instance requirements
-		- [ ] Update function should be able to modify (zone, cpu, memory, ip addresses and hostname)
-	* Storage requirements
-		- [ ] Add templatize support for the storages (e.g. managed by the templatize flag)
-		- [ ] Attach and deattach instances
+    * Instance requirements
+      - [ ] Update function should be able to modify (zone, cpu, memory, ip addresses and hostname)
+    * Storage requirements
+      - [ ] Add templatize support for the storages (e.g. managed by the templatize flag)
+      - [ ] Attach and deattach instances
 
-*  Use partial state in the resource update functions
+* Use partial state in the resource update functions
   - [X] Instance (server)
   - [ ] Storage
   - [ ] Firewall
@@ -112,5 +111,5 @@ $ make testacc
   - [ ] Plan
 
 * Resource validation (All user inputs have to be validated at the Terraform plan phase)
-- [ ] Write validators for all the upcloud resources according to Upcloud API
-  * Check validators.go file and the Terraform validation help package in here https://github.com/hashicorp/terraform/blob/master/helper/validation/validation.go
+  - [ ] Write validators for all the upcloud resources according to Upcloud API
+* Check validators.go file and the Terraform validation help package in here https://github.com/hashicorp/terraform/blob/master/helper/validation/validation.go
