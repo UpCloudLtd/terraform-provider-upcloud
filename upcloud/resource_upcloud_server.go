@@ -59,7 +59,7 @@ func resourceUpCloudServer() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validateStorageSize,
+				ValidateFunc: validateMemoryCount,
 			},
 			"template": {
 				Type:     schema.TypeString,
