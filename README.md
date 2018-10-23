@@ -1,4 +1,4 @@
-# Terraform Provider [![Build Status](https://travis-ci.org/7ojo/terraform-provider-upcloud.svg?branch=master)](https://travis-ci.org/7ojo/terraform-provider-upcloud)
+# Terraform Provider [![Build Status](https://travis-ci.com/nikohaap/terraform-provider-upcloud.svg?branch=master)](https://travis-ci.com/nikohaap/terraform-provider-upcloud)
 
 This provider is currently under active development. It is not production-ready yet so you are advised to chime in and help!
 
