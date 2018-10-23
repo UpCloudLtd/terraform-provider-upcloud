@@ -1,4 +1,4 @@
-# Terraform Provider [![Build Status](https://travis-ci.com/nikohaap/terraform-provider-upcloud.svg?branch=master)](https://travis-ci.com/nikohaap/terraform-provider-upcloud)
+# Terraform Provider [![Build Status](https://travis-ci.com/nikohaap/terraform-provider-upcloud.svg?branch=master)](https://travis-ci.com/nikohaap/terraform-provider-upcloud) [![Coverage Status](https://coveralls.io/repos/github/nikohaap/terraform-provider-upcloud/badge.svg?branch=master)](https://coveralls.io/github/nikohaap/terraform-provider-upcloud?branch=master)
 
 This provider is currently under active development. It is not production-ready yet so you are advised to chime in and help!
 
