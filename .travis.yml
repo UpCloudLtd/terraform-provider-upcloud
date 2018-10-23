@@ -8,9 +8,6 @@ install:
 # packages that live there.
 # See: https://github.com/golang/go/issues/12933
 - bash scripts/gogetcookie.sh
-- go get -v ./...
-- go get github.com/terraform-providers/terraform-provider-template
-- go get github.com/terraform-providers/terraform-provider-tls
 
 script:
 - make test
