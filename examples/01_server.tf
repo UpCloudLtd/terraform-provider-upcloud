@@ -17,7 +17,7 @@ resource "upcloud_server" "test" {
     user = "tf"
 
     keys = [
-      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCYn6VuEgiH3//qpSa/b3Khrjy3Z4Q4fvvhRNRDrZaJqddLvQLCtoL2ktoke7+0jTcR4Vydi8bk8csUQlZxpWC6SIfif+tB8HjwusbUfLT5I5fJEI/O7gtktvtWkK4GnePFXYIdgKlXKRJ92xFnNOGV+el2zug78QahsrzsyV0Cucfjb7twPyojh5iPl3gf6f7NBHVnsqNELhJqmpo4uY+vSTfHx0siyIGP0U/Jz9dB64kbnoG6GL2fh3CEQ950Ll2luY/cfX52SO+WX/nl156A2VVCozkOSE3wbZ501Gd1508KY7ctuaqOue4DF8ZuQ1uzv4Lf9sfg4Bv4jBMTu4tvB",
+      "ssh-rsa xx",
     ]
 
     create_password   = true
@@ -41,42 +41,6 @@ resource "upcloud_server" "test" {
   ]
 }
 
-resource "upcloud_server" "test2" {
-  zone     = "fi-hel1"
-  hostname = "ubuntu.example.tld"
-
-  plan     = "2xCPU-4GB"
-
-  # Login details
-  login {
-    user = "tf"
-
-    keys = [
-      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCYn6VuEgiH3//qpSa/b3Khrjy3Z4Q4fvvhRNRDrZaJqddLvQLCtoL2ktoke7+0jTcR4Vydi8bk8csUQlZxpWC6SIfif+tB8HjwusbUfLT5I5fJEI/O7gtktvtWkK4GnePFXYIdgKlXKRJ92xFnNOGV+el2zug78QahsrzsyV0Cucfjb7twPyojh5iPl3gf6f7NBHVnsqNELhJqmpo4uY+vSTfHx0siyIGP0U/Jz9dB64kbnoG6GL2fh3CEQ950Ll2luY/cfX52SO+WX/nl156A2VVCozkOSE3wbZ501Gd1508KY7ctuaqOue4DF8ZuQ1uzv4Lf9sfg4Bv4jBMTu4tvB",
-    ]
-
-    create_password   = true
-    password_delivery = "sms"
-  }
-
-  storage_devices = [
-    {
-      # You can use both storage template names and UUIDs
-      size    = 50
-      action  = "clone"
-      tier    = "maxiops"
-      storage = "01000000-0000-4000-8000-000020040100"
-
-    backup_rule = {
-        interval = "mon"
-        time = "0100"
-        retention = 2
-      }
-    }
-  ]
-}
-
-
 resource "upcloud_tag" "My-tag" {
   name        = "TagName1"
   description = "TagDescription"
@@ -86,10 +50,7 @@ resource "upcloud_tag" "My-tag" {
   ]
 }
 
-output "test ipv4_address" {
+output "test_ipv4_address" {
   value = "${upcloud_server.test.ipv4_address}"
 }
 
-output "test2 ipv4_address" {
-  value = "${upcloud_server.test2.ipv4_address}"
-}

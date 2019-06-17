@@ -25,20 +25,22 @@ func resourceUpCloudStorage() *schema.Resource {
 			"backup_rule": {
 				Type:     schema.TypeMap,
 				Optional: true,
-				Elem: map[string]*schema.Schema{
-					"interval": &schema.Schema{
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"time": &schema.Schema{
-						Type:     schema.TypeString,
-						Optional: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
-					},
-					"retention": &schema.Schema{
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  false,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"interval": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"time": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+						"retention": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
