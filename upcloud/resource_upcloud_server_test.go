@@ -32,26 +32,25 @@ func testUpcloudServerInstanceConfig() string {
 		resource "upcloud_server" "my-server" {
 			zone     = "fi-hel1"
 			hostname = "debian.example.com"
-		
-		
-			storage_devices = [{
+
+
+			storage_devices {
 				size    = 50
 				action  = "clone"
 				storage = "01000000-0000-4000-8000-000020030100"
-			},
-				{
+			}
+			storage_devices {
 					action  = "attach"
 					storage = "01000000-0000-4000-8000-000020010301"
 					type    = "cdrom"
-				},
-				{
+			}
+			storage_devices {
 					action = "create"
-					size   = 700
+					size   = 10
 					tier   = "maxiops"
-				},
-			]
+			}
 		}
-`)
+	`)
 }
 
 func TestAccServer_changePlan(t *testing.T) {
@@ -82,24 +81,22 @@ resource "upcloud_server" "my-server" {
 			zone     = "fi-hel1"
 			hostname = "debian.example.com"
 			plan     = "1xCPU-2GB"
-		
-		
-			storage_devices = [{
-				size    = 50
+
+			storage_devices {
+				size    = 10
 				action  = "clone"
 				storage = "01000000-0000-4000-8000-000020030100"
-			},
-				{
-					action  = "attach"
-					storage = "01000000-0000-4000-8000-000020010301"
-					type    = "cdrom"
-				},
-				{
+			}
+			storage_devices {
+				action  = "attach"
+				storage = "01000000-0000-4000-8000-000020010301"
+				type    = "cdrom"
+			}
+			storage_devices {
 					action = "create"
-					size   = 700
+					size   = 10
 					tier   = "maxiops"
-				},
-			]
+			}
 		}
 `
 
@@ -108,23 +105,22 @@ resource "upcloud_server" "my-server" {
 			zone     = "fi-hel1"
 			hostname = "debian.example.com"
 			plan     = "2xCPU-4GB"
-		
-		
-			storage_devices = [{
+
+
+			storage_devices {
 				size    = 50
 				action  = "clone"
 				storage = "01000000-0000-4000-8000-000020030100"
-			},
-				{
+			}
+			storage_devices {
 					action  = "attach"
 					storage = "01000000-0000-4000-8000-000020010301"
 					type    = "cdrom"
-				},
-				{
+			}
+			storage_devices {
 					action = "create"
-					size   = 700
+					size   = 10
 					tier   = "maxiops"
-				},
-			]
+			}
 		}
 `

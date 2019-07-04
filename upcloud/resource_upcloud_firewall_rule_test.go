@@ -17,49 +17,34 @@ func TestUpcloudFirewallRule_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "action"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "comment"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "destination_address_end"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "destination_address_start"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "destination_port_end"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "destination_port_start"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "direction"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "family"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "icmp_type"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "position"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "protocol"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "source_address_end"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "source_address_start"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "source_port_end"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_rule.my-firewall-rule", "source_port_start"),
 					resource.TestCheckResourceAttr(
 						"upcloud_firewall_rule.my-firewall-rule", "action", "accept"),
 					resource.TestCheckResourceAttr(
 						"upcloud_firewall_rule.my-firewall-rule", "comment", "Allow SSH from this network"),
 					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "destination_address_end", ""),
+						"upcloud_firewall_rule.my-firewall-rule", "destination_port_end", "22"),
 					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "destination_address_start", ""),
-					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "destination_port_end", "80"),
-					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "destination_port_start", "80"),
+						"upcloud_firewall_rule.my-firewall-rule", "destination_port_start", "22"),
 					resource.TestCheckResourceAttr(
 						"upcloud_firewall_rule.my-firewall-rule", "direction", "in"),
 					resource.TestCheckResourceAttr(
 						"upcloud_firewall_rule.my-firewall-rule", "family", "IPv4"),
 					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "icmp_type", ""),
-					resource.TestCheckResourceAttr(
 						"upcloud_firewall_rule.my-firewall-rule", "position", "1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "protocol", ""),
+						"upcloud_firewall_rule.my-firewall-rule", "protocol", "tcp"),
 					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "source_address_end", ""),
+						"upcloud_firewall_rule.my-firewall-rule", "source_address_end", "192.168.1.255"),
 					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "source_address_start", ""),
-					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "source_port_end", ""),
-					resource.TestCheckResourceAttr(
-						"upcloud_firewall_rule.my-firewall-rule", "source_port_start", ""),
+						"upcloud_firewall_rule.my-firewall-rule", "source_address_start", "192.168.1.1"),
 				),
 			},
 		},
@@ -68,20 +53,33 @@ func TestUpcloudFirewallRule_basic(t *testing.T) {
 
 func testUpcloudFirewallRuleInstanceConfig() string {
 	return fmt.Sprintf(`
+		resource "upcloud_server" "my-server" {
+			zone     = "fi-hel1"
+			hostname = "debian.example.com"
+			plan     = "1xCPU-2GB"
+
+			storage_devices {
+				size    = 10
+				action  = "clone"
+				storage = "01000000-0000-4000-8000-000020030100"
+			}
+		}
+
 		resource "upcloud_firewall_rule" "my-firewall-rule" {
+			server_id                 = "${upcloud_server.my-server.id}"
 			action                    = "accept"
 			comment                   = "Allow SSH from this network"
 			destination_address_end   = ""
 			destination_address_start = ""
-			destination_port_end      = "80"
-			destination_port_start    = "80"
+			destination_port_end      = "22"
+			destination_port_start    = "22"
 			direction                 = "in"
 			family                    = "IPv4"
 			icmp_type                 = ""
 			position                  = "1"
-			protocol                  = ""
-			source_address_end        = ""
-			source_address_start      = ""
+			protocol                  = "tcp"
+			source_address_end        = "192.168.1.255"
+			source_address_start      = "192.168.1.1"
 			source_port_end           = ""
 			source_port_start         = ""
 		}

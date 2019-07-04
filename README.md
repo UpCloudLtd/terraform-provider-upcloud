@@ -26,7 +26,6 @@ Get and install the provider:
 $ mkdir -p $GOPATH/src/github.com/UpCloudLtd; cd $GOPATH/src/github.com/UpCloudLtd
 $ git clone git@github.com:UpCloudLtd/terraform-provider-upcloud.git
 $ cd terraform-provider-upcloud
-$ dep ensure
 ```
 
 Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
