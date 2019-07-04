@@ -206,7 +206,7 @@ func resourceUpCloudServerCreate(d *schema.ResourceData, meta interface{}) error
 	server, err = client.WaitForServerState(&request.WaitForServerStateRequest{
 		UUID:         server.UUID,
 		DesiredState: upcloud.ServerStateStarted,
-		Timeout:      time.Minute * 5,
+		Timeout:      time.Minute * 25,
 	})
 	if err != nil {
 		return err
