@@ -562,16 +562,8 @@ func buildAfterServerCreationOps(d *schema.ResourceData, meta interface{}) error
 		the server creation.
 	*/
 
-	if err := verifyServerStopped(d, meta); err != nil {
-		return err
-	}
-
 	err := buildStorageBackupRuleOps(d, meta)
 	if err != nil {
-		return err
-	}
-
-	if err := verifyServerStarted(d, meta); err != nil {
 		return err
 	}
 

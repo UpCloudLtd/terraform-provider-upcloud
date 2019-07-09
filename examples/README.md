@@ -18,7 +18,7 @@ $ go mod init
 $ go install
 $ go build
 $ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s terraform-provider-upcloud $HOME/.terraform.d/plugins
+$ ln -s $(pwd)/terraform-provider-upcloud $HOME/.terraform.d/plugins
 ```
 ```
 
