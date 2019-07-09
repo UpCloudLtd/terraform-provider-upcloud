@@ -4,24 +4,27 @@ This is a full example which shows how you can set up your own UpCloud instance 
 
 ## Initializing local environment
 
-First install this provider:
+Get and install the provider:
 
 ```sh
-$ go get github.com/UpCloudLtd/terraform-provider-upcloud
-$ go install github.com/UpCloudLtd/terraform-provider-upcloud
+$ git clone git@github.com:UpCloudLtd/terraform-provider-upcloud.git
+$ cd terraform-provider-upcloud
 ```
 
-Symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
+Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
+$ go mod init
+$ go install
+$ go build
 $ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $GOPATH/bin/terraform-provider-upcloud $HOME/.terraform.d/plugins/terraform-provider-upcloud
+$ ln -s $(pwd)/terraform-provider-upcloud $HOME/.terraform.d/plugins
+```
 ```
 
 Clone this example and init Terraform in the example folder:
 
 ```sh
-$ git clone https://github.com/UpCloudLtd/terraform-upcloud-provider
 $ cd terraform-upcloud-provider/examples
 $ terraform init
 

@@ -4,7 +4,6 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 default: build
 
 build: fmtcheck
-	dep ensure
 	go install
 
 test: fmtcheck
