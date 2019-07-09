@@ -14,16 +14,14 @@ This provider is currently under active development. It is not production-ready 
 
 ## Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) 0.10.x
-* [Go](https://golang.org/doc/install) 1.8 (to build the provider plugin)
-* [Go dep](https://github.com/golang/dep) (to install vendor deps)
+* [Terraform](https://www.terraform.io/downloads.html) 0.12.x
+* [Go](https://golang.org/doc/install) 1.12 (to build the provider plugin)
 
 ## Building The Provider
 
 Get and install the provider:
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/UpCloudLtd; cd $GOPATH/src/github.com/UpCloudLtd
 $ git clone git@github.com:UpCloudLtd/terraform-provider-upcloud.git
 $ cd terraform-provider-upcloud
 ```
@@ -31,10 +29,10 @@ $ cd terraform-provider-upcloud
 Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
-$ cd $GOPATH/src/github.com/UpCloudLtd/terraform-provider-upcloud
-$ make build
+$ go install
+$ go build
 $ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $GOPATH/bin/terraform-provider-upcloud $HOME/.terraform.d/plugins/terraform-provider-upcloud
+$ ln -s terraform-provider-upcloud $HOME/.terraform.d/plugins
 ```
 
 ## Using the provider
@@ -50,15 +48,12 @@ Click **Add user** and fill in the required details, and check the “**Allow AP
 
 ## Developing the Provider
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.8+ is _required_). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.12+ is _required_).
 
-To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
+To compile the provider, run `go build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 ```sh
-$ make build
-...
-$ $GOPATH/bin/terraform-provider-upcloud
-...
+$ go build
 ```
 
 In order to test the provider, you can simply run `make test`.
