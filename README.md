@@ -29,6 +29,7 @@ $ cd terraform-provider-upcloud
 Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
+$ go mod init
 $ go install
 $ go build
 $ mkdir -p $HOME/.terraform.d/plugins
