@@ -1,6 +1,6 @@
 # Terraform Provider
 
-This provider is currently under active development. It is not production-ready yet so you are advised to chime in and help!
+This provider is developed by UpCloud, contributions from the community are welcomed!
 
 * Check Github issues or create more issues
 * Check `examples/` directory for examples and test them
