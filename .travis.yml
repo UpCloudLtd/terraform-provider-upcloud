@@ -16,6 +16,7 @@ install:
 script:
   - make test
   - make vet
+  - make testacc
 
 env:
   - GOFLAGS=-mod=vendor
