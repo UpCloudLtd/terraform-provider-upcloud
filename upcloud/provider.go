@@ -25,7 +25,7 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("UPCLOUD_PASSWORD", nil),
-				Description: "Password for Upcloud API user",
+				Description: "Password for UpCloud API user",
 			},
 		},
 

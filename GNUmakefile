@@ -1,5 +1,7 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
+PROVIDER_NAME=upcloud
+WEBSITE_REPO=github.com/hashicorp/terraform-website
 
 default: build
 
@@ -43,5 +45,24 @@ test-compile:
 update-deps:
 	go mod vendor
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test
 
+
+
+website:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), getting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	ln -s ../../../ext/providers/$(PROVIDER_NAME)/website/$(PROVIDER_NAME).erb $(GOPATH)/src/$(WEBSITE_REPO)/content/source/layouts/$(PROVIDER_NAME).erb || true
+	ln -s ../../../../ext/providers/$(PROVIDER_NAME)/website/docs $(GOPATH)/src/$(WEBSITE_REPO)/content/source/docs/providers/$(PROVIDER_NAME) || true
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PROVIDER_NAME)
+
+website-test:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), getting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	ln -s ../../../ext/providers/$(PROVIDER_NAME)/website/$(PROVIDER_NAME).erb $(GOPATH)/src/$(WEBSITE_REPO)/content/source/layouts/$(PROVIDER_NAME).erb || true
+	ln -s ../../../../ext/providers/$(PROVIDER_NAME)/website/docs $(GOPATH)/src/$(WEBSITE_REPO)/content/source/docs/providers/$(PROVIDER_NAME) || true
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PROVIDER_NAME)
