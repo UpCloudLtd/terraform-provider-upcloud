@@ -16,6 +16,7 @@ install:
 script:
   - make test
   - make vet
+  - make website-test
 
 env:
   - GOFLAGS=-mod=vendor

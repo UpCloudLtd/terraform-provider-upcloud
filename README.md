@@ -72,6 +72,19 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 $ make testacc
 ```
 
+In order to run an individual acceptance test, the '-run' flag can be used together with a regular expression.
+The following example uses a regular expression matching single test called 'TestUpcloudServer_basic'.
+
+```sh
+$ make testacc TESTARGS='-run=TestUpcloudServer_basic'
+```
+
+The following example uses a regular expression to execute a grouping of basic acceptance tests.
+
+```sh
+$ make testacc TESTARGS='-run=TestUpcloudServer_*'
+```
+
 In order to view the provider documentation locally, you can run `make website`.
 A docker container will start and a URl to the documentation will be returned.
 
