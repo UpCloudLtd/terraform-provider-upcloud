@@ -6,7 +6,7 @@ import (
 
 func resourceUpCloudZone() *schema.Resource {
 	return &schema.Resource{
-		Read: resourceUpCloudPriceRead,
+		Read: resourceUpCloudZoneRead,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
