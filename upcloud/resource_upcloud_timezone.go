@@ -1,7 +1,7 @@
 package upcloud
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceUpCloudTimezone() *schema.Resource {
