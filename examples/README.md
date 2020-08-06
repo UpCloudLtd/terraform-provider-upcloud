@@ -14,12 +14,10 @@ $ cd terraform-provider-upcloud
 Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
-$ go mod init
+$ go mod download
 $ go install
-$ go build
 $ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $(pwd)/terraform-provider-upcloud $HOME/.terraform.d/plugins
-```
+$ ln -s $GOBIN/terraform-provider-upcloud $HOME/.terraform.d/plugins
 ```
 
 Clone this example and init Terraform in the example folder:
@@ -28,9 +26,12 @@ Clone this example and init Terraform in the example folder:
 $ cd terraform-upcloud-provider/examples
 $ terraform init
 
+Initializing the backend...
+
 Initializing provider plugins...
 
 Terraform has been successfully initialized!
+...
 ```
 
 ## Configuring the plan

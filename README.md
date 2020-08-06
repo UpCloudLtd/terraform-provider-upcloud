@@ -14,8 +14,8 @@ This provider is developed by UpCloud, contributions from the community are welc
 
 ## Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) 0.12.x
-* [Go](https://golang.org/doc/install) 1.12 (to build the provider plugin)
+* [Terraform](https://www.terraform.io/downloads.html) 0.12.x, (to execute the provider plugin)
+* [Go](https://golang.org/doc/install) 1.14.x or greater, (to build the provider plugin)
 
 ## Building The Provider
 
@@ -29,11 +29,10 @@ $ cd terraform-provider-upcloud
 Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
-$ go mod init
+$ go mod download
 $ go install
-$ go build
 $ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $(pwd)/terraform-provider-upcloud $HOME/.terraform.d/plugins
+$ ln -s $GOBIN/terraform-provider-upcloud $HOME/.terraform.d/plugins
 ```
 
 ## Using the provider
@@ -51,9 +50,9 @@ For more instructions, check out examples folder.
 
 ## Developing the Provider
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.12+ is _required_).
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.14+ is _required_).
 
-To compile the provider, run `go build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
+To compile the provider, run `go build`. This will build the provider and put the provider binary in the current directory.
 
 ```sh
 $ go build
@@ -72,3 +71,30 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 ```sh
 $ make testacc
 ```
+
+In order to run an individual acceptance test, the '-run' flag can be used together with a regular expression.
+The following example uses a regular expression matching single test called 'TestUpcloudServer_basic'.
+
+```sh
+$ make testacc TESTARGS='-run=TestUpcloudServer_basic'
+```
+
+The following example uses a regular expression to execute a grouping of basic acceptance tests.
+
+```sh
+$ make testacc TESTARGS='-run=TestUpcloudServer_*'
+```
+
+In order to view the provider documentation locally, you can run `make website`.
+A docker container will start and a URl to the documentation will be returned.
+
+```sh
+$ make website
+
+...
+==> Starting upcloud provider website in Docker...
+== The Middleman is loading
+==
+==> See upcloud docs at http://localhost:4567/docs/providers/upcloud
+...
+``` 

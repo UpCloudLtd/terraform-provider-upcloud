@@ -1,5 +1,7 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
+PROVIDER_NAME=upcloud
+WEBSITE_REPO=github.com/hashicorp/terraform-website
 
 default: build
 
@@ -32,9 +34,6 @@ fmtcheck:
 errcheck:
 	@sh -c "'$(CURDIR)/scripts/errcheck.sh'"
 
-vendor-status:
-	@govendor status
-
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
 		echo "ERROR: Set TEST to a specific package. For example,"; \
@@ -44,12 +43,26 @@ test-compile:
 	go test -c $(TEST) $(TESTARGS)
 
 update-deps:
-	govendor add +outside +external
-	govendor update +outside +vendor
-	govendor remove +unused
+	go mod vendor
 
-docker-build:
-	docker build -t terraform-provider-upcloud .
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck vendor-status test-compile update-deps docker-build
 
+
+website:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), getting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	ln -s ../../../ext/providers/$(PROVIDER_NAME)/website/$(PROVIDER_NAME).erb $(GOPATH)/src/$(WEBSITE_REPO)/content/source/layouts/$(PROVIDER_NAME).erb || true
+	ln -s ../../../../ext/providers/$(PROVIDER_NAME)/website/docs $(GOPATH)/src/$(WEBSITE_REPO)/content/source/docs/providers/$(PROVIDER_NAME) || true
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PROVIDER_NAME)
+
+website-test:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), getting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	ln -s ../../../ext/providers/$(PROVIDER_NAME)/website/$(PROVIDER_NAME).erb $(GOPATH)/src/$(WEBSITE_REPO)/content/source/layouts/$(PROVIDER_NAME).erb || true
+	ln -s ../../../../ext/providers/$(PROVIDER_NAME)/website/docs $(GOPATH)/src/$(WEBSITE_REPO)/content/source/docs/providers/$(PROVIDER_NAME) || true
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PROVIDER_NAME)

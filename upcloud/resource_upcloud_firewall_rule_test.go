@@ -59,9 +59,9 @@ func testUpcloudFirewallRuleInstanceConfig() string {
 			plan     = "1xCPU-2GB"
 
 			storage_devices {
-				size    = 10
-				action  = "clone"
-				storage = "01000000-0000-4000-8000-000020030100"
+					action = "create"
+					size   = 10
+					tier   = "maxiops"
 			}
 		}
 
