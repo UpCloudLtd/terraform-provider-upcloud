@@ -1,12 +1,12 @@
 package upcloud
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceUpCloudZone() *schema.Resource {
 	return &schema.Resource{
-		Read: resourceUpCloudPriceRead,
+		Read: resourceUpCloudZoneRead,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},

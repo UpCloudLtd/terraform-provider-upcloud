@@ -5,7 +5,7 @@ import (
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 const (
@@ -33,9 +33,6 @@ func Provider() *schema.Provider {
 			"upcloud_server":        resourceUpCloudServer(),
 			"upcloud_storage":       resourceUpCloudStorage(),
 			"upcloud_firewall_rule": resourceUpCloudFirewallRule(),
-			"upcloud_plan":          resourceUpCloudPlan(),
-			"upcloud_price":         resourceUpCloudPrice(),
-			"upcloud_price_zone":    resourceUpCloudPriceZone(),
 			"upcloud_tag":           resourceUpCloudTag(),
 		},
 
