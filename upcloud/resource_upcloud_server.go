@@ -437,10 +437,10 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 		if newCPU != 0 || newMem != 0 {
 			log.Printf("[DEBUG] Modifying server, cpu = %v, mem = %v", newCPU, newMem)
 			if newCPU != 0 {
-				r.CoreNumber = strconv.Itoa(newCPU.(int))
+				r.CoreNumber = newCPU.(int)
 			}
 			if newMem != 0 {
-				r.MemoryAmount = strconv.Itoa(newMem.(int))
+				r.MemoryAmount = newMem.(int)
 			}
 		}
 		_, err := client.ModifyServer(r)

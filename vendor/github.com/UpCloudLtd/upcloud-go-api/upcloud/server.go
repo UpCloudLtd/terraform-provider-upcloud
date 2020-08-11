@@ -1,5 +1,9 @@
 package upcloud
 
+import (
+	"encoding/json"
+)
+
 // Constants
 const (
 	ServerStateStarted     = "started"
@@ -16,52 +20,173 @@ const (
 
 // ServerConfigurations represents a /server_size response
 type ServerConfigurations struct {
-	ServerConfigurations []ServerConfiguration `xml:"server_size"`
+	ServerConfigurations []ServerConfiguration `json:"server_sizes"`
+}
+
+// UnmarshalJSON is a custom unmarshaller that deals with
+// deeply embedded values.
+func (s *ServerConfigurations) UnmarshalJSON(b []byte) error {
+	type serverConfigurationWrapper struct {
+		ServerConfigurations []ServerConfiguration `json:"server_size"`
+	}
+
+	v := struct {
+		ServerConfigurations serverConfigurationWrapper `json:"server_sizes"`
+	}{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	s.ServerConfigurations = v.ServerConfigurations.ServerConfigurations
+
+	return nil
 }
 
 // ServerConfiguration represents a server configuration
 type ServerConfiguration struct {
-	CoreNumber   int `xml:"core_number"`
-	MemoryAmount int `xml:"memory_amount"`
+	CoreNumber   int `json:"core_number,string"`
+	MemoryAmount int `json:"memory_amount,string"`
 }
 
 // Servers represents a /server response
 type Servers struct {
-	Servers []Server `xml:"server"`
+	Servers []Server `json:"servers"`
+}
+
+// UnmarshalJSON is a custom unmarshaller that deals with
+// deeply embedded values.
+func (s *Servers) UnmarshalJSON(b []byte) error {
+	type serverWrapper struct {
+		Servers []Server `json:"server"`
+	}
+
+	v := struct {
+		Servers serverWrapper `json:"servers"`
+	}{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	s.Servers = v.Servers.Servers
+
+	return nil
+}
+
+// ServerTagSlice is a slice of string.
+// It exists to allow for a custom JSON unmarshaller.
+type ServerTagSlice []string
+
+// UnmarshalJSON is a custom unmarshaller that deals with
+// deeply embedded values.
+func (t *ServerTagSlice) UnmarshalJSON(b []byte) error {
+	v := struct {
+		Tags []string `json:"tag"`
+	}{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	(*t) = v.Tags
+
+	return nil
 }
 
 // Server represents a server
 type Server struct {
-	CoreNumber   int      `xml:"core_number"`
-	Hostname     string   `xml:"hostname"`
-	License      float64  `xml:"license"`
-	MemoryAmount int      `xml:"memory_amount"`
-	Plan         string   `xml:"plan"`
-	Progress     int      `xml:"progress"`
-	State        string   `xml:"state"`
-	Tags         []string `xml:"tags>tag"`
-	Title        string   `xml:"title"`
-	UUID         string   `xml:"uuid"`
-	Zone         string   `xml:"zone"`
+	CoreNumber   int            `json:"core_number,string"`
+	Hostname     string         `json:"hostname"`
+	License      float64        `json:"license"`
+	MemoryAmount int            `json:"memory_amount,string"`
+	Plan         string         `json:"plan"`
+	Progress     int            `json:"progress,string"`
+	State        string         `json:"state"`
+	Tags         ServerTagSlice `json:"tags"`
+	Title        string         `json:"title"`
+	UUID         string         `json:"uuid"`
+	Zone         string         `json:"zone"`
+}
+
+// IPAddressSlice is a slice of IPAddress.
+// It exists to allow for a custom JSON unmarshaller.
+type IPAddressSlice []IPAddress
+
+// UnmarshalJSON is a custom unmarshaller that deals with
+// deeply embedded values.
+func (i *IPAddressSlice) UnmarshalJSON(b []byte) error {
+	type localIPAddress IPAddress
+	v := struct {
+		IPAddresses []localIPAddress `json:"ip_address"`
+	}{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	for _, ip := range v.IPAddresses {
+		(*i) = append((*i), IPAddress(ip))
+	}
+
+	return nil
+}
+
+// ServerStorageDeviceSlice is a slice of ServerStorageDevices.
+// It exists to allow for a custom JSON unmarshaller.
+type ServerStorageDeviceSlice []ServerStorageDevice
+
+// UnmarshalJSON is a custom unmarshaller that deals with
+// deeply embedded values.
+func (s *ServerStorageDeviceSlice) UnmarshalJSON(b []byte) error {
+	v := struct {
+		StorageDevices []ServerStorageDevice `json:"storage_device"`
+	}{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	(*s) = v.StorageDevices
+
+	return nil
 }
 
 // ServerDetails represents details about a server
 type ServerDetails struct {
 	Server
 
-	BootOrder  string `xml:"boot_order"`
-	CoreNumber int    `xml:"core_number"`
+	BootOrder  string `json:"boot_order"`
+	CoreNumber int    `json:"core_number,string"`
 	// TODO: Convert to boolean
-	Firewall       string                `xml:"firewall"`
-	Host           int                   `xml:"host"`
-	IPAddresses    []IPAddress           `xml:"ip_addresses>ip_address"`
-	NICModel       string                `xml:"nic_model"`
-	StorageDevices []ServerStorageDevice `xml:"storage_devices>storage_device"`
-	Timezone       string                `xml:"timezone"`
-	VideoModel     string                `xml:"video_model"`
+	Firewall       string                   `json:"firewall"`
+	Host           int                      `json:"host"`
+	IPAddresses    IPAddressSlice           `json:"ip_addresses"`
+	NICModel       string                   `json:"nic_model"`
+	StorageDevices ServerStorageDeviceSlice `json:"storage_devices"`
+	Timezone       string                   `json:"timezone"`
+	VideoModel     string                   `json:"video_model"`
 	// TODO: Convert to boolean
-	VNC         string `xml:"vnc"`
-	VNCHost     string `xml:"vnc_host"`
-	VNCPassword string `xml:"vnc_password"`
-	VNCPort     int    `xml:"vnc_port"`
+	VNC         string `json:"vnc"`
+	VNCHost     string `json:"vnc_host"`
+	VNCPassword string `json:"vnc_password"`
+	VNCPort     int    `json:"vnc_port,string"`
+}
+
+// UnmarshalJSON is a custom unmarshaller that deals with
+// deeply embedded values.
+func (s *ServerDetails) UnmarshalJSON(b []byte) error {
+	type localServerDetails ServerDetails
+
+	v := struct {
+		ServerDetails localServerDetails `json:"server"`
+	}{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	(*s) = ServerDetails(v.ServerDetails)
+
+	return nil
 }

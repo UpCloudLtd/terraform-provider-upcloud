@@ -1,10 +1,11 @@
 package request
 
 import (
-	"encoding/xml"
+	"encoding/json"
 	"fmt"
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"time"
+
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 )
 
 // GetStoragesRequest represents a request for retrieving all or some storages
@@ -46,13 +47,11 @@ func (r *GetStorageDetailsRequest) RequestURL() string {
 
 // CreateStorageRequest represents a request to create a storage device
 type CreateStorageRequest struct {
-	XMLName xml.Name `xml:"storage"`
-
-	Size       int                 `xml:"size"`
-	Tier       string              `xml:"tier,omitempty"`
-	Title      string              `xml:"title"`
-	Zone       string              `xml:"zone"`
-	BackupRule *upcloud.BackupRule `xml:"backup_rule,omitempty"`
+	Size       int                 `json:"size,string"`
+	Tier       string              `json:"tier,omitempty"`
+	Title      string              `json:"title,omitempty"`
+	Zone       string              `json:"zone"`
+	BackupRule *upcloud.BackupRule `json:"backup_rule,omitempty"`
 }
 
 // RequestURL implements the Request interface
@@ -60,14 +59,37 @@ func (r *CreateStorageRequest) RequestURL() string {
 	return "/storage"
 }
 
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r CreateStorageRequest) MarshalJSON() ([]byte, error) {
+	type localCreateStorageRequest CreateStorageRequest
+	v := struct {
+		CreateStorageRequest localCreateStorageRequest `json:"storage"`
+	}{}
+	v.CreateStorageRequest = localCreateStorageRequest(r)
+
+	return json.Marshal(&v)
+}
+
 // ModifyStorageRequest represents a request to modify a storage device
 type ModifyStorageRequest struct {
-	XMLName xml.Name `xml:"storage"`
-	UUID    string   `xml:"-"`
+	UUID string `json:"-"`
 
-	Title      string              `xml:"title,omitempty"`
-	Size       int                 `xml:"size,omitempty"`
-	BackupRule *upcloud.BackupRule `xml:"backup_rule,omitempty"`
+	Title      string              `json:"title,omitempty"`
+	Size       int                 `json:"size,omitempty,string"`
+	BackupRule *upcloud.BackupRule `json:"backup_rule,omitempty"`
+}
+
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r ModifyStorageRequest) MarshalJSON() ([]byte, error) {
+	type localModifyStorageRequest ModifyStorageRequest
+	v := struct {
+		ModifyStorageRequest localModifyStorageRequest `json:"storage"`
+	}{}
+	v.ModifyStorageRequest = localModifyStorageRequest(r)
+
+	return json.Marshal(&v)
 }
 
 // RequestURL implements the Request interface
@@ -77,12 +99,12 @@ func (r *ModifyStorageRequest) RequestURL() string {
 
 // AttachStorageRequest represents a request to attach a storage device to a server
 type AttachStorageRequest struct {
-	XMLName    xml.Name `xml:"storage_device"`
-	ServerUUID string   `xml:"-"`
+	ServerUUID string `json:"-"`
 
-	Type        string `xml:"type,omitempty"`
-	Address     string `xml:"address,omitempty"`
-	StorageUUID string `xml:"storage,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Address     string `json:"address,omitempty"`
+	StorageUUID string `json:"storage,omitempty"`
+	BootDisk    int    `json:"boot_disk,omitempty,string"`
 }
 
 // RequestURL implements the Request interface
@@ -90,17 +112,40 @@ func (r *AttachStorageRequest) RequestURL() string {
 	return fmt.Sprintf("/server/%s/storage/attach", r.ServerUUID)
 }
 
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r AttachStorageRequest) MarshalJSON() ([]byte, error) {
+	type localAttachStorageRequest AttachStorageRequest
+	v := struct {
+		AttachStorageRequest localAttachStorageRequest `json:"storage_device"`
+	}{}
+	v.AttachStorageRequest = localAttachStorageRequest(r)
+
+	return json.Marshal(&v)
+}
+
 // DetachStorageRequest represents a request to detach a storage device from a server
 type DetachStorageRequest struct {
-	XMLName    xml.Name `xml:"storage_device"`
-	ServerUUID string   `xml:"-"`
+	ServerUUID string `json:"-"`
 
-	Address string `xml:"address"`
+	Address string `json:"address"`
 }
 
 // RequestURL implements the Request interface
 func (r *DetachStorageRequest) RequestURL() string {
 	return fmt.Sprintf("/server/%s/storage/detach", r.ServerUUID)
+}
+
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r DetachStorageRequest) MarshalJSON() ([]byte, error) {
+	type localDetachStorageRequest DetachStorageRequest
+	v := struct {
+		DetachStorageRequest localDetachStorageRequest `json:"storage_device"`
+	}{}
+	v.DetachStorageRequest = localDetachStorageRequest(r)
+
+	return json.Marshal(&v)
 }
 
 //DeleteStorageRequest represents a request to delete a storage device
@@ -115,12 +160,11 @@ func (r *DeleteStorageRequest) RequestURL() string {
 
 // CloneStorageRequest represents a requests to clone a storage device
 type CloneStorageRequest struct {
-	XMLName xml.Name `xml:"storage"`
-	UUID    string   `xml:"-"`
+	UUID string `json:"-"`
 
-	Zone  string `xml:"zone"`
-	Tier  string `xml:"tier,omitempty"`
-	Title string `xml:"title"`
+	Zone  string `json:"zone"`
+	Tier  string `json:"tier,omitempty"`
+	Title string `json:"title"`
 }
 
 // RequestURL implements the Request interface
@@ -128,17 +172,40 @@ func (r *CloneStorageRequest) RequestURL() string {
 	return fmt.Sprintf("/storage/%s/clone", r.UUID)
 }
 
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r CloneStorageRequest) MarshalJSON() ([]byte, error) {
+	type localCloneStorageRequest CloneStorageRequest
+	v := struct {
+		CloneStorageRequest localCloneStorageRequest `json:"storage"`
+	}{}
+	v.CloneStorageRequest = localCloneStorageRequest(r)
+
+	return json.Marshal(&v)
+}
+
 // TemplatizeStorageRequest represents a request to templatize a storage device
 type TemplatizeStorageRequest struct {
-	XMLName xml.Name `xml:"storage"`
-	UUID    string   `xml:"-"`
+	UUID string `json:"-"`
 
-	Title string `xml:"title"`
+	Title string `json:"title"`
 }
 
 // RequestURL implements the Request interface
 func (r *TemplatizeStorageRequest) RequestURL() string {
 	return fmt.Sprintf("/storage/%s/templatize", r.UUID)
+}
+
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r TemplatizeStorageRequest) MarshalJSON() ([]byte, error) {
+	type localTemplatizeStorageRequest TemplatizeStorageRequest
+	v := struct {
+		TemplatizeStorageRequest localTemplatizeStorageRequest `json:"storage"`
+	}{}
+	v.TemplatizeStorageRequest = localTemplatizeStorageRequest(r)
+
+	return json.Marshal(&v)
 }
 
 // WaitForStorageStateRequest represents a request to wait for a storage to enter a specific state
@@ -150,15 +217,26 @@ type WaitForStorageStateRequest struct {
 
 // LoadCDROMRequest represents a request to load a storage as a CD-ROM in the CD-ROM device of a server
 type LoadCDROMRequest struct {
-	XMLName    xml.Name `xml:"storage_device"`
-	ServerUUID string   `xml:"-"`
+	ServerUUID string `json:"-"`
 
-	StorageUUID string `xml:"storage"`
+	StorageUUID string `json:"storage"`
 }
 
 // RequestURL implements the Request interface
 func (r *LoadCDROMRequest) RequestURL() string {
 	return fmt.Sprintf("/server/%s/cdrom/load", r.ServerUUID)
+}
+
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r LoadCDROMRequest) MarshalJSON() ([]byte, error) {
+	type localLoadCDROMRequest LoadCDROMRequest
+	v := struct {
+		LoadCDROMRequest localLoadCDROMRequest `json:"storage_device"`
+	}{}
+	v.LoadCDROMRequest = localLoadCDROMRequest(r)
+
+	return json.Marshal(&v)
 }
 
 // EjectCDROMRequest represents a request to load a storage as a CD-ROM in the CD-ROM device of a server
@@ -173,15 +251,26 @@ func (r *EjectCDROMRequest) RequestURL() string {
 
 // CreateBackupRequest represents a request to create a backup of a storage device
 type CreateBackupRequest struct {
-	XMLName xml.Name `xml:"storage"`
-	UUID    string   `xml:"-"`
+	UUID string `json:"-"`
 
-	Title string `xml:"title"`
+	Title string `json:"title"`
 }
 
 // RequestURL implements the Request interface
 func (r *CreateBackupRequest) RequestURL() string {
 	return fmt.Sprintf("/storage/%s/backup", r.UUID)
+}
+
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r CreateBackupRequest) MarshalJSON() ([]byte, error) {
+	type localCreateBackupRequest CreateBackupRequest
+	v := struct {
+		CreateBackupRequest localCreateBackupRequest `json:"storage"`
+	}{}
+	v.CreateBackupRequest = localCreateBackupRequest(r)
+
+	return json.Marshal(&v)
 }
 
 // RestoreBackupRequest represents a request to restore a storage from the specified backup
