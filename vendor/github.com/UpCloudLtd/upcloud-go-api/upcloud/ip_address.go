@@ -9,6 +9,7 @@ const (
 
 	IPAddressAccessPrivate = "private"
 	IPAddressAccessPublic  = "public"
+	IPAddressAccessUtility = "utility"
 )
 
 // IPAddresses represents a /ip_address response
@@ -41,13 +42,15 @@ func (s *IPAddresses) UnmarshalJSON(b []byte) error {
 
 // IPAddress represents an IP address
 type IPAddress struct {
-	Access  string `json:"access"`
-	Address string `json:"address"`
-	Family  string `json:"family"`
-	// TODO: Convert to boolean
-	PartOfPlan string `json:"part_of_plan"`
-	PTRRecord  string `json:"ptr_record"`
-	ServerUUID string `json:"server"`
+	Access     string  `json:"access"`
+	Address    string  `json:"address"`
+	Family     string  `json:"family"`
+	PartOfPlan Boolean `json:"part_of_plan"`
+	PTRRecord  string  `json:"ptr_record"`
+	ServerUUID string  `json:"server"`
+	MAC        string  `json:"mac"`
+	Floating   Boolean `json:"floating"`
+	Zone       string  `json:"zone"`
 }
 
 // UnmarshalJSON is a custom unmarshaller that deals with

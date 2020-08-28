@@ -1,26 +1,30 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	uuid "github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceUpCloudServer() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceUpCloudServerCreate,
-		Read:   resourceUpCloudServerRead,
-		Update: resourceUpCloudServerUpdate,
-		Delete: resourceUpCloudServerDelete,
+		CreateContext: resourceUpCloudServerCreate,
+		ReadContext:   resourceUpCloudServerRead,
+		UpdateContext: resourceUpCloudServerUpdate,
+		DeleteContext: resourceUpCloudServerDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"hostname": {
@@ -56,32 +60,97 @@ func resourceUpCloudServer() *schema.Resource {
 				ForceNew: true,
 				Optional: true,
 			},
-			"private_networking": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-			"ipv4": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-			"ipv6": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-			"ipv4_address": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"ipv4_address_private": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"ipv6_address": {
-				Type:     schema.TypeString,
-				Computed: true,
+			"network_interface": {
+				Type:        schema.TypeList,
+				Description: "One or more blocks describing the network interfaces of the server.",
+				Required:    true,
+				ForceNew:    true,
+				MinItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ip_address_family": {
+							Type:        schema.TypeString,
+							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     upcloud.IPAddressFamilyIPv4,
+							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+								switch v.(string) {
+								case upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6:
+									return nil
+								default:
+									return diag.Diagnostics{diag.Diagnostic{
+										Severity: diag.Error,
+										Summary:  "'ip_address_family' has incorrect value",
+										Detail: fmt.Sprintf(
+											"'ip_address_family' must be one of %s or %s",
+											upcloud.IPAddressFamilyIPv4,
+											upcloud.IPAddressFamilyIPv6),
+									}}
+								}
+							},
+						},
+						"ip_address": {
+							Type:        schema.TypeString,
+							Description: "The assigned IP address.",
+							Computed:    true,
+						},
+						"ip_address_floating": {
+							Type:        schema.TypeBool,
+							Description: "`true` is a floating IP address is attached.",
+							Computed:    true,
+						},
+						"mac_address": {
+							Type:        schema.TypeString,
+							Description: "The assigned MAC address.",
+							Computed:    true,
+						},
+						"type": {
+							Type:        schema.TypeString,
+							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
+							Required:    true,
+							ForceNew:    true,
+							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+								switch v.(string) {
+								case upcloud.NetworkTypePrivate, upcloud.NetworkTypeUtility, upcloud.NetworkTypePublic:
+									return nil
+								default:
+									return diag.Diagnostics{diag.Diagnostic{
+										Severity: diag.Error,
+										Summary:  "'type' has incorrect value",
+										Detail: fmt.Sprintf(
+											"'type' must be one of %s, %s or %s",
+											upcloud.NetworkTypePrivate,
+											upcloud.NetworkTypePublic,
+											upcloud.NetworkTypeUtility),
+									}}
+								}
+							},
+						},
+						"network": {
+							Type:        schema.TypeString,
+							Description: "The unique ID of a network to attach this network to.",
+							ForceNew:    true,
+							Optional:    true,
+							Computed:    true,
+						},
+						"source_ip_filtering": {
+							Type:        schema.TypeBool,
+							Description: "`true` if source IP should be filtered.",
+							ForceNew:    true,
+							Default:     nil,
+							Optional:    true,
+							Computed:    true,
+						},
+						"bootable": {
+							Type:        schema.TypeBool,
+							Description: "`true` if this interface should be used for network booting.",
+							ForceNew:    true,
+							Optional:    true,
+							Computed:    true,
+						},
+					},
+				},
 			},
 			"user_data": {
 				Type:     schema.TypeString,
@@ -95,6 +164,7 @@ func resourceUpCloudServer() *schema.Resource {
 			"storage_devices": {
 				Type:     schema.TypeList,
 				Required: true,
+				ForceNew: true,
 				MinItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -105,50 +175,66 @@ func resourceUpCloudServer() *schema.Resource {
 						"address": {
 							Type:     schema.TypeString,
 							Computed: true,
+							ForceNew: true,
 							Optional: true,
 						},
 						"action": {
 							Type:     schema.TypeString,
+							ForceNew: true,
 							Required: true,
 						},
 						"size": {
 							Type:     schema.TypeInt,
 							Optional: true,
+							ForceNew: true,
 							Default:  -1,
 						},
 						"tier": {
 							Type:     schema.TypeString,
+							ForceNew: true,
 							Optional: true,
 						},
 						"title": {
 							Type:     schema.TypeString,
 							Optional: true,
+							ForceNew: true,
 							Computed: true,
 						},
 						"storage": {
 							Type:     schema.TypeString,
+							ForceNew: true,
 							Optional: true,
 						},
 						"type": {
 							Type:     schema.TypeString,
+							ForceNew: true,
 							Optional: true,
 						},
 						"backup_rule": {
-							Type:     schema.TypeMap,
-							Optional: true,
+							Description: "The criteria to backup the storage",
+							Type:        schema.TypeSet,
+							MaxItems:    1,
+							ForceNew:    true,
+							Optional:    true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"interval": {
-										Type:     schema.TypeString,
-										Required: true,
+										Description: "The weekday when the backup is created",
+										Type:        schema.TypeString,
+										ForceNew:    true,
+										Required:    true,
 									},
 									"time": {
-										Type:     schema.TypeString,
-										Required: true,
+										Description: "The time of day when the backup is created",
+										Type:        schema.TypeString,
+										ForceNew:    true,
+										Required:    true,
 									},
 									"retention": {
-										Type:     schema.TypeString,
-										Required: true,
+										Description: "The number of days before a backup is automatically deleted",
+										Type:        schema.TypeString,
+										ForceNew:    true,
+										Required:    true,
 									},
 								},
 							},
@@ -163,21 +249,21 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"user": &schema.Schema{
+						"user": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"keys": &schema.Schema{
+						"keys": {
 							Type:     schema.TypeList,
 							Optional: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
-						"create_password": &schema.Schema{
+						"create_password": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
-						"password_delivery": &schema.Schema{
+						"password_delivery": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Default:  "none",
@@ -189,15 +275,16 @@ func resourceUpCloudServer() *schema.Resource {
 	}
 }
 
-func resourceUpCloudServerCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+
 	r, err := buildServerOpts(d, meta)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	server, err := client.CreateServer(r)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(server.UUID)
@@ -209,25 +296,28 @@ func resourceUpCloudServerCreate(d *schema.ResourceData, meta interface{}) error
 		Timeout:      time.Minute * 25,
 	})
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	err = buildAfterServerCreationOps(d, client)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceUpCloudServerRead(d, meta)
+	return resourceUpCloudServerRead(ctx, d, meta)
 }
 
-func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
+func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+
+	var diags diag.Diagnostics
+
 	r := &request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	d.Set("hostname", server.Hostname)
 	d.Set("title", server.Title)
@@ -235,19 +325,35 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("cpu", server.CoreNumber)
 	d.Set("mem", server.MemoryAmount)
 
-	// Store server addresses into state
-	conn_ip := ""
-	for _, ip := range server.IPAddresses {
-		if ip.Access == upcloud.IPAddressAccessPrivate && ip.Family == upcloud.IPAddressFamilyIPv4 {
-			d.Set("ipv4_address_private", ip.Address)
+	networkInterfaces := []map[string]interface{}{}
+	var connIP string
+	for _, iface := range server.Networking.Interfaces {
+		ni := make(map[string]interface{}, 0)
+		ni["ip_address_family"] = iface.IPAddresses[0].Family
+		ni["ip_address"] = iface.IPAddresses[0].Address
+		if !iface.IPAddresses[0].Floating.Empty() {
+			ni["ip_address_floating"] = iface.IPAddresses[0].Floating.Bool()
 		}
-		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv4 {
-			d.Set("ipv4_address", ip.Address)
-			conn_ip = ip.Address
+		ni["mac_address"] = iface.MAC
+		ni["network"] = iface.Network
+		ni["type"] = iface.Type
+		if !iface.Bootable.Empty() {
+			ni["bootable"] = iface.Bootable.Bool()
 		}
-		if ip.Access == upcloud.IPAddressAccessPublic && ip.Family == upcloud.IPAddressFamilyIPv6 {
-			d.Set("ipv6_address", ip.Address)
+		if !iface.SourceIPFiltering.Empty() {
+			ni["source_ip_filtering"] = iface.SourceIPFiltering.Bool()
 		}
+
+		networkInterfaces = append(networkInterfaces, ni)
+
+		if iface.Type == upcloud.NetworkTypePublic &&
+			iface.IPAddresses[0].Family == upcloud.IPAddressFamilyIPv4 {
+
+			connIP = iface.IPAddresses[0].Address
+		}
+	}
+	if len(networkInterfaces) > 0 {
+		d.Set("network_interface", networkInterfaces)
 	}
 
 	storageDevices := d.Get("storage_devices").([]interface{})
@@ -264,161 +370,22 @@ func resourceUpCloudServerRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Initialize the connection information.
 	d.SetConnInfo(map[string]string{
-		"host":     conn_ip,
+		"host":     connIP,
 		"password": "",
 		"type":     "ssh",
 		"user":     "root",
 	})
 
-	return nil
+	return diags
 }
 
-func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+
 	if err := verifyServerStopped(d, meta); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
-	if d.HasChange("storage_devices") {
-		oldStorageDevicesI, storageDevicesI := d.GetChange("storage_devices")
-		d.Set("storage_devices", storageDevicesI)
-		storageDevices := storageDevicesI.([]interface{})
-		oldStorageDevices := oldStorageDevicesI.([]interface{})
-		log.Printf("[DEBUG] New storage devices: %v", storageDevices)
-		log.Printf("[DEBUG] Current storage devices: %v", oldStorageDevices)
-		for i, storageDevice := range storageDevices {
-			storageDevice := storageDevice.(map[string]interface{})
-			log.Printf("[DEBUG] Number of current storage devices: %v\n", len(oldStorageDevices))
-			var oldStorageDeviceN int
-			for i, oldStorageDevice := range oldStorageDevices {
-				id1 := oldStorageDevice.(map[string]interface{})["id"].(string)
-				id2 := storageDevice["id"].(string)
-				log.Printf("[DEBUG] Storage device Id 1: %v, Id 2: %v, Equal: %v", id1, id2, id1 == id2)
-				if id1 == id2 {
-					oldStorageDeviceN = i
-					break
-				}
-			}
 
-			log.Printf("[DEBUG] Old storage device number: %v\n", oldStorageDeviceN)
-			var oldStorageDevice map[string]interface{}
-			if oldStorageDeviceN < len(oldStorageDevices) {
-				oldStorageDevice = oldStorageDevices[oldStorageDeviceN].(map[string]interface{})
-			}
-			log.Printf("[DEBUG] New storage device: %v\n", storageDevice)
-			log.Printf("[DEBUG] Current storage device: %v\n", oldStorageDevice)
-			if oldStorageDevice == nil {
-				var newStorageDeviceID string
-				switch storageDevice["action"] {
-				case upcloud.CreateServerStorageDeviceActionCreate:
-					storage, err := buildStorage(storageDevice, i, meta, d.Get("hostname").(string), d.Get("zone").(string))
-					if err != nil {
-						return err
-					}
-					newStorage, err := client.CreateStorage(&request.CreateStorageRequest{
-						Size:  storage.Size,
-						Tier:  storage.Tier,
-						Title: storage.Title,
-						Zone:  d.Get("zone").(string),
-					})
-					if err != nil {
-						return err
-					}
-					newStorageDeviceID = newStorage.UUID
-					break
-				case upcloud.CreateServerStorageDeviceActionClone:
-					// storage, err := buildStorage(storageDevice, i, meta)
-					// if err != nil {
-					// 	return err
-					// }
-					// newStorage, err := client.CloneStorage(&request.CloneStorageRequest{
-					// 	UUID:  storageDevice["storage"].(string),
-					// 	Tier:  storage.Tier,
-					// 	Title: storage.Title,
-					// 	Zone:  d.Get("zone").(string),
-					// })
-					// if err != nil {
-					// 	return err
-					// }
-					newStorageDeviceID = storageDevice["storage"].(string)
-					break
-				case upcloud.CreateServerStorageDeviceActionAttach:
-					newStorageDeviceID = storageDevice["storage"].(string)
-					break
-				}
-
-				attachStorageRequest := request.AttachStorageRequest{
-					ServerUUID:  d.Id(),
-					StorageUUID: newStorageDeviceID,
-					Address:     storageDevice["address"].(string),
-				}
-
-				if storageType := storageDevice["type"].(string); storageType != "" {
-					attachStorageRequest.Type = storageType
-				}
-
-				log.Printf("[DEBUG] Attach storage request: %v", attachStorageRequest)
-
-				client.AttachStorage(&attachStorageRequest)
-			} else {
-				log.Printf("[DEBUG] Try to modify storage device %v", storageDevice)
-				modifyStorage := &request.ModifyStorageRequest{
-					UUID:  storageDevice["id"].(string),
-					Size:  storageDevice["size"].(int),
-					Title: storageDevice["title"].(string),
-				}
-
-				if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-					log.Println("[DEBUG] Backup rule create")
-					retention, err := strconv.Atoi(backupRule["retention"].(string))
-					if err != nil {
-						return err
-					}
-
-					modifyStorage.BackupRule = &upcloud.BackupRule{
-						Interval:  backupRule["interval"].(string),
-						Retention: retention,
-						Time:      backupRule["time"].(string),
-					}
-				}
-
-				if oldStorageDevice["address"] != storageDevice["address"] {
-					log.Printf("[DEBUG] Trying to change address from %v to %v", oldStorageDevice["address"], storageDevice["address"])
-					client.DetachStorage(&request.DetachStorageRequest{
-						ServerUUID: d.Id(),
-						Address:    oldStorageDevice["address"].(string),
-					})
-					client.AttachStorage(&request.AttachStorageRequest{
-						ServerUUID:  d.Id(),
-						StorageUUID: storageDevice["id"].(string),
-						Address:     storageDevice["address"].(string),
-					})
-				}
-
-				log.Printf("[DEBUG] Storage modify request: %v\n", modifyStorage)
-
-				_, err := client.ModifyStorage(modifyStorage)
-
-				if err != nil {
-					return err
-				}
-
-				oldStorageDevices = append(oldStorageDevices[:oldStorageDeviceN], oldStorageDevices[oldStorageDeviceN+1:]...)
-			}
-		}
-		log.Printf("[DEBUG] Current storage devices: %v\n", oldStorageDevices)
-		for _, oldStorageDevice := range oldStorageDevices {
-			oldStorageDevice := oldStorageDevice.(map[string]interface{})
-			client.DetachStorage(&request.DetachStorageRequest{
-				ServerUUID: d.Id(),
-				Address:    oldStorageDevice["address"].(string),
-			})
-			if oldStorageDevice["action"] != upcloud.CreateServerStorageDeviceActionAttach {
-				client.DeleteStorage(&request.DeleteStorageRequest{
-					UUID: oldStorageDevice["id"].(string),
-				})
-			}
-		}
-	}
 	if d.HasChange("mem") || d.HasChange("cpu") || d.HasChange("firewall") {
 		_, newCPU := d.GetChange("cpu")
 		_, newMem := d.GetChange("mem")
@@ -445,9 +412,10 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 		_, err := client.ModifyServer(r)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
+
 	if d.HasChange("plan") {
 		_, newPlan := d.GetChange("plan")
 
@@ -459,20 +427,24 @@ func resourceUpCloudServerUpdate(d *schema.ResourceData, meta interface{}) error
 
 		_, err := client.ModifyServer(r)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
+
 	if err := verifyServerStarted(d, meta); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
-	return resourceUpCloudServerRead(d, meta)
+	return resourceUpCloudServerRead(ctx, d, meta)
 }
 
-func resourceUpCloudServerDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+
+	var diags diag.Diagnostics
+
 	// Verify server is stopped before deletion
 	if err := verifyServerStopped(d, meta); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	// Delete server
 	deleteServerRequest := &request.DeleteServerRequest{
@@ -481,7 +453,7 @@ func resourceUpCloudServerDelete(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[INFO] Deleting server (server UUID: %s)", d.Id())
 	err := client.DeleteServer(deleteServerRequest)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	storageDevices := d.Get("storage_devices").([]interface{})
@@ -490,19 +462,19 @@ func resourceUpCloudServerDelete(d *schema.ResourceData, meta interface{}) error
 		storageDevice := storageDevice.(map[string]interface{})
 		id := storageDevice["id"].(string)
 		action := storageDevice["action"].(string)
-		if action != upcloud.CreateServerStorageDeviceActionAttach {
+		if action != request.CreateServerStorageDeviceActionAttach {
 			deleteStorageRequest := &request.DeleteStorageRequest{
 				UUID: id,
 			}
 			log.Printf("[INFO] Deleting server storage (storage UUID: %s)", id)
 			err = client.DeleteStorage(deleteStorageRequest)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		}
 	}
 
-	return nil
+	return diags
 }
 
 func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateServerRequest, error) {
@@ -547,11 +519,14 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	}
 	r.StorageDevices = storageOpts
 
-	networkOpts, err := buildNetworkOpts(d, meta)
+	networking, err := buildNetworkOpts(d, meta)
 	if err != nil {
 		return nil, err
 	}
-	r.IPAddresses = networkOpts
+
+	r.Networking = &request.CreateServerNetworking{
+		Interfaces: networking,
+	}
 
 	return r, nil
 }
@@ -586,29 +561,37 @@ func buildStorageBackupRuleOps(d *schema.ResourceData, meta interface{}) error {
 	for i, storageDevice := range storageDevices {
 		storageDevice := storageDevice.(map[string]interface{})
 
-		if backupRule := storageDevice["backup_rule"].(map[string]interface{}); backupRule != nil && len(backupRule) != 0 {
-			retention, err := strconv.Atoi(backupRule["retention"].(string))
-			if err != nil {
-				return err
-			}
-			modifyStorage := &request.ModifyStorageRequest{
-				UUID: server.StorageDevices[i].UUID,
-			}
+		if backupRule := storageDevice["backup_rule"].(*schema.Set).List(); backupRule != nil && len(backupRule) != 0 {
 
-			modifyStorage.BackupRule = &upcloud.BackupRule{
-				Interval:  backupRule["interval"].(string),
-				Retention: retention,
-				Time:      backupRule["time"].(string),
+			for _, br := range backupRule {
+				mBr := br.(map[string]interface{})
+
+				retentionValue, err := strconv.Atoi(mBr["retention"].(string))
+
+				if err != nil {
+					diag.FromErr(err)
+				}
+
+				modifyStorage := &request.ModifyStorageRequest{
+					UUID: server.StorageDevices[i].UUID,
+				}
+
+				modifyStorage.BackupRule = &upcloud.BackupRule{
+					Interval:  mBr["interval"].(string),
+					Time:      mBr["time"].(string),
+					Retention: retentionValue,
+				}
+
+				client.ModifyStorage(modifyStorage)
 			}
-			client.ModifyStorage(modifyStorage)
 		}
 	}
 
 	return nil
 }
 
-func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*upcloud.CreateServerStorageDevice, error) {
-	osDisk := upcloud.CreateServerStorageDevice{}
+func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*request.CreateServerStorageDevice, error) {
+	osDisk := request.CreateServerStorageDevice{}
 
 	if source := storageDevice["storage"].(string); source != "" {
 		_, err := uuid.ParseUUID(source)
@@ -665,8 +648,8 @@ func buildStorage(storageDevice map[string]interface{}, i int, meta interface{},
 	return &osDisk, nil
 }
 
-func buildStorageOpts(storageDevices []interface{}, meta interface{}, hostname, zone string) ([]upcloud.CreateServerStorageDevice, error) {
-	storageCfg := make([]upcloud.CreateServerStorageDevice, 0)
+func buildStorageOpts(storageDevices []interface{}, meta interface{}, hostname, zone string) ([]request.CreateServerStorageDevice, error) {
+	storageCfg := make([]request.CreateServerStorageDevice, 0)
 	for i, storageDevice := range storageDevices {
 		storageDevice, err := buildStorage(storageDevice.(map[string]interface{}), i, meta, hostname, zone)
 
@@ -680,13 +663,46 @@ func buildStorageOpts(storageDevices []interface{}, meta interface{}, hostname, 
 	return storageCfg, nil
 }
 
-func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerIPAddress, error) {
+func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerInterface, error) {
+	ifaces := []request.CreateServerInterface{}
+
+	niCount := d.Get("network_interface.#").(int)
+	for i := 0; i < niCount; i++ {
+		keyRoot := fmt.Sprintf("network_interface.%d.", i)
+
+		iface := request.CreateServerInterface{
+			IPAddresses: []request.CreateServerIPAddress{
+				{
+					Family: d.Get(keyRoot + "ip_address_family").(string),
+				},
+			},
+			Type: d.Get(keyRoot + "type").(string),
+		}
+
+		if v, ok := d.GetOk(keyRoot + "source_ip_filtering"); ok {
+			iface.SourceIPFiltering = upcloud.FromBool(v.(bool))
+		}
+
+		if v, ok := d.GetOk(keyRoot + "bootable"); ok {
+			iface.Bootable = upcloud.FromBool(v.(bool))
+		}
+
+		if v, ok := d.GetOk(keyRoot + "network"); ok {
+			iface.Network = v.(string)
+		}
+
+		ifaces = append(ifaces, iface)
+	}
+
+	return ifaces, nil
+}
+
+func buildNetworkOptsOld(d *schema.ResourceData, meta interface{}) ([]request.CreateServerIPAddress, error) {
 	ifaceCfg := make([]request.CreateServerIPAddress, 0)
 	if attr, ok := d.GetOk("ipv4"); ok {
 		publicIPv4 := attr.(bool)
 		if publicIPv4 {
 			publicIPv4 := request.CreateServerIPAddress{
-				Access: upcloud.IPAddressAccessPublic,
 				Family: upcloud.IPAddressFamilyIPv4,
 			}
 			ifaceCfg = append(ifaceCfg, publicIPv4)
@@ -696,7 +712,6 @@ func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.Creat
 		setPrivateIP := attr.(bool)
 		if setPrivateIP {
 			privateIPv4 := request.CreateServerIPAddress{
-				Access: upcloud.IPAddressAccessPrivate,
 				Family: upcloud.IPAddressFamilyIPv4,
 			}
 			ifaceCfg = append(ifaceCfg, privateIPv4)
@@ -706,7 +721,6 @@ func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.Creat
 		publicIPv6 := attr.(bool)
 		if publicIPv6 {
 			publicIPv6 := request.CreateServerIPAddress{
-				Access: upcloud.IPAddressAccessPublic,
 				Family: upcloud.IPAddressFamilyIPv6,
 			}
 			ifaceCfg = append(ifaceCfg, publicIPv6)

@@ -55,7 +55,7 @@ type FirewallRule struct {
 	Direction               string `json:"direction"`
 	Family                  string `json:"family"`
 	ICMPType                string `json:"icmp_type,omitempty"`
-	Position                int    `json:"position,string"`
+	Position                int    `json:"position,string,omitempty"`
 	Protocol                string `json:"protocol,omitempty"`
 	SourceAddressStart      string `json:"source_address_start,omitempty"`
 	SourceAddressEnd        string `json:"source_address_end,omitempty"`

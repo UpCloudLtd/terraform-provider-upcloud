@@ -24,6 +24,7 @@ const (
 	StorageStateCloning     = "cloning"
 	StorageStateBackuping   = "backuping"
 	StorageStateError       = "error"
+	StorageStateSyncing     = "syncing"
 
 	BackupRuleIntervalDaily     = "daily"
 	BackupRuleIntervalMonday    = "mon"
@@ -34,9 +35,16 @@ const (
 	BackupRuleIntervalSaturday  = "sat"
 	BackupRuleIntervalSunday    = "sun"
 
-	CreateServerStorageDeviceActionCreate = "create"
-	CreateServerStorageDeviceActionClone  = "clone"
-	CreateServerStorageDeviceActionAttach = "attach"
+	StorageImportSourceDirectUpload = "direct_upload"
+	StorageImportSourceHTTPImport   = "http_import"
+
+	StorageImportStatePrepared   = "prepared"
+	StorageImportStatePending    = "pending"
+	StorageImportStateImporting  = "importing"
+	StorageImportStateFailed     = "failed"
+	StorageImportStateCancelling = "cancelling"
+	StorageImportStateCancelled  = "cancelled"
+	StorageImportStateCompleted  = "completed"
 )
 
 // Storages represents a /storage response
@@ -169,14 +177,38 @@ type ServerStorageDevice struct {
 	BootDisk   int    `json:"boot_disk,string"`
 }
 
-// CreateServerStorageDevice represents a storage device for a CreateServerRequest
-type CreateServerStorageDevice struct {
-	Action  string `json:"action"`
-	Address string `json:"address,omitempty"`
-	Storage string `json:"storage"`
-	Title   string `json:"title,omitempty"`
-	// Storage size in gigabytes
-	Size int    `json:"size"`
-	Tier string `json:"tier,omitempty"`
-	Type string `json:"type,omitempty"`
+// StorageImportDetails represents the details of an ongoing or completed storge import operation.
+type StorageImportDetails struct {
+	ClientContentLength int       `json:"client_content_length"`
+	ClientContentType   string    `json:"client_content_type"`
+	Completed           string    `json:"completed"`
+	Created             time.Time `json:"created"`
+	DirectUploadURL     string    `json:"direct_upload_url"`
+	ErrorCode           string    `json:"error_code"`
+	ErrorMessage        string    `json:"error_message"`
+	MD5Sum              string    `json:"md5sum"`
+	ReadBytes           int       `json:"read_bytes"`
+	SHA256Sum           string    `json:"sha256sum"`
+	Source              string    `json:"source"`
+	State               string    `json:"state"`
+	UUID                string    `json:"uuid"`
+	WrittenBytes        int       `json:"written_bytes"`
+}
+
+// UnmarshalJSON is a custom unmarshaller that deals with
+// deeply embedded values.
+func (s *StorageImportDetails) UnmarshalJSON(b []byte) error {
+	type localStorageImport StorageImportDetails
+
+	v := struct {
+		StorageImport localStorageImport `json:"storage_import"`
+	}{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	(*s) = StorageImportDetails(v.StorageImport)
+
+	return nil
 }

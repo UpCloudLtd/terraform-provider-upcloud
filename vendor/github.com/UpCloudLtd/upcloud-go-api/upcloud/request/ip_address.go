@@ -3,6 +3,8 @@ package request
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 )
 
 // GetIPAddressDetailsRequest represents a request to retrieve details about a specific IP address
@@ -17,9 +19,12 @@ func (r *GetIPAddressDetailsRequest) RequestURL() string {
 
 // AssignIPAddressRequest represents a request to assign a new IP address to a server
 type AssignIPAddressRequest struct {
-	Access     string `json:"access"`
-	Family     string `json:"family,omitempty"`
-	ServerUUID string `json:"server"`
+	Access     string          `json:"access,omitempty"`
+	Family     string          `json:"family,omitempty"`
+	ServerUUID string          `json:"server,omitempty"`
+	Floating   upcloud.Boolean `json:"floating,omitempty"`
+	MAC        string          `json:"mac,omitempty"`
+	Zone       string          `json:"zone,omitempty"`
 }
 
 // RequestURL implements the Request interface
@@ -43,7 +48,8 @@ func (r AssignIPAddressRequest) MarshalJSON() ([]byte, error) {
 type ModifyIPAddressRequest struct {
 	IPAddress string `json:"-"`
 
-	PTRRecord string `json:"ptr_record"`
+	PTRRecord string `json:"ptr_record,omitempty"`
+	MAC       string `json:"mac,omitempty"`
 }
 
 // RequestURL implements the Request interface
@@ -54,6 +60,16 @@ func (r *ModifyIPAddressRequest) RequestURL() string {
 // MarshalJSON is a custom marshaller that deals with
 // deeply embedded values.
 func (r ModifyIPAddressRequest) MarshalJSON() ([]byte, error) {
+	if r.PTRRecord == "" && r.MAC == "" {
+		// We want to unassign the IP which requires the MAC to be explicitly not set.
+		return []byte(`
+		  {
+			"ip_address": {
+			  "mac": null
+			}
+		  }
+		`), nil
+	}
 	type localModifyIPAddressRequest ModifyIPAddressRequest
 	v := struct {
 		ModifyIPAddressRequest localModifyIPAddressRequest `json:"ip_address"`

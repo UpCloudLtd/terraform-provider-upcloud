@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
  - Changelog to highlight key alterations across future releases 
  - Website directory for future provider documentation
  - Vendor directory through go modules to cover CI builds
+ - datasource_upcloud_hosts to view hosts data
 
 ### Changed
  - README and examples/README to cover local builds, setup and test execution

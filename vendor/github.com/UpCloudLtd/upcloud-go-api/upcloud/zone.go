@@ -29,6 +29,7 @@ func (s *Zones) UnmarshalJSON(b []byte) error {
 
 // Zone represents a zone
 type Zone struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
+	ID          string  `json:"id"`
+	Description string  `json:"description"`
+	Public      Boolean `json:"public"`
 }

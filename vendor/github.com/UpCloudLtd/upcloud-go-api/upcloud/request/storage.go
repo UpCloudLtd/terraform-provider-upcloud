@@ -8,6 +8,12 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 )
 
+// Constants
+const (
+	StorageImportSourceDirectUpload = "direct_upload"
+	StorageImportSourceHTTPImport   = "http_import"
+)
+
 // GetStoragesRequest represents a request for retrieving all or some storages
 type GetStoragesRequest struct {
 	// If specified, only storages with this access type will be retrieved
@@ -281,4 +287,47 @@ type RestoreBackupRequest struct {
 // RequestURL implements the Request interface
 func (r *RestoreBackupRequest) RequestURL() string {
 	return fmt.Sprintf("/storage/%s/restore", r.UUID)
+}
+
+// CreateStorageImportRequest represent a request to import storage.
+type CreateStorageImportRequest struct {
+	StorageUUID string `json:"-"`
+
+	Source         string `json:"source"`
+	SourceLocation string `json:"source_location,omitempty"`
+}
+
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (r CreateStorageImportRequest) MarshalJSON() ([]byte, error) {
+	type localStorageImportRequest CreateStorageImportRequest
+	v := struct {
+		StorageImportRequest localStorageImportRequest `json:"storage_import"`
+	}{}
+	v.StorageImportRequest = localStorageImportRequest(r)
+
+	return json.Marshal(&v)
+}
+
+// RequestURL implements the Request interface
+func (r *CreateStorageImportRequest) RequestURL() string {
+	return fmt.Sprintf("/storage/%s/import", r.StorageUUID)
+}
+
+// GetStorageImportDetailsRequest represents a request to get details
+// about an import
+type GetStorageImportDetailsRequest struct {
+	UUID string
+}
+
+// RequestURL implements the Request interface
+func (r *GetStorageImportDetailsRequest) RequestURL() string {
+	return fmt.Sprintf("/storage/%s/import", r.UUID)
+}
+
+// WaitForStorageImportCompletionRequest represents a request to wait
+// for storage import to complete.
+type WaitForStorageImportCompletionRequest struct {
+	StorageUUID string
+	Timeout     time.Duration
 }

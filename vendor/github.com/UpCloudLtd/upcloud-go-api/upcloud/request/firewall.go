@@ -62,3 +62,31 @@ type DeleteFirewallRuleRequest struct {
 func (r *DeleteFirewallRuleRequest) RequestURL() string {
 	return fmt.Sprintf("/server/%s/firewall_rule/%d", r.ServerUUID, r.Position)
 }
+
+// FirewallRuleSlice is a slice of firewall rules
+// It exists to allow for a custom JSON marshaller.
+type FirewallRuleSlice []upcloud.FirewallRule
+
+// MarshalJSON is a custom marshaller that deals with
+// deeply embedded values.
+func (s FirewallRuleSlice) MarshalJSON() ([]byte, error) {
+	v := struct {
+		FirewallRules []upcloud.FirewallRule `json:"firewall_rule"`
+	}{}
+	v.FirewallRules = s
+
+	return json.Marshal(v)
+}
+
+// CreateFirewallRulesRequest represents a request to create
+// (and replace) the entire firewall rule set.
+type CreateFirewallRulesRequest struct {
+	ServerUUID string `json:"-"`
+
+	FirewallRules FirewallRuleSlice `json:"firewall_rules"`
+}
+
+// RequestURL implements the Request interface
+func (r *CreateFirewallRulesRequest) RequestURL() string {
+	return fmt.Sprintf("/server/%s/firewall_rule", r.ServerUUID)
+}
