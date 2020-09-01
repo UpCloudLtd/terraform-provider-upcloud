@@ -33,11 +33,11 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server":         resourceUpCloudServer(),
-			"upcloud_router":         resourceUpCloudRouter(),
-			"upcloud_storage":        resourceUpCloudStorage(),
-			"upcloud_firewall_rules": resourceUpCloudFirewallRules(),
-			//"upcloud_tag":           resourceUpCloudTag(),
+			"upcloud_server":              resourceUpCloudServer(),
+			"upcloud_router":              resourceUpCloudRouter(),
+			"upcloud_storage":             resourceUpCloudStorage(),
+			"upcloud_firewall_rules":      resourceUpCloudFirewallRules(),
+			"upcloud_tag":                 resourceUpCloudTag(),
 			"upcloud_network":             resourceUpCloudNetwork(),
 			"upcloud_floating_ip_address": resourceUpCloudFloatingIPAddress(),
 		},
@@ -48,6 +48,7 @@ func Provider() *schema.Provider {
 			"upcloud_networks":     dataSourceNetworks(),
 			"upcloud_hosts":        dataSourceUpCloudHosts(),
 			"upcloud_ip_addresses": dataSourceUpCloudIPAddresses(),
+			"upcloud_tags":         dataSourceUpCloudTags(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
