@@ -20,17 +20,17 @@ func dataSourceUpCloudHosts() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"host_id": {
 							Type:        schema.TypeInt,
-							Description: "",
+							Description: "The unique id of the host",
 							Computed:    true,
 						},
 						"description": {
 							Type:        schema.TypeString,
-							Description: "",
+							Description: "Free form text describing the host",
 							Computed:    true,
 						},
 						"zone": {
 							Type:        schema.TypeString,
-							Description: "",
+							Description: "The zone the host is in",
 							Computed:    true,
 						},
 					},

@@ -248,16 +248,14 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 			comment = "Allow SSH from this network"
 			destination_address_end = ""
 			destination_address_start = ""
-			destination_port_end = "22"
-			destination_port_start = "22"
+			destination_port_end = 22
+			destination_port_start = 22
 			direction = "in"
 			family = "IPv4"
 			icmp_type = ""
 			protocol = "tcp"
 			source_address_end = "192.168.1.255"
 			source_address_start = "192.168.1.1"
-			source_port_end = ""
-			source_port_start = ""
 		  }
 
 		}`)
@@ -290,16 +288,14 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 			comment = "Allow SSH from this network"
 			destination_address_end = ""
 			destination_address_start = ""
-			destination_port_end = "22"
-			destination_port_start = "22"
+			destination_port_end = 22
+			destination_port_start = 22
 			direction = "in"
 			family = "IPv4"
 			icmp_type = ""
 			protocol = "tcp"
 			source_address_end = "192.168.1.255"
 			source_address_start = "192.168.1.1"
-			source_port_end = ""
-			source_port_start = ""
 		  }
 		
 		  firewall_rule {
@@ -307,16 +303,14 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 			comment = "Allow SSH from this network"
 			destination_address_end = ""
 			destination_address_start = ""
-			destination_port_end = "22"
-			destination_port_start = "22"
+			destination_port_end = 22
+			destination_port_start = 22
 			direction = "in"
 			family = "IPv4"
 			icmp_type = ""
 			protocol = "tcp"
 			source_address_end = "192.168.3.255"
 			source_address_start = "192.168.3.1"
-			source_port_end = ""
-			source_port_start = ""
 		  }
 
 		}`)

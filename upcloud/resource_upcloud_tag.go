@@ -7,6 +7,8 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"regexp"
 )
 
 func resourceUpCloudTag() *schema.Resource {
@@ -20,17 +22,23 @@ func resourceUpCloudTag() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description:  "Free form text representing the meaning of the tag",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringLenBetween(0, 255),
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The value representing the tag",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				ValidateFunc: validation.Any(validation.StringLenBetween(1, 32),
+					validation.StringMatch(regexp.MustCompile("[a-zA-Z0-9_]"), "")),
 			},
 			"servers": {
-				Type:     schema.TypeSet,
-				Optional: true,
+				Description: "A collection of servers that have been assigned the tag",
+				Type:        schema.TypeSet,
+				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

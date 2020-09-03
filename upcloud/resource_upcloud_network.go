@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
@@ -32,10 +33,11 @@ func resourceUpCloudNetwork() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"address": {
-							Type:        schema.TypeString,
-							Description: "The CIDR range of the subnet",
-							Required:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The CIDR range of the subnet",
+							Required:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.IsCIDR,
 						},
 						"dhcp": {
 							Type:        schema.TypeBool,
@@ -54,7 +56,8 @@ func resourceUpCloudNetwork() *schema.Resource {
 							Computed:    true,
 							Optional:    true,
 							Elem: &schema.Schema{
-								Type: schema.TypeString,
+								Type:         schema.TypeString,
+								ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address),
 							},
 						},
 						"family": {

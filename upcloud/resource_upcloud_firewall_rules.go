@@ -7,6 +7,8 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"strconv"
 )
 
 func resourceUpCloudFirewallRules() *schema.Resource {
@@ -32,89 +34,103 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"direction": {
-							Type:        schema.TypeString,
-							Description: "The direction of network traffic this rule will be applied to",
-							Required:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The direction of network traffic this rule will be applied to",
+							Required:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.StringInSlice([]string{"in", "out"}, false),
 						},
 						"action": {
-							Type:        schema.TypeString,
-							Description: "Action to take if the rule conditions are met",
-							Required:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "Action to take if the rule conditions are met",
+							Required:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.StringInSlice([]string{"accept", "drop"}, false),
 						},
 						"family": {
-							Type:        schema.TypeString,
-							Description: "The address family of new firewall rule",
-							Required:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The address family of new firewall rule",
+							Required:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.StringInSlice([]string{"IPv4", "IPv6"}, false),
 						},
 						"protocol": {
-							Type:        schema.TypeString,
-							Description: "The protocol this rule will be applied to",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     "tcp",
+							Type:         schema.TypeString,
+							Description:  "The protocol this rule will be applied to",
+							Optional:     true,
+							ForceNew:     true,
+							Default:      "tcp",
+							ValidateFunc: validation.StringInSlice([]string{"tcp", "udp", "icmp"}, false),
 						},
 						"icmp_type": {
-							Type:        schema.TypeString,
-							Description: "The ICMP type",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The ICMP type",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.StringLenBetween(0, 255),
 						},
 						"source_address_start": {
-							Type:        schema.TypeString,
-							Description: "The source address range starts from this address",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The source address range starts from this address",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty),
 						},
 						"source_address_end": {
-							Type:        schema.TypeString,
-							Description: "The source address range ends from this address",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The source address range ends from this address",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty),
 						},
 						"source_port_end": {
-							Type:        schema.TypeString,
-							Description: "The source port range ends from this port number",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeInt,
+							Description:  "The source port range ends from this port number",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"source_port_start": {
-							Type:        schema.TypeString,
-							Description: "The source port range starts from this port number",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeInt,
+							Description:  "The source port range starts from this port number",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"destination_address_start": {
-							Type:        schema.TypeString,
-							Description: "The destination address range starts from this address",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The destination address range starts from this address",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty),
 						},
 						"destination_address_end": {
-							Type:        schema.TypeString,
-							Description: "The destination address range ends from this address",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "The destination address range ends from this address",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty),
 						},
 						"destination_port_start": {
-							Type:        schema.TypeString,
-							Description: "The destination port range starts from this port number",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeInt,
+							Description:  "The destination port range starts from this port number",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"destination_port_end": {
-							Type:        schema.TypeString,
-							Description: "The destination port range ends from this port number",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeInt,
+							Description:  "The destination port range ends from this port number",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"comment": {
-							Type:        schema.TypeString,
-							Description: "Freeform comment string for the rule",
-							Optional:    true,
-							ForceNew:    true,
+							Type:         schema.TypeString,
+							Description:  "Freeform comment string for the rule",
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.StringLenBetween(0, 250),
 						},
 					},
 				},
@@ -137,21 +153,41 @@ func resourceUpCloudFirewallRulesCreate(ctx context.Context, d *schema.ResourceD
 		for _, frMap := range v.([]interface{}) {
 			rule := frMap.(map[string]interface{})
 
+			destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
+			if destinationPortStart == "0" {
+				destinationPortStart = ""
+			}
+
+			destinationPortEnd := strconv.Itoa(rule["destination_port_end"].(int))
+			if destinationPortEnd == "0" {
+				destinationPortEnd = ""
+			}
+
+			sourcePortStart := strconv.Itoa(rule["source_port_start"].(int))
+			if sourcePortStart == "0" {
+				sourcePortStart = ""
+			}
+
+			sourcePortEnd := strconv.Itoa(rule["source_port_end"].(int))
+			if sourcePortEnd == "0" {
+				sourcePortEnd = ""
+			}
+
 			firewallRule := upcloud.FirewallRule{
 				Action:                  rule["action"].(string),
 				Comment:                 rule["comment"].(string),
 				DestinationAddressStart: rule["destination_address_start"].(string),
 				DestinationAddressEnd:   rule["destination_address_end"].(string),
-				DestinationPortStart:    rule["destination_port_start"].(string),
-				DestinationPortEnd:      rule["destination_port_end"].(string),
+				DestinationPortStart:    destinationPortStart,
+				DestinationPortEnd:      destinationPortEnd,
 				Direction:               rule["direction"].(string),
 				Family:                  rule["family"].(string),
 				ICMPType:                rule["icmp_type"].(string),
 				Protocol:                rule["protocol"].(string),
 				SourceAddressStart:      rule["source_address_start"].(string),
 				SourceAddressEnd:        rule["source_address_end"].(string),
-				SourcePortStart:         rule["source_port_start"].(string),
-				SourcePortEnd:           rule["source_port_end"].(string),
+				SourcePortStart:         sourcePortStart,
+				SourcePortEnd:           sourcePortEnd,
 			}
 
 			firewallRules = append(firewallRules, firewallRule)
@@ -195,16 +231,44 @@ func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceDat
 			"comment":                   rule.Comment,
 			"destination_address_end":   rule.DestinationAddressEnd,
 			"destination_address_start": rule.DestinationAddressStart,
-			"destination_port_end":      rule.DestinationPortEnd,
-			"destination_port_start":    rule.DestinationPortStart,
 			"direction":                 rule.Direction,
 			"family":                    rule.Family,
 			"icmp_type":                 rule.ICMPType,
 			"protocol":                  rule.Protocol,
 			"source_address_end":        rule.SourceAddressEnd,
 			"source_address_start":      rule.SourceAddressStart,
-			"source_port_end":           rule.SourcePortEnd,
-			"source_port_start":         rule.SourcePortStart,
+		}
+
+		if rule.DestinationPortEnd != "" {
+			value, err := strconv.Atoi(rule.DestinationPortEnd)
+			if err != nil {
+				diag.FromErr(err)
+			}
+			frMap["destination_port_end"] = value
+		}
+
+		if rule.DestinationPortStart != "" {
+			value, err := strconv.Atoi(rule.DestinationPortStart)
+			if err != nil {
+				diag.FromErr(err)
+			}
+			frMap["destination_port_start"] = value
+		}
+
+		if rule.SourcePortEnd != "" {
+			value, err := strconv.Atoi(rule.SourcePortEnd)
+			if err != nil {
+				diag.FromErr(err)
+			}
+			frMap["source_port_end"] = value
+		}
+
+		if rule.SourcePortStart != "" {
+			value, err := strconv.Atoi(rule.SourcePortStart)
+			if err != nil {
+				diag.FromErr(err)
+			}
+			frMap["source_port_start"] = value
 		}
 
 		frMaps = append(frMaps, frMap)
@@ -238,21 +302,41 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 		for _, frMap := range v.([]interface{}) {
 			rule := frMap.(map[string]interface{})
 
+			destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
+			if destinationPortStart == "0" {
+				destinationPortStart = ""
+			}
+
+			destinationPortEnd := strconv.Itoa(rule["destination_port_end"].(int))
+			if destinationPortEnd == "0" {
+				destinationPortEnd = ""
+			}
+
+			sourcePortStart := strconv.Itoa(rule["source_port_start"].(int))
+			if sourcePortStart == "0" {
+				sourcePortStart = ""
+			}
+
+			sourcePortEnd := strconv.Itoa(rule["source_port_end"].(int))
+			if sourcePortEnd == "0" {
+				sourcePortEnd = ""
+			}
+
 			firewallRule := upcloud.FirewallRule{
 				Action:                  rule["action"].(string),
 				Comment:                 rule["comment"].(string),
 				DestinationAddressStart: rule["destination_address_start"].(string),
 				DestinationAddressEnd:   rule["destination_address_end"].(string),
-				DestinationPortStart:    rule["destination_port_start"].(string),
-				DestinationPortEnd:      rule["destination_port_end"].(string),
+				DestinationPortStart:    destinationPortStart,
+				DestinationPortEnd:      destinationPortEnd,
 				Direction:               rule["direction"].(string),
 				Family:                  rule["family"].(string),
 				ICMPType:                rule["icmp_type"].(string),
 				Protocol:                rule["protocol"].(string),
 				SourceAddressStart:      rule["source_address_start"].(string),
 				SourceAddressEnd:        rule["source_address_end"].(string),
-				SourcePortStart:         rule["source_port_start"].(string),
-				SourcePortEnd:           rule["source_port_end"].(string),
+				SourcePortStart:         sourcePortStart,
+				SourcePortEnd:           sourcePortEnd,
 			}
 
 			firewallRules = append(firewallRules, firewallRule)

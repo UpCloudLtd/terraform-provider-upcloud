@@ -15,17 +15,17 @@ func dataSourceUpCloudZone() *schema.Resource {
 		ReadContext: resourceUpCloudZoneRead,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Unique lablel for the zone",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 			"description": {
-				Description: "",
+				Description: "Meaningful text describing the zone",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"public": {
-				Description: "",
+				Description: "Indicates whether the zone is public",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},

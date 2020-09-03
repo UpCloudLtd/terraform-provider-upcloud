@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strconv"
 	"time"
 
@@ -25,21 +26,24 @@ func resourceUpCloudStorage() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"size": {
-				Description: "The size of the storage in gigabytes",
-				Type:        schema.TypeInt,
-				Required:    true,
+				Description:  "The size of the storage in gigabytes",
+				Type:         schema.TypeInt,
+				Required:     true,
+				ValidateFunc: validation.IntBetween(10, 2048),
 			},
 			"tier": {
-				Description: "The storage tier to use",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				ForceNew:    true,
+				Description:  "The storage tier to use",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice([]string{"hdd", "maxiops"}, false),
 			},
 			"title": {
-				Description: "A short, informative description",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "A short, informative description",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringLenBetween(0, 64),
 			},
 			"zone": {
 				Description: "The zone in which the storage will be created",

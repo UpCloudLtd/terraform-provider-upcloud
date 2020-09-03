@@ -19,18 +19,19 @@ func dataSourceUpCloudTags() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"description": {
-							Type:     schema.TypeString,
-							Optional: true,
-							ForceNew: true,
+							Description: "Free form text representing the meaning of the tag",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 						"name": {
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: true,
+							Description: "The value representing the tag",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 						"servers": {
-							Type:     schema.TypeSet,
-							Required: true,
+							Description: "A collection of servers that have been assigned the tag",
+							Type:        schema.TypeSet,
+							Computed:    true,
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},

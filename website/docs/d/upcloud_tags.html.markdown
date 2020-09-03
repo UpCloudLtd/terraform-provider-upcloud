@@ -28,6 +28,6 @@ data "upcloud_tags" "all_tags" {}
  
  * `name` - The value representing the tag
  
- * `description` - Freeform comment string for the host
+ * `description` - Free form text representing the meaning of the tag
  
- * `servers` - A collection of servers that have been assigned the tag.
+ * `servers` - A collection of servers that have been assigned the tag

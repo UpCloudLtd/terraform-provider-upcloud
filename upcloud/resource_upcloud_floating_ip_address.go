@@ -7,6 +7,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceUpCloudFloatingIPAddress() *schema.Resource {
@@ -25,21 +26,24 @@ func resourceUpCloudFloatingIPAddress() *schema.Resource {
 				Computed:    true,
 			},
 			"access": {
-				Description: "Is address for utility or public network",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "public",
+				Description:  "Is address for utility or public network",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "public",
+				ValidateFunc: validation.StringInSlice([]string{"utility", "public"}, false),
 			},
 			"family": {
-				Description: "The address family of new IP address",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "IPv4",
+				Description:  "The address family of new IP address",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "IPv4",
+				ValidateFunc: validation.StringInSlice([]string{"IPv4", "IPv6"}, false),
 			},
 			"mac_address": {
-				Description: "MAC address of server interface to assign address to",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:  "MAC address of server interface to assign address to",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.IsMACAddress,
 			},
 			"zone": {
 				Description: "Zone of address, required when assigning a detached floating IP address",

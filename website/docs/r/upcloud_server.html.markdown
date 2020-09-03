@@ -54,43 +54,42 @@ resource "upcloud_server" "test" {
 
 The following arguments are supported:
 
-* `hostname` - (Required)
-* `zone` - (Required)
-* `firewall` - (Optional)
-* `cpu` - (Optional)
-* `mem` - (Optional)
-* `template` - (Optional)
-* `user_data` - (Optional)
-* `plan` - (Optional)
-* `storage_devices` - (Required)
-* `login` - (Optional)
+* `hostname` - (Required) A valid domain name, e.g. host.example.com. The maximum length is 128 characters.
+* `zone` - (Required) - The zone in which the server will be hosted, e.g. fi-hel1. See [Zones API](https://developers.upcloud.com/1.3/5-zones/)
+* `firewall` - (Optional) Are firewall rules active for the server
+* `cpu` - (Optional) The number of CPU for the server
+* `mem` - (Optional) The size of memory for the server
+* `template` - (Optional) The template to use during creation
+* `user_data` - (Optional) Defines URL for a server setup script, or the script body itself
+* `plan` - (Optional) The pricing plan used for the server
+* `storage_devices` - (Required) A list of storage devices associated with the server
+* `login` - (Optional) Configure access credentials to the server
 * `network_interface` - (Required) One or more blocks describing the network interfaces of the server. Any changes to these blocks will force the creation of a new server resource.
 
 The `storage_devices` block supports:
 
-* `id` - 
-* `address` - (Optional)
-* `action` - (Required)
-* `size` - (Optional)
-* `tier` - (Optional)
-* `title` - (Optional)
-* `storage` - (Optional)
-* `type` - (Optional)
-* `backup_rule` - (Optional)
+* `address` - (Optional) An UpCloud assigned IP Address
+* `action` - (Required) The method used to create or attach the specified storage
+* `size` - (Optional) The size of the storage in gigabytes
+* `tier` - (Optional) The storage tier to use
+* `title` - (Optional) A short, informative description
+* `storage` - (Optional) A valid storage UUID. Applicable only if action is attach or clone.
+
+* `type` - (Optional) The device type the storage will be attached as. See [Storage types](https://developers.upcloud.com/1.3/9-storages/).
+* `backup_rule` - (Optional) The criteria to backup the storage
 
 The `backup_rule` block supports:
 
-* `interval` - (Required)
-* `time` - (Required)
-* `retention` - (Required)
-
+* `interval` - (Required) The weekday when the backup is created
+* `time` - (Required) The time of day when the backup is created
+* `retention` - (Required) The number of days before a backup is automatically deleted
 
 The `login` block supports:
 
-* `user` - (Required)
-* `keys` - (Optional)
-* `create_password` - (Optional) 
-* `password_delivery` - (Optional)
+* `user` - (Required) Username to be create to access the server
+* `keys` - (Optional) A list of ssh keys to access the server
+* `create_password` - (Optional) Indicates a password should be create to allow access
+* `password_delivery` - (Optional) The delivery method for the server’s root password
 
 The `network_interface` block supports:
 
@@ -102,7 +101,7 @@ The `network_interface` block supports:
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `title` -
+* `title` - A short, informational description.
 
 The `network_interface` block also exports the following additional attributes:
 
