@@ -1,7 +1,11 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
-PROVIDER_NAME=upcloud
 WEBSITE_REPO=github.com/hashicorp/terraform-website
+
+PROVIDER_REGISTRY=upcloud.com
+PROVIDER_NAME=upcloud
+PROVIDER_VERSION=0.1.0
+PROVIDER_PATH=~/.terraform.d/plugins/$(PROVIDER_REGISTRY)/$(PROVIDER_NAME)/$(PROVIDER_NAME)/$(PROVIDER_VERSION)/$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: build
 
@@ -45,7 +49,7 @@ test-compile:
 update-deps:
 	go mod vendor
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_13
 
 
 
@@ -66,3 +70,7 @@ endif
 	ln -s ../../../ext/providers/$(PROVIDER_NAME)/website/$(PROVIDER_NAME).erb $(GOPATH)/src/$(WEBSITE_REPO)/content/source/layouts/$(PROVIDER_NAME).erb || true
 	ln -s ../../../../ext/providers/$(PROVIDER_NAME)/website/docs $(GOPATH)/src/$(WEBSITE_REPO)/content/source/docs/providers/$(PROVIDER_NAME) || true
 	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PROVIDER_NAME)
+
+build_0_13: fmtcheck
+	@mkdir -p $(PROVIDER_PATH)
+	go build -o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAME)_v$(PROVIDER_VERSION)
