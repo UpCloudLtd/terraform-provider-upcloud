@@ -76,6 +76,24 @@ This storage resource will have its content imported from a local file:
     }
 ```
 
+The following HCL example shows the creation of the storage resource with the optional clone block.
+This storage resource will be cloned from the referenced storage ID. The reference storage should either not
+be attached to a server or that server be stopped. If the storage to clone is not the specified size
+the storage will be resized after cloning.
+
+```hcl
+    resource "upcloud_storage" "example_storage_clone" {
+      size  = 20
+      tier  = "maxiops"
+      title = "My cloned data"
+      zone  = "fi-hel1"
+    
+      clone {
+        id = "01f936c9-38b2-4a10-b1fe-ad43d3078246"
+      }
+    }
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -85,7 +103,8 @@ The following arguments are supported:
 * `title` - (Required) A short, informative description
 * `zone` - (Required) The zone in which the storage will be created
 * `backup_rule` - (Optional) The criteria to backup the storage
-* `import` - (Optional) Details off the external data to import
+* `import` - (Optional) Details of the external data to import
+* `clone` - (Optional) Details of another storage device to clone
 
 The `backup_rule` block supports:
 
@@ -98,6 +117,10 @@ The `import` block supports:
 * `source` - (Required) The source type (one of `direct_upload` or `http_import`).
 * `source_location` - (Required) For `direct_upload` the path to a local file. For `http_import` an accessible URL.
 * `source_hash` - (Optional) The hash of `source_location`. This is used to indicate that `source_location` has changed. It is not used for verification.
+
+The `clone` block supports:
+
+* `id` - (Required) The unique identifier of another storage device to clone.
 
 ## Import
 

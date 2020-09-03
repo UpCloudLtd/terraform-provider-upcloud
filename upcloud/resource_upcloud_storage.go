@@ -47,13 +47,32 @@ func resourceUpCloudStorage() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"clone": {
+				Description:   "Block defining another storage/template to clone to storage",
+				Type:          schema.TypeSet,
+				MaxItems:      1,
+				MinItems:      0,
+				ForceNew:      true,
+				Optional:      true,
+				ConflictsWith: []string{"import"},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Description: "The unique identifier of the storage/template to clone",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
+			},
 			"import": {
-				Description: "Block defining external data to import to storage",
-				Type:        schema.TypeSet,
-				MaxItems:    1,
-				MinItems:    0,
-				ForceNew:    true,
-				Optional:    true,
+				Description:   "Block defining external data to import to storage",
+				Type:          schema.TypeSet,
+				MaxItems:      1,
+				MinItems:      0,
+				ForceNew:      true,
+				Optional:      true,
+				ConflictsWith: []string{"clone"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"source": {
@@ -135,18 +154,117 @@ func resourceUpCloudStorageCreate(ctx context.Context, d *schema.ResourceData, m
 
 	var diags diag.Diagnostics
 
-	createStorageRequest := request.CreateStorageRequest{}
-	if size, ok := d.GetOk("size"); ok {
-		createStorageRequest.Size = size.(int)
+	var size int
+	var tier, title, zone string
+
+	if v, ok := d.GetOk("size"); ok {
+		size = v.(int)
 	}
-	if tier, ok := d.GetOk("tier"); ok {
-		createStorageRequest.Tier = tier.(string)
+	if v, ok := d.GetOk("tier"); ok {
+		tier = v.(string)
 	}
-	if title, ok := d.GetOk("title"); ok {
-		createStorageRequest.Title = title.(string)
+	if v, ok := d.GetOk("title"); ok {
+		title = v.(string)
 	}
-	if zone, ok := d.GetOk("zone"); ok {
-		createStorageRequest.Zone = zone.(string)
+	if v, ok := d.GetOk("zone"); ok {
+		zone = v.(string)
+	}
+
+	if _, ok := d.GetOk("clone"); !ok {
+		// There is not 'clone' block so do the
+		// create storage logic including importing
+		// external data.
+		diags = createStorage(client, size, tier, title, zone, d)
+	} else {
+		diags = cloneStorage(client, size, tier, title, zone, d)
+	}
+	if diags.HasError() {
+		return diags
+	}
+
+	diags = append(diags, resourceUpCloudStorageRead(ctx, d, meta)...)
+
+	return diags
+}
+
+func cloneStorage(
+	client *service.Service,
+	size int,
+	tier string,
+	title string,
+	zone string,
+	d *schema.ResourceData) diag.Diagnostics {
+
+	cloneStorageRequest := request.CloneStorageRequest{
+		Zone:  zone,
+		Tier:  tier,
+		Title: title,
+	}
+
+	if v, ok := d.GetOk("clone"); ok {
+		block := v.(*schema.Set).List()[0].(map[string]interface{})
+		cloneStorageRequest.UUID = block["id"].(string)
+	}
+
+	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
+		UUID:         cloneStorageRequest.UUID,
+		DesiredState: upcloud.StorageStateOnline,
+		Timeout:      15 * time.Minute,
+	})
+
+	storage, err := client.CloneStorage(&cloneStorageRequest)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	storage, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+		UUID:         storage.UUID,
+		DesiredState: upcloud.StorageStateOnline,
+		Timeout:      15 * time.Minute,
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// If the storage specified does not match the cloned storage, modify it so that it does.
+	if storage.Size != size {
+		storage, err := client.ModifyStorage(&request.ModifyStorageRequest{
+			UUID: storage.UUID,
+			Size: size,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+			UUID:         storage.UUID,
+			DesiredState: upcloud.StorageStateOnline,
+			Timeout:      15 * time.Minute,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	d.SetId(storage.UUID)
+
+	return nil
+}
+
+func createStorage(
+	client *service.Service,
+	size int,
+	tier string,
+	title string,
+	zone string,
+	d *schema.ResourceData) diag.Diagnostics {
+
+	var diags diag.Diagnostics
+
+	createStorageRequest := request.CreateStorageRequest{
+		Size:  size,
+		Tier:  tier,
+		Title: title,
+		Zone:  zone,
 	}
 
 	var importReq *request.CreateStorageImportRequest
@@ -223,8 +341,6 @@ func resourceUpCloudStorageCreate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	d.SetId(storage.UUID)
-
-	diags = append(diags, resourceUpCloudStorageRead(ctx, d, meta)...)
 
 	return diags
 }

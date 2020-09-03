@@ -21,6 +21,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+const (
+	AlpineURL  = "https://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"
+	AlpineHash = "fd805e748f1950a34e354dc8fdfdf2f883237d65f5cdb8bcb47c64b0561d97a5"
+)
+
 func TestAccUpcloudStorage_basic(t *testing.T) {
 	var providers []*schema.Provider
 
@@ -219,12 +224,12 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 			{
 				Config: testUpcloudStorageInstanceConfigWithStorageImport(
 					"http_import",
-					"https://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"),
+					AlpineURL),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckStorageExists("upcloud_storage.my_storage", &storageDetails),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "import.#", "1"),
-					resource.TestCheckResourceAttr("upcloud_storage.my_storage", "import.0.sha256sum", "fd805e748f1950a34e354dc8fdfdf2f883237d65f5cdb8bcb47c64b0561d97a5"),
+					resource.TestCheckResourceAttr("upcloud_storage.my_storage", "import.0.sha256sum", AlpineHash),
 				),
 			},
 		},
@@ -354,6 +359,66 @@ func TestAccUpCloudStorage_StorageImportDirectHash(t *testing.T) {
 	}
 }
 
+func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		CheckDestroy:      testAccCheckStorageDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testUpcloudStorageInstanceConfigWithImportAndClone(),
+				ExpectError: regexp.MustCompile("ConflictsWith"),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
+	var providers []*schema.Provider
+	var storageDetailsPlain upcloud.StorageDetails
+	var storageDetailsClone upcloud.StorageDetails
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		CheckDestroy:      testAccCheckStorageDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testUpcloudStorageInstanceConfigWithClone(20),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckStorageExists("upcloud_storage.plain_storage", &storageDetailsPlain),
+					testAccCheckStorageExists("upcloud_storage.cloned_storage", &storageDetailsClone),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.cloned_storage", "clone.#", "1"),
+					testAccCheckClonedStorageSize("upcloud_storage.cloned_storage", 20, &storageDetailsClone),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckClonedStorageSize(resourceName string, expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		// Use the API SDK to locate the remote resource.
+		client := testAccProvider.Meta().(*service.Service)
+		latest, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+			UUID: storage.UUID,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if latest.Size != expected {
+			return fmt.Errorf("clone storage size is not as expected: %d != %d", expected, latest.Size)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckStorageDetailsDiffer(d1 *upcloud.StorageDetails, d2 *upcloud.StorageDetails) resource.TestCheckFunc {
 	return func(*terraform.State) error {
 		if d1.UUID == d2.UUID {
@@ -474,6 +539,49 @@ func testUpcloudStorageInstanceConfigWithStorageImportHash(source, sourceLocatio
 			}
 		}
 `, source, sourceLocation, sourceHash)
+}
+
+func testUpcloudStorageInstanceConfigWithImportAndClone() string {
+	return `
+		resource "upcloud_storage" "my_storage" {
+			size  = 10
+			tier  = "maxiops"
+			title = "My Imported with hash data"
+			zone  = "fi-hel1"
+
+			import {
+				source = "foo"
+				source_location = "bar"
+				source_hash = "boo"
+			}
+
+			clone {
+				id = "far"
+			}
+		}
+	`
+}
+
+func testUpcloudStorageInstanceConfigWithClone(clonedSize int) string {
+	return fmt.Sprintf(`
+		resource "upcloud_storage" "plain_storage" {
+			size  = 10
+			tier  = "maxiops"
+			title = "Plain storage"
+			zone  = "fi-hel1"
+		}
+
+		resource "upcloud_storage" "cloned_storage" {
+			size  = %d
+			tier  = "maxiops"
+			title = "My clone storage"
+			zone  = "fi-hel1"
+
+			clone {
+				id = upcloud_storage.plain_storage.id
+			}
+		}
+	`, clonedSize)
 }
 
 func createTempImage() (string, *hash.Hash, error) {
