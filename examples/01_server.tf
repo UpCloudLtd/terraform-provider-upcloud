@@ -29,10 +29,11 @@ resource "upcloud_server" "test" {
   }
 
   storage_devices {
+    # You can use both storage template names and UUIDs
     size    = 50
     action  = "clone"
     tier    = "maxiops"
-    storage = "01000000-0000-4000-8000-000030060200"
+    storage = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
 
     backup_rule {
       interval  = "daily"

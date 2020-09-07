@@ -224,11 +224,10 @@ func resourceUpCloudServer() *schema.Resource {
 							ValidateFunc: validation.StringLenBetween(0, 64),
 						},
 						"storage": {
-							Description:  "A valid storage UUID",
-							Type:         schema.TypeString,
-							ForceNew:     true,
-							Optional:     true,
-							ValidateFunc: validation.IsUUID,
+							Description: "A valid storage UUID or template name",
+							Type:        schema.TypeString,
+							ForceNew:    true,
+							Optional:    true,
 						},
 						"type": {
 							Description:  "The device type the storage will be attached as",
