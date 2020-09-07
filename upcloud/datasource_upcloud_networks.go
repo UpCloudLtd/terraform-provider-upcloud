@@ -2,7 +2,6 @@ package upcloud
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"time"
 
@@ -153,19 +152,14 @@ func dataSourceNetworksRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	filteredNetworks := fetchedNetworks.Networks
-	fmt.Println("Fetched: ", len(filteredNetworks))
 	if filterName != "" {
 		filteredNetworks, err = FilterNetworks(fetchedNetworks.Networks, func(n upcloud.Network) (bool, error) {
-			fmt.Println("Filter:", filterName)
-			fmt.Println("Name:", n.Name)
-			fmt.Println(regexp.MatchString(filterName, n.Name))
 			return regexp.MatchString(filterName, n.Name)
 		})
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
-	fmt.Println("Filtered: ", len(filteredNetworks))
 
 	// Map the received data to the Terraform resource.
 	var networks []map[string]interface{}

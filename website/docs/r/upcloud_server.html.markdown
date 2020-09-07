@@ -69,11 +69,11 @@ The following arguments are supported:
 The `storage_devices` block supports:
 
 * `address` - (Optional) An UpCloud assigned IP Address
-* `action` - (Required) The method used to create or attach the specified storage
-* `size` - (Optional) The size of the storage in gigabytes
+* `action` - (Required) The method used to create or attach the specified storage. Valid values are `create`, `clone` or `attach`.
+* `size` - (Optional) The size of the storage in gigabytes. Required for the `create` action.
 * `tier` - (Optional) The storage tier to use
 * `title` - (Optional) A short, informative description
-* `storage` - (Optional) A valid storage UUID. Applicable only if action is attach or clone.
+* `storage` - (Optional) A valid storage UUID. Applicable only if action is `attach` or `clone`.
 
 * `type` - (Optional) The device type the storage will be attached as. See [Storage types](https://developers.upcloud.com/1.3/9-storages/).
 * `backup_rule` - (Optional) The criteria to backup the storage

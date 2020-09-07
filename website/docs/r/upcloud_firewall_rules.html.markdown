@@ -22,6 +22,7 @@ The list of firewall rules applied to the server can be expanded by providing ad
     zone     = "fi-hel1"
     hostname = "debian.example.com"
     plan     = "1xCPU-2GB"
+    firewall = true
   
     storage_devices {
       action = "create"
