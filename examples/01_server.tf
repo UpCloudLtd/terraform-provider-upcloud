@@ -12,6 +12,10 @@ resource "upcloud_server" "test" {
   cpu = "2"
   mem = "1024"
 
+  network_interface {
+    type = "utility"
+  }
+
   # Login details
   login {
     user = "tf"
@@ -25,13 +29,12 @@ resource "upcloud_server" "test" {
   }
 
   storage_devices {
-    # You can use both storage template names and UUIDs
     size    = 50
     action  = "clone"
     tier    = "maxiops"
-    storage = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
+    storage = "01000000-0000-4000-8000-000030060200"
 
-    backup_rule = {
+    backup_rule {
       interval  = "daily"
       time      = "0100"
       retention = 8
@@ -39,12 +42,11 @@ resource "upcloud_server" "test" {
   }
 
   storage_devices {
-    # You can use both storage template names and UUIDs
     size    = 10
     action  = "create"
     tier    = "maxiops"
 
-    backup_rule = {
+    backup_rule {
       interval  = "daily"
       time      = "0100"
       retention = 8
@@ -61,6 +63,6 @@ resource "upcloud_tag" "My-tag" {
 }
 
 output "Public_ip" {
-  value = upcloud_server.test.ipv4_address
+  value = upcloud_server.test.network_interface[0].ip_address
 }
 
