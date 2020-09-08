@@ -29,30 +29,30 @@ The list of firewall rules applied to the server can be expanded by providing ad
       size   = 10
       tier   = "maxiops"
     }
+  
+    network_interface {
+      type = "utility"
+    }
+  
   }
-
+  
   resource "upcloud_firewall_rules" "my_server" {
   
     server_id = upcloud_server.my_server.id
   
-    server_firewall_rules {
+    firewall_rule {
   
       action = "accept"
       comment = "Allow SSH from this network"
-      destination_address_end = ""
-      destination_address_start = ""
       destination_port_end = "22"
       destination_port_start = "22"
       direction = "in"
       family = "IPv4"
-      icmp_type = ""
       protocol = "tcp"
       source_address_end = "192.168.1.255"
       source_address_start = "192.168.1.1"
-      source_port_end = ""
-      source_port_start = ""
     }
- 
+  
   }
 ```
 
