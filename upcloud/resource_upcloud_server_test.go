@@ -248,7 +248,6 @@ func testAccCheckNetwork(resourceName string, niIdx int, networkResourceName str
 		server := s.RootModule().Resources[resourceName]
 		network := s.RootModule().Resources[networkResourceName]
 		if network == nil {
-			fmt.Printf("%#v", s.RootModule().Resources)
 			return fmt.Errorf("network resource %s not found", networkResourceName)
 		}
 
