@@ -15,7 +15,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
  - datasource_upcloud_zone to retrieve specific zone details
  - datasource_upcloud_zones to retrieve account wide zone data
  - resource_upcloud_firewall_rules add to allow rules to be applied to server
- - resource_upcloyd_floating_ip_address to allow the management of floating ip addresses
+ - resource_upcloud_floating_ip_address to allow the management of floating ip addresses
  - resource_upcloud_network to allow the management of networks
  - resource_upcloud_router to allow the management of routers
 
