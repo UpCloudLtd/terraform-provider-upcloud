@@ -9,6 +9,8 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
 const (
@@ -29,6 +31,24 @@ func Provider() *schema.Provider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("UPCLOUD_PASSWORD", nil),
 				Description: "Password for UpCloud API user",
+			},
+			"retry_wait_min_sec": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     1,
+				Description: "Minimum time to wait between retries",
+			},
+			"retry_wait_max_sec": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     30,
+				Description: "Maximum time to wait between retries",
+			},
+			"retry_max": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     4,
+				Description: "Maximum number of retries",
 			},
 		},
 
@@ -64,7 +84,12 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		Password: d.Get("password").(string),
 	}
 
-	client := client.New(d.Get("username").(string), d.Get("password").(string))
+	httpClient := retryablehttp.NewClient()
+	httpClient.RetryWaitMin = time.Duration(d.Get("retry_wait_min_sec").(int)) * time.Second
+	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
+	httpClient.RetryMax = d.Get("retry_max").(int)
+
+	client := client.NewWithHTTPClient(d.Get("username").(string), d.Get("password").(string), httpClient.StandardClient())
 	client.SetTimeout(upcloudAPITimeout)
 
 	service := service.New(client)

@@ -18,7 +18,7 @@ terraform {
 }
 
 provider "upcloud" {
-  username = "<YOUR username>"
+  username = "<Your username>"
   password = "<Your password>"
 }
 
@@ -36,3 +36,11 @@ The following arguments are supported:
 
 * `password` - (Optional) The Password for UpCloud API user. It must be provided, but
   it can also be sourced from the `UPCLOUD_PASSWORD` environment variable.
+
+The following paramters are optional and control the retry behaviour in the event of transient errors:
+
+* `retry_wait_min_sec` - (Optional) Minimum time to wait between retries.
+
+* `retry_wait_min_sec` - (Optional) Maximum time to wait between retries.
+
+* `retry_max` - (Optional) Maximum number of retries
