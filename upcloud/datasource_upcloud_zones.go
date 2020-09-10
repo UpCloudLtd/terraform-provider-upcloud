@@ -3,7 +3,6 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"

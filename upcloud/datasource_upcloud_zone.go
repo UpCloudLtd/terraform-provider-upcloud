@@ -3,11 +3,11 @@ package upcloud
 import (
 	"context"
 	"fmt"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"log"
 )
 
 func dataSourceUpCloudZone() *schema.Resource {
