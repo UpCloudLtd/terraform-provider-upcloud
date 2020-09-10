@@ -39,7 +39,6 @@ func resourceUpCloudZoneRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	var diags diag.Diagnostics
 
-	log.Printf("[DEBUG] Getting Zones.")
 	zones, err := client.GetZones()
 
 	if err != nil {
