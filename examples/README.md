@@ -14,8 +14,7 @@ $ cd terraform-provider-upcloud
 Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
 
 ```sh
-$ go mod download
-$ go install
+$ make
 $ mkdir -p $HOME/.terraform.d/plugins
 $ ln -s $GOBIN/terraform-provider-upcloud $HOME/.terraform.d/plugins
 ```
@@ -43,7 +42,7 @@ and deliver it via SMS.
 Plan your changes.
 
 ```
-$ terraform plan
+$ terraform plan
 Refreshing Terraform state in-memory prior to plan...
 The refreshed state will be used to calculate this plan, but will not be
 persisted to local or remote state storage.
@@ -104,7 +103,7 @@ Plan: 1 to add, 0 to change, 0 to destroy.
 Apply the plan by running `terraform apply`.
 
 ```
-$ terraform apply
+$ terraform apply
 upcloud_server.test: Creating...
   cpu:                               "" => "<computed>"
   hostname:                          "" => "ubuntu.example.tld"

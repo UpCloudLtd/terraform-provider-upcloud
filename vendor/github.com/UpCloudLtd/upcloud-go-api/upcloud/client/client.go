@@ -3,21 +3,22 @@ package client
 import (
 	"bytes"
 	"fmt"
-	"github.com/blang/semver"
-	"github.com/hashicorp/go-cleanhttp"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/blang/semver"
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 // Constants
 const (
-	DEFAULT_API_VERSION = "1.2.3"
-	DEFAULT_API_BASEURL = "https://api.upcloud.com"
+	DefaultAPIVersion = "1.3.4"
+	DefaultAPIBaseURL = "https://api.upcloud.com"
 
 	// The default timeout (in seconds)
-	DEFAULT_TIMEOUT = 10
+	DefaultTimeout = 10
 )
 
 // Client represents an API client
@@ -25,22 +26,23 @@ type Client struct {
 	userName   string
 	password   string
 	httpClient *http.Client
-
-	apiVersion string
-	apiBaseUrl string
 }
 
 // New creates ands returns a new client configured with the specified user and password
 func New(userName, password string) *Client {
+
+	return NewWithHTTPClient(userName, password, cleanhttp.DefaultClient())
+}
+
+// NewWithHTTPClient creates ands returns a new client configured with the specified user and password and
+// using a supplied `http.Client`.
+func NewWithHTTPClient(userName string, password string, httpClient *http.Client) *Client {
 	client := Client{}
 
 	client.userName = userName
 	client.password = password
-	client.httpClient = cleanhttp.DefaultClient()
-	client.SetTimeout(time.Second * DEFAULT_TIMEOUT)
-
-	client.apiVersion = DEFAULT_API_VERSION
-	client.apiBaseUrl = DEFAULT_API_BASEURL
+	client.httpClient = httpClient
+	client.SetTimeout(time.Second * DefaultTimeout)
 
 	return &client
 }
@@ -50,80 +52,116 @@ func (c *Client) SetTimeout(timeout time.Duration) {
 	c.httpClient.Timeout = timeout
 }
 
-// CreateRequestUrl creates and returns a complete request URL for the specified API location
-func (c *Client) CreateRequestUrl(location string) string {
-	return fmt.Sprintf("%s%s", c.getBaseUrl(), location)
+// GetTimeout returns current timeout
+func (c *Client) GetTimeout() time.Duration {
+	return c.httpClient.Timeout
 }
 
-// PerformGetRequest performs a GET request to the specified URL and returns the response body and eventual errors
-func (c *Client) PerformGetRequest(url string) ([]byte, error) {
-	request, err := http.NewRequest("GET", url, nil)
+// CreateRequestURL creates and returns a complete request URL for the specified API location
+// using a newer API version
+func (c *Client) CreateRequestURL(location string) string {
+	return fmt.Sprintf("%s%s", c.getBaseURL(), location)
+}
+
+// PerformJSONGetRequest performs a GET request to the specified URL and returns the response body and eventual errors
+func (c *Client) PerformJSONGetRequest(url string) ([]byte, error) {
+	request, err := http.NewRequest(http.MethodGet, url, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return c.performRequest(request)
+	return c.performJSONRequest(request)
 }
 
-// PerformPostRequest performs a POST request to the specified URL and returns the response body and eventual errors
-func (c *Client) PerformPostRequest(url string, requestBody []byte) ([]byte, error) {
+// PerformJSONPostRequest performs a POST request to the specified URL and returns the response body and eventual errors
+func (c *Client) PerformJSONPostRequest(url string, requestBody []byte) ([]byte, error) {
 	var bodyReader io.Reader
 
 	if requestBody != nil {
 		bodyReader = bytes.NewBuffer(requestBody)
 	}
 
-	request, err := http.NewRequest("POST", url, bodyReader)
+	request, err := http.NewRequest(http.MethodPost, url, bodyReader)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return c.performRequest(request)
+	return c.performJSONRequest(request)
 }
 
-// PerformPutRequest performs a PUT request to the specified URL and returns the response body and eventual errors
-func (c *Client) PerformPutRequest(url string, requestBody []byte) ([]byte, error) {
+// PerformJSONPutRequest performs a PUT request to the specified URL and returns the response body and eventual errors
+func (c *Client) PerformJSONPutRequest(url string, requestBody []byte) ([]byte, error) {
 	var bodyReader io.Reader
 
 	if requestBody != nil {
 		bodyReader = bytes.NewBuffer(requestBody)
 	}
 
-	request, err := http.NewRequest("PUT", url, bodyReader)
+	request, err := http.NewRequest(http.MethodPut, url, bodyReader)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return c.performRequest(request)
+	return c.performJSONRequest(request)
 }
 
-// PerformDeleteRequest performs a DELETE request to the specified URL and returns the response body and eventual errors
-func (c *Client) PerformDeleteRequest(url string) error {
-	request, err := http.NewRequest("DELETE", url, nil)
+// PerformJSONPatchRequest performs a PATCH request to the specified URL and returns the response body and eventual errors
+func (c *Client) PerformJSONPatchRequest(url string, requestBody []byte) ([]byte, error) {
+	var bodyReader io.Reader
+
+	if requestBody != nil {
+		bodyReader = bytes.NewBuffer(requestBody)
+	}
+
+	request, err := http.NewRequest(http.MethodPatch, url, bodyReader)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c.performJSONRequest(request)
+}
+
+// PerformJSONDeleteRequest performs a DELETE request to the specified URL and returns the response body and eventual errors
+func (c *Client) PerformJSONDeleteRequest(url string) error {
+	request, err := http.NewRequest(http.MethodDelete, url, nil)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = c.performRequest(request)
+	_, err = c.performJSONRequest(request)
 	return err
 }
 
+// PerformJSONPutUploadRequest performs a PUT request to the specified URL with an io.Reader
+// and returns the response body and eventual errors
+func (c *Client) PerformJSONPutUploadRequest(url string, requestBody io.Reader) ([]byte, error) {
+
+	request, err := http.NewRequest(http.MethodPut, url, requestBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c.performJSONRequest(request)
+}
+
 // Adds common headers to the specified request
-func (c *Client) addRequestHeaders(request *http.Request) *http.Request {
+func (c *Client) addJSONRequestHeaders(request *http.Request) *http.Request {
 	request.SetBasicAuth(c.userName, c.password)
-	request.Header.Add("Accept", "application/xml")
-	request.Header.Add("Content-Type", "application/xml")
+	request.Header.Add("Accept", "application/json")
+	request.Header.Add("Content-Type", "application/json")
 
 	return request
 }
 
 // Performs the specified HTTP request and returns the response through handleResponse()
-func (c *Client) performRequest(request *http.Request) ([]byte, error) {
-	c.addRequestHeaders(request)
+func (c *Client) performJSONRequest(request *http.Request) ([]byte, error) {
+	c.addJSONRequestHeaders(request)
 	response, err := c.httpClient.Do(request)
 
 	if err != nil {
@@ -134,10 +172,10 @@ func (c *Client) performRequest(request *http.Request) ([]byte, error) {
 }
 
 // Returns the base URL to use for API requests
-func (c *Client) getBaseUrl() string {
-	urlVersion, _ := semver.Make(c.apiVersion)
+func (c *Client) getBaseURL() string {
+	urlVersion, _ := semver.Make(DefaultAPIVersion)
 
-	return fmt.Sprintf("%s/%d.%d", c.apiBaseUrl, urlVersion.Major, urlVersion.Minor)
+	return fmt.Sprintf("%s/%d.%d", DefaultAPIBaseURL, urlVersion.Major, urlVersion.Minor)
 }
 
 // Parses the response and returns either the response body or an error
