@@ -18,7 +18,7 @@ const (
 	DefaultAPIBaseURL = "https://api.upcloud.com"
 
 	// The default timeout (in seconds)
-	DefaultTimeout = 10
+	DefaultTimeout = 60
 )
 
 // Client represents an API client

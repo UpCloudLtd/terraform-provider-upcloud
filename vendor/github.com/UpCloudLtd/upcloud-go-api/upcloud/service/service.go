@@ -136,7 +136,10 @@ func (s *Service) GetServerDetails(r *request.GetServerDetailsRequest) (*upcloud
 		return nil, err
 	}
 
-	json.Unmarshal(response, &serverDetails)
+	err = json.Unmarshal(response, &serverDetails)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal JSON: %s, %w", string(response), err)
+	}
 
 	return &serverDetails, nil
 }
