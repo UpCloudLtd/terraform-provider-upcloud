@@ -36,8 +36,6 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 git.sr.ht/~yoink00/goflenfig v0.1.0/go.mod h1:+b5SR2TmdQHQ2WqgotlpJEN0xjijoDz6V3pzyfyc6v4=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/UpCloudLtd/upcloud-go-api v0.0.0-20200820120833-fc8b79dbe646 h1:ujosW4FdKLRRbUrg+uiqD9V1pM2LNZtWlU7Fo3QeQiU=
-github.com/UpCloudLtd/upcloud-go-api v0.0.0-20200820120833-fc8b79dbe646/go.mod h1:nKv1Y0cTJTGYSd3lEcFfEnbPPiIj3gT4lJzV0ZfTlpQ=
 github.com/UpCloudLtd/upcloud-go-api v0.0.0-20200923062849-02a65fe2fabb h1:an0QPRQyUilZ0EZW9Db/XI+hYLyKePEbysjw13fBv1k=
 github.com/UpCloudLtd/upcloud-go-api v0.0.0-20200923062849-02a65fe2fabb/go.mod h1:nKv1Y0cTJTGYSd3lEcFfEnbPPiIj3gT4lJzV0ZfTlpQ=
 github.com/agext/levenshtein v1.2.1 h1:QmvMAjj2aEICytGiWzmxoE0x2KZvE0fvmqMOfy2tjT8=

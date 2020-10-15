@@ -1,0 +1,57 @@
+variables:
+  IMAGE_NAME: terraform-provider-upcloud-releaser
+  VOLUME_NAME: terraform-provider-upcloud-releaser
+
+before_script:
+  - docker build -t $IMAGE_NAME release/
+
+after_script:
+  - docker rmi $IMAGE_NAME
+
+test:
+  stage: test
+  script:
+    - docker volume inspect $VOLUME_NAME && docker volume rm $VOLUME_NAME
+    - docker volume create $VOLUME_NAME
+    - >-
+      docker run --rm -v $(pwd):/host:ro --entrypoint= --mount source=$VOLUME_NAME,destination=/go/src
+      $IMAGE_NAME cp -pR /host/. /go/src
+    - docker run --rm --mount source=$VOLUME_NAME,destination=/go/src --entrypoint= $IMAGE_NAME make test vet
+    - docker run --rm --mount source=$VOLUME_NAME,destination=/go/src --entrypoint= $IMAGE_NAME goreleaser check
+  after_script:
+    - docker volume rm $VOLUME_NAME
+
+deploy_release:
+  variables:
+    GITHUB_TOKEN: ""
+    VAULT_ADDR: ""
+    VAULT_LOGIN: ""
+    VAULT_LOGIN_PASSWORD: ""
+    VAULT_SIGNER_PATH: ""
+  stage: deploy
+  only:
+    - tags
+  artifacts:
+    paths:
+      - dist
+    expire_in: 1 week
+  script:
+    - docker volume inspect $VOLUME_NAME && docker volume rm $VOLUME_NAME
+    - docker volume create $VOLUME_NAME
+    - >-
+      docker run --rm -v $(pwd):/host:ro --entrypoint= --mount source=$VOLUME_NAME,destination=/go/src
+      $IMAGE_NAME cp -pR /host/. /go/src
+    - >-
+      docker run --rm --mount source=$VOLUME_NAME,destination=/go/src
+      -e GITHUB_TOKEN
+      -e VAULT_ADDR
+      -e VAULT_LOGIN
+      -e VAULT_LOGIN_PASSWORD
+      -e VAULT_SIGNER_PATH
+      $IMAGE_NAME goreleaser release --rm-dist
+    - mkdir -p dist
+    - >-
+      docker run --rm --entrypoint= --mount source=$VOLUME_NAME,destination=/go/src
+      $IMAGE_NAME tar -C dist -c . | tar -C dist -x
+  after_script:
+    - docker volume rm $VOLUME_NAME

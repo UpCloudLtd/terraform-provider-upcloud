@@ -40,3 +40,6 @@ Temporary Items
 
 .envrc
 .idea
+
+dist/
+terraform/
