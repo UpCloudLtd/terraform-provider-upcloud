@@ -1,14 +1,17 @@
-dist: trusty
+dist: focal
 sudo: false
 
 language: go
 go:
-  - 1.14.x
-  - master
+  - 1.15.x
+
+env:
+  - GOFLAGS=-mod=vendor
 
 branches:
   only:
     - master
+    - /^v\d+\.\d+\.\d+$/
 
 install:
   - bash scripts/gogetcookie.sh
@@ -17,9 +20,7 @@ script:
   - make test
   - make vet
   - make website-test
-
-env:
-  - GOFLAGS=-mod=vendor
+  - curl -sfL https://git.io/goreleaser | sh -s -- check
 
 matrix:
   fast_finish: true
