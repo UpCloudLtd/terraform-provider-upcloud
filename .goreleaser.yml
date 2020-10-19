@@ -44,7 +44,7 @@ signs:
       - >-
           set -ex &&
           vault write -field=signature {{ .Env.VAULT_SIGNER_PATH }}
-          input=@<(base64 ${artifact}) format=ascii-armor > ${signature}
+          input=@<(base64 ${artifact}) | base64 -d > ${signature}
 release:
   # If you want to manually examine the release before its live, uncomment this line:
   draft: true
