@@ -47,11 +47,20 @@ Click **Add user** and fill in the required details, and check the “**Allow AP
 
 For more instructions, check out examples folder.
 
-## A usage example for creating a server
+## Example use case
 
 Below is an example configuration on how to create a server using the Terraform provider. Note that currently, only 10 concurrent servers creation is possible per account. For more examples, visit [official Terraform documentation](https://registry.terraform.io/providers/UpCloudLtd/upcloud/latest/docs).
 
 ```
+terraform {
+  required_providers {
+    upcloud = {
+      source = "UpCloudLtd/upcloud"
+      version = "1.0.0"
+    }
+  }
+}
+
 provider "upcloud" {
   # Your UpCloud credentials are read from the environment variables
   # export UPCLOUD_USERNAME="Username for Upcloud API user"
@@ -93,7 +102,7 @@ resource "upcloud_server" "server1" {
   login {
     user = "root"
     keys = [
-      "ssh-rsa public key",
+      "<YOUR SSH PUBLIC KEY>",
     ]
     create_password = true
     password_delivery = "email"
@@ -105,7 +114,7 @@ resource "upcloud_server" "server1" {
     host        = self.network_interface[0].ip_address
     type        = "ssh"
     user        = "root"
-    private_key = file("~/.ssh/rsa_private_key")
+    private_key = "<PATH TO YOUR SSH PRIVATE KEY>"
   }
 
   # Remotely executing a command on the server
