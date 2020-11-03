@@ -47,6 +47,85 @@ Click **Add user** and fill in the required details, and check the “**Allow AP
 
 For more instructions, check out examples folder.
 
+## Example use case
+
+Below is an example configuration on how to create a server using the Terraform provider. Note that currently, only 10 concurrent servers creation is possible per account. For more examples, visit [official Terraform documentation](https://registry.terraform.io/providers/UpCloudLtd/upcloud/latest/docs).
+
+```
+terraform {
+  required_providers {
+    upcloud = {
+      source = "UpCloudLtd/upcloud"
+      version = "1.0.0"
+    }
+  }
+}
+
+provider "upcloud" {
+  # Your UpCloud credentials are read from the environment variables
+  # export UPCLOUD_USERNAME="Username for Upcloud API user"
+  # export UPCLOUD_PASSWORD="Password for Upcloud API user"
+}
+
+resource "upcloud_server" "server1" {
+  # System hostname
+  hostname = "terraform.example.com"
+
+  # Availability zone
+  zone = "nl-ams1"
+
+  # Number of CPUs and memory in GB
+  plan = "1xCPU-1GB"
+
+  storage_devices {
+    # System storage device size
+    size = 25
+
+    # Template UUID for Ubuntu 20.04
+    storage = "01000000-0000-4000-8000-000030200200"
+
+    # Storage device typeC
+    tier   = "maxiops"
+    action = "clone"
+  }
+
+  # Network interfaces
+  network_interface {
+    type = "public"
+  }
+
+  network_interface {
+    type = "utility"
+  }
+
+  # Include at least one public SSH key
+  login {
+    user = "root"
+    keys = [
+      "<YOUR SSH PUBLIC KEY>",
+    ]
+    create_password = true
+    password_delivery = "email"
+  }
+
+  # Configuring connection details
+  connection {
+    # The server public IP address
+    host        = self.network_interface[0].ip_address
+    type        = "ssh"
+    user        = "root"
+    private_key = "<PATH TO YOUR SSH PRIVATE KEY>"
+  }
+
+  # Remotely executing a command on the server
+  provisioner "remote-exec" {
+    inline = [
+      "echo 'Hello world!'"
+    ]
+  }
+}
+```
+
 ## Developing the Provider
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.14+ is _required_).
