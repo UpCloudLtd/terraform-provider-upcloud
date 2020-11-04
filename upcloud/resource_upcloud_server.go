@@ -147,7 +147,6 @@ func resourceUpCloudServer() *schema.Resource {
 							Type:        schema.TypeBool,
 							Description: "`true` if source IP should be filtered.",
 							ForceNew:    true,
-							Default:     nil,
 							Optional:    true,
 							Computed:    true,
 						},
@@ -712,11 +711,11 @@ func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.Creat
 			Type: d.Get(keyRoot + "type").(string),
 		}
 
-		if v, ok := d.GetOk(keyRoot + "source_ip_filtering"); ok {
+		if v, ok := d.GetOkExists(keyRoot + "source_ip_filtering"); ok {
 			iface.SourceIPFiltering = upcloud.FromBool(v.(bool))
 		}
 
-		if v, ok := d.GetOk(keyRoot + "bootable"); ok {
+		if v, ok := d.GetOkExists(keyRoot + "bootable"); ok {
 			iface.Bootable = upcloud.FromBool(v.(bool))
 		}
 
