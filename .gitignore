@@ -4,7 +4,8 @@ terraform-provider-upcloud
 crash.log
 *.tf
 
-
+# Dependencies
+vendor/
 
 # Created by https://www.gitignore.io/api/macos
 
