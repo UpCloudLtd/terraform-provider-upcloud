@@ -179,7 +179,7 @@ func resourceUpCloudServer() *schema.Resource {
 							Computed:    true,
 						},
 						"address": {
-							Description: "An UpCloud assigned IP Address",
+							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
 							Type:        schema.TypeString,
 							Computed:    true,
 							ForceNew:    true,
