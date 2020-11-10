@@ -62,12 +62,6 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
-			"template": {
-				Description: "The template to use during creation",
-				Type:        schema.TypeString,
-				ForceNew:    true,
-				Optional:    true,
-			},
 			"network_interface": {
 				Type:        schema.TypeList,
 				Description: "One or more blocks describing the network interfaces of the server.",
