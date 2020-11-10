@@ -32,7 +32,6 @@ func resourceUpCloudServer() *schema.Resource {
 				Description:  "A valid domain name",
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.StringLenBetween(1, 128),
 			},
 			"title": {
