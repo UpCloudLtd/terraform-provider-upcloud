@@ -109,7 +109,7 @@ func resourceUpCloudServer() *schema.Resource {
 						},
 						"type": {
 							Type:        schema.TypeString,
-							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
+							Description: "Network interface type. For private network interfaces, a network must be specified with an existing network id.",
 							Required:    true,
 							ForceNew:    true,
 							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
