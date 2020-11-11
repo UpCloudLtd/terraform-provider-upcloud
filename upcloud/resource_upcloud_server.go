@@ -430,6 +430,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	r.CoreNumber = d.Get("cpu").(int)
 	r.MemoryAmount = d.Get("mem").(int)
 	r.Plan = d.Get("plan").(string)
+	r.Hostname = d.Get("hostname").(string)
 
 	if _, err := client.ModifyServer(r); err != nil {
 		return diag.FromErr(err)
