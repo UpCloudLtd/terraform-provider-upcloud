@@ -210,7 +210,6 @@ func resourceUpCloudServer() *schema.Resource {
 						"tier": {
 							Description:  "The storage tier to use",
 							Type:         schema.TypeString,
-							Default:      "hdd",
 							ForceNew:     true,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"hdd", "maxiops"}, false),
@@ -234,7 +233,6 @@ func resourceUpCloudServer() *schema.Resource {
 							Type:         schema.TypeString,
 							ForceNew:     true,
 							Optional:     true,
-							Default:      "disk",
 							ValidateFunc: validation.StringInSlice([]string{"disk", "cdrom"}, false),
 						},
 						"backup_rule": {
@@ -419,49 +417,22 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if d.HasChange("mem") || d.HasChange("cpu") || d.HasChange("firewall") {
-		_, newCPU := d.GetChange("cpu")
-		_, newMem := d.GetChange("mem")
-		_, newFirewall := d.GetChange("firewall")
-
-		r := &request.ModifyServerRequest{
-			UUID: d.Id(),
-		}
-
-		if newFirewall.(bool) {
-			r.Firewall = "on"
-		} else {
-			r.Firewall = "off"
-		}
-
-		if newCPU != 0 || newMem != 0 {
-			log.Printf("[DEBUG] Modifying server, cpu = %v, mem = %v", newCPU, newMem)
-			if newCPU != 0 {
-				r.CoreNumber = newCPU.(int)
-			}
-			if newMem != 0 {
-				r.MemoryAmount = newMem.(int)
-			}
-		}
-		_, err := client.ModifyServer(r)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	r := &request.ModifyServerRequest{
+		UUID: d.Id(),
 	}
 
-	if d.HasChange("plan") {
-		_, newPlan := d.GetChange("plan")
+	if d.Get("firewall").(bool) {
+		r.Firewall = "on"
+	} else {
+		r.Firewall = "off"
+	}
 
-		r := &request.ModifyServerRequest{
-			UUID: d.Id(),
-		}
+	r.CoreNumber = d.Get("cpu").(int)
+	r.MemoryAmount = d.Get("mem").(int)
+	r.Plan = d.Get("plan").(string)
 
-		r.Plan = newPlan.(string)
-
-		_, err := client.ModifyServer(r)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	if _, err := client.ModifyServer(r); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if err := verifyServerStarted(d, meta); err != nil {
