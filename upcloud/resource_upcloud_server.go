@@ -210,6 +210,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"tier": {
 							Description:  "The storage tier to use",
 							Type:         schema.TypeString,
+							Default:      "hdd",
 							ForceNew:     true,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"hdd", "maxiops"}, false),
@@ -233,6 +234,7 @@ func resourceUpCloudServer() *schema.Resource {
 							Type:         schema.TypeString,
 							ForceNew:     true,
 							Optional:     true,
+							Default:      "disk",
 							ValidateFunc: validation.StringInSlice([]string{"disk", "cdrom"}, false),
 						},
 						"backup_rule": {
