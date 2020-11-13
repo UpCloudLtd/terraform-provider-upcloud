@@ -730,38 +730,6 @@ func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.Creat
 	return ifaces, nil
 }
 
-func buildNetworkOptsOld(d *schema.ResourceData, meta interface{}) ([]request.CreateServerIPAddress, error) {
-	ifaceCfg := make([]request.CreateServerIPAddress, 0)
-	if attr, ok := d.GetOk("ipv4"); ok {
-		publicIPv4 := attr.(bool)
-		if publicIPv4 {
-			publicIPv4 := request.CreateServerIPAddress{
-				Family: upcloud.IPAddressFamilyIPv4,
-			}
-			ifaceCfg = append(ifaceCfg, publicIPv4)
-		}
-	}
-	if attr, ok := d.GetOk("private_networking"); ok {
-		setPrivateIP := attr.(bool)
-		if setPrivateIP {
-			privateIPv4 := request.CreateServerIPAddress{
-				Family: upcloud.IPAddressFamilyIPv4,
-			}
-			ifaceCfg = append(ifaceCfg, privateIPv4)
-		}
-	}
-	if attr, ok := d.GetOk("ipv6"); ok {
-		publicIPv6 := attr.(bool)
-		if publicIPv6 {
-			publicIPv6 := request.CreateServerIPAddress{
-				Family: upcloud.IPAddressFamilyIPv6,
-			}
-			ifaceCfg = append(ifaceCfg, publicIPv6)
-		}
-	}
-	return ifaceCfg, nil
-}
-
 func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string, error) {
 	// Construct LoginUser struct from the schema
 	r := &request.LoginUser{}
