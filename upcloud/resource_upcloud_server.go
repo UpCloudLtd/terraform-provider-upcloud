@@ -417,56 +417,33 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	if err := verifyServerStopped(d, meta); err != nil {
+	if err := verifyServerStopped(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if d.HasChange("mem") || d.HasChange("cpu") || d.HasChange("firewall") {
-		_, newCPU := d.GetChange("cpu")
-		_, newMem := d.GetChange("mem")
-		_, newFirewall := d.GetChange("firewall")
-
-		r := &request.ModifyServerRequest{
-			UUID: d.Id(),
-		}
-
-		if newFirewall.(bool) {
-			r.Firewall = "on"
-		} else {
-			r.Firewall = "off"
-		}
-
-		if newCPU != 0 || newMem != 0 {
-			log.Printf("[DEBUG] Modifying server, cpu = %v, mem = %v", newCPU, newMem)
-			if newCPU != 0 {
-				r.CoreNumber = newCPU.(int)
-			}
-			if newMem != 0 {
-				r.MemoryAmount = newMem.(int)
-			}
-		}
-		_, err := client.ModifyServer(r)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	r := &request.ModifyServerRequest{
+		UUID: d.Id(),
 	}
 
-	if d.HasChange("plan") {
-		_, newPlan := d.GetChange("plan")
-
-		r := &request.ModifyServerRequest{
-			UUID: d.Id(),
-		}
-
-		r.Plan = newPlan.(string)
-
-		_, err := client.ModifyServer(r)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	if d.Get("firewall").(bool) {
+		r.Firewall = "on"
+	} else {
+		r.Firewall = "off"
 	}
 
-	if err := verifyServerStarted(d, meta); err != nil {
+	if plan, ok := d.GetOk("plan"); ok {
+		r.Plan = plan.(string)
+	} else {
+		r.CoreNumber = d.Get("cpu").(int)
+		r.MemoryAmount = d.Get("mem").(int)
+	}
+	r.Hostname = d.Get("hostname").(string)
+
+	if _, err := client.ModifyServer(r); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := verifyServerStarted(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 	return resourceUpCloudServerRead(ctx, d, meta)
@@ -478,7 +455,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	var diags diag.Diagnostics
 
 	// Verify server is stopped before deletion
-	if err := verifyServerStopped(d, meta); err != nil {
+	if err := verifyServerStopped(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 	// Delete server
@@ -796,11 +773,11 @@ func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string
 	return r, deliveryMethod, nil
 }
 
-func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
+func verifyServerStopped(id string, meta interface{}) error {
 	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
-		UUID: d.Id(),
+		UUID: id,
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
@@ -809,17 +786,17 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 	if server.State != upcloud.ServerStateStopped {
 		// Soft stop with 2 minute timeout, after which hard stop occurs
 		stopRequest := &request.StopServerRequest{
-			UUID:     d.Id(),
+			UUID:     id,
 			StopType: "soft",
 			Timeout:  time.Minute * 2,
 		}
-		log.Printf("[INFO] Stopping server (server UUID: %s)", d.Id())
+		log.Printf("[INFO] Stopping server (server UUID: %s)", id)
 		_, err := client.StopServer(stopRequest)
 		if err != nil {
 			return err
 		}
 		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         d.Id(),
+			UUID:         id,
 			DesiredState: upcloud.ServerStateStopped,
 			Timeout:      time.Minute * 5,
 		})
@@ -830,11 +807,11 @@ func verifyServerStopped(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func verifyServerStarted(d *schema.ResourceData, meta interface{}) error {
+func verifyServerStarted(id string, meta interface{}) error {
 	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
-		UUID: d.Id(),
+		UUID: id,
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
@@ -842,16 +819,16 @@ func verifyServerStarted(d *schema.ResourceData, meta interface{}) error {
 	}
 	if server.State != upcloud.ServerStateStarted {
 		startRequest := &request.StartServerRequest{
-			UUID:    d.Id(),
+			UUID:    id,
 			Timeout: time.Minute * 2,
 		}
-		log.Printf("[INFO] Starting server (server UUID: %s)", d.Id())
+		log.Printf("[INFO] Starting server (server UUID: %s)", id)
 		_, err := client.StartServer(startRequest)
 		if err != nil {
 			return err
 		}
 		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         d.Id(),
+			UUID:         id,
 			DesiredState: upcloud.ServerStateStarted,
 			Timeout:      time.Minute * 5,
 		})
