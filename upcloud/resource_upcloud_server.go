@@ -168,17 +168,37 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"storage_devices": {
 				Description: "A list of storage devices associated with the server",
-				Type:        schema.TypeList,
-				Required:    true,
-				ForceNew:    true,
-				MinItems:    1,
+				Type:        schema.TypeSet,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": {
-							Description: "The unique identifier for the storage",
+						"storage": {
+							Description: "A valid storage UUID",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"address": {
+							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
 							Type:        schema.TypeString,
 							Computed:    true,
+							Optional:    true,
 						},
+						"type": {
+							Description:  "The device type the storage will be attached as",
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "disk",
+							ValidateFunc: validation.StringInSlice([]string{"disk", "cdrom"}, false),
+						},
+					},
+				},
+			},
+			"template": {
+				Description: "",
+				Type:        schema.TypeSet,
+				Required:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
 						"address": {
 							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
 							Type:        schema.TypeString,
@@ -186,34 +206,22 @@ func resourceUpCloudServer() *schema.Resource {
 							ForceNew:    true,
 							Optional:    true,
 						},
-						"action": {
-							Description:  "The method used to create or attach the specified storage",
-							Type:         schema.TypeString,
-							ForceNew:     true,
-							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"create", "clone", "attach"}, false),
-						},
 						"size": {
 							Description:  "The size of the storage in gigabytes",
 							Type:         schema.TypeInt,
 							Optional:     true,
-							ForceNew:     true,
-							Default:      -1,
 							ValidateFunc: validation.IntBetween(10, 2048),
 						},
+						// will be set to maxiops
 						"tier": {
-							Description:  "The storage tier to use",
-							Type:         schema.TypeString,
-							Default:      "hdd",
-							ForceNew:     true,
-							Optional:     true,
-							ValidateFunc: validation.StringInSlice([]string{"hdd", "maxiops"}, false),
+							Description: "The storage tier to use",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 						"title": {
 							Description:  "A short, informative description",
 							Type:         schema.TypeString,
 							Optional:     true,
-							ForceNew:     true,
 							Computed:     true,
 							ValidateFunc: validation.StringLenBetween(0, 64),
 						},
@@ -222,43 +230,6 @@ func resourceUpCloudServer() *schema.Resource {
 							Type:        schema.TypeString,
 							ForceNew:    true,
 							Optional:    true,
-						},
-						"type": {
-							Description:  "The device type the storage will be attached as",
-							Type:         schema.TypeString,
-							ForceNew:     true,
-							Optional:     true,
-							Default:      "disk",
-							ValidateFunc: validation.StringInSlice([]string{"disk", "cdrom"}, false),
-						},
-						"backup_rule": {
-							Description: "The criteria to backup the storage",
-							Type:        schema.TypeSet,
-							MaxItems:    1,
-							ForceNew:    true,
-							Optional:    true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"interval": {
-										Description: "The weekday when the backup is created",
-										Type:        schema.TypeString,
-										ForceNew:    true,
-										Required:    true,
-									},
-									"time": {
-										Description: "The time of day when the backup is created",
-										Type:        schema.TypeString,
-										ForceNew:    true,
-										Required:    true,
-									},
-									"retention": {
-										Description: "The number of days before a backup is automatically deleted",
-										Type:        schema.TypeString,
-										ForceNew:    true,
-										Required:    true,
-									},
-								},
-							},
 						},
 					},
 				},
