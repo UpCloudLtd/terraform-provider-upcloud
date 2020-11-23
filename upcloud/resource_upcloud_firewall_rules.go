@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strconv"
+	"time"
 )
 
 func resourceUpCloudFirewallRules() *schema.Resource {
@@ -196,9 +197,15 @@ func resourceUpCloudFirewallRulesCreate(ctx context.Context, d *schema.ResourceD
 		opts.FirewallRules = firewallRules
 	}
 
-	err := client.CreateFirewallRules(opts)
+	if _, err := client.WaitForServerState(&request.WaitForServerStateRequest{
+		UUID:           opts.ServerUUID,
+		UndesiredState: upcloud.ServerStateMaintenance,
+		Timeout:        time.Minute * 5,
+	}); err != nil {
+		return diag.FromErr(err)
+	}
 
-	if err != nil {
+	if err := client.CreateFirewallRules(opts); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -364,9 +371,15 @@ func resourceUpCloudFirewallRulesDelete(ctx context.Context, d *schema.ResourceD
 		FirewallRules: nil,
 	}
 
-	err := client.CreateFirewallRules(opts)
+	if _, err := client.WaitForServerState(&request.WaitForServerStateRequest{
+		UUID:           opts.ServerUUID,
+		UndesiredState: upcloud.ServerStateMaintenance,
+		Timeout:        time.Minute * 5,
+	}); err != nil {
+		return diag.FromErr(err)
+	}
 
-	if err != nil {
+	if err := client.CreateFirewallRules(opts); err != nil {
 		return diag.FromErr(err)
 	}
 
