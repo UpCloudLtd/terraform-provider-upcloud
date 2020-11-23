@@ -32,7 +32,6 @@ func resourceUpCloudServer() *schema.Resource {
 				Description:  "A valid domain name",
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.StringLenBetween(1, 128),
 			},
 			"title": {
@@ -64,12 +63,6 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
-			},
-			"template": {
-				Description: "The template to use during creation",
-				Type:        schema.TypeString,
-				ForceNew:    true,
-				Optional:    true,
 			},
 			"network_interface": {
 				Type:        schema.TypeList,
@@ -118,7 +111,7 @@ func resourceUpCloudServer() *schema.Resource {
 						},
 						"type": {
 							Type:        schema.TypeString,
-							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
+							Description: "Network interface type. For private network interfaces, a network must be specified with an existing network id.",
 							Required:    true,
 							ForceNew:    true,
 							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
@@ -187,7 +180,7 @@ func resourceUpCloudServer() *schema.Resource {
 							Computed:    true,
 						},
 						"address": {
-							Description: "An UpCloud assigned IP Address",
+							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
 							Type:        schema.TypeString,
 							Computed:    true,
 							ForceNew:    true,
