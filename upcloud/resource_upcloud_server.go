@@ -354,15 +354,29 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("network_interface", networkInterfaces)
 	}
 
-	storageDevices := d.Get("storage_devices").([]interface{})
-	log.Printf("[DEBUG] Configured storage devices in state: %v", storageDevices)
+	storageDevices := []map[string]interface{}{}
+	log.Printf("[DEBUG] Configured storage devices in state: %+v", d.Get("storage_devices"))
 	log.Printf("[DEBUG] Actual storage devices on server: %v", server.StorageDevices)
-	for i, storageDevice := range storageDevices {
-		storageDevice := storageDevice.(map[string]interface{})
-		storageDevice["id"] = server.StorageDevices[i].UUID
-		storageDevice["address"] = server.StorageDevices[i].Address
-		storageDevice["title"] = server.StorageDevices[i].Title
-		storageDevice["size"] = server.StorageDevices[i].Size
+	for _, serverStorage := range server.StorageDevices {
+		// the template is managed within the server
+		if serverStorage.UUID == d.Get("template.0.id") {
+			d.Set("template", []map[string]interface{}{{
+				"address": serverStorage.Address,
+				"id":      serverStorage.UUID,
+				"size":    serverStorage.Size,
+				"title":   serverStorage.Title,
+				"storage": d.Get("template.0.storage"),
+				// FIXME: backupRule cannot be derived from server.storageDevices payload, will not sync if changed elsewhere
+				"backup_rule": d.Get("template.0.backup_rule"),
+				// TODO: add when go-api updated ... "tier":   serverStorage.Tier,
+			}})
+		} else {
+			storageDevices = append(storageDevices, map[string]interface{}{
+				"address": serverStorage.Address,
+				"storage": serverStorage.UUID,
+				"type":    serverStorage.Type,
+			})
+		}
 	}
 	d.Set("storage_devices", storageDevices)
 
