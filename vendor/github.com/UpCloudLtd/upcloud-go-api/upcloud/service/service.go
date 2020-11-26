@@ -10,6 +10,53 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 )
 
+type Firewall interface {
+	GetFirewallRules(r *request.GetFirewallRulesRequest) (*upcloud.FirewallRules, error)
+	GetFirewallRuleDetails(r *request.GetFirewallRuleDetailsRequest) (*upcloud.FirewallRule, error)
+	CreateFirewallRule(r *request.CreateFirewallRuleRequest) (*upcloud.FirewallRule, error)
+	CreateFirewallRules(r *request.CreateFirewallRulesRequest) error
+	DeleteFirewallRule(r *request.DeleteFirewallRuleRequest) error
+}
+
+var _ Firewall = (*Service)(nil)
+
+type IpAddress interface {
+	GetIPAddresses() (*upcloud.IPAddresses, error)
+	GetIPAddressDetails(r *request.GetIPAddressDetailsRequest) (*upcloud.IPAddress, error)
+	AssignIPAddress(r *request.AssignIPAddressRequest) (*upcloud.IPAddress, error)
+	ModifyIPAddress(r *request.ModifyIPAddressRequest) (*upcloud.IPAddress, error)
+	ReleaseIPAddress(r *request.ReleaseIPAddressRequest) error
+}
+
+var _ IpAddress = (*Service)(nil)
+
+type Server interface {
+	GetServerConfigurations() (*upcloud.ServerConfigurations, error)
+	GetServers() (*upcloud.Servers, error)
+	GetServerDetails(r *request.GetServerDetailsRequest) (*upcloud.ServerDetails, error)
+	CreateServer(r *request.CreateServerRequest) (*upcloud.ServerDetails, error)
+	WaitForServerState(r *request.WaitForServerStateRequest) (*upcloud.ServerDetails, error)
+	StartServer(r *request.StartServerRequest) (*upcloud.ServerDetails, error)
+	StopServer(r *request.StopServerRequest) (*upcloud.ServerDetails, error)
+	RestartServer(r *request.RestartServerRequest) (*upcloud.ServerDetails, error)
+	ModifyServer(r *request.ModifyServerRequest) (*upcloud.ServerDetails, error)
+	DeleteServer(r *request.DeleteServerRequest) error
+	DeleteServerAndStorages(r *request.DeleteServerAndStoragesRequest) error
+}
+
+var _ Server = (*Service)(nil)
+
+type Tag interface {
+	GetTags() (*upcloud.Tags, error)
+	CreateTag(r *request.CreateTagRequest) (*upcloud.Tag, error)
+	ModifyTag(r *request.ModifyTagRequest) (*upcloud.Tag, error)
+	DeleteTag(r *request.DeleteTagRequest) error
+	TagServer(r *request.TagServerRequest) (*upcloud.ServerDetails, error)
+	UntagServer(r *request.UntagServerRequest) (*upcloud.ServerDetails, error)
+}
+
+var _ Tag = (*Service)(nil)
+
 // Service represents the API service. The specified client is used to communicate with the API
 type Service struct {
 	client *client.Client
@@ -222,12 +269,19 @@ func (s *Service) StartServer(r *request.StartServerRequest) (*upcloud.ServerDet
 
 // StopServer stops the specified server
 func (s *Service) StopServer(r *request.StopServerRequest) (*upcloud.ServerDetails, error) {
+	// Save previous timeout
+	prevTimeout := s.client.GetTimeout()
+
 	// Increase the client timeout to match the request timeout
-	s.client.SetTimeout(r.Timeout)
+	// Allow ten seconds to give the API a chance to respond with an error
+	s.client.SetTimeout(r.Timeout + 10*time.Second)
 
 	serverDetails := upcloud.ServerDetails{}
 	requestBody, _ := json.Marshal(r)
 	response, err := s.client.PerformJSONPostRequest(s.client.CreateRequestURL(r.RequestURL()), requestBody)
+
+	// Restore previous timeout
+	s.client.SetTimeout(prevTimeout)
 
 	if err != nil {
 		return nil, parseJSONServiceError(err)
@@ -240,12 +294,19 @@ func (s *Service) StopServer(r *request.StopServerRequest) (*upcloud.ServerDetai
 
 // RestartServer restarts the specified server
 func (s *Service) RestartServer(r *request.RestartServerRequest) (*upcloud.ServerDetails, error) {
+	// Save previous timeout
+	prevTimeout := s.client.GetTimeout()
+
 	// Increase the client timeout to match the request timeout
-	s.client.SetTimeout(r.Timeout)
+	// Allow ten seconds to give the API a chance to respond with an error
+	s.client.SetTimeout(r.Timeout + 10*time.Second)
 
 	serverDetails := upcloud.ServerDetails{}
 	requestBody, _ := json.Marshal(r)
 	response, err := s.client.PerformJSONPostRequest(s.client.CreateRequestURL(r.RequestURL()), requestBody)
+
+	// Restore previous timeout
+	s.client.SetTimeout(prevTimeout)
 
 	if err != nil {
 		return nil, parseJSONServiceError(err)

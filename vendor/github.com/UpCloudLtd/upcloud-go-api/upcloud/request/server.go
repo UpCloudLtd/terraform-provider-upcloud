@@ -58,7 +58,7 @@ type CreateServerStorageDevice struct {
 	Storage string `json:"storage"`
 	Title   string `json:"title,omitempty"`
 	// Storage size in gigabytes
-	Size int    `json:"size"`
+	Size int    `json:"size,omitempty"`
 	Tier string `json:"tier,omitempty"`
 	Type string `json:"type,omitempty"`
 }
@@ -189,7 +189,7 @@ func (s SSHKeySlice) MarshalJSON() ([]byte, error) {
 type LoginUser struct {
 	CreatePassword string      `json:"create_password,omitempty"`
 	Username       string      `json:"username,omitempty"`
-	SSHKeys        SSHKeySlice `json:"ssh_keys"`
+	SSHKeys        SSHKeySlice `json:"ssh_keys,omitempty"`
 }
 
 // CreateServerIPAddress represents an IP address for a CreateServerRequest

@@ -181,7 +181,7 @@ type ServerStorageDevice struct {
 type StorageImportDetails struct {
 	ClientContentLength int       `json:"client_content_length"`
 	ClientContentType   string    `json:"client_content_type"`
-	Completed           string    `json:"completed"`
+	Completed           time.Time `json:"completed"`
 	Created             time.Time `json:"created"`
 	DirectUploadURL     string    `json:"direct_upload_url"`
 	ErrorCode           string    `json:"error_code"`
@@ -190,6 +190,7 @@ type StorageImportDetails struct {
 	ReadBytes           int       `json:"read_bytes"`
 	SHA256Sum           string    `json:"sha256sum"`
 	Source              string    `json:"source"`
+	SourceLocation      string    `json:"source_location"`
 	State               string    `json:"state"`
 	UUID                string    `json:"uuid"`
 	WrittenBytes        int       `json:"written_bytes"`
@@ -199,16 +200,25 @@ type StorageImportDetails struct {
 // deeply embedded values.
 func (s *StorageImportDetails) UnmarshalJSON(b []byte) error {
 	type localStorageImport StorageImportDetails
-
 	v := struct {
-		StorageImport localStorageImport `json:"storage_import"`
+		StorageImport struct {
+			localStorageImport
+			Completed string `json:"completed"`
+		} `json:"storage_import"`
 	}{}
 	err := json.Unmarshal(b, &v)
 	if err != nil {
 		return err
 	}
 
-	(*s) = StorageImportDetails(v.StorageImport)
+	if v.StorageImport.Completed != "" {
+		tv, err := time.Parse(time.RFC3339, v.StorageImport.Completed)
+		if err != nil {
+			return err
+		}
+		v.StorageImport.localStorageImport.Completed = tv
+	}
+	*s = StorageImportDetails(v.StorageImport.localStorageImport)
 
 	return nil
 }

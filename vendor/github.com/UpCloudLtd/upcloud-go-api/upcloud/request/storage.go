@@ -154,7 +154,7 @@ func (r DetachStorageRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&v)
 }
 
-//DeleteStorageRequest represents a request to delete a storage device
+// DeleteStorageRequest represents a request to delete a storage device
 type DeleteStorageRequest struct {
 	UUID string
 }
@@ -289,12 +289,18 @@ func (r *RestoreBackupRequest) RequestURL() string {
 	return fmt.Sprintf("/storage/%s/restore", r.UUID)
 }
 
+// ImportSourceLocation can be a string to a file or io.Reader in StorageImportSourceDirectUpload mode or a URL
+// in StorageImportSourceHTTPImport mode
+type ImportSourceLocation interface{}
+
 // CreateStorageImportRequest represent a request to import storage.
 type CreateStorageImportRequest struct {
 	StorageUUID string `json:"-"`
+	// ContentType can be given when using the StorageImportSourceDirectUpload mode
+	ContentType string `json:"-"`
 
-	Source         string `json:"source"`
-	SourceLocation string `json:"source_location,omitempty"`
+	Source         string               `json:"source"`
+	SourceLocation ImportSourceLocation `json:"source_location,omitempty"`
 }
 
 // MarshalJSON is a custom marshaller that deals with
