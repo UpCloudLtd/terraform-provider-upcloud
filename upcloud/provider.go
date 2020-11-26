@@ -3,12 +3,11 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
-	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
+	globals "github.com/UpCloudLtd/upcloud-go-api/internal"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,15 +17,7 @@ import (
 
 const (
 	upcloudAPITimeout = time.Second * 120
-	version           = "0.1.0"
 )
-
-type userAgentTransport struct{}
-
-func (t *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("User-Agent", fmt.Sprintf("terraform-provider-upcloud/%s", version))
-	return cleanhttp.DefaultTransport().RoundTrip(req)
-}
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
@@ -99,9 +90,9 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	httpClient.RetryWaitMin = time.Duration(d.Get("retry_wait_min_sec").(int)) * time.Second
 	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
 	httpClient.RetryMax = d.Get("retry_max").(int)
-	httpClient.HTTPClient = &http.Client{Transport: &userAgentTransport{}}
 
 	client := client.NewWithHTTPClient(d.Get("username").(string), d.Get("password").(string), httpClient.HTTPClient)
+	client.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", globals.Version)
 	client.SetTimeout(upcloudAPITimeout)
 
 	service := service.New(client)
