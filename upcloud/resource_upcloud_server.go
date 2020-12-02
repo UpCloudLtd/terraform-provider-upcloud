@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -14,7 +13,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
-	uuid "github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -185,8 +183,8 @@ func resourceUpCloudServer() *schema.Resource {
 						"type": {
 							Description:  "The device type the storage will be attached as",
 							Type:         schema.TypeString,
+							Computed:     true,
 							Optional:     true,
-							Default:      "disk",
 							ValidateFunc: validation.StringInSlice([]string{"disk", "cdrom"}, false),
 						},
 					},
@@ -195,8 +193,9 @@ func resourceUpCloudServer() *schema.Resource {
 			"template": {
 				Description: "",
 				Type:        schema.TypeSet,
-				Required:    true,
-				MaxItems:    1,
+				// NOTE: might want to make this optional
+				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"address": {
@@ -212,7 +211,7 @@ func resourceUpCloudServer() *schema.Resource {
 							Optional:     true,
 							ValidateFunc: validation.IntBetween(10, 2048),
 						},
-						// will be set to maxiops
+						// will be set to value matching the plan
 						"tier": {
 							Description: "The storage tier to use",
 							Type:        schema.TypeString,
@@ -231,6 +230,7 @@ func resourceUpCloudServer() *schema.Resource {
 							ForceNew:    true,
 							Optional:    true,
 						},
+						"backup_rule": backupRuleSchema(),
 					},
 				},
 			},
@@ -293,11 +293,6 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		DesiredState: upcloud.ServerStateStarted,
 		Timeout:      time.Minute * 25,
 	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	err = buildAfterServerCreationOps(d, client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -501,13 +496,6 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		r.PasswordDelivery = deliveryMethod
 	}
 
-	storageDevices := d.Get("storage_devices").([]interface{})
-	storageOpts, err := buildStorageOpts(storageDevices, meta, d.Get("hostname").(string), d.Get("zone").(string))
-	if err != nil {
-		return nil, err
-	}
-	r.StorageDevices = storageOpts
-
 	networking, err := buildNetworkOpts(d, meta)
 	if err != nil {
 		return nil, err
@@ -518,138 +506,6 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	}
 
 	return r, nil
-}
-
-func buildAfterServerCreationOps(d *schema.ResourceData, meta interface{}) error {
-	/*
-		Some of the operations such as backup_rule for storage device can only be done after
-		the server creation.
-	*/
-
-	err := buildStorageBackupRuleOps(d, meta)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func buildStorageBackupRuleOps(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*service.Service)
-
-	storageDevices := d.Get("storage_devices").([]interface{})
-
-	r := &request.GetServerDetailsRequest{
-		UUID: d.Id(),
-	}
-	server, err := client.GetServerDetails(r)
-	if err != nil {
-		return err
-	}
-
-	for i, storageDevice := range storageDevices {
-		storageDevice := storageDevice.(map[string]interface{})
-
-		if backupRule := storageDevice["backup_rule"].(*schema.Set).List(); backupRule != nil && len(backupRule) != 0 {
-
-			for _, br := range backupRule {
-				mBr := br.(map[string]interface{})
-
-				retentionValue, err := strconv.Atoi(mBr["retention"].(string))
-
-				if err != nil {
-					diag.FromErr(err)
-				}
-
-				modifyStorage := &request.ModifyStorageRequest{
-					UUID: server.StorageDevices[i].UUID,
-				}
-
-				modifyStorage.BackupRule = &upcloud.BackupRule{
-					Interval:  mBr["interval"].(string),
-					Time:      mBr["time"].(string),
-					Retention: retentionValue,
-				}
-
-				client.ModifyStorage(modifyStorage)
-			}
-		}
-	}
-
-	return nil
-}
-
-func buildStorage(storageDevice map[string]interface{}, i int, meta interface{}, hostname, zone string) (*request.CreateServerStorageDevice, error) {
-	osDisk := request.CreateServerStorageDevice{}
-
-	if source := storageDevice["storage"].(string); source != "" {
-		_, err := uuid.ParseUUID(source)
-		// Assume template name is given and map name to UUID
-		if err != nil {
-			client := meta.(*service.Service)
-			r := &request.GetStoragesRequest{
-				Type: upcloud.StorageTypeTemplate,
-			}
-			l, err := client.GetStorages(r)
-			if err != nil {
-				return nil, err
-			}
-			for _, s := range l.Storages {
-				if s.Title == source {
-					source = s.UUID
-					break
-				}
-			}
-		}
-
-		osDisk.Storage = source
-	}
-
-	// Set size or use the one defined by target template
-	if size := storageDevice["size"]; size != -1 {
-		osDisk.Size = size.(int)
-	}
-
-	// Autogenerate disk title
-	if title := storageDevice["title"].(string); title != "" {
-		osDisk.Title = title
-	} else {
-		osDisk.Title = fmt.Sprintf("terraform-%s-disk-%d", hostname, i)
-	}
-
-	// Set disk tier or use the one defined by target template
-	if tier := storageDevice["tier"]; tier != "" {
-		osDisk.Tier = tier.(string)
-	}
-
-	if storageType := storageDevice["type"].(string); storageType != "" {
-		osDisk.Type = storageType
-	}
-
-	if address := storageDevice["address"].(string); address != "" {
-		osDisk.Address = address
-	}
-
-	osDisk.Action = storageDevice["action"].(string)
-
-	log.Printf("[DEBUG] Disk: %v", osDisk)
-
-	return &osDisk, nil
-}
-
-func buildStorageOpts(storageDevices []interface{}, meta interface{}, hostname, zone string) ([]request.CreateServerStorageDevice, error) {
-	storageCfg := make([]request.CreateServerStorageDevice, 0)
-	for i, storageDevice := range storageDevices {
-		storageDevice, err := buildStorage(storageDevice.(map[string]interface{}), i, meta, hostname, zone)
-
-		if err != nil {
-			return nil, err
-		}
-
-		storageCfg = append(storageCfg, *storageDevice)
-	}
-
-	return storageCfg, nil
 }
 
 func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerInterface, error) {
