@@ -15,6 +15,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func backupRuleSchema() *schema.Schema {
+	return &schema.Schema{
+		Description: "The criteria to backup the storage",
+		Type:        schema.TypeList,
+		MaxItems:    1,
+		Optional:    true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"interval": {
+					Description: "The weekday when the backup is created",
+					Type:        schema.TypeString,
+					Required:    true,
+				},
+				"time": {
+					Description: "The time of day when the backup is created",
+					Type:        schema.TypeString,
+					Required:    true,
+				},
+				"retention": {
+					Description: "The number of days before a backup is automatically deleted",
+					Type:        schema.TypeString,
+					Required:    true,
+				},
+			},
+		},
+	}
+}
+
 func resourceUpCloudStorage() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceUpCloudStorageCreate,
@@ -124,31 +152,7 @@ func resourceUpCloudStorage() *schema.Resource {
 					},
 				},
 			},
-			"backup_rule": {
-				Description: "The criteria to backup the storage",
-				Type:        schema.TypeSet,
-				MaxItems:    1,
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"interval": {
-							Description: "The weekday when the backup is created",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"time": {
-							Description: "The time of day when the backup is created",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"retention": {
-							Description: "The number of days before a backup is automatically deleted",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-					},
-				},
-			},
+			"backup_rule": backupRuleSchema(),
 		},
 	}
 }
