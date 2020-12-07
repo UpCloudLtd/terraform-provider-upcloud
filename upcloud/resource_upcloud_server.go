@@ -491,6 +491,32 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		r.PasswordDelivery = deliveryMethod
 	}
 
+	if template, ok := d.GetOk("template"); ok {
+		template := template.(map[string]interface{})
+		r.StorageDevices = append(
+			r.StorageDevices,
+			request.CreateServerStorageDevice{
+				Action:  "clone",
+				Address: template["address"].(string),
+				Size:    template["size"].(int),
+				Storage: template["storage"].(string),
+				Title:   template["title"].(string),
+			},
+		)
+		// TODO: handle backup_rule
+	}
+
+	if storage_devices, ok := d.GetOk("storage_devices"); ok {
+		storage_devices := storage_devices.([]map[string]interface{})
+		for _, storage_device := range storage_devices {
+			r.StorageDevices = append(r.StorageDevices, request.CreateServerStorageDevice{
+				Address: storage_device["address"].(string),
+				Type:    storage_device["type"].(string),
+				Storage: storage_device["storage"].(string),
+			})
+		}
+	}
+
 	networking, err := buildNetworkOpts(d, meta)
 	if err != nil {
 		return nil, err
