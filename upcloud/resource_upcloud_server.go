@@ -234,6 +234,7 @@ func resourceUpCloudServer() *schema.Resource {
 							Type:        schema.TypeString,
 							ForceNew:    true,
 							Optional:    true,
+							Required:    true,
 						},
 						"backup_rule": backupRuleSchema(),
 					},
