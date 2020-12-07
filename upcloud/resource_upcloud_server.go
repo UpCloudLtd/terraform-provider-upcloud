@@ -440,21 +440,16 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	storageDevices := d.Get("storage_devices").([]interface{})
-	for _, storageDevice := range storageDevices {
+	template := d.Get("template").([]map[string]interface{})
+	if len(template) > 0 {
 		// Delete server root disk
-		storageDevice := storageDevice.(map[string]interface{})
-		id := storageDevice["id"].(string)
-		action := storageDevice["action"].(string)
-		if action != request.CreateServerStorageDeviceActionAttach {
-			deleteStorageRequest := &request.DeleteStorageRequest{
-				UUID: id,
-			}
-			log.Printf("[INFO] Deleting server storage (storage UUID: %s)", id)
-			err = client.DeleteStorage(deleteStorageRequest)
-			if err != nil {
-				return diag.FromErr(err)
-			}
+		deleteStorageRequest := &request.DeleteStorageRequest{
+			UUID: template[0]["id"].(string),
+		}
+		log.Printf("[INFO] Deleting server storage (storage UUID: %s)", deleteStorageRequest.UUID)
+		err = client.DeleteStorage(deleteStorageRequest)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
