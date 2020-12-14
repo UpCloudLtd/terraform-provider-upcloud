@@ -166,7 +166,8 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"storage_devices": {
 				Description: "A list of storage devices associated with the server",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
+				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"storage": {
@@ -192,12 +193,17 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"template": {
 				Description: "",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				// NOTE: might want to make this optional
 				Required: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"id": {
+							Description: "The unique identifier for the storage",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
 						"address": {
 							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
 							Type:        schema.TypeString,
@@ -228,7 +234,6 @@ func resourceUpCloudServer() *schema.Resource {
 							Description: "A valid storage UUID or template name",
 							Type:        schema.TypeString,
 							ForceNew:    true,
-							Optional:    true,
 							Required:    true,
 						},
 						"backup_rule": backupRuleSchema(),
