@@ -501,7 +501,7 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	if template, ok := d.GetOk("template.0"); ok {
 		template := template.(map[string]interface{})
 		if template["title"].(string) == "" {
-			template["title"] = fmt.Sprintf("terraform-%s-disk-1", r.Hostname)
+			template["title"] = fmt.Sprintf("terraform-%s-disk", r.Hostname)
 		}
 		r.StorageDevices = append(
 			r.StorageDevices,
