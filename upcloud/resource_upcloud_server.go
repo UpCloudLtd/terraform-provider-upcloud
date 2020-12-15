@@ -514,9 +514,11 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	}
 
 	if storage_devices, ok := d.GetOk("storage_devices"); ok {
-		storage_devices := storage_devices.([]map[string]interface{})
+		storage_devices := storage_devices.([]interface{})
 		for _, storage_device := range storage_devices {
+			storage_device := storage_device.(map[string]interface{})
 			r.StorageDevices = append(r.StorageDevices, request.CreateServerStorageDevice{
+				Action:  "attach",
 				Address: storage_device["address"].(string),
 				Type:    storage_device["type"].(string),
 				Storage: storage_device["storage"].(string),
