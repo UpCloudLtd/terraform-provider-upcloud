@@ -446,11 +446,11 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	template := d.Get("template").([]map[string]interface{})
-	if len(template) > 0 {
-		// Delete server root disk
+	// Delete server root disk
+	if template, ok := d.GetOk("template.0"); ok {
+		template := template.(map[string]interface{})
 		deleteStorageRequest := &request.DeleteStorageRequest{
-			UUID: template[0]["id"].(string),
+			UUID: template["id"].(string),
 		}
 		log.Printf("[INFO] Deleting server storage (storage UUID: %s)", deleteStorageRequest.UUID)
 		err = client.DeleteStorage(deleteStorageRequest)
