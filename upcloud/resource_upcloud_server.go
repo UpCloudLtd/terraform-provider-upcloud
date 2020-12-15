@@ -212,9 +212,10 @@ func resourceUpCloudServer() *schema.Resource {
 							Optional:    true,
 						},
 						"size": {
-							Description:  "The size of the storage in gigabytes",
-							Type:         schema.TypeInt,
-							Optional:     true,
+							Description: "The size of the storage in gigabytes",
+							Type:        schema.TypeInt,
+							// TODO: update go-api to omit zero value from the payload and make this optional
+							Required:     true,
 							ValidateFunc: validation.IntBetween(10, 2048),
 						},
 						// will be set to value matching the plan
