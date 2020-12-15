@@ -166,7 +166,7 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"storage_devices": {
 				Description: "A list of storage devices associated with the server",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -365,7 +365,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("network_interface", networkInterfaces)
 	}
 
-	storageDevices := []map[string]interface{}{}
+	storageDevices := []interface{}{}
 	log.Printf("[DEBUG] Configured storage devices in state: %+v", d.Get("storage_devices"))
 	log.Printf("[DEBUG] Actual storage devices on server: %v", server.StorageDevices)
 	for _, serverStorage := range server.StorageDevices {
@@ -526,8 +526,8 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	}
 
 	if storage_devices, ok := d.GetOk("storage_devices"); ok {
-		storage_devices := storage_devices.([]interface{})
-		for _, storage_device := range storage_devices {
+		storage_devices := storage_devices.(*schema.Set)
+		for _, storage_device := range storage_devices.List() {
 			storage_device := storage_device.(map[string]interface{})
 			r.StorageDevices = append(r.StorageDevices, request.CreateServerStorageDevice{
 				Action:  "attach",
