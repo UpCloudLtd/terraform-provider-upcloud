@@ -300,6 +300,15 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		DesiredState: upcloud.ServerStateStarted,
 		Timeout:      time.Minute * 25,
 	})
+
+	// set template id from the payload (if passed)
+	if _, ok := d.GetOk("template.0"); ok {
+		d.Set("template", []map[string]interface{}{{
+			"id":      server.StorageDevices[0].UUID,
+			"storage": d.Get("template.0.storage"),
+		}})
+	}
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
