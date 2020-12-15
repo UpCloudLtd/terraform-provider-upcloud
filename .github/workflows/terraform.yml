@@ -1,0 +1,24 @@
+name: Terraform test
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  Build:
+    runs-on: '${{ matrix.os }}'
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            GOFLAGS: '-mod=vendor'
+    steps:
+      - uses: actions/checkout@v2
+      - run: bash scripts/gogetcookie.sh
+      - run: make test
+      - run: make vet
+      - run: make website-test
+      - run: make testacc
+      - run: 'curl -sfL https://git.io/goreleaser | sh -s -- check'
