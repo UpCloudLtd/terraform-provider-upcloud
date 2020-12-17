@@ -431,6 +431,46 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
+	// handle the template
+	if d.HasChanges("template.0.title", "template.0.size", "template.0.backup_rule") {
+		template := d.Get("template.0").(map[string]interface{})
+		if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
+			UUID:  template["id"].(string),
+			Size:  template["size"].(int),
+			Title: template["title"].(string),
+			// TODO: handle backup_rule
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// handle the other storage devices
+	if d.HasChange("storage_devices") {
+		o, n := d.GetChange("storage_devices")
+
+		// detach the devices that should be detached or sould be re-attached with different parameters
+		for _, storage_device := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+			if _, err := client.DetachStorage(&request.DetachStorageRequest{
+				ServerUUID: d.Id(),
+				Address:    storage_device.(map[string]interface{})["address"].(string),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+		// attach the storages that are new or have changed
+		for _, storage_device := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
+			storage_device := storage_device.(map[string]interface{})
+			if _, err := client.AttachStorage(&request.AttachStorageRequest{
+				ServerUUID:  d.Id(),
+				Address:     storage_device["address"].(string),
+				StorageUUID: storage_device["storage"].(string),
+				Type:        storage_device["type"].(string),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	if err := verifyServerStarted(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
