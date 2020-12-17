@@ -461,26 +461,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if d.HasChange("backup_rule") {
-		if v, ok := d.GetOk("backup_rule"); ok {
-			brs := v.(*schema.Set).List()
-			for _, br := range brs {
-				mBr := br.(map[string]interface{})
-
-				retentionValue, err := strconv.Atoi(mBr["retention"].(string))
-
-				if err != nil {
-					diag.FromErr(err)
-				}
-
-				backupRule := upcloud.BackupRule{
-					Interval:  mBr["interval"].(string),
-					Time:      mBr["time"].(string),
-					Retention: retentionValue,
-				}
-
-				r.BackupRule = &backupRule
-			}
-		}
+		r.BackupRule = backup_rule(d.Get("backup_rule.0").(map[string]interface{}))
 	}
 
 	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
