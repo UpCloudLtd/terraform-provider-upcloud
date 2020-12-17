@@ -192,11 +192,11 @@ func resourceUpCloudServer() *schema.Resource {
 				},
 			},
 			"template": {
+				// TODO: add description
 				Description: "",
 				Type:        schema.TypeList,
-				// NOTE: might want to make this optional
-				Required: true,
-				MaxItems: 1,
+				Optional:    true,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
@@ -211,10 +211,9 @@ func resourceUpCloudServer() *schema.Resource {
 							Optional:    true,
 						},
 						"size": {
-							Description: "The size of the storage in gigabytes",
-							Type:        schema.TypeInt,
-							// TODO: update go-api to omit zero value from the payload and make this optional
-							Required:     true,
+							Description:  "The size of the storage in gigabytes",
+							Type:         schema.TypeInt,
+							Optional:     true,
 							ValidateFunc: validation.IntBetween(10, 2048),
 						},
 						// will be set to value matching the plan
@@ -376,9 +375,9 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 				"size":    serverStorage.Size,
 				"title":   serverStorage.Title,
 				"storage": d.Get("template.0.storage"),
-				// FIXME: backupRule cannot be derived from server.storageDevices payload, will not sync if changed elsewhere
+				"tier":    serverStorage.Tier,
+				// NOTE: backupRule cannot be derived from server.storageDevices payload, will not sync if changed elsewhere
 				"backup_rule": d.Get("template.0.backup_rule"),
-				// TODO: add when go-api updated ... "tier":   serverStorage.Tier,
 			}})
 		} else {
 			storageDevices = append(storageDevices, map[string]interface{}{
