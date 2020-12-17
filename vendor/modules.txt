@@ -8,7 +8,7 @@ cloud.google.com/go/internal/trace
 cloud.google.com/go/internal/version
 # cloud.google.com/go/storage v1.10.0
 cloud.google.com/go/storage
-# github.com/UpCloudLtd/upcloud-go-api v0.0.0-20201123135118-0d93a789b5f8
+# github.com/UpCloudLtd/upcloud-go-api v0.0.0-20201217164938-bc0db84cead0
 ## explicit
 github.com/UpCloudLtd/upcloud-go-api/internal
 github.com/UpCloudLtd/upcloud-go-api/upcloud

@@ -19,6 +19,11 @@ type Network interface {
 	CreateNetworkInterface(r *request.CreateNetworkInterfaceRequest) (*upcloud.Interface, error)
 	ModifyNetworkInterface(r *request.ModifyNetworkInterfaceRequest) (*upcloud.Interface, error)
 	DeleteNetworkInterface(r *request.DeleteNetworkInterfaceRequest) error
+	GetRouters() (*upcloud.Routers, error)
+	GetRouterDetails(r *request.GetRouterDetailsRequest) (*upcloud.Router, error)
+	CreateRouter(r *request.CreateRouterRequest) (*upcloud.Router, error)
+	ModifyRouter(r *request.ModifyRouterRequest) (*upcloud.Router, error)
+	DeleteRouter(r *request.DeleteRouterRequest) error
 }
 
 var _ Network = (*Service)(nil)

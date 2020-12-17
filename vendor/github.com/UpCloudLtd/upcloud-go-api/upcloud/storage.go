@@ -159,10 +159,10 @@ func (s *StorageDetails) UnmarshalJSON(b []byte) error {
 
 // BackupRule represents a backup rule
 type BackupRule struct {
-	Interval string `json:"interval"`
+	Interval string `json:"interval,omitempty"`
 	// Time should be in the format "hhmm", e.g. "0430"
-	Time      string `json:"time"`
-	Retention int    `json:"retention,string"`
+	Time      string `json:"time,omitempty"`
+	Retention int    `json:"retention,string,omitempty"`
 }
 
 // ServerStorageDevice represents a storage device in the context of server requests or server details
@@ -172,6 +172,7 @@ type ServerStorageDevice struct {
 	PartOfPlan string `json:"part_of_plan"`
 	UUID       string `json:"storage"`
 	Size       int    `json:"storage_size"`
+	Tier       string `json:"storage_tier"`
 	Title      string `json:"storage_title"`
 	Type       string `json:"type"`
 	BootDisk   int    `json:"boot_disk,string"`

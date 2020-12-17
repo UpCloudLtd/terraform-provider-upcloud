@@ -57,6 +57,30 @@ type Tag interface {
 
 var _ Tag = (*Service)(nil)
 
+type Account interface {
+	GetAccount() (*upcloud.Account, error)
+}
+
+var _ Account = (*Service)(nil)
+
+type PriceZones interface {
+	GetPriceZones() (*upcloud.PriceZones, error)
+}
+
+var _ PriceZones = (*Service)(nil)
+
+type TimeZones interface {
+	GetTimeZones() (*upcloud.TimeZones, error)
+}
+
+var _ TimeZones = (*Service)(nil)
+
+type Plans interface {
+	GetPlans() (*upcloud.Plans, error)
+}
+
+var _ Plans = (*Service)(nil)
+
 // Service represents the API service. The specified client is used to communicate with the API
 type Service struct {
 	client *client.Client
