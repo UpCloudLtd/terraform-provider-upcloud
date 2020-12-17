@@ -208,7 +208,6 @@ func resourceUpCloudServer() *schema.Resource {
 							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
 							Type:        schema.TypeString,
 							Computed:    true,
-							ForceNew:    true,
 							Optional:    true,
 						},
 						"size": {
@@ -439,6 +438,23 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			Size:  template["size"].(int),
 			Title: template["title"].(string),
 			// TODO: handle backup_rule
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	// should reattach if address changed
+	if d.HasChange("template.0.address") {
+		o, n := d.GetChange("template.0.address")
+		if _, err := client.DetachStorage(&request.DetachStorageRequest{
+			ServerUUID: d.Id(),
+			Address:    o.(string),
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+		if _, err := client.AttachStorage(&request.AttachStorageRequest{
+			Address:     n.(string),
+			ServerUUID:  d.Id(),
+			StorageUUID: d.Get("template.0.id").(string),
 		}); err != nil {
 			return diag.FromErr(err)
 		}
