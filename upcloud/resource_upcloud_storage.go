@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strconv"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
@@ -35,7 +34,7 @@ func backupRuleSchema() *schema.Schema {
 				},
 				"retention": {
 					Description: "The number of days before a backup is automatically deleted",
-					Type:        schema.TypeString,
+					Type:        schema.TypeInt,
 					Required:    true,
 				},
 			},
@@ -407,7 +406,7 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 			map[string]interface{}{
 				"interval":  storage.BackupRule.Interval,
 				"time":      storage.BackupRule.Time,
-				"retention": strconv.Itoa(storage.BackupRule.Retention),
+				"retention": storage.BackupRule.Retention,
 			},
 		}
 
