@@ -399,7 +399,7 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	if _, ok := d.GetOk("backup_rule"); ok {
+	if storage.BackupRule != nil {
 		backupRule := []interface{}{
 			map[string]interface{}{
 				"interval":  storage.BackupRule.Interval,
