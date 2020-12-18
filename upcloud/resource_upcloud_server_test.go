@@ -40,10 +40,8 @@ func testUpcloudServerInstanceConfig() string {
 			zone     = "fi-hel1"
 			hostname = "debian.example.com"
 
-			storage_devices {
-					action = "create"
-					size   = 10
-					tier   = "maxiops"
+			template {
+					storage = "01000000-0000-4000-8000-000020050100"
 			}
 
 			network_interface {
@@ -281,10 +279,8 @@ resource "upcloud_server" "my-server" {
 			hostname = "debian.example.com"
 			plan     = "1xCPU-2GB"
 
-			storage_devices {
-					action = "create"
-					size   = 10
-					tier   = "maxiops"
+			template {
+					storage = "01000000-0000-4000-8000-000020050100"
 			}
 
 			network_interface {
@@ -299,10 +295,8 @@ resource "upcloud_server" "my-server" {
 			hostname = "debian.example.com"
 			plan     = "2xCPU-4GB"
 
-			storage_devices {
-					action = "create"
-					size   = 10
-					tier   = "maxiops"
+			template {
+					storage = "01000000-0000-4000-8000-000020050100"
 			}
 
 			network_interface {
@@ -326,10 +320,8 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 			hostname = "debian.example.com"
 			plan     = "2xCPU-4GB"
 
-			storage_devices {
-					action = "create"
-					size   = 10
-					tier   = "maxiops"
+			template {
+					storage = "01000000-0000-4000-8000-000020050100"
 			}
 	`)
 
