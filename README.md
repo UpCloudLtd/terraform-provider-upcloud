@@ -1,5 +1,7 @@
 # Terraform Provider
 
+![UpCloud Terraform provider tests](https://github.com/UpCloudLtd/terraform-provider-upcloud/workflows/UpCloud%20Terraform%20provider%20tests/badge.svg)
+
 This provider is developed by UpCloud, contributions from the community are welcomed!
 
 * Check Github issues or create more issues
