@@ -8,6 +8,14 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 )
 
+type Host interface {
+	GetHosts() (*upcloud.Hosts, error)
+	GetHostDetails(r *request.GetHostDetailsRequest) (*upcloud.Host, error)
+	ModifyHost(r *request.ModifyHostRequest) (*upcloud.Host, error)
+}
+
+var _ Host = (*Service)(nil)
+
 // GetHosts returns the all the available private hosts
 func (s *Service) GetHosts() (*upcloud.Hosts, error) {
 	hosts := upcloud.Hosts{}

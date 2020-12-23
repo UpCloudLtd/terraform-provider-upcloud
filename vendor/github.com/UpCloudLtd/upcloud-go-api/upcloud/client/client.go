@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"time"
 
+	globals "github.com/UpCloudLtd/upcloud-go-api/internal"
 	"github.com/blang/semver"
 	"github.com/hashicorp/go-cleanhttp"
 )
 
 // Constants
 const (
-	DefaultAPIVersion = "1.3.4"
+	DefaultAPIVersion = "1.3.6"
 	DefaultAPIBaseURL = "https://api.upcloud.com"
 
 	// The default timeout (in seconds)
@@ -26,6 +27,8 @@ type Client struct {
 	userName   string
 	password   string
 	httpClient *http.Client
+
+	UserAgent string
 }
 
 // New creates ands returns a new client configured with the specified user and password
@@ -42,7 +45,11 @@ func NewWithHTTPClient(userName string, password string, httpClient *http.Client
 	client.userName = userName
 	client.password = password
 	client.httpClient = httpClient
-	client.SetTimeout(time.Second * DefaultTimeout)
+	// Set the default timeout if the caller hasn't set its own
+	if client.httpClient.Timeout == 0 {
+		client.SetTimeout(time.Second * DefaultTimeout)
+	}
+	client.UserAgent = fmt.Sprintf("upcloud-go-api/%s", globals.Version)
 
 	return &client
 }
@@ -140,7 +147,6 @@ func (c *Client) PerformJSONDeleteRequest(url string) error {
 // PerformJSONPutUploadRequest performs a PUT request to the specified URL with an io.Reader
 // and returns the response body and eventual errors
 func (c *Client) PerformJSONPutUploadRequest(url string, requestBody io.Reader) ([]byte, error) {
-
 	request, err := http.NewRequest(http.MethodPut, url, requestBody)
 
 	if err != nil {
@@ -151,17 +157,23 @@ func (c *Client) PerformJSONPutUploadRequest(url string, requestBody io.Reader) 
 }
 
 // Adds common headers to the specified request
-func (c *Client) addJSONRequestHeaders(request *http.Request) *http.Request {
+func (c *Client) AddRequestHeaders(request *http.Request) *http.Request {
 	request.SetBasicAuth(c.userName, c.password)
-	request.Header.Add("Accept", "application/json")
-	request.Header.Add("Content-Type", "application/json")
+	request.Header.Set("Accept", "application/json")
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Add("User-Agent", c.UserAgent)
 
 	return request
 }
 
 // Performs the specified HTTP request and returns the response through handleResponse()
 func (c *Client) performJSONRequest(request *http.Request) ([]byte, error) {
-	c.addJSONRequestHeaders(request)
+	c.AddRequestHeaders(request)
+	return c.PerformRequest(request)
+}
+
+// Performs the specified HTTP request and returns the response through handleResponse()
+func (c *Client) PerformRequest(request *http.Request) ([]byte, error) {
 	response, err := c.httpClient.Do(request)
 
 	if err != nil {

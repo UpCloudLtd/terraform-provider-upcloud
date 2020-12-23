@@ -58,9 +58,10 @@ type CreateServerStorageDevice struct {
 	Storage string `json:"storage"`
 	Title   string `json:"title,omitempty"`
 	// Storage size in gigabytes
-	Size int    `json:"size"`
-	Tier string `json:"tier,omitempty"`
-	Type string `json:"type,omitempty"`
+	Size       int                 `json:"size,omitempty"`
+	Tier       string              `json:"tier,omitempty"`
+	Type       string              `json:"type,omitempty"`
+	BackupRule *upcloud.BackupRule `json:"backup_rule,omitempty"`
 }
 
 // CreateServerStorageDeviceSlice is a slice of CreateServerStorageDevices
@@ -189,7 +190,7 @@ func (s SSHKeySlice) MarshalJSON() ([]byte, error) {
 type LoginUser struct {
 	CreatePassword string      `json:"create_password,omitempty"`
 	Username       string      `json:"username,omitempty"`
-	SSHKeys        SSHKeySlice `json:"ssh_keys"`
+	SSHKeys        SSHKeySlice `json:"ssh_keys,omitempty"`
 }
 
 // CreateServerIPAddress represents an IP address for a CreateServerRequest

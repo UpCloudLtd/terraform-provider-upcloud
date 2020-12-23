@@ -11,14 +11,14 @@ type Account struct {
 
 // ResourceLimits represents an account's resource limits
 type ResourceLimits struct {
-	Cores               int `json:"cores"`
-	DetachedFloatingIps int `json:"detached_floating_ips"`
-	Memory              int `json:"memory"`
-	Networks            int `json:"networks"`
-	PublicIPv4          int `json:"public_ipv4"`
-	PublicIPv6          int `json:"public_ipv6"`
-	StorageHDD          int `json:"storage_hdd"`
-	StorageSSD          int `json:"storage_ssd"`
+	Cores               int `json:"cores,omitempty"`
+	DetachedFloatingIps int `json:"detached_floating_ips,omitempty"`
+	Memory              int `json:"memory,omitempty"`
+	Networks            int `json:"networks,omitempty"`
+	PublicIPv4          int `json:"public_ipv4,omitempty"`
+	PublicIPv6          int `json:"public_ipv6,omitempty"`
+	StorageHDD          int `json:"storage_hdd,omitempty"`
+	StorageSSD          int `json:"storage_ssd,omitempty"`
 }
 
 // UnmarshalJSON is a custom unmarshaller that deals with

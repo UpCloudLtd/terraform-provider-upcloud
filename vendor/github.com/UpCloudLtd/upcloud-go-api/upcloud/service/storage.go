@@ -4,12 +4,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 )
+
+type Storage interface {
+	GetStorages(r *request.GetStoragesRequest) (*upcloud.Storages, error)
+	GetStorageDetails(r *request.GetStorageDetailsRequest) (*upcloud.StorageDetails, error)
+	CreateStorage(r *request.CreateStorageRequest) (*upcloud.StorageDetails, error)
+	ModifyStorage(r *request.ModifyStorageRequest) (*upcloud.StorageDetails, error)
+	AttachStorage(r *request.AttachStorageRequest) (*upcloud.ServerDetails, error)
+	DetachStorage(r *request.DetachStorageRequest) (*upcloud.ServerDetails, error)
+	CloneStorage(r *request.CloneStorageRequest) (*upcloud.StorageDetails, error)
+	TemplatizeStorage(r *request.TemplatizeStorageRequest) (*upcloud.StorageDetails, error)
+	WaitForStorageState(r *request.WaitForStorageStateRequest) (*upcloud.StorageDetails, error)
+	LoadCDROM(r *request.LoadCDROMRequest) (*upcloud.ServerDetails, error)
+	EjectCDROM(r *request.EjectCDROMRequest) (*upcloud.ServerDetails, error)
+	CreateBackup(r *request.CreateBackupRequest) (*upcloud.StorageDetails, error)
+	RestoreBackup(r *request.RestoreBackupRequest) error
+	CreateStorageImport(r *request.CreateStorageImportRequest) (*upcloud.StorageImportDetails, error)
+	GetStorageImportDetails(r *request.GetStorageImportDetailsRequest) (*upcloud.StorageImportDetails, error)
+	WaitForStorageImportCompletion(r *request.WaitForStorageImportCompletionRequest) (*upcloud.StorageImportDetails, error)
+	DeleteStorage(*request.DeleteStorageRequest) error
+}
+
+var _ Storage = (*Service)(nil)
 
 // GetStorages returns all available storages
 func (s *Service) GetStorages(r *request.GetStoragesRequest) (*upcloud.Storages, error) {
@@ -227,11 +251,20 @@ func (s *Service) RestoreBackup(r *request.RestoreBackupRequest) error {
 // CreateStorageImport begins the process of importing an image onto a storage device. A `upcloud.StorageImportSourceHTTPImport` source
 // will import from an HTTP source. `upcloud.StorageImportSourceDirectUpload` will directly upload the file specified in `SourceLocation`.
 func (s *Service) CreateStorageImport(r *request.CreateStorageImportRequest) (*upcloud.StorageImportDetails, error) {
-
 	if r.Source == request.StorageImportSourceDirectUpload {
-		return s.directStorageImport(r)
+		switch r.SourceLocation.(type) {
+		case string, io.Reader:
+			return s.directStorageImport(r)
+		case nil:
+			return nil, errors.New("SourceLocation must be specified")
+		default:
+			return nil, fmt.Errorf("unsupported storage source location type %T", r.SourceLocation)
+		}
 	}
 
+	if _, isString := r.SourceLocation.(string); !isString {
+		return nil, fmt.Errorf("unsupported storage source location type %T", r.Source)
+	}
 	return s.doCreateStorageImport(r)
 }
 
@@ -253,15 +286,24 @@ func (s *Service) doCreateStorageImport(r *request.CreateStorageImportRequest) (
 // directStorageImport handles the direct upload logic including getting the upload URL and PUT the file data
 // to that endpoint.
 func (s *Service) directStorageImport(r *request.CreateStorageImportRequest) (*upcloud.StorageImportDetails, error) {
-	if r.SourceLocation == "" {
-		return nil, errors.New("SourceLocation must be specified")
-	}
+	var bodyReader io.Reader
 
-	f, err := os.Open(r.SourceLocation)
-	if err != nil {
-		return nil, fmt.Errorf("unable to open SourceLocation: %w", err)
+	switch v := r.SourceLocation.(type) {
+	case string:
+		if v == "" {
+			return nil, errors.New("SourceLocation must be specified")
+		}
+		f, err := os.Open(v)
+		if err != nil {
+			return nil, fmt.Errorf("unable to open SourceLocation: %w", err)
+		}
+		bodyReader = f
+		defer f.Close()
+	case io.Reader:
+		bodyReader = v
+	default:
+		return nil, fmt.Errorf("unsupported source location type %T", r.SourceLocation)
 	}
-	defer f.Close()
 
 	r.SourceLocation = ""
 	storageImport, err := s.doCreateStorageImport(r)
@@ -273,8 +315,14 @@ func (s *Service) directStorageImport(r *request.CreateStorageImportRequest) (*u
 		return nil, errors.New("no DirectUploadURL found in response")
 	}
 
-	_, err = s.client.PerformJSONPutUploadRequest(storageImport.DirectUploadURL, f)
+	req, err := http.NewRequest(http.MethodPut, storageImport.DirectUploadURL, bodyReader)
 	if err != nil {
+		return nil, err
+	}
+
+	s.client.AddRequestHeaders(req)
+	req.Header.Add("Content-Type", r.ContentType)
+	if _, err := s.client.PerformRequest(req); err != nil {
 		return nil, err
 	}
 

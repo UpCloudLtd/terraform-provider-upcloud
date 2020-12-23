@@ -8,6 +8,26 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 )
 
+type Network interface {
+	GetNetworks() (*upcloud.Networks, error)
+	GetNetworksInZone(r *request.GetNetworksInZoneRequest) (*upcloud.Networks, error)
+	CreateNetwork(r *request.CreateNetworkRequest) (*upcloud.Network, error)
+	GetNetworkDetails(r *request.GetNetworkDetailsRequest) (*upcloud.Network, error)
+	ModifyNetwork(r *request.ModifyNetworkRequest) (*upcloud.Network, error)
+	DeleteNetwork(r *request.DeleteNetworkRequest) error
+	GetServerNetworks(r *request.GetServerNetworksRequest) (*upcloud.Networking, error)
+	CreateNetworkInterface(r *request.CreateNetworkInterfaceRequest) (*upcloud.Interface, error)
+	ModifyNetworkInterface(r *request.ModifyNetworkInterfaceRequest) (*upcloud.Interface, error)
+	DeleteNetworkInterface(r *request.DeleteNetworkInterfaceRequest) error
+	GetRouters() (*upcloud.Routers, error)
+	GetRouterDetails(r *request.GetRouterDetailsRequest) (*upcloud.Router, error)
+	CreateRouter(r *request.CreateRouterRequest) (*upcloud.Router, error)
+	ModifyRouter(r *request.ModifyRouterRequest) (*upcloud.Router, error)
+	DeleteRouter(r *request.DeleteRouterRequest) error
+}
+
+var _ Network = (*Service)(nil)
+
 // GetNetworks returns the all the available networks
 func (s *Service) GetNetworks() (*upcloud.Networks, error) {
 	networks := upcloud.Networks{}
