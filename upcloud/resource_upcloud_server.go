@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
@@ -588,6 +589,27 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		}
 		if attr, ok := d.GetOk("template.0.backup_rule.0"); ok {
 			serverStorageDevice.BackupRule = backup_rule(attr.(map[string]interface{}))
+		}
+		if source := template["storage"].(string); source != "" {
+			// Assume template name is given and attempt map name to UUID
+			if _, err := uuid.ParseUUID(source); err != nil {
+				l, err := meta.(*service.Service).GetStorages(
+					&request.GetStoragesRequest{
+						Type: upcloud.StorageTypeTemplate,
+					})
+
+				if err != nil {
+					return nil, err
+				}
+				for _, s := range l.Storages {
+					if s.Title == source {
+						source = s.UUID
+						break
+					}
+				}
+			}
+
+			serverStorageDevice.Storage = source
 		}
 		r.StorageDevices = append(r.StorageDevices, serverStorageDevice)
 		// TODO: handle backup_rule
