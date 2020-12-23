@@ -579,16 +579,17 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		if template["title"].(string) == "" {
 			template["title"] = fmt.Sprintf("terraform-%s-disk", r.Hostname)
 		}
-		r.StorageDevices = append(
-			r.StorageDevices,
-			request.CreateServerStorageDevice{
-				Action:  "clone",
-				Address: template["address"].(string),
-				Size:    template["size"].(int),
-				Storage: template["storage"].(string),
-				Title:   template["title"].(string),
-			},
-		)
+		serverStorageDevice := request.CreateServerStorageDevice{
+			Action:  "clone",
+			Address: template["address"].(string),
+			Size:    template["size"].(int),
+			Storage: template["storage"].(string),
+			Title:   template["title"].(string),
+		}
+		if attr, ok := d.GetOk("template.0.backup_rule.0"); ok {
+			serverStorageDevice.BackupRule = backup_rule(attr.(map[string]interface{}))
+		}
+		r.StorageDevices = append(r.StorageDevices, serverStorageDevice)
 		// TODO: handle backup_rule
 	}
 
