@@ -1,0 +1,33 @@
+name: UpCloud Terraform provider tests
+
+on:
+   push:
+     branches:
+       - master
+   pull_request:
+     branches:
+       - master
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ 1.14.x, 1.15.x ]
+    steps:
+      - name: setup
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - uses: actions/checkout@v2
+      - name: install
+        run: bash scripts/gogetcookie.sh
+      - run: make vet
+
+      - name: Unit test sweep
+        run: make test
+
+      # Todo: enable acceptance tests for CI/CD once they are fixed
+      # Note: needs env variables
+      # - name: e2e acceptance tests
+      #   run: make testacc
