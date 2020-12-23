@@ -113,7 +113,7 @@ func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
 
 		client := testAccProvider.Meta().(*service.Service)
 		firewallRules, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
-			rs.Primary.ID,
+			ServerUUID: rs.Primary.ID,
 		})
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing firewall rules when deleting upcloud firewall rules (%s): %s", rs.Primary.ID, err)
@@ -227,7 +227,7 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 		  zone     = "fi-hel1"
 		  hostname = "debian.example.com"
 		  plan     = "1xCPU-2GB"
-		
+
 		  storage_devices {
 			action = "create"
 			size   = 10
@@ -242,7 +242,7 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 
 		resource "upcloud_firewall_rules" "my_server" {
 		  server_id = upcloud_server.my_server.id
-		
+
 		  firewall_rule {
 			action = "accept"
 			comment = "Allow SSH from this network"
@@ -267,7 +267,7 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 		  zone     = "fi-hel1"
 		  hostname = "debian.example.com"
 		  plan     = "1xCPU-2GB"
-		
+
 		  storage_devices {
 			action = "create"
 			size   = 10
@@ -282,7 +282,7 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 
 		resource "upcloud_firewall_rules" "my_server" {
 		  server_id = upcloud_server.my_server.id
-		
+
 		  firewall_rule {
 			action = "accept"
 			comment = "Allow SSH from this network"
@@ -297,7 +297,7 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 			source_address_end = "192.168.1.255"
 			source_address_start = "192.168.1.1"
 		  }
-		
+
 		  firewall_rule {
 			action = "accept"
 			comment = "Allow SSH from this network"
