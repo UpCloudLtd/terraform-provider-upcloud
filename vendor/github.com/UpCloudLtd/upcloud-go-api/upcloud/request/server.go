@@ -58,9 +58,10 @@ type CreateServerStorageDevice struct {
 	Storage string `json:"storage"`
 	Title   string `json:"title,omitempty"`
 	// Storage size in gigabytes
-	Size int    `json:"size,omitempty"`
-	Tier string `json:"tier,omitempty"`
-	Type string `json:"type,omitempty"`
+	Size       int                 `json:"size,omitempty"`
+	Tier       string              `json:"tier,omitempty"`
+	Type       string              `json:"type,omitempty"`
+	BackupRule *upcloud.BackupRule `json:"backup_rule,omitempty"`
 }
 
 // CreateServerStorageDeviceSlice is a slice of CreateServerStorageDevices
