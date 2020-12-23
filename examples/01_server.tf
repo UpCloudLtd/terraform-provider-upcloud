@@ -28,12 +28,9 @@ resource "upcloud_server" "test" {
     password_delivery = "sms"
   }
 
-  storage_devices {
-    # You can use both storage template names and UUIDs
-    size    = 50
-    action  = "clone"
-    tier    = "maxiops"
+  template {
     storage = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
+    size    = 50
 
     backup_rule {
       interval  = "daily"
@@ -43,16 +40,23 @@ resource "upcloud_server" "test" {
   }
 
   storage_devices {
-    size    = 10
-    action  = "create"
-    tier    = "maxiops"
-
-    backup_rule {
-      interval  = "daily"
-      time      = "0100"
-      retention = 8
-    }
+    storage = upcloud_storage.storage.id
+    # address = "virtio"
+    # type    = "disk"
   }
+}
+
+resource "upcloud_storage" "storage" {
+  size  = 10
+  tier  = "maxiops"
+  title = "additional storage"
+  zone  = "fi-hel1"
+
+  # backup_rule {
+  #   interval  = "daily"
+  #   time      = "0100"
+  #   retention = 8
+  # }
 }
 
 resource "upcloud_tag" "My-tag" {
