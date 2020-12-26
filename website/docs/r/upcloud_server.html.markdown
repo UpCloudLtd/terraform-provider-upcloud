@@ -57,6 +57,7 @@ The following arguments are supported:
 * `hostname` - (Required) A valid domain name, e.g. host.example.com. The maximum length is 128 characters.
 * `zone` - (Required) - The zone in which the server will be hosted, e.g. fi-hel1. See [Zones API](https://developers.upcloud.com/1.3/5-zones/)
 * `firewall` - (Optional) Are firewall rules active for the server
+* `metadata` - (Optional) Is the metadata service active for the server
 * `cpu` - (Optional) The number of CPU for the server
 * `mem` - (Optional) The size of memory for the server
 * `template` - (Optional) The template to use during creation
