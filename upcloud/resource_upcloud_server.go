@@ -434,10 +434,10 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	if d.HasChanges("template.0.title", "template.0.size", "template.0.backup_rule") {
 		template := d.Get("template.0").(map[string]interface{})
 		if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
-			UUID:  template["id"].(string),
-			Size:  template["size"].(int),
-			Title: template["title"].(string),
-			// TODO: handle backup_rule
+			UUID:       template["id"].(string),
+			Size:       template["size"].(int),
+			Title:      template["title"].(string),
+			BackupRule: backup_rule(d.Get("template.0.backup_rule.0").(map[string]interface{})),
 		}); err != nil {
 			return diag.FromErr(err)
 		}
