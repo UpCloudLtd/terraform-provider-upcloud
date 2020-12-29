@@ -470,22 +470,22 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		o, n := d.GetChange("storage_devices")
 
 		// detach the devices that should be detached or sould be re-attached with different parameters
-		for _, storage_device := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+		for _, storageDevices := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
 			if _, err := client.DetachStorage(&request.DetachStorageRequest{
 				ServerUUID: d.Id(),
-				Address:    storage_device.(map[string]interface{})["address"].(string),
+				Address:    storageDevices.(map[string]interface{})["address"].(string),
 			}); err != nil {
 				return diag.FromErr(err)
 			}
 		}
 		// attach the storages that are new or have changed
-		for _, storage_device := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
-			storage_device := storage_device.(map[string]interface{})
+		for _, storageDevice := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
+			storageDevice := storageDevice.(map[string]interface{})
 			if _, err := client.AttachStorage(&request.AttachStorageRequest{
 				ServerUUID:  d.Id(),
-				Address:     storage_device["address"].(string),
-				StorageUUID: storage_device["storage"].(string),
-				Type:        storage_device["type"].(string),
+				Address:     storageDevice["address"].(string),
+				StorageUUID: storageDevice["storage"].(string),
+				Type:        storageDevice["type"].(string),
 			}); err != nil {
 				return diag.FromErr(err)
 			}
@@ -615,15 +615,15 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		// TODO: handle backup_rule
 	}
 
-	if storage_devices, ok := d.GetOk("storage_devices"); ok {
-		storage_devices := storage_devices.(*schema.Set)
-		for _, storage_device := range storage_devices.List() {
-			storage_device := storage_device.(map[string]interface{})
+	if storageDevices, ok := d.GetOk("storage_devices"); ok {
+		storageDevices := storageDevices.(*schema.Set)
+		for _, storageDevice := range storageDevices.List() {
+			storageDevice := storageDevice.(map[string]interface{})
 			r.StorageDevices = append(r.StorageDevices, request.CreateServerStorageDevice{
 				Action:  "attach",
-				Address: storage_device["address"].(string),
-				Type:    storage_device["type"].(string),
-				Storage: storage_device["storage"].(string),
+				Address: storageDevice["address"].(string),
+				Type:    storageDevice["type"].(string),
+				Storage: storageDevice["storage"].(string),
 			})
 		}
 	}
