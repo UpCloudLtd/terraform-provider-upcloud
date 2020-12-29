@@ -599,7 +599,6 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 			serverStorageDevice.Storage = source
 		}
 		r.StorageDevices = append(r.StorageDevices, serverStorageDevice)
-		// TODO: handle backup_rule
 	}
 
 	if storageDevices, ok := d.GetOk("storage_devices"); ok {
