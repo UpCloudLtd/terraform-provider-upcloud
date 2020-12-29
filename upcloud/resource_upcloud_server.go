@@ -198,8 +198,7 @@ func resourceUpCloudServer() *schema.Resource {
 				},
 			},
 			"template": {
-				// TODO: add description
-				Description: "",
+				Description: "Block describing the preconfigured operating system",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
