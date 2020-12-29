@@ -257,10 +257,10 @@ func cloneStorage(
 	return nil
 }
 
-func backup_rule(backup_rule map[string]interface{}) *upcloud.BackupRule {
-	if interval, ok := backup_rule["interval"]; ok {
-		if time, ok := backup_rule["time"]; ok {
-			if retention, ok := backup_rule["retention"]; ok {
+func backupRule(backupRule map[string]interface{}) *upcloud.BackupRule {
+	if interval, ok := backupRule["interval"]; ok {
+		if time, ok := backupRule["time"]; ok {
+			if retention, ok := backupRule["retention"]; ok {
 				return &upcloud.BackupRule{
 					Interval:  interval.(string),
 					Time:      time.(string),
@@ -302,7 +302,7 @@ func createStorage(
 	}
 
 	if v, ok := d.GetOk("backup_rule.0"); ok {
-		createStorageRequest.BackupRule = backup_rule(v.(map[string]interface{}))
+		createStorageRequest.BackupRule = backupRule(v.(map[string]interface{}))
 	}
 
 	storage, err := client.CreateStorage(&createStorageRequest)
@@ -461,7 +461,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if d.HasChange("backup_rule") {
-		r.BackupRule = backup_rule(d.Get("backup_rule.0").(map[string]interface{}))
+		r.BackupRule = backupRule(d.Get("backup_rule.0").(map[string]interface{}))
 	}
 
 	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{

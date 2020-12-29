@@ -442,7 +442,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			UUID:       template["id"].(string),
 			Size:       template["size"].(int),
 			Title:      template["title"].(string),
-			BackupRule: backup_rule(d.Get("template.0.backup_rule.0").(map[string]interface{})),
+			BackupRule: backupRule(d.Get("template.0.backup_rule.0").(map[string]interface{})),
 		}); err != nil {
 			return diag.FromErr(err)
 		}
@@ -588,7 +588,7 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 			Title:   template["title"].(string),
 		}
 		if attr, ok := d.GetOk("template.0.backup_rule.0"); ok {
-			serverStorageDevice.BackupRule = backup_rule(attr.(map[string]interface{}))
+			serverStorageDevice.BackupRule = backupRule(attr.(map[string]interface{}))
 		}
 		if source := template["storage"].(string); source != "" {
 			// Assume template name is given and attempt map name to UUID
