@@ -50,6 +50,11 @@ func resourceUpCloudServer() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
+			"metadata": {
+				Description: "Is the metadata service active for the server",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 			"cpu": {
 				Description:   "The number of CPU for the server",
 				Type:          schema.TypeInt,
@@ -493,6 +498,13 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 			r.Firewall = "on"
 		} else {
 			r.Firewall = "off"
+		}
+	}
+	if attr, ok := d.GetOk("metadata"); ok {
+		if attr.(bool) {
+			r.Metadata = upcloud.True
+		} else {
+			r.Metadata = upcloud.False
 		}
 	}
 	if attr, ok := d.GetOk("cpu"); ok {
