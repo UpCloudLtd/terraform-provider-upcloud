@@ -408,7 +408,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	if err := verifyServerStopped(d.Id(), meta); err != nil {
+	if _, err := verifyServerStopped(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -491,7 +491,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	if err := verifyServerStarted(d.Id(), meta); err != nil {
+	if _, err := verifyServerStarted(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 	return resourceUpCloudServerRead(ctx, d, meta)
@@ -503,7 +503,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	var diags diag.Diagnostics
 
 	// Verify server is stopped before deletion
-	if err := verifyServerStopped(d.Id(), meta); err != nil {
+	if _, err := verifyServerStopped(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 	// Delete server
@@ -699,7 +699,7 @@ func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string
 	return r, deliveryMethod, nil
 }
 
-func verifyServerStopped(id string, meta interface{}) error {
+func verifyServerStopped(id string, meta interface{}) (*upcloud.ServerDetails, error) {
 	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
@@ -707,7 +707,7 @@ func verifyServerStopped(id string, meta interface{}) error {
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
-		return err
+		return server, err
 	}
 	if server.State != upcloud.ServerStateStopped {
 		// Soft stop with 2 minute timeout, after which hard stop occurs
@@ -719,7 +719,7 @@ func verifyServerStopped(id string, meta interface{}) error {
 		log.Printf("[INFO] Stopping server (server UUID: %s)", id)
 		_, err := client.StopServer(stopRequest)
 		if err != nil {
-			return err
+			return server, err
 		}
 		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
 			UUID:         id,
@@ -727,13 +727,13 @@ func verifyServerStopped(id string, meta interface{}) error {
 			Timeout:      time.Minute * 5,
 		})
 		if err != nil {
-			return err
+			return server, err
 		}
 	}
-	return nil
+	return server, nil
 }
 
-func verifyServerStarted(id string, meta interface{}) error {
+func verifyServerStarted(id string, meta interface{}) (*upcloud.ServerDetails, error) {
 	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
@@ -741,7 +741,7 @@ func verifyServerStarted(id string, meta interface{}) error {
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
-		return err
+		return server, err
 	}
 	if server.State != upcloud.ServerStateStarted {
 		startRequest := &request.StartServerRequest{
@@ -751,7 +751,7 @@ func verifyServerStarted(id string, meta interface{}) error {
 		log.Printf("[INFO] Starting server (server UUID: %s)", id)
 		_, err := client.StartServer(startRequest)
 		if err != nil {
-			return err
+			return server, err
 		}
 		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
 			UUID:         id,
@@ -759,8 +759,8 @@ func verifyServerStarted(id string, meta interface{}) error {
 			Timeout:      time.Minute * 5,
 		})
 		if err != nil {
-			return err
+			return server, err
 		}
 	}
-	return nil
+	return server, nil
 }
