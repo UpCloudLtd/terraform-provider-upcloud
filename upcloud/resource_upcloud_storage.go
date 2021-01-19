@@ -447,24 +447,6 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	r := &request.ModifyStorageRequest{
-		UUID: d.Id(),
-	}
-
-	if d.HasChange("size") {
-		_, newSize := d.GetChange("size")
-		r.Size = newSize.(int)
-	}
-
-	if d.HasChange("title") {
-		_, newTitle := d.GetChange("title")
-		r.Title = newTitle.(string)
-	}
-
-	if d.HasChange("backup_rule") {
-		r.BackupRule = backupRule(d.Get("backup_rule.0").(map[string]interface{}))
-	}
-
 	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
@@ -474,7 +456,12 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	_, err = client.ModifyStorage(r)
+	_, err = client.ModifyStorage(&request.ModifyStorageRequest{
+		UUID:       d.Id(),
+		Size:       d.Get("size").(int),
+		Title:      d.Get("title").(string),
+		BackupRule: backupRule(d.Get("backup_rule.0").(map[string]interface{})),
+	})
 
 	if err != nil {
 		return diag.FromErr(err)
