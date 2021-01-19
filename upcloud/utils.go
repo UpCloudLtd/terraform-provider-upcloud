@@ -61,13 +61,13 @@ func min(x, y int) int {
 	return y
 }
 
-// WithRetry attempts to call the provided function until it has been successfully called or the number of calls exceeds retries
-func WithRetry(fn func() (interface{}, error), retries int, delay int) (interface{}, error) {
+// WithRetry attempts to call the provided function until it has been successfully called or the number of calls exceeds retries delaying the consecutive calls by given delay
+func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration) (interface{}, error) {
 	var err error
 	var res interface{}
 	for count := 0; true; count++ {
 		if delay > 0 {
-			time.Sleep(time.Duration(delay) * time.Second)
+			time.Sleep(delay)
 		}
 		if count >= retries {
 			break
