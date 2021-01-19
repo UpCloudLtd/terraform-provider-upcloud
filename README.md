@@ -25,6 +25,8 @@ Note that currently, creation of only 10 concurrent servers is possible per acco
 
 ## Quick Start
 
+Install [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli).
+
 Set environment variables for authentication (on command line, in .bashrc, .zshrc, ...):
 
 ```
@@ -63,6 +65,8 @@ resource "upcloud_server" "example" {
 Run Terraform with e.g. `terraform apply`.
 
 ## Using the provider
+
+Before using the provider, install [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli).
 
 You need to set UpCloud credentials in shell environment variable (.bashrc, .zshrc or similar) to be able to use the provider:
 
