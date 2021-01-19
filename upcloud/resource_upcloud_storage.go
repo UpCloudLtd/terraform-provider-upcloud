@@ -520,14 +520,16 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
 			// ide devices can only be detached from stopped servers
 			if strings.HasPrefix(storageDevice.Address, "ide") {
-				verifyServerStopped(serverUUID, meta)
+				serverDetails, err = verifyServerStopped(serverUUID, meta)
+				if err != nil {
+					return diag.FromErr(err)
+				}
 			}
 			WithRetry(func() (interface{}, error) {
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
-			if strings.HasPrefix(storageDevice.Address, "ide") {
-				// TODO: respect initial state when https://github.com/UpCloudLtd/terraform-provider-upcloud/pull/109 merged
-				verifyServerStopped(serverUUID, meta)
+			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
+				verifyServerStarted(serverUUID, meta)
 			}
 		}
 	}
