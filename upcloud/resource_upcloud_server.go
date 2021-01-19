@@ -408,7 +408,8 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	if _, err := verifyServerStopped(d.Id(), meta); err != nil {
+	server, err := verifyServerStopped(d.Id(), meta)
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -468,8 +469,11 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	if d.HasChange("storage_devices") {
 		o, n := d.GetChange("storage_devices")
 
-		// detach the devices that should be detached or sould be re-attached with different parameters
+		// detach the devices that should be detached or should be re-attached with different parameters
 		for _, storageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+			if server.StorageDevice(storageDevice.(map[string]interface{})["storage"].(string)) == nil {
+				continue
+			}
 			if _, err := client.DetachStorage(&request.DetachStorageRequest{
 				ServerUUID: d.Id(),
 				Address:    storageDevice.(map[string]interface{})["address"].(string),

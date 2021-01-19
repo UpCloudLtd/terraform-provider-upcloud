@@ -524,7 +524,7 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 			}
 			WithRetry(func() (interface{}, error) {
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
-			}, 20, 1)
+			}, 20, time.Second*3)
 			if strings.HasPrefix(storageDevice.Address, "ide") {
 				// TODO: respect initial state when https://github.com/UpCloudLtd/terraform-provider-upcloud/pull/109 merged
 				verifyServerStopped(serverUUID, meta)
