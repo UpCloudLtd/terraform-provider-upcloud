@@ -208,12 +208,3 @@ func (s *ServerDetails) UnmarshalJSON(b []byte) error {
 
 	return nil
 }
-
-func (s *ServerDetails) StorageDevice(storageUUID string) *ServerStorageDevice {
-	for _, storageDevice := range s.StorageDevices {
-		if storageDevice.UUID == storageUUID {
-			return &storageDevice
-		}
-	}
-	return nil
-}
