@@ -1,6 +1,12 @@
 package upcloud
 
-import "github.com/UpCloudLtd/upcloud-go-api/upcloud"
+import (
+	"time"
+
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
+)
+
+var RetryDelay = 1000
 
 func FilterZoneIds(vs []upcloud.Zone, f func(upcloud.Zone) bool) []string {
 	vsf := make([]string, 0)
@@ -53,4 +59,25 @@ func min(x, y int) int {
 	}
 
 	return y
+}
+
+// WithRetry attempts to call the provided function until it has been successfully called or the number of calls exceeds retries
+func WithRetry(fn func() (interface{}, error), retries int, delay int) (interface{}, error) {
+	var err error
+	var res interface{}
+	for count := 0; true; count++ {
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Second)
+		}
+		if count >= retries {
+			break
+		}
+		res, err = fn()
+		if err == nil {
+			return res, nil
+		} else {
+			continue
+		}
+	}
+	return nil, err
 }

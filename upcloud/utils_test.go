@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -56,6 +57,34 @@ func TestFilterNetworks(t *testing.T) {
 	}
 	if len(filtered2) != 3 {
 		t.Logf("filter2 returned wrong number of items: %d", len(filtered2))
+		t.Fail()
+	}
+}
+
+func TestWithRetry(t *testing.T) {
+	fail := func() (interface{}, error) {
+		return nil, fmt.Errorf("")
+	}
+	count := 0
+	successAftertree := func() (interface{}, error) {
+		if count < 3 {
+			count++
+			return nil, fmt.Errorf("")
+		} else {
+			return nil, nil
+		}
+	}
+	if _, err := WithRetry(fail, 3, 0); err == nil {
+		t.Log("should fail")
+		t.Fail()
+	}
+	if _, err := WithRetry(successAftertree, 4, 0); err != nil {
+		t.Log("should not fail")
+		t.Fail()
+	}
+	count = 0
+	if _, err := WithRetry(successAftertree, 3, 0); err == nil {
+		t.Log("should fail")
 		t.Fail()
 	}
 }
