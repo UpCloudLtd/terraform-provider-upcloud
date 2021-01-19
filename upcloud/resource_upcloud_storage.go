@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
@@ -496,6 +497,39 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 	})
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// fetch storage details for checking that the storage can be deleted
+	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+		UUID: d.Id(),
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if len(storageDetails.ServerUUIDs) > 0 {
+		serverUUID := storageDetails.ServerUUIDs[0]
+		// Get server details for retrieven the address used to detach the storage
+		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+			UUID: serverUUID,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
+			// ide devices can only be detached from stopped servers
+			if strings.HasPrefix(storageDevice.Address, "ide") {
+				verifyServerStopped(serverUUID, meta)
+			}
+			WithRetry(func() (interface{}, error) {
+				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
+			}, 20, 1)
+			if strings.HasPrefix(storageDevice.Address, "ide") {
+				// TODO: respect initial state when https://github.com/UpCloudLtd/terraform-provider-upcloud/pull/109 merged
+				verifyServerStopped(serverUUID, meta)
+			}
+		}
 	}
 
 	deleteStorageRequest := &request.DeleteStorageRequest{
