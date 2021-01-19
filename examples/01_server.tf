@@ -1,36 +1,40 @@
 provider "upcloud" {
-  # You need to set UpCloud credentials in shell environment variable
-  # using .bashrc, .zshrc or similar
-  # export UPCLOUD_USERNAME="Username for Upcloud API user"
-  # export UPCLOUD_PASSWORD="Password for Upcloud API user"
+  # Your UpCloud credentials are read from the environment variables:
+  # export UPCLOUD_USERNAME="Username of your UpCloud API user"
+  # export UPCLOUD_PASSWORD="Password of your UpCloud API user"
 }
 
-resource "upcloud_server" "test" {
-  zone     = "fi-hel1"
+# create a server
+resource "upcloud_server" "ubuntu" {
   hostname = "ubuntu.example.tld"
+  zone     = "de-fra1"
+  firewall = false
 
-  cpu = "2"
-  mem = "1024"
+  # choose a simple plan
+  plan = "1xCPU-1GB"
 
+  # use flexible plan:
+  # cpu = "2"
+  # mem = "1024"
+
+  # add a public IP address
+  network_interface {
+    type = "public"
+  }
+
+  # add the utility network
   network_interface {
     type = "utility"
   }
 
-  # Login details
-  login {
-    user = "tf"
-
-    keys = [
-      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCYn6VuEgiH3//qpSa/b3Khrjy3Z4Q4fvvhRNRDrZaJqddLvQLCtoL2ktoke7+0jTcR4Vydi8bk8csUQlZxpWC6SIfif+tB8HjwusbUfLT5I5fJEI/O7gtktvtWkK4GnePFXYIdgKlXKRJ92xFnNOGV+el2zug78QahsrzsyV0Cucfjb7twPyojh5iPl3gf6f7NBHVnsqNELhJqmpo4uY+vSTfHx0siyIGP0U/Jz9dB64kbnoG6GL2fh3CEQ950Ll2luY/cfX52SO+WX/nl156A2VVCozkOSE3wbZ501Gd1508KY7ctuaqOue4DF8ZuQ1uzv4Lf9sfg4Bv4jBMTu4tvB",
-    ]
-
-    create_password   = true
-    password_delivery = "sms"
-  }
-
   template {
-    storage = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
-    size    = 50
+    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+
+    # use size allotted by the 1xCPU-1GB plan:
+    size = 25
+
+    # UUID also works:
+    # storage = "01000000-0000-4000-8000-000030200200"
 
     backup_rule {
       interval  = "daily"
@@ -39,18 +43,50 @@ resource "upcloud_server" "test" {
     }
   }
 
+  # attach an extra storage device (configured below)
   storage_devices {
-    storage = upcloud_storage.storage.id
+    storage = upcloud_storage.datastorage.id
+
+    # defaults if not specified:
     # address = "virtio"
     # type    = "disk"
   }
+
+  # login details
+  login {
+    # create a new sudo user called "terraform"
+    user = "terraform"
+
+    keys = [
+      "<YOUR PUBLIC SSH KEY HERE>",
+    ]
+
+    # create a password (set to false if using SSH key only)
+    create_password = true
+
+    # remove password_delivery if using SSH key only
+    password_delivery = "sms"
+  }
+
+  # Allow terraform to connect to the server
+  connection {
+    # the server public IP address
+    host = self.network_interface[0].ip_address
+    type = "ssh"
+
+    # the user created above
+    user        = "terraform"
+    private_key = "<PATH TO YOUR PRIVATE SSH KEY>"
+  }
 }
 
-resource "upcloud_storage" "storage" {
+# create a storage for data
+resource "upcloud_storage" "datastorage" {
+  title = "/data"
   size  = 10
+  # zone needs to match server's zone:
+  zone  = "de-fra1"
   tier  = "maxiops"
-  title = "additional storage"
-  zone  = "fi-hel1"
 
   # backup_rule {
   #   interval  = "daily"
@@ -59,15 +95,17 @@ resource "upcloud_storage" "storage" {
   # }
 }
 
-resource "upcloud_tag" "My-tag" {
-  name        = "TagName1"
-  description = "TagDescription"
+# add a tag for the server
+resource "upcloud_tag" "ubuntu-tag" {
+  name        = "Ubuntu"
+  description = "Ubuntu"
+
+  # apply tag to our server:
   servers = [
-    upcloud_server.test.id,
+    upcloud_server.ubuntu.id,
   ]
 }
 
 output "Public_ip" {
-  value = upcloud_server.test.network_interface[0].ip_address
+  value = upcloud_server.ubuntu.network_interface[0].ip_address
 }
-
