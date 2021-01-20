@@ -26,3 +26,6 @@ jobs:
 
       - name: Unit test sweep
         run: make test
+
+      - name: acceptance test sweep
+        run: make acctest
