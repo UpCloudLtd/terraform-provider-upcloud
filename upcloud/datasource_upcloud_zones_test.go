@@ -43,7 +43,6 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceUpCloudZonesCheck(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
-					resource.TestCheckResourceAttr(resourceName, "zone_ids.#", "9"),
 				),
 			},
 		},
@@ -65,7 +64,6 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceUpCloudZonesCheck(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
-					resource.TestCheckResourceAttr(resourceName, "zone_ids.#", "1"),
 				),
 			},
 		},
@@ -87,7 +85,6 @@ func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceUpCloudZonesCheck(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
-					resource.TestCheckResourceAttr(resourceName, "zone_ids.#", "10"),
 				),
 			},
 		},
