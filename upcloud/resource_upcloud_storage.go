@@ -456,15 +456,35 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	_, err = client.ModifyStorage(&request.ModifyStorageRequest{
+	req := request.ModifyStorageRequest{
 		UUID:       d.Id(),
 		Size:       d.Get("size").(int),
 		Title:      d.Get("title").(string),
 		BackupRule: backupRule(d.Get("backup_rule.0").(map[string]interface{})),
-	})
+	}
 
+	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+		UUID: d.Id(),
+	})
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	// need to shut down server if resizing
+	if len(storageDetails.ServerUUIDs) > 0 && d.HasChange("size") {
+		serverDetails, err := verifyServerStopped(storageDetails.ServerUUIDs[0], meta)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if _, err := WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
+			return diag.FromErr(err)
+		}
+		if serverDetails.State != upcloud.ServerStateStopped {
+			verifyServerStarted(serverDetails.UUID, meta)
+		}
+	} else {
+		if _, err := client.ModifyStorage(&req); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return resourceUpCloudStorageRead(ctx, d, meta)
