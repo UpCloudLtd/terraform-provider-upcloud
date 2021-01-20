@@ -471,15 +471,20 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 	// need to shut down server if resizing
 	if len(storageDetails.ServerUUIDs) > 0 && d.HasChange("size") {
-		serverDetails, err := verifyServerStopped(storageDetails.ServerUUIDs[0], meta)
+		server, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+			UUID: d.Id(),
+		})
 		if err != nil {
+			return diag.FromErr(err)
+		}
+		if err := verifyServerStopped(server, meta); err != nil {
 			return diag.FromErr(err)
 		}
 		if _, err := WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
 			return diag.FromErr(err)
 		}
-		if serverDetails.State != upcloud.ServerStateStopped {
-			verifyServerStarted(serverDetails.UUID, meta)
+		if server.State != upcloud.ServerStateStopped {
+			verifyServerStarted(server, meta)
 		}
 	} else {
 		if _, err := client.ModifyStorage(&req); err != nil {
@@ -517,26 +522,27 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 	if len(storageDetails.ServerUUIDs) > 0 {
 		serverUUID := storageDetails.ServerUUIDs[0]
 		// Get server details for retrieven the address used to detach the storage
-		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+		server, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 			UUID: serverUUID,
 		})
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
+		if storageDevice := server.StorageDevice(d.Id()); storageDevice != nil {
 			// ide devices can only be detached from stopped servers
 			if strings.HasPrefix(storageDevice.Address, "ide") {
-				serverDetails, err = verifyServerStopped(serverUUID, meta)
-				if err != nil {
+				if err = verifyServerStopped(server, meta); err != nil {
 					return diag.FromErr(err)
 				}
 			}
 			WithRetry(func() (interface{}, error) {
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
-			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
-				verifyServerStarted(serverUUID, meta)
+			if strings.HasPrefix(storageDevice.Address, "ide") && server.State != upcloud.ServerStateStopped {
+				if err = verifyServerStarted(server, meta); err != nil {
+					return diag.FromErr(err)
+				}
 			}
 		}
 	}
