@@ -25,4 +25,8 @@ jobs:
         run: make test
 
       - name: acceptance test sweep
+        env:
+          UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
+          UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
+
         run: make acctest
