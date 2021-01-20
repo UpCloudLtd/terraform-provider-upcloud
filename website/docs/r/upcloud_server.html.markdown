@@ -57,7 +57,7 @@ The following arguments are supported:
 * `metadata` - (Optional) Is the metadata service active for the server
 * `cpu` - (Optional) The number of CPU for the server
 * `mem` - (Optional) The size of memory for the server
-* `template` - (Optional) The template to use during creation
+* `template` - (Optional) The template to use for the server's main storage device
 * `user_data` - (Optional) Defines URL for a server setup script, or the script body itself
 * `plan` - (Optional) The pricing plan used for the server
 * `storage_devices` - (Optional) A list of storage devices associated with the server
@@ -68,6 +68,14 @@ The `storage_devices` block supports:
 * `storage` - (Required) A valid storage UUID
 * `address` - (Optional) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
 * `type` - (Optional) The device type the storage will be attached as. See [Storage types](https://developers.upcloud.com/1.3/9-storages/).
+
+The `template` block supports:
+
+* `storage` - (Required) A valid storage UUID or exact template name
+* `address` - (Optional) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
+* `title` - (Optional) A short, informative description for the storage device
+* `size`- (Optional) The size of the storage in gigabytes
+* `backup_rule` - (Optional) The criteria to backup the storage
 
 The `login` block supports:
 
@@ -83,6 +91,12 @@ The `network_interface` block supports:
 * `network` - (Optional) The unique ID of a network to attach this interface to. Only supported for `private` interfaces.
 * `source_ip_filtering` - (Optional) `true` if source IPs should be filtered. Only supported for `private` interfaces.
 * `bootable` - (Optional) `true` if this interface should be used for network booting. Only supported for `private` interfaces.
+
+The `backup_rule` block supports:
+
+* `interval` - (Required) The weekday when the backup is created
+* `time` - (Required) The time of day when the backup is created
+* `retention` - (Required) The number of days before a backup is automatically deleted
 
 ## Attributes Reference
 
