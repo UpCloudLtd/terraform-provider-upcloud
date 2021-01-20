@@ -3,7 +3,6 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceUpCloudServer() *schema.Resource {
@@ -68,14 +68,18 @@ func resourceUpCloudServer() *schema.Resource {
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
 			},
-			"network_interface": {
-				Type:        schema.TypeList,
+			"network_interfaces": {
+				Type:        schema.TypeSet,
 				Description: "One or more blocks describing the network interfaces of the server.",
 				Required:    true,
-				ForceNew:    true,
 				MinItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"index": {
+							Type:        schema.TypeInt,
+							Description: "Index of the interface",
+							Required:    true,
+						},
 						"ip_address_family": {
 							Type:        schema.TypeString,
 							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
@@ -365,7 +369,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 	if len(networkInterfaces) > 0 {
-		d.Set("network_interface", networkInterfaces)
+		d.Set("network_interfaces", networkInterfaces)
 	}
 
 	storageDevices := []interface{}{}
@@ -485,6 +489,35 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 				Address:     storageDevice["address"].(string),
 				StorageUUID: storageDevice["storage"].(string),
 				Type:        storageDevice["type"].(string),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	// handle network interface modify
+	if d.HasChange("network_interfaces") {
+		o, n := d.GetChange("network_interfaces")
+
+		// modify server network interfaces, if there are changes
+		for _, networkInterfaces := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+			o := o.(map[string]interface{})
+			networkInterfaces := networkInterfaces.(map[string]interface{})
+			if _, err := client.ModifyNetworkInterface(&request.ModifyNetworkInterfaceRequest{
+				ServerUUID:   d.Id(),
+				CurrentIndex: o["index"].(int),
+				Type:         networkInterfaces["type"].(string),
+				NetworkUUID:  networkInterfaces["network"].(string),
+				NewIndex:     networkInterfaces["index"].(int),
+
+				IPAddresses: []request.CreateNetworkInterfaceIPAddress{
+					{
+						Family:  networkInterfaces["ip_address_family"].(string),
+						Address: networkInterfaces["ip_address"].(string),
+					},
+				},
+				SourceIPFiltering: networkInterfaces["source_ip_filtering"].(upcloud.Boolean),
+				Bootable:          networkInterfaces["bootable"].(upcloud.Boolean),
 			}); err != nil {
 				return diag.FromErr(err)
 			}
@@ -641,9 +674,9 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerInterface, error) {
 	ifaces := []request.CreateServerInterface{}
 
-	niCount := d.Get("network_interface.#").(int)
+	niCount := d.Get("network_interfaces.#").(int)
 	for i := 0; i < niCount; i++ {
-		keyRoot := fmt.Sprintf("network_interface.%d.", i)
+		keyRoot := fmt.Sprintf("network_interfaces.%d.", i)
 
 		iface := request.CreateServerInterface{
 			IPAddresses: []request.CreateServerIPAddress{
