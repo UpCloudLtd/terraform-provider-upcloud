@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	globals "github.com/UpCloudLtd/upcloud-go-api/internal"
+	globals "github.com/UpCloudLtd/terraform-provider-upcloud/internal"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
