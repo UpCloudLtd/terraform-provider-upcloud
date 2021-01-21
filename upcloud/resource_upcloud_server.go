@@ -669,27 +669,25 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerInterface, error) {
 	ifaces := []request.CreateServerInterface{}
 
-	niCount := d.Get("network_interfaces.#").(int)
-	for i := 0; i < niCount; i++ {
-		keyRoot := fmt.Sprintf("network_interfaces.%d.", i)
+	if networkInterfaces, ok := d.GetOk("network_interfaces"); ok {
+		networkInterfaces := networkInterfaces.(*schema.Set)
+		for _, networkInterface := range networkInterfaces.List() {
+			networkInterface := networkInterface.(map[string]interface{})
 
-		iface := request.CreateServerInterface{
-			IPAddresses: []request.CreateServerIPAddress{
-				{
-					Family: d.Get(keyRoot + "ip_address_family").(string),
+			iface := request.CreateServerInterface{
+				IPAddresses: []request.CreateServerIPAddress{
+					{
+						Family: networkInterface["ip_address_family"].(string),
+					},
 				},
-			},
-			Type: d.Get(keyRoot + "type").(string),
+				Type:              networkInterface["type"].(string),
+				Network:           networkInterface["network"].(string),
+				SourceIPFiltering: upcloud.FromBool(networkInterface["source_ip_filtering"].(bool)),
+				Bootable:          upcloud.FromBool(networkInterface["bootable"].(bool)),
+			}
+
+			ifaces = append(ifaces, iface)
 		}
-
-		iface.SourceIPFiltering = upcloud.FromBool(d.Get(keyRoot + "source_ip_filtering").(bool))
-		iface.Bootable = upcloud.FromBool(d.Get(keyRoot + "bootable").(bool))
-
-		if v, ok := d.GetOk(keyRoot + "network"); ok {
-			iface.Network = v.(string)
-		}
-
-		ifaces = append(ifaces, iface)
 	}
 
 	return ifaces, nil
