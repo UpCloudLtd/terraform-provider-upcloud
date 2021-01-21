@@ -84,7 +84,6 @@ func resourceUpCloudServer() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
 							Optional:    true,
-							ForceNew:    true,
 							Default:     upcloud.IPAddressFamilyIPv4,
 							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
 								switch v.(string) {
@@ -121,7 +120,6 @@ func resourceUpCloudServer() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Network interface type. For private network interfaces, a network must be specified with an existing network id.",
 							Required:    true,
-							ForceNew:    true,
 							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
 								switch v.(string) {
 								case upcloud.NetworkTypePrivate, upcloud.NetworkTypeUtility, upcloud.NetworkTypePublic:
@@ -142,21 +140,18 @@ func resourceUpCloudServer() *schema.Resource {
 						"network": {
 							Type:        schema.TypeString,
 							Description: "The unique ID of a network to attach this network to.",
-							ForceNew:    true,
 							Optional:    true,
 							Computed:    true,
 						},
 						"source_ip_filtering": {
 							Type:        schema.TypeBool,
 							Description: "`true` if source IP should be filtered.",
-							ForceNew:    true,
 							Optional:    true,
 							Default:     true,
 						},
 						"bootable": {
 							Type:        schema.TypeBool,
 							Description: "`true` if this interface should be used for network booting.",
-							ForceNew:    true,
 							Optional:    true,
 							Default:     false,
 						},
