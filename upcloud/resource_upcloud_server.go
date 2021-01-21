@@ -469,10 +469,10 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		o, n := d.GetChange("storage_devices")
 
 		// detach the devices that should be detached or sould be re-attached with different parameters
-		for _, storageDevices := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+		for _, storageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
 			if _, err := client.DetachStorage(&request.DetachStorageRequest{
 				ServerUUID: d.Id(),
-				Address:    storageDevices.(map[string]interface{})["address"].(string),
+				Address:    storageDevice.(map[string]interface{})["address"].(string),
 			}); err != nil {
 				return diag.FromErr(err)
 			}
