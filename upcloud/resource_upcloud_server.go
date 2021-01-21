@@ -78,7 +78,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"index": {
 							Type:        schema.TypeInt,
 							Description: "Index of the interface",
-							Required:    true,
+							Optional:    true,
 						},
 						"ip_address_family": {
 							Type:        schema.TypeString,
