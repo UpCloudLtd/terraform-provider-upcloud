@@ -27,21 +27,21 @@ The following HCL example shows the creation of a floating IP address assigned t
       zone     = "fi-hel1"
       hostname = "mydebian.example.com"
       plan     = "1xCPU-2GB"
-    
+
       storage_devices {
         action = "create"
         size   = 10
         tier   = "maxiops"
       }
-    
-      network_interface {
+
+      network_interfaces {
         type = "public"
       }
-    
+
     }
-    
+
     resource "upcloud_floating_ip_address" "my_new_floating_address" {
-      mac_address = upcloud_server.my_server.network_interface[0].mac_address
+      mac_address = upcloud_server.my_server.network_interfaces[0].mac_address
     }
 ```
 

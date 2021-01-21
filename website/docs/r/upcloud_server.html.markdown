@@ -18,7 +18,7 @@ resource "upcloud_server" "test" {
   plan     = "1xCPU-1GB"
   zone     = "fi-hel1"
 
-  network_interface {
+  network_interfaces {
     type = "public"
   }
 
@@ -52,7 +52,7 @@ The following arguments are supported:
 
 * `hostname` - (Required) A valid domain name, e.g. host.example.com. The maximum length is 128 characters.
 * `zone` - (Required) - The zone in which the server will be hosted, e.g. fi-hel1. See [Zones API](https://developers.upcloud.com/1.3/5-zones/)
-* `network_interface` - (Required) One or more blocks describing the network interfaces of the server. Any changes to these blocks will force the creation of a new server resource.
+* `network_interfaces` - (Required) One or more blocks describing the network interfaces of the server. Any changes to these blocks will force the creation of a new server resource.
 * `firewall` - (Optional) Are firewall rules active for the server
 * `metadata` - (Optional) Is the metadata service active for the server
 * `cpu` - (Optional) The number of CPU for the server
@@ -84,7 +84,7 @@ The `login` block supports:
 * `create_password` - (Optional) Indicates a password should be create to allow access
 * `password_delivery` - (Optional) The delivery method for the server’s root password
 
-The `network_interface` block supports:
+The `network_interfaces` block supports:
 
 * `type` - (Required) The type of network interface (one of `private`, `public` or `utility`).
 * `ip_address_family` - (Optional) The IP address type of this interface (one of `IPv4` or `IPv6`).
@@ -110,7 +110,7 @@ In addition to the arguments listed above, the following `template` block attrib
 * `id` - The unique identifier for the storage
 * `tier` - The storage tier to use
 
-In addition to the arguments listed above, the following `network_interface` block attributes are exported:
+In addition to the arguments listed above, the following `network_interfaces` block attributes are exported:
 
 * `ip_address` - The assigned IP address.
 * `ip_address_floating` - `true` if a floating IP address is attached.
