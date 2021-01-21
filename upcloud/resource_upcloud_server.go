@@ -495,24 +495,24 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		o, n := d.GetChange("network_interfaces")
 
 		// modify server network interfaces, if there are changes
-		for _, networkInterfaces := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+		for _, networkInterface := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
 			o := o.(map[string]interface{})
-			networkInterfaces := networkInterfaces.(map[string]interface{})
+			networkInterface := networkInterface.(map[string]interface{})
 			if _, err := client.ModifyNetworkInterface(&request.ModifyNetworkInterfaceRequest{
 				ServerUUID:   d.Id(),
 				CurrentIndex: o["index"].(int),
-				Type:         networkInterfaces["type"].(string),
-				NetworkUUID:  networkInterfaces["network"].(string),
-				NewIndex:     networkInterfaces["index"].(int),
+				Type:         networkInterface["type"].(string),
+				NetworkUUID:  networkInterface["network"].(string),
+				NewIndex:     networkInterface["index"].(int),
 
 				IPAddresses: []request.CreateNetworkInterfaceIPAddress{
 					{
-						Family:  networkInterfaces["ip_address_family"].(string),
-						Address: networkInterfaces["ip_address"].(string),
+						Family:  networkInterface["ip_address_family"].(string),
+						Address: networkInterface["ip_address"].(string),
 					},
 				},
-				SourceIPFiltering: networkInterfaces["source_ip_filtering"].(upcloud.Boolean),
-				Bootable:          networkInterfaces["bootable"].(upcloud.Boolean),
+				SourceIPFiltering: networkInterface["source_ip_filtering"].(upcloud.Boolean),
+				Bootable:          networkInterface["bootable"].(upcloud.Boolean),
 			}); err != nil {
 				return diag.FromErr(err)
 			}
