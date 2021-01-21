@@ -2,9 +2,6 @@
 terraform.tfstate*
 terraform-provider-upcloud
 crash.log
-*.tf
-
-
 
 # Created by https://www.gitignore.io/api/macos
 
