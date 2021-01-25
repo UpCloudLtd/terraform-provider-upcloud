@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -14,34 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-func backupRuleSchema() *schema.Schema {
-	return &schema.Schema{
-		Description: "The criteria to backup the storage",
-		Type:        schema.TypeList,
-		MaxItems:    1,
-		Optional:    true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"interval": {
-					Description: "The weekday when the backup is created",
-					Type:        schema.TypeString,
-					Required:    true,
-				},
-				"time": {
-					Description: "The time of day when the backup is created",
-					Type:        schema.TypeString,
-					Required:    true,
-				},
-				"retention": {
-					Description: "The number of days before a backup is automatically deleted",
-					Type:        schema.TypeInt,
-					Required:    true,
-				},
-			},
-		},
-	}
-}
 
 func resourceUpCloudStorage() *schema.Resource {
 	return &schema.Resource{
@@ -152,7 +126,7 @@ func resourceUpCloudStorage() *schema.Resource {
 					},
 				},
 			},
-			"backup_rule": backupRuleSchema(),
+			"backup_rule": storage.BackupRuleSchema(),
 		},
 	}
 }
@@ -258,21 +232,6 @@ func cloneStorage(
 	return nil
 }
 
-func backupRule(backupRule map[string]interface{}) *upcloud.BackupRule {
-	if interval, ok := backupRule["interval"]; ok {
-		if time, ok := backupRule["time"]; ok {
-			if retention, ok := backupRule["retention"]; ok {
-				return &upcloud.BackupRule{
-					Interval:  interval.(string),
-					Time:      time.(string),
-					Retention: retention.(int),
-				}
-			}
-		}
-	}
-	return &upcloud.BackupRule{}
-}
-
 func createStorage(
 	client *service.Service,
 	size int,
@@ -303,7 +262,7 @@ func createStorage(
 	}
 
 	if v, ok := d.GetOk("backup_rule.0"); ok {
-		createStorageRequest.BackupRule = backupRule(v.(map[string]interface{}))
+		createStorageRequest.BackupRule = storage.BackupRule(v.(map[string]interface{}))
 	}
 
 	storage, err := client.CreateStorage(&createStorageRequest)
@@ -460,7 +419,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		UUID:       d.Id(),
 		Size:       d.Get("size").(int),
 		Title:      d.Get("title").(string),
-		BackupRule: backupRule(d.Get("backup_rule.0").(map[string]interface{})),
+		BackupRule: storage.BackupRule(d.Get("backup_rule.0").(map[string]interface{})),
 	}
 
 	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
@@ -471,14 +430,14 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 	// need to shut down server if resizing
 	if len(storageDetails.ServerUUIDs) > 0 && d.HasChange("size") {
-		err := verifyServerStopped(storageDetails.ServerUUIDs[0], meta)
+		err := server.VerifyServerStopped(storageDetails.ServerUUIDs[0], meta)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		if _, err := WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
 			return diag.FromErr(err)
 		}
-		verifyServerStarted(d.Id(), meta)
+		server.VerifyServerStarted(d.Id(), meta)
 	} else {
 		if _, err := client.ModifyStorage(&req); err != nil {
 			return diag.FromErr(err)
@@ -525,7 +484,7 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
 			// ide devices can only be detached from stopped servers
 			if strings.HasPrefix(storageDevice.Address, "ide") {
-				err = verifyServerStopped(serverUUID, meta)
+				err = server.VerifyServerStopped(serverUUID, meta)
 				if err != nil {
 					return diag.FromErr(err)
 				}
@@ -534,7 +493,7 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
-				verifyServerStarted(serverUUID, meta)
+				server.VerifyServerStarted(serverUUID, meta)
 			}
 		}
 	}
