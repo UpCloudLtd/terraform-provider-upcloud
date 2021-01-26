@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"strconv"
 	"testing"
 )
 
@@ -38,20 +37,10 @@ func testAccDataSourceUpCloudTagsCheck(resourceName string) resource.TestCheckFu
 			return fmt.Errorf("root module has no resource called %s", resourceName)
 		}
 
-		tags, tagsOk := rs.Primary.Attributes["tags.#"]
+		_, tagsOk := rs.Primary.Attributes["tags.#"]
 
 		if !tagsOk {
 			return fmt.Errorf("tags attribute is missing.")
-		}
-
-		tagsQuantity, err := strconv.Atoi(tags)
-
-		if err != nil {
-			return fmt.Errorf("error parsing names (%s) into integer: %s", tags, err)
-		}
-
-		if tagsQuantity == 0 {
-			return fmt.Errorf("No tags found, this is probably a bug.")
 		}
 
 		return nil
