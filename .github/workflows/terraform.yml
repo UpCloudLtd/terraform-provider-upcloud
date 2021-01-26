@@ -29,4 +29,4 @@ jobs:
           UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
           UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
 
-        run: make acctest
+        run: make testacc
