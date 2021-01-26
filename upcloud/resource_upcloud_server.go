@@ -3,18 +3,18 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
 	"time"
 
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceUpCloudServer() *schema.Resource {
@@ -240,7 +240,7 @@ func resourceUpCloudServer() *schema.Resource {
 							ForceNew:    true,
 							Required:    true,
 						},
-						"backup_rule": backupRuleSchema(),
+						"backup_rule": storage.BackupRuleSchema(),
 					},
 				},
 			},
@@ -286,7 +286,7 @@ func resourceUpCloudServer() *schema.Resource {
 func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	r, err := buildServerOpts(d, meta)
+	r, err := server.BuildServerOpts(d, meta)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -408,13 +408,13 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	server, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := verifyServerStopped(d.Id(), meta); err != nil {
+	if err := server.VerifyServerStopped(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -447,7 +447,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			UUID:       template["id"].(string),
 			Size:       template["size"].(int),
 			Title:      template["title"].(string),
-			BackupRule: backupRule(d.Get("template.0.backup_rule.0").(map[string]interface{})),
+			BackupRule: storage.BackupRule(d.Get("template.0.backup_rule.0").(map[string]interface{})),
 		}); err != nil {
 			return diag.FromErr(err)
 		}
@@ -476,7 +476,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 
 		// detach the devices that should be detached or should be re-attached with different parameters
 		for _, storageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
-			if server.StorageDevice(storageDevice.(map[string]interface{})["storage"].(string)) == nil {
+			if serverDetails.StorageDevice(storageDevice.(map[string]interface{})["storage"].(string)) == nil {
 				continue
 			}
 			if _, err := client.DetachStorage(&request.DetachStorageRequest{
@@ -500,12 +500,12 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	if server.State == upcloud.ServerStateStarted {
-		if err := verifyServerStarted(d.Id(), meta); err != nil {
+	if serverDetails.State == upcloud.ServerStateStarted {
+		if err := server.VerifyServerStarted(d.Id(), meta); err != nil {
 			return diag.FromErr(err)
 		}
 	}
-	if err := verifyServerStarted(d.Id(), meta); err != nil {
+	if err := server.VerifyServerStarted(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 	return resourceUpCloudServerRead(ctx, d, meta)
@@ -517,7 +517,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	var diags diag.Diagnostics
 
 	// Verify server is stopped before deletion
-	if err := verifyServerStopped(d.Id(), meta); err != nil {
+	if err := server.VerifyServerStopped(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
 	// Delete server
@@ -544,237 +544,4 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	return diags
-}
-
-func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateServerRequest, error) {
-	r := &request.CreateServerRequest{
-		Zone:     d.Get("zone").(string),
-		Hostname: d.Get("hostname").(string),
-		Title:    fmt.Sprintf("%s (managed by terraform)", d.Get("hostname").(string)),
-	}
-
-	if attr, ok := d.GetOk("firewall"); ok {
-		if attr.(bool) {
-			r.Firewall = "on"
-		} else {
-			r.Firewall = "off"
-		}
-	}
-	if attr, ok := d.GetOk("metadata"); ok {
-		if attr.(bool) {
-			r.Metadata = upcloud.True
-		} else {
-			r.Metadata = upcloud.False
-		}
-	}
-	if attr, ok := d.GetOk("cpu"); ok {
-		r.CoreNumber = attr.(int)
-	}
-	if attr, ok := d.GetOk("mem"); ok {
-		r.MemoryAmount = attr.(int)
-	}
-	if attr, ok := d.GetOk("user_data"); ok {
-		r.UserData = attr.(string)
-	}
-	if attr, ok := d.GetOk("plan"); ok {
-		r.Plan = attr.(string)
-	}
-	if login, ok := d.GetOk("login"); ok {
-		loginOpts, deliveryMethod, err := buildLoginOpts(login, meta)
-		if err != nil {
-			return nil, err
-		}
-		r.LoginUser = loginOpts
-		r.PasswordDelivery = deliveryMethod
-	}
-
-	if template, ok := d.GetOk("template.0"); ok {
-		template := template.(map[string]interface{})
-		if template["title"].(string) == "" {
-			template["title"] = fmt.Sprintf("terraform-%s-disk", r.Hostname)
-		}
-		serverStorageDevice := request.CreateServerStorageDevice{
-			Action:  "clone",
-			Address: template["address"].(string),
-			Size:    template["size"].(int),
-			Storage: template["storage"].(string),
-			Title:   template["title"].(string),
-		}
-		if attr, ok := d.GetOk("template.0.backup_rule.0"); ok {
-			serverStorageDevice.BackupRule = backupRule(attr.(map[string]interface{}))
-		}
-		if source := template["storage"].(string); source != "" {
-			// Assume template name is given and attempt map name to UUID
-			if _, err := uuid.ParseUUID(source); err != nil {
-				l, err := meta.(*service.Service).GetStorages(
-					&request.GetStoragesRequest{
-						Type: upcloud.StorageTypeTemplate,
-					})
-
-				if err != nil {
-					return nil, err
-				}
-				for _, s := range l.Storages {
-					if s.Title == source {
-						source = s.UUID
-						break
-					}
-				}
-			}
-
-			serverStorageDevice.Storage = source
-		}
-		r.StorageDevices = append(r.StorageDevices, serverStorageDevice)
-	}
-
-	if storageDevices, ok := d.GetOk("storage_devices"); ok {
-		storageDevices := storageDevices.(*schema.Set)
-		for _, storageDevice := range storageDevices.List() {
-			storageDevice := storageDevice.(map[string]interface{})
-			r.StorageDevices = append(r.StorageDevices, request.CreateServerStorageDevice{
-				Action:  "attach",
-				Address: storageDevice["address"].(string),
-				Type:    storageDevice["type"].(string),
-				Storage: storageDevice["storage"].(string),
-			})
-		}
-	}
-
-	networking, err := buildNetworkOpts(d, meta)
-	if err != nil {
-		return nil, err
-	}
-
-	r.Networking = &request.CreateServerNetworking{
-		Interfaces: networking,
-	}
-
-	return r, nil
-}
-
-func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerInterface, error) {
-	ifaces := []request.CreateServerInterface{}
-
-	niCount := d.Get("network_interface.#").(int)
-	for i := 0; i < niCount; i++ {
-		keyRoot := fmt.Sprintf("network_interface.%d.", i)
-
-		iface := request.CreateServerInterface{
-			IPAddresses: []request.CreateServerIPAddress{
-				{
-					Family: d.Get(keyRoot + "ip_address_family").(string),
-				},
-			},
-			Type: d.Get(keyRoot + "type").(string),
-		}
-
-		iface.SourceIPFiltering = upcloud.FromBool(d.Get(keyRoot + "source_ip_filtering").(bool))
-		iface.Bootable = upcloud.FromBool(d.Get(keyRoot + "bootable").(bool))
-
-		if v, ok := d.GetOk(keyRoot + "network"); ok {
-			iface.Network = v.(string)
-		}
-
-		ifaces = append(ifaces, iface)
-	}
-
-	return ifaces, nil
-}
-
-func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string, error) {
-	// Construct LoginUser struct from the schema
-	r := &request.LoginUser{}
-	e := v.(*schema.Set).List()[0]
-	m := e.(map[string]interface{})
-
-	// Set username as is
-	r.Username = m["user"].(string)
-
-	// Set 'create_password' to "yes" or "no" depending on the bool value.
-	// Would be nice if the API would just get a standard bool str.
-	createPassword := "no"
-	b := m["create_password"].(bool)
-	if b {
-		createPassword = "yes"
-	}
-	r.CreatePassword = createPassword
-
-	// Handle SSH keys one by one
-	keys := make([]string, 0)
-	for _, k := range m["keys"].([]interface{}) {
-		key := k.(string)
-		keys = append(keys, key)
-	}
-	r.SSHKeys = keys
-
-	// Define password delivery method none/email/sms
-	deliveryMethod := m["password_delivery"].(string)
-
-	return r, deliveryMethod, nil
-}
-
-func verifyServerStopped(id string, meta interface{}) error {
-	client := meta.(*service.Service)
-	// Get current server state
-	r := &request.GetServerDetailsRequest{
-		UUID: id,
-	}
-	server, err := client.GetServerDetails(r)
-	if err != nil {
-		return err
-	}
-	if server.State != upcloud.ServerStateStopped {
-		// Soft stop with 2 minute timeout, after which hard stop occurs
-		stopRequest := &request.StopServerRequest{
-			UUID:     id,
-			StopType: "soft",
-			Timeout:  time.Minute * 2,
-		}
-		log.Printf("[INFO] Stopping server (server UUID: %s)", id)
-		_, err := client.StopServer(stopRequest)
-		if err != nil {
-			return err
-		}
-		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         id,
-			DesiredState: upcloud.ServerStateStopped,
-			Timeout:      time.Minute * 5,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func verifyServerStarted(id string, meta interface{}) error {
-	client := meta.(*service.Service)
-	// Get current server state
-	r := &request.GetServerDetailsRequest{
-		UUID: id,
-	}
-	server, err := client.GetServerDetails(r)
-	if err != nil {
-		return err
-	}
-	if server.State != upcloud.ServerStateStarted {
-		startRequest := &request.StartServerRequest{
-			UUID:    id,
-			Timeout: time.Minute * 2,
-		}
-		log.Printf("[INFO] Starting server (server UUID: %s)", id)
-		_, err := client.StartServer(startRequest)
-		if err != nil {
-			return err
-		}
-		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         id,
-			DesiredState: upcloud.ServerStateStarted,
-			Timeout:      time.Minute * 5,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
