@@ -499,12 +499,6 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 		}
 	}
-
-	if serverDetails.State == upcloud.ServerStateStarted {
-		if err := server.VerifyServerStarted(d.Id(), meta); err != nil {
-			return diag.FromErr(err)
-		}
-	}
 	if err := server.VerifyServerStarted(d.Id(), meta); err != nil {
 		return diag.FromErr(err)
 	}
