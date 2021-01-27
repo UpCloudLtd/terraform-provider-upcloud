@@ -1,4 +1,8 @@
-# Terraform Provider
+<a href="https://terraform.io">
+  <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" alt="Terraform logo" title="Terraform" align="right" height="50" />
+</a>
+
+# Terraform Provider for UpCloud
 
 ![UpCloud Terraform provider tests](https://github.com/UpCloudLtd/terraform-provider-upcloud/workflows/UpCloud%20Terraform%20provider%20tests/badge.svg)
 
@@ -7,91 +11,103 @@ This provider is developed by UpCloud, contributions from the community are welc
 * Check Github issues or create more issues
 * Check `examples/` directory for examples and test them
 * Improve documentation
-
 * Website: https://www.terraform.io
 * [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
 * Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool)
 
-<img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
+This Terraform provider is a plugin for Terraform which provides capabilities to manage your UpCloud products such as servers, storages, networks and IP addresses.
+
+Note that currently, creation of only 10 concurrent servers is possible per account.
 
 ## Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) 0.12.x, (to execute the provider plugin)
-* [Go](https://golang.org/doc/install) 1.14.x or greater, (to build the provider plugin)
+* [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
 
-## Building The Provider
+## Quick Start
 
-Get and install the provider:
+Install [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli).
 
-```sh
-$ git clone git@github.com:UpCloudLtd/terraform-provider-upcloud.git
-$ cd terraform-provider-upcloud
+Set environment variables for authentication (on command line, in .bashrc, .zshrc, ...):
+
+```
+export UPCLOUD_USERNAME="upcloud-api-access-enabled-user"
+export UPCLOUD_PASSWORD="verysecretpassword"
 ```
 
-Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
+Create a example_create_server.tf file:
 
-```sh
-$ make
-$ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $GOBIN/terraform-provider-upcloud $HOME/.terraform.d/plugins
 ```
+# Configure the UpCloud provider
+provider "upcloud" {}
+
+# Create a server
+resource "upcloud_server" "example" {
+  hostname = "terraform.example.tld"
+  zone     = "de-fra1"
+  plan     = "1xCPU-1GB"
+
+  # Set the operating system
+  template {
+    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+    title   = "root"
+
+    # Use the size allotted by the 1xCPU-1GB plan
+    size = 25
+  }
+
+  # Add a public IP address
+  network_interface {
+    type = "public"
+  }
+}
+```
+
+Run Terraform with e.g. `terraform apply`.
 
 ## Using the provider
 
+Before using the provider, install [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli).
+
 You need to set UpCloud credentials in shell environment variable (.bashrc, .zshrc or similar) to be able to use the provider:
 
-* `export UPCLOUD_USERNAME="Username for Upcloud API user"` - Your API access enabled users username
-* `export UPCLOUD_PASSWORD="Password for Upcloud API user"` - Your API access enabled users password
+* `export UPCLOUD_USERNAME="Username for Upcloud API user"` - Your API access enabled user's username
+* `export UPCLOUD_PASSWORD="Password for Upcloud API user"` - Your API access enabled user's password
 
-To allow API access to your UpCloud account, you first need to enable the API permissions by visiting [My Account -> User accounts](https://my.upcloud.com/account) in your UpCloud Control Panel. We recommend you to set up a sub-account specifically for the API usage with its own username and password, as it allows you to assign specific permissions for increased security.
+To allow API access to your UpCloud account, you need to allow API connections by visiting [Account-page](https://hub.upcloud.com/account) in your UpCloud Hub.
 
-Click **Add user** and fill in the required details, and check the “**Allow API connections**” checkbox to enable API for the user. You can also limit the API connections to a specific IP address or address range for additional security. Once you are done entering the user information, hit the **Save** button at the bottom of the page to create the new username.
+We recommend you to set up a sub-account specifically for the API usage with its own username and password, as it allows you to assign specific permissions for increased security:
 
-For more instructions, check out examples folder.
+1. Open the [People-page](https://hub.upcloud.com/people) in the UpCloud Hub
+2. Click **Add** in top-right corner and fill in the required details, and check the **Allow API connections** checkbox to enable API for the sub-account. You can also limit the API connections to a specific IP address or address range for additional security
+3. Click the **Create subaccount** button at the bottom left of the page to create the sub-account
 
-## Example use case
-
-Below is an example configuration on how to create a server using the Terraform provider. Note that currently, only 10 concurrent servers creation is possible per account. For more examples, visit [official Terraform documentation](https://registry.terraform.io/providers/UpCloudLtd/upcloud/latest/docs).
+Below is an example configuration on how to create a server using the Terraform provider with Terraform 0.13 or later:
 
 ```
+# set the provider version
 terraform {
   required_providers {
     upcloud = {
       source = "UpCloudLtd/upcloud"
-      version = "1.0.0"
+      version = "~> 2.0"
     }
   }
 }
 
+# configure the provider
 provider "upcloud" {
-  # Your UpCloud credentials are read from the environment variables
-  # export UPCLOUD_USERNAME="Username for Upcloud API user"
-  # export UPCLOUD_PASSWORD="Password for Upcloud API user"
+  # Your UpCloud credentials are read from the environment variables:
+  # export UPCLOUD_USERNAME="Username of your UpCloud API user"
+  # export UPCLOUD_PASSWORD="Password of your UpCloud API user"
 }
 
-resource "upcloud_server" "server1" {
-  # System hostname
-  hostname = "terraform.example.com"
+# create a server
+resource "upcloud_server" "example" {
+  hostname = "terraform.example.tld"
+  zone     = "de-fra1"
+  plan     = "1xCPU-1GB"
 
-  # Availability zone
-  zone = "nl-ams1"
-
-  # Number of CPUs and memory in GB
-  plan = "1xCPU-1GB"
-
-  storage_devices {
-    # System storage device size
-    size = 25
-
-    # Template UUID for Ubuntu 20.04
-    storage = "01000000-0000-4000-8000-000030200200"
-
-    # Storage device typeC
-    tier   = "maxiops"
-    action = "clone"
-  }
-
-  # Network interfaces
+  # Declare network interfaces
   network_interface {
     type = "public"
   }
@@ -102,42 +118,113 @@ resource "upcloud_server" "server1" {
 
   # Include at least one public SSH key
   login {
-    user = "root"
+    user = "terraform"
     keys = [
       "<YOUR SSH PUBLIC KEY>",
     ]
-    create_password = true
-    password_delivery = "email"
+    create_password = false
   }
 
-  # Configuring connection details
-  connection {
-    # The server public IP address
-    host        = self.network_interface[0].ip_address
-    type        = "ssh"
-    user        = "root"
-    private_key = "<PATH TO YOUR SSH PRIVATE KEY>"
-  }
+  # Provision the server with Ubuntu
+  template {
+    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
 
-  # Remotely executing a command on the server
-  provisioner "remote-exec" {
-    inline = [
-      "echo 'Hello world!'"
-    ]
+    # Use all the space allotted by the selected simple plan
+    size = 25
+
+    # Enable backups
+    backup_rule {
+      interval  = "daily"
+      time      = "0100"
+      retention = 8
+    }
   }
 }
 ```
 
+Terraform 0.12 or earlier:
+
+```
+# configure the provider
+provider "upcloud" {
+  # Your UpCloud credentials are read from the environment variables:
+  # export UPCLOUD_USERNAME="Username of your UpCloud API user"
+  # export UPCLOUD_PASSWORD="Password of your UpCloud API user"
+  version = "~> 2.0"
+}
+
+# create a server
+resource "upcloud_server" "example" {
+  hostname = "terraform.example.tld"
+  zone     = "de-fra1"
+  plan     = "1xCPU-1GB"
+
+  # Declare network interfaces
+  network_interface {
+    type = "public"
+  }
+
+  network_interface {
+    type = "utility"
+  }
+
+  # Include at least one public SSH key
+  login {
+    user = "terraform"
+    keys = [
+      "<YOUR SSH PUBLIC KEY>",
+    ]
+    create_password = false
+  }
+
+  # Provision the server with Ubuntu
+  template {
+    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+
+    # Use all the space allotted by the selected simple plan
+    size = 25
+
+    # Enable backups
+    backup_rule {
+      interval  = "daily"
+      time      = "0100"
+      retention = 8
+    }
+  }
+}
+```
+
+For more examples, check the `examples/` directory or visit [official Terraform documentation](https://registry.terraform.io/providers/UpCloudLtd/upcloud/latest/docs).
+
 ## Developing the Provider
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.14+ is _required_).
+
+Get the provider source code:
+
+```sh
+$ git clone git@github.com:UpCloudLtd/terraform-provider-upcloud.git
+$ cd terraform-provider-upcloud
+```
 
 To compile the provider, run `go build`. This will build the provider and put the provider binary in the current directory.
 
 ```sh
 $ go build
 ```
-In the majority of cases the ```make``` command will be executed to allow the provider binary to be discovered by Terraform.
+
+In the majority of cases the `make` command will be executed to allow the provider binary to be discovered by Terraform.
+
+```sh
+$ make
+```
+
+Symlink the provider into a directory for Terraform to find it:
+
+```sh
+$ mkdir -p $HOME/.terraform.d/plugins
+$ ln -s $GOBIN/terraform-provider-upcloud $HOME/.terraform.d/plugins
+```
 
 In order to test the provider, you can simply run `make test`.
 
@@ -178,7 +265,7 @@ $ make website
 ==
 ==> See upcloud docs at http://localhost:4567/docs/providers/upcloud
 ...
-``` 
+```
 
 A website test can be execute to confirm that the links inside the website docs are not broken.
 This test can be run through the following command
@@ -187,7 +274,7 @@ This test can be run through the following command
 $ make website-test
 ```
 
-## Consuming local provider with Terraform 0.13.0
+### Consuming local provider with Terraform 0.13.0
 
 With the release of Terraform 0.13.0 the discovery of a locally built provider binary has changed.
 These changes have been made to allow all providers to be discovered from public and provider registries.
@@ -225,6 +312,47 @@ The version number will match the value specified in the makefile and in this ca
             └── 0.1.0
                 └── darwin_amd64
                     └── terraform-provider-upcloud_v0.1.0
-``` 
+```
 
 After the provider has been built you can then use standard terraform commands can be executed as normal.
+
+### Developing in Docker
+
+You can also develop/build/test in Docker. After you've cloned the repository:
+
+Create a docker container with golang as base:
+
+```
+docker run -it -v `pwd`:/work -w /work golang bash
+```
+
+Install Terraform:
+
+```
+cd /tmp
+git clone https://github.com/hashicorp/terraform.git
+cd terraform
+go install
+```
+
+Build the UpCloud provider:
+
+```
+cd /work
+make build_0_13
+```
+
+Run Terraform files, e.g. the examples:
+
+```
+cd /tmp
+cp /work/examples/01_server.tf .
+terraform init
+terraform apply
+```
+
+After exiting the container, you can connect back to the container:
+
+```
+docker start -ai <container ID here>
+```
