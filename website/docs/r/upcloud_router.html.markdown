@@ -8,8 +8,8 @@ description: |-
 
 # upcloud_router
 
-This resource represents a generated UpCloud router resource.  Routers can be used to connect multiple Private Networks. 
-UpCloud Servers on any attached network can communicate directly with each other. 
+This resource represents a generated UpCloud router resource.  Routers can be used to connect multiple Private Networks.
+UpCloud Servers on any attached network can communicate directly with each other.
 
 ## Example Usage
 

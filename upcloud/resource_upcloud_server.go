@@ -62,7 +62,7 @@ func resourceUpCloudServer() *schema.Resource {
 				ConflictsWith: []string{"plan"},
 			},
 			"mem": {
-				Description:   "The size of memory for the server",
+				Description:   "The size of memory for the server (in megabytes)",
 				Type:          schema.TypeInt,
 				Optional:      true,
 				Computed:      true,
