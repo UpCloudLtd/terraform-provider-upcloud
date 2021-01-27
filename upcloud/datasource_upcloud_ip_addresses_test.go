@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"strconv"
 	"testing"
 )
 
@@ -36,20 +35,10 @@ func testAccDataSourceUpCloudIPAddressesCheck(resourceName string) resource.Test
 			return fmt.Errorf("root module has no resource called %s", resourceName)
 		}
 
-		ipAddresses, ipAddressesOk := rs.Primary.Attributes["addresses.#"]
+		_, ipAddressesOk := rs.Primary.Attributes["addresses.#"]
 
 		if !ipAddressesOk {
 			return fmt.Errorf("addresses attribute is missing.")
-		}
-
-		ipAddressesQuantity, err := strconv.Atoi(ipAddresses)
-
-		if err != nil {
-			return fmt.Errorf("error parsing names (%s) into integer: %s", ipAddresses, err)
-		}
-
-		if ipAddressesQuantity == 0 {
-			return fmt.Errorf("No ip addresses found, this is probably a bug.")
 		}
 
 		return nil

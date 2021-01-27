@@ -8,7 +8,7 @@ description: |-
 
 # upcloud_tag
 
-This resource represents a UpCloud Tag resource.
+This resource represents a UpCloud Tag resource. Tags are currently not fully supported for sub accounts.
 
 ## Example Usage
 
@@ -19,27 +19,27 @@ The following HCL example shows the creation of a Tag resource.
       zone     = "fi-hel1"
       hostname = "mydebian.example.com"
       plan     = "1xCPU-2GB"
-    
+
       storage_devices {
         action = "create"
         size   = 10
         tier   = "maxiops"
       }
-    
+
       network_interface {
         type = "public"
       }
-    
+
     }
 
     resource "upcloud_tag" "dev" {
-    
+
       name = "development"
       description = "Represents the development environment"
       servers = [
         upcloud_server.my_example_server.id,
 
-      ]   
+      ]
     }
 ```
 
@@ -47,11 +47,11 @@ The following HCL example shows the creation of a Tag resource.
 ## Argument Reference
 
 The following arguments are supported:
-   
+
  * `name` - The value representing the tag
- 
+
  * `description` - Freeform comment string for the host
- 
+
  * `servers` - A collection of servers that have been assigned the tag.
 
 ## Import

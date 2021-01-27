@@ -10,38 +10,36 @@ description: |-
 
 This resource represents a UpCloud floating IP address resource.
 
-
 ## Example Usage
 
 The following HCL example shows how to create a detached floating IP address.
 ```hcl
     resource "upcloud_floating_ip_address" "my_floating_address" {
-      zone     = "fi-hel1"
+      zone = "de-fra1"
     }
 ```
 
 The following HCL example shows the creation of a floating IP address assigned to a server resource.
 
 ```hcl
-    resource "upcloud_server" "my_server" {
-      zone     = "fi-hel1"
-      hostname = "mydebian.example.com"
-      plan     = "1xCPU-2GB"
-    
-      storage_devices {
-        action = "create"
-        size   = 10
-        tier   = "maxiops"
+    resource "upcloud_server" "example" {
+      hostname = "terraform.example.tld"
+      zone     = "de-fra1"
+      plan     = "1xCPU-1GB"
+
+      template {
+        storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+        size    = 25
       }
-    
+
       network_interface {
         type = "public"
       }
-    
+
     }
-    
+
     resource "upcloud_floating_ip_address" "my_new_floating_address" {
-      mac_address = upcloud_server.my_server.network_interface[0].mac_address
+      mac_address = upcloud_server.example.network_interface[0].mac_address
     }
 ```
 

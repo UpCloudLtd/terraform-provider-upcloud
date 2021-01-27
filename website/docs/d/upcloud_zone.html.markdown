@@ -28,5 +28,6 @@ The following arguments can be supplied to the datasource.
 
 ## Attributes Reference
 
+* `id` - Unique label for the zone (same as `name`)
 * `description` - A real world value representing the zone, for example `London #1`.
-* `public` - . Identifies the zone as either public `true` or private `false`.
+* `public` - Identifies the zone as either public `true` or private `false`.

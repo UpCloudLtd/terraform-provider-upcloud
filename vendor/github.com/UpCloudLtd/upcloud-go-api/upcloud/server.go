@@ -182,6 +182,15 @@ type ServerDetails struct {
 	RemoteAccessPort     int                      `json:"remote_access_port,string"`
 }
 
+func (s *ServerDetails) StorageDevice(storageUUID string) *ServerStorageDevice {
+	for _, storageDevice := range s.StorageDevices {
+		if storageDevice.UUID == storageUUID {
+			return &storageDevice
+		}
+	}
+	return nil
+}
+
 // UnmarshalJSON is a custom unmarshaller that deals with
 // deeply embedded values.
 func (s *ServerDetails) UnmarshalJSON(b []byte) error {

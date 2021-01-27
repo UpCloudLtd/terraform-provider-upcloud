@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strconv"
+	"strings"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -124,31 +127,7 @@ func resourceUpCloudStorage() *schema.Resource {
 					},
 				},
 			},
-			"backup_rule": {
-				Description: "The criteria to backup the storage",
-				Type:        schema.TypeSet,
-				MaxItems:    1,
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"interval": {
-							Description: "The weekday when the backup is created",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"time": {
-							Description: "The time of day when the backup is created",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"retention": {
-							Description: "The number of days before a backup is automatically deleted",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-					},
-				},
-			},
+			"backup_rule": storage.BackupRuleSchema(),
 		},
 	}
 }
@@ -283,25 +262,8 @@ func createStorage(
 		}
 	}
 
-	if v, ok := d.GetOk("backup_rule"); ok {
-		brs := v.(*schema.Set).List()
-		for _, br := range brs {
-			mBr := br.(map[string]interface{})
-
-			retentionValue, err := strconv.Atoi(mBr["retention"].(string))
-
-			if err != nil {
-				diag.FromErr(err)
-			}
-
-			backupRule := upcloud.BackupRule{
-				Interval:  mBr["interval"].(string),
-				Time:      mBr["time"].(string),
-				Retention: retentionValue,
-			}
-
-			createStorageRequest.BackupRule = &backupRule
-		}
+	if v, ok := d.GetOk("backup_rule.0"); ok {
+		createStorageRequest.BackupRule = storage.BackupRule(v.(map[string]interface{}))
 	}
 
 	storage, err := client.CreateStorage(&createStorageRequest)
@@ -398,12 +360,12 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	if _, ok := d.GetOk("backup_rule"); ok {
+	if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
 		backupRule := []interface{}{
 			map[string]interface{}{
 				"interval":  storage.BackupRule.Interval,
 				"time":      storage.BackupRule.Time,
-				"retention": strconv.Itoa(storage.BackupRule.Retention),
+				"retention": storage.BackupRule.Retention,
 			},
 		}
 
@@ -445,43 +407,6 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	r := &request.ModifyStorageRequest{
-		UUID: d.Id(),
-	}
-
-	if d.HasChange("size") {
-		_, newSize := d.GetChange("size")
-		r.Size = newSize.(int)
-	}
-
-	if d.HasChange("title") {
-		_, newTitle := d.GetChange("title")
-		r.Title = newTitle.(string)
-	}
-
-	if d.HasChange("backup_rule") {
-		if v, ok := d.GetOk("backup_rule"); ok {
-			brs := v.(*schema.Set).List()
-			for _, br := range brs {
-				mBr := br.(map[string]interface{})
-
-				retentionValue, err := strconv.Atoi(mBr["retention"].(string))
-
-				if err != nil {
-					diag.FromErr(err)
-				}
-
-				backupRule := upcloud.BackupRule{
-					Interval:  mBr["interval"].(string),
-					Time:      mBr["time"].(string),
-					Retention: retentionValue,
-				}
-
-				r.BackupRule = &backupRule
-			}
-		}
-	}
-
 	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
@@ -491,10 +416,33 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	_, err = client.ModifyStorage(r)
+	req := request.ModifyStorageRequest{
+		UUID:       d.Id(),
+		Size:       d.Get("size").(int),
+		Title:      d.Get("title").(string),
+		BackupRule: storage.BackupRule(d.Get("backup_rule.0").(map[string]interface{})),
+	}
 
+	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+		UUID: d.Id(),
+	})
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	// need to shut down server if resizing
+	if len(storageDetails.ServerUUIDs) > 0 && d.HasChange("size") {
+		err := server.VerifyServerStopped(storageDetails.ServerUUIDs[0], meta)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if _, err := utils.WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
+			return diag.FromErr(err)
+		}
+		server.VerifyServerStarted(d.Id(), meta)
+	} else {
+		if _, err := client.ModifyStorage(&req); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return resourceUpCloudStorageRead(ctx, d, meta)
@@ -514,6 +462,41 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 	})
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// fetch storage details for checking that the storage can be deleted
+	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+		UUID: d.Id(),
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if len(storageDetails.ServerUUIDs) > 0 {
+		serverUUID := storageDetails.ServerUUIDs[0]
+		// Get server details for retrieving the address that is to be used when detaching the storage
+		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+			UUID: serverUUID,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
+			// ide devices can only be detached from stopped servers
+			if strings.HasPrefix(storageDevice.Address, "ide") {
+				err = server.VerifyServerStopped(serverUUID, meta)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+			}
+			utils.WithRetry(func() (interface{}, error) {
+				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
+			}, 20, time.Second*3)
+			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
+				server.VerifyServerStarted(serverUUID, meta)
+			}
+		}
 	}
 
 	deleteStorageRequest := &request.DeleteStorageRequest{

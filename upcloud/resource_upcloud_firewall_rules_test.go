@@ -228,10 +228,9 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 		  hostname = "debian.example.com"
 		  plan     = "1xCPU-2GB"
 
-		  storage_devices {
-			action = "create"
-			size   = 10
-			tier   = "maxiops"
+		  template {
+			storage = "01000000-0000-4000-8000-000020050100"
+			size = 10
 		  }
 
 		  network_interface {
@@ -268,10 +267,9 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 		  hostname = "debian.example.com"
 		  plan     = "1xCPU-2GB"
 
-		  storage_devices {
-			action = "create"
-			size   = 10
-			tier   = "maxiops"
+		  template {
+			storage = "01000000-0000-4000-8000-000020050100"
+			size = 10
 		  }
 
 		  network_interface {

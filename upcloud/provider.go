@@ -2,10 +2,12 @@ package upcloud
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
+	globals "github.com/UpCloudLtd/terraform-provider-upcloud/internal"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -89,7 +91,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
 	httpClient.RetryMax = d.Get("retry_max").(int)
 
-	client := client.NewWithHTTPClient(d.Get("username").(string), d.Get("password").(string), httpClient.StandardClient())
+	client := client.NewWithHTTPClient(d.Get("username").(string), d.Get("password").(string), httpClient.HTTPClient)
+	client.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", globals.Version)
 	client.SetTimeout(upcloudAPITimeout)
 
 	service := service.New(client)

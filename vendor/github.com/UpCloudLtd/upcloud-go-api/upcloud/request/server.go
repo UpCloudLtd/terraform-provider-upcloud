@@ -195,7 +195,8 @@ type LoginUser struct {
 
 // CreateServerIPAddress represents an IP address for a CreateServerRequest
 type CreateServerIPAddress struct {
-	Family string `json:"family"`
+	Family  string `json:"family"`
+	Address string `json:"address,omitempty"`
 }
 
 // WaitForServerStateRequest represents a request to wait for a server to enter or exit a specific state

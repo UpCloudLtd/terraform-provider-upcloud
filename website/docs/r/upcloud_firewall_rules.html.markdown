@@ -8,7 +8,7 @@ description: |-
 
 # upcloud_firewall_rules
 
-This resource represents a generated list of UpCloud firewall rules.  Firewall rules are used in conjunction with UpCloud servers. 
+This resource represents a generated list of UpCloud firewall rules.  Firewall rules are used in conjunction with UpCloud servers.
 Each server has its own firewall rules. The firewall is enabled on all network interfaces except ones attached to private virtual networks.
 The maximum number of firewall rules per server is 1000.
 
@@ -18,30 +18,27 @@ The following example defines a server and then links the server to a single fir
 The list of firewall rules applied to the server can be expanded by providing additional `server_firewall_rules` blocks.
 
 ```hcl
-  resource "upcloud_server" "my_server" {
-    zone     = "fi-hel1"
-    hostname = "debian.example.com"
-    plan     = "1xCPU-2GB"
+  resource "upcloud_server" "example" {
     firewall = true
-  
-    storage_devices {
-      action = "create"
-      size   = 10
-      tier   = "maxiops"
+    hostname = "terraform.example.tld"
+    zone     = "de-fra1"
+    plan     = "1xCPU-1GB"
+
+    template {
+      storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+      size    = 25
     }
-  
+
     network_interface {
       type = "utility"
     }
-  
+
   }
-  
-  resource "upcloud_firewall_rules" "my_server" {
-  
-    server_id = upcloud_server.my_server.id
-  
+
+  resource "upcloud_firewall_rules" "example" {
+    server_id = upcloud_server.example.id
+
     firewall_rule {
-  
       action = "accept"
       comment = "Allow SSH from this network"
       destination_port_end = "22"
@@ -52,7 +49,7 @@ The list of firewall rules applied to the server can be expanded by providing ad
       source_address_end = "192.168.1.255"
       source_address_start = "192.168.1.1"
     }
-  
+
   }
 ```
 
@@ -76,7 +73,7 @@ Each `firewall_rule` block supports the following:
 
 * `comment` - (Optional) Freeform comment string for the rule.  Accepted length 0-250 characters.
 
-* `destination_address_end` - (Optional) The destination address range ends from this address.  Required if using `destination_address_start`. 
+* `destination_address_end` - (Optional) The destination address range ends from this address.  Required if using `destination_address_start`.
 
 * `destination_address_start` - (Optional) The destination address range starts from this address.  Required if using `destination_address_end`.
 

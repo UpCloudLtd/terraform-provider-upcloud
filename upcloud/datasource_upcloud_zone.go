@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -49,7 +50,7 @@ func resourceUpCloudZoneRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	if v, ok := d.GetOk("name"); ok {
 		zoneId := v.(string)
-		zones := FilterZones(zones.Zones, func(zone upcloud.Zone) bool {
+		zones := utils.FilterZones(zones.Zones, func(zone upcloud.Zone) bool {
 			return zone.ID == zoneId
 		})
 
