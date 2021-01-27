@@ -8,7 +8,7 @@ description: |-
 
 # upcloud_server
 
-This resource represents a generated resource in the new Terraform Provider.  You will need to declare one for each backend entity you wish to expose and manage in the newly generated Terraform Provider.
+This resource represents a generated UpCloud server resource.
 
 ## Example Usage
 
