@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - Updated workflow to run acceptance tests when opening pull request / pushing to master
 - Add user-agent header to the requests
 - Can now explicitly set IP address for network interfaces (requires special priviledes for your UpCloud account)
+- Expose metadata field for server resource
 
 ### Changed
 
