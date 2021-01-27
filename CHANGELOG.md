@@ -52,12 +52,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 
 - README and examples/README to cover local builds, setup and test execution
-- Go verison to 1.14 and against Go master branch in Travis CI
-- Travis CI file execute to execute website-test covering provider documentation
+- Go version to 1.14 and against Go master branch in Travis CI
+- Travis CI file to execute website-test covering provider documentation
 - Provider uses Terraform Plugin SDK V2
 - resource_upcloud_server expanded with new functionality from UpCloud API 1.3
-- resource_upcloud_storage expaned with new functionalty from UpCloud API 1.3
-- resource_upclopud_tag expanded to implement read function
+- resource_upcloud_storage expaned with new functionality from UpCloud API 1.3
+- resource_upcloud_tag expanded to implement read function
 
 ### Removed
 
