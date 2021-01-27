@@ -17,19 +17,16 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - **Breaking**: the template (os storage) is described with a separate block within the server resource
 - **Breaking**: other storages are now managed outside of the server resource and attached to server using `storage_devices` block
-- **Breaking**: requires now to explicitly set indices for `network_interfaces` blocks, changing the index will likely change the allotted IP address
 
 ### Removed
 
-- **Breaking**: `source_ip_filtering` renamed to `disable_source_ip_filtering` (leaving this out will set source IP filtering on, needs explicitly be set to `true` for filtering to be disabled)
-- **Breaking**: renamed `network_interface` block to `network_interfaces`
 - Moved multiple utility functions to `/internal`
 
 ### Fixed
 
 - Better drift detection [#106](https://github.com/UpCloudLtd/terraform-provider-upcloud/issues/106)
-- Fixed issue where a change in server networking would replace the previous storages and recreate the server
 - Fixed issue where a change in server storages would replace the server network interfaces and recreate the server
+- Addressed issue where a change in server networking would replace the previous storages (the template will still be created anew)
 
 ## 0.1.0
 
