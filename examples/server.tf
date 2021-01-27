@@ -1,3 +1,13 @@
+# set the provider version
+terraform {
+  required_providers {
+    upcloud = {
+      source = "UpCloudLtd/upcloud"
+      version = "~> 2.0"
+    }
+  }
+}
+
 provider "upcloud" {
   # Your UpCloud credentials are read from the environment variables:
   # export UPCLOUD_USERNAME="Username of your UpCloud API user"
