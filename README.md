@@ -49,7 +49,6 @@ resource "upcloud_server" "example" {
   # Set the operating system
   template {
     storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
-    title   = "root"
 
     # Use the size allotted by the 1xCPU-1GB plan
     size = 25

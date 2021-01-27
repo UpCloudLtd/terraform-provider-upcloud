@@ -13,17 +13,13 @@ This resource represents a generated UpCloud server resource.
 ## Example Usage
 
 ```hcl
-resource "upcloud_server" "test" {
-  hostname = "ubuntu.example.tld"
+resource "upcloud_server" "example" {
+  hostname = "terraform.example.tld"
+  zone     = "de-fra1"
   plan     = "1xCPU-1GB"
-  zone     = "fi-hel1"
-
-  network_interface {
-    type = "public"
-  }
 
   template {
-    storage = "Ubuntu Server 16.04 LTS (Xenial Xerus)"
+    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
     size    = 25
 
     backup_rule = {
@@ -31,6 +27,10 @@ resource "upcloud_server" "test" {
       time      = "0100"
       retention = 8
     }
+  }
+
+  network_interface {
+    type = "public"
   }
 
   login {
