@@ -29,6 +29,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - Fixed issue where a change in server storages would replace the server network interfaces and recreate the server
 - Addressed issue where a change in server networking would replace the previous storages (the template will still be created anew)
 
+## 1.0.0
+
 ## 0.1.0
 
 ### Added
