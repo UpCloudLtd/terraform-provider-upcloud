@@ -38,8 +38,9 @@ data "upcloud_zones" "all_private_zones" {
 
 The following arguments can be supplied to the datasource.
 
-* `filter_type` - (Optional) Allows the zone_ids to be filtered by type, (public, private or all). Defaults to `all` 
+* `filter_type` - (Optional) Allows the zone_ids to be filtered by type, (public, private or all). Defaults to `all`
 
 ## Attributes Reference
 
-* `zone_ids` - A Collection of ids representing the available zones within UpCloud. 
+* `id` - UTC timestamp when the request was completed; used only for identifying the request in Terraform.
+* `zone_ids` - A Collection of ids representing the available zones within UpCloud.
