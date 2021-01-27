@@ -95,17 +95,6 @@ resource "upcloud_storage" "datastorage" {
   # }
 }
 
-# add a tag for the server
-resource "upcloud_tag" "ubuntu-tag" {
-  name        = "Ubuntu"
-  description = "Ubuntu"
-
-  # apply tag to our server:
-  servers = [
-    upcloud_server.ubuntu.id,
-  ]
-}
-
 output "Public_ip" {
   value = upcloud_server.ubuntu.network_interface[0].ip_address
 }
