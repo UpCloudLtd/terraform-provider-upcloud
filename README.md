@@ -17,8 +17,6 @@ This provider is developed by UpCloud, contributions from the community are welc
 
 This Terraform provider is a plugin for Terraform which provides capabilities to manage your UpCloud products such as servers, storages, networks and IP addresses.
 
-Note that currently, creation of only 10 concurrent servers is possible per account.
-
 ## Requirements
 
 * [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
