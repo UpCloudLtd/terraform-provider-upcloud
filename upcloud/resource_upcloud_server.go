@@ -101,7 +101,9 @@ func resourceUpCloudServer() *schema.Resource {
 						"ip_address": {
 							Type:        schema.TypeString,
 							Description: "The assigned IP address.",
+							Optional:    true,
 							Computed:    true,
+							ForceNew:    true,
 						},
 						"ip_address_floating": {
 							Type:        schema.TypeBool,

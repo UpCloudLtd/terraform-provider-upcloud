@@ -12,10 +12,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - New [examples](../blob/master/examples) of using the provider
 - Updated workflow to run acceptance tests when opening pull request / pushing to master
 - Add user-agent header to the requests
+- Can now explicitly set IP address for network interfaces (requires special priviledes for your UpCloud account)
 
 ### Changed
 
-- **Breaking**: the template (os storage) is described with a separate block within the server resource
+- **Breaking**: the template (os storage) is described with a separate block within the server resource, note that removing / recreating server resource also recreates the storage
 - **Breaking**: other storages are now managed outside of the server resource and attached to server using `storage_devices` block
 
 ### Removed

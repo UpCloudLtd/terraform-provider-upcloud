@@ -46,6 +46,8 @@ github.com/UpCloudLtd/upcloud-go-api v0.0.0-20201223084439-d827e77e1f4a h1:MBhpu
 github.com/UpCloudLtd/upcloud-go-api v0.0.0-20201223084439-d827e77e1f4a/go.mod h1:nKv1Y0cTJTGYSd3lEcFfEnbPPiIj3gT4lJzV0ZfTlpQ=
 github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210118131343-9b908e5bf5f5 h1:TUWcagFvig55SQeqGze7qMwu5jLUYDd/beLZZ0bKPc0=
 github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210118131343-9b908e5bf5f5/go.mod h1:nKv1Y0cTJTGYSd3lEcFfEnbPPiIj3gT4lJzV0ZfTlpQ=
+github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210127073406-2964ed7e5972 h1:OUrt9phz41jCKOgqu3Iq8KH+5OfyfgcdFT28R9QLN0Y=
+github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210127073406-2964ed7e5972/go.mod h1:nKv1Y0cTJTGYSd3lEcFfEnbPPiIj3gT4lJzV0ZfTlpQ=
 github.com/agext/levenshtein v1.2.1 h1:QmvMAjj2aEICytGiWzmxoE0x2KZvE0fvmqMOfy2tjT8=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=

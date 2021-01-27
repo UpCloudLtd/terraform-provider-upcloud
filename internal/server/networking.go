@@ -18,7 +18,8 @@ func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.Creat
 		iface := request.CreateServerInterface{
 			IPAddresses: []request.CreateServerIPAddress{
 				{
-					Family: d.Get(keyRoot + "ip_address_family").(string),
+					Family:  d.Get(keyRoot + "ip_address_family").(string),
+					Address: d.Get(keyRoot + "ip_address").(string),
 				},
 			},
 			Type: d.Get(keyRoot + "type").(string),
