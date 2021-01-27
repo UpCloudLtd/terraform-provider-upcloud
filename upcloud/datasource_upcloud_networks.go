@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -153,7 +154,7 @@ func dataSourceNetworksRead(ctx context.Context, d *schema.ResourceData, meta in
 
 	filteredNetworks := fetchedNetworks.Networks
 	if filterName != "" {
-		filteredNetworks, err = FilterNetworks(fetchedNetworks.Networks, func(n upcloud.Network) (bool, error) {
+		filteredNetworks, err = utils.FilterNetworks(fetchedNetworks.Networks, func(n upcloud.Network) (bool, error) {
 			return regexp.MatchString(filterName, n.Name)
 		})
 		if err != nil {

@@ -1,4 +1,4 @@
-package upcloud
+package utils
 
 import (
 	"time"

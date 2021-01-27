@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -54,7 +55,7 @@ func dataSourceUpCloudZonesRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(fmt.Errorf("error getting filter_type: %s", err))
 	}
 
-	zoneIds := FilterZoneIds(zones.Zones, func(zone upcloud.Zone) bool {
+	zoneIds := utils.FilterZoneIds(zones.Zones, func(zone upcloud.Zone) bool {
 		switch filterType {
 		case PRIVATE_FILTER:
 			return zone.Public != upcloud.True

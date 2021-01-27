@@ -9,6 +9,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -434,7 +435,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if _, err := WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
+		if _, err := utils.WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
 			return diag.FromErr(err)
 		}
 		server.VerifyServerStarted(d.Id(), meta)
@@ -489,7 +490,7 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 					return diag.FromErr(err)
 				}
 			}
-			WithRetry(func() (interface{}, error) {
+			utils.WithRetry(func() (interface{}, error) {
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
