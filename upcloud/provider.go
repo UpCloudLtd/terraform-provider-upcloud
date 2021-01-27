@@ -62,6 +62,7 @@ func Provider() *schema.Provider {
 			"upcloud_tag":                 resourceUpCloudTag(),
 			"upcloud_network":             resourceUpCloudNetwork(),
 			"upcloud_floating_ip_address": resourceUpCloudFloatingIPAddress(),
+			"upcloud_object_storage":      resourceUpCloudObjectStorage(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
