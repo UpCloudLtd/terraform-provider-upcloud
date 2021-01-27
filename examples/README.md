@@ -4,33 +4,34 @@ This is a full example which shows how you can set up your own UpCloud instance 
 
 ## Initializing local environment
 
-Get and install the provider:
+Copy the `server.tf` example and run `terraform init` in the working directory.
 
-```sh
-$ git clone git@github.com:UpCloudLtd/terraform-provider-upcloud.git
-$ cd terraform-provider-upcloud
 ```
-
-Build and symlink the provider into a folder (also make sure it exists) where Terraform looks for it:
-
-```sh
-$ make
-$ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $GOBIN/terraform-provider-upcloud $HOME/.terraform.d/plugins
-```
-
-Clone this example and init Terraform in the example folder:
-
-```sh
-$ cd terraform-upcloud-provider/examples
 $ terraform init
 
 Initializing the backend...
 
 Initializing provider plugins...
+- Using previously-installed registry.upcloud.com/upcloud/upcloud v0.1.0
+
+The following providers do not have any version constraints in configuration,
+so the latest version was installed.
+
+To prevent automatic upgrades to new major versions that may contain breaking
+changes, we recommend adding version constraints in a required_providers block
+in your configuration, with the constraint strings suggested below.
+
+* registry.upcloud.com/upcloud/upcloud: version = "~> 0.1.0"
 
 Terraform has been successfully initialized!
-...
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
 ```
 
 ## Configuring the plan
