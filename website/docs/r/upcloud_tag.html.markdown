@@ -8,7 +8,7 @@ description: |-
 
 # upcloud_tag
 
-This resource represents a UpCloud Tag resource.
+This resource represents a UpCloud Tag resource. Tags are currently not fully supported for sub accounts.
 
 ## Example Usage
 
