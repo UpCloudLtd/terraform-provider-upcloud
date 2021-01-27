@@ -88,7 +88,7 @@ Below is an example configuration on how to create a server using the Terraform 
 terraform {
   required_providers {
     upcloud = {
-      source = "hashicorp/upcloud"
+      source = "UpCloudLtd/upcloud"
       version = "~> 2.0"
     }
   }
