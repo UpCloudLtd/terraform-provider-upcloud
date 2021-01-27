@@ -347,6 +347,8 @@ Run Terraform files, e.g. the examples:
 ```
 cd /tmp
 cp /work/examples/01_server.tf .
+export UPCLOUD_USERNAME="upcloud-api-access-enabled-user"
+export UPCLOUD_PASSWORD="verysecretpassword"
 terraform init
 terraform apply
 ```
