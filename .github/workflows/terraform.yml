@@ -33,5 +33,5 @@ jobs:
         env:
           UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
           UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
-        if: secrets.UPCLOUD_PASSWORD != ''
+        if: env.UPCLOUD_PASSWORD != ''
         run: make testacc
