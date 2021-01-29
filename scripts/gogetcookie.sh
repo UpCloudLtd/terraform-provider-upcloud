@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Create googlesource.com cookie
+#
+# From https://github.com/hashicorp/terraform/blob/master/scripts/gogetcookie.sh
 
 install -m 0600 /dev/null ~/.gitcookies
 
