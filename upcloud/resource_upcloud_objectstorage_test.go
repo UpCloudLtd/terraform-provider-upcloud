@@ -2,12 +2,15 @@ package upcloud
 
 import (
 	"fmt"
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"net/url"
+	"os"
 	"testing"
 	"time"
 )
@@ -17,20 +20,77 @@ const expectedZone = "fi-hel2"
 const expectedKey = "an access key"
 const expectedSecret = "a secret key"
 
-func TestUpcloudObjectStorage_basic(t *testing.T) {
+const expectedName1 = "name1"
+const expectedName2 = "name2"
+
+
+func init() {
+	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
+		Name: "object_storage_cleanup",
+		F: func(region string) error {
+			var nameMap = map[string]interface{} {
+				expectedName1: nil,
+				expectedName2: nil,
+			}
+
+			username, ok := os.LookupEnv("UPCLOUD_USERNAME")
+			if !ok {
+				return fmt.Errorf("UPCLOUD_USERNAME must be set for acceptance tests")
+			}
+
+			password, ok := os.LookupEnv("UPCLOUD_PASSWORD")
+			if !ok {
+				return fmt.Errorf("UPCLOUD_PASSWORD must be set for acceptance tests")
+			}
+
+			client := retryablehttp.NewClient()
+
+			service := newUpCloudServiceConnection(username, password, client.HTTPClient)
+
+			objectStorages, err := service.GetObjectStorages()
+			if err != nil {
+				return err
+			}
+
+			for _, objectStorage := range objectStorages.ObjectStorages {
+				_, found := nameMap[objectStorage.Name]
+				if !found {
+					continue
+				}
+
+				print("sweep is deleting objectstore", objectStorage.Name)
+				err = service.DeleteObjectStorage(&request.DeleteObjectStorageRequest{
+					UUID: objectStorage.UUID,
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	})
+}
+
+// TestMain is boilerplate needed for -sweep command line parameters to work
+func TestMain(m *testing.M) {
+	resource.TestMain(m)
+}
+
+func TestUpCloudObjectStorage_basic(t *testing.T) {
 	var providers []*schema.Provider
 
 	const expectedSize = "250"
-	const expectedName = "name1"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy: verifyObjectStorageDoesNotExist(expectedKey, expectedSecret, expectedName),
+		CheckDestroy: verifyObjectStorageDoesNotExist(expectedKey, expectedSecret, expectedName1),
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudObjectStorageInstanceConfig(
-					expectedSize, expectedName, expectedDescription, expectedZone, expectedKey, expectedSecret,
+				Config: testUpCloudObjectStorageInstanceConfig(
+					expectedSize, expectedName1, expectedDescription, expectedZone, expectedKey, expectedSecret,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("upcloud_object_storage.my_storage", "size"),
@@ -40,23 +100,22 @@ func TestUpcloudObjectStorage_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "name", expectedName),
+						"upcloud_object_storage.my_storage", "name", expectedName1),
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "description", expectedDescription),
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "zone", expectedZone),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName),
+					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName1),
 				),
 			},
 		},
 	})
 }
 
-func TestUpcloudObjectStorage_basic_update(t *testing.T) {
+func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 	var providers []*schema.Provider
 
 	const expectedSize = "500"
-	const expectedName = "name2"
 
 	const expectedUpdatedSize = "1000"
 	const expectedUpdatedDescription = "My Updated data collection"
@@ -66,28 +125,28 @@ func TestUpcloudObjectStorage_basic_update(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy: verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, expectedName),
+		CheckDestroy: verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, expectedName2),
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudObjectStorageInstanceConfig(
-					expectedSize, expectedName, expectedDescription, expectedZone, expectedKey, expectedSecret,
+				Config: testUpCloudObjectStorageInstanceConfig(
+					expectedSize, expectedName2, expectedDescription, expectedZone, expectedKey, expectedSecret,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "name", expectedName),
+						"upcloud_object_storage.my_storage", "name", expectedName2),
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "description", expectedDescription),
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "zone", expectedZone),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName),
+					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
 				),
 			},
 			{
-				Config: testUpcloudObjectStorageInstanceConfig(
+				Config: testUpCloudObjectStorageInstanceConfig(
 					expectedUpdatedSize,
-					expectedName,
+					expectedName2,
 					expectedUpdatedDescription,
 					expectedZone,
 					expectedUpdatedKey,
@@ -98,14 +157,14 @@ func TestUpcloudObjectStorage_basic_update(t *testing.T) {
 						"upcloud_object_storage.my_storage", "size", expectedUpdatedSize),
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "description", expectedUpdatedDescription),
-					verifyObjectStorageExists(expectedUpdatedKey, expectedUpdatedSecret, expectedName),
+					verifyObjectStorageExists(expectedUpdatedKey, expectedUpdatedSecret, expectedName2),
 				),
 			},
 		},
 	})
 }
 
-func testUpcloudObjectStorageInstanceConfig(size, name, description, zone, access_key, secret_key string) string {
+func testUpCloudObjectStorageInstanceConfig(size, name, description, zone, accessKey, secretKey string) string {
 	return fmt.Sprintf(`
 		resource "upcloud_object_storage" "my_storage" {
 			size  = %s
@@ -115,12 +174,12 @@ func testUpcloudObjectStorageInstanceConfig(size, name, description, zone, acces
 			access_key = "%s"
 			secret_key = "%s"
 		}
-`, size, name, description, zone, access_key, secret_key)
+`, size, name, description, zone, accessKey, secretKey)
 }
 
 func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestCheckFunc {
 	return func (state * terraform.State) error {
-		exists, err := doesObjectStorageExists(state, accessKey, secretKey, name)
+		exists, err := doesObjectStorageExists(state, accessKey, secretKey)
 		if err != nil {
 			return err
 		}
@@ -134,7 +193,7 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource.TestCheckFunc {
 	return func (state * terraform.State) error {
 		time.Sleep(time.Second * 3)
-		exists, err := doesObjectStorageExists(state, accessKey, secretKey, name)
+		exists, err := doesObjectStorageExists(state, accessKey, secretKey)
 		if err != nil {
 			if err.Error() == "could not find resources" {
 				return nil
@@ -148,7 +207,7 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 	}
 }
 
-func doesObjectStorageExists(state * terraform.State, accessKey, secretKey, name string) (bool, error) {
+func doesObjectStorageExists(state * terraform.State, accessKey, secretKey string) (bool, error) {
 	resources, ok := state.Modules[0].Resources["upcloud_object_storage.my_storage"]
 	if !ok {
 		return false, fmt.Errorf("could not find resources")
