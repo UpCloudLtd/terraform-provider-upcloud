@@ -43,13 +43,14 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 			},
 			"name": {
 				Description: "The name of the object storage bucket to be created",
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			"description": {
-				Description: "The description of the object storage bucket to be created",
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  "The description of the object storage bucket to be created",
+				Required:     true,
+				Type:         schema.TypeString,
+				DefaultFunc:  func() (interface{}, error) { return "managed by terraform", nil },
 				ValidateFunc: validation.StringLenBetween(1, 255),
 			},
 			"url": {
@@ -74,8 +75,8 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 
 func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var (
-	    diags diag.Diagnostics
-		req request.CreateObjectStorageRequest
+		diags diag.Diagnostics
+		req   request.CreateObjectStorageRequest
 	)
 
 	client := m.(*service.Service)
@@ -127,7 +128,7 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 	if d.HasChanges([]string{"size", "access_key", "secret_key", "description"}...) {
 
-		req := request.ModifyObjectStorageRequest{ UUID: d.Id() }
+		req := request.ModifyObjectStorageRequest{UUID: d.Id()}
 
 		req.Size = d.Get("size").(int)
 		req.AccessKey = d.Get("access_key").(string)
