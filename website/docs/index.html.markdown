@@ -8,7 +8,7 @@ description: |-
 
 # UpCloud Provider
 
-The UpCloud Terraform Provider enables organisations to control resources hosted on the UpCloud hosting platform. 
+The UpCloud Terraform Provider enables organisations to control resources hosted on the UpCloud hosting platform.
 
 ## Example Usage
 
@@ -41,6 +41,6 @@ The following paramters are optional and control the retry behaviour in the even
 
 * `retry_wait_min_sec` - (Optional) Minimum time to wait between retries.
 
-* `retry_wait_min_sec` - (Optional) Maximum time to wait between retries.
+* `retry_wait_max_sec` - (Optional) Maximum time to wait between retries.
 
 * `retry_max` - (Optional) Maximum number of retries

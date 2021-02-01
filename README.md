@@ -4,7 +4,7 @@
 
 # Terraform Provider for UpCloud
 
-![UpCloud Terraform provider tests](https://github.com/UpCloudLtd/terraform-provider-upcloud/workflows/UpCloud%20Terraform%20provider%20tests/badge.svg)
+[![UpCloud Terraform provider tests](https://github.com/UpCloudLtd/terraform-provider-upcloud/workflows/UpCloud%20Terraform%20provider%20tests/badge.svg)](https://github.com/UpCloudLtd/terraform-provider-upcloud/actions)
 
 This provider is developed by UpCloud, contributions from the community are welcomed!
 
@@ -17,8 +17,6 @@ This provider is developed by UpCloud, contributions from the community are welc
 
 This Terraform provider is a plugin for Terraform which provides capabilities to manage your UpCloud products such as servers, storages, networks and IP addresses.
 
-Note that currently, creation of only 10 concurrent servers is possible per account.
-
 ## Requirements
 
 * [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
@@ -29,14 +27,14 @@ Install [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
 
 Set environment variables for authentication (on command line, in .bashrc, .zshrc, ...):
 
-```
+```sh
 export UPCLOUD_USERNAME="upcloud-api-access-enabled-user"
 export UPCLOUD_PASSWORD="verysecretpassword"
 ```
 
 Create a example_create_server.tf file:
 
-```
+```terraform
 # Configure the UpCloud provider
 provider "upcloud" {}
 
@@ -82,7 +80,7 @@ We recommend you to set up a sub-account specifically for the API usage with its
 
 Below is an example configuration on how to create a server using the Terraform provider with Terraform 0.13 or later:
 
-```
+```terraform
 # set the provider version
 terraform {
   required_providers {
@@ -143,7 +141,7 @@ resource "upcloud_server" "example" {
 
 Terraform 0.12 or earlier:
 
-```
+```terraform
 # configure the provider
 provider "upcloud" {
   # Your UpCloud credentials are read from the environment variables:
@@ -283,7 +281,7 @@ The following commands will allow you to build and execute terraform with the pr
 
 Update your terraform files with the following terraform configuration block.  A standard name for a file with the following HCL is `version.tf`.
 
-```
+```terraform
 terraform {
   required_providers {
     upcloud = {
@@ -321,13 +319,13 @@ You can also develop/build/test in Docker. After you've cloned the repository:
 
 Create a docker container with golang as base:
 
-```
+```sh
 docker run -it -v `pwd`:/work -w /work golang bash
 ```
 
 Install Terraform:
 
-```
+```sh
 cd /tmp
 git clone https://github.com/hashicorp/terraform.git
 cd terraform
@@ -336,14 +334,14 @@ go install
 
 Build the UpCloud provider:
 
-```
+```sh
 cd /work
 make build_0_13
 ```
 
 Run Terraform files, e.g. the examples:
 
-```
+```sh
 cd /tmp
 cp /work/examples/01_server.tf .
 export UPCLOUD_USERNAME="upcloud-api-access-enabled-user"
@@ -354,6 +352,6 @@ terraform apply
 
 After exiting the container, you can connect back to the container:
 
-```
+```sh
 docker start -ai <container ID here>
 ```

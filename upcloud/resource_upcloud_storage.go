@@ -474,7 +474,7 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 
 	if len(storageDetails.ServerUUIDs) > 0 {
 		serverUUID := storageDetails.ServerUUIDs[0]
-		// Get server details for retrieven the address used to detach the storage
+		// Get server details for retrieving the address that is to be used when detaching the storage
 		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 			UUID: serverUUID,
 		})

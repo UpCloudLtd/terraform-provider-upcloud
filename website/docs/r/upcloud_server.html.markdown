@@ -22,7 +22,7 @@ resource "upcloud_server" "example" {
     storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
     size    = 25
 
-    backup_rule = {
+    backup_rule {
       interval  = "daily"
       time      = "0100"
       retention = 8
@@ -56,7 +56,7 @@ The following arguments are supported:
 * `firewall` - (Optional) Are firewall rules active for the server
 * `metadata` - (Optional) Is the metadata service active for the server
 * `cpu` - (Optional) The number of CPU for the server
-* `mem` - (Optional) The size of memory for the server
+* `mem` - (Optional) The size of memory for the server (in megabytes)
 * `template` - (Optional) The template to use for the server's main storage device
 * `user_data` - (Optional) Defines URL for a server setup script, or the script body itself
 * `plan` - (Optional) The pricing plan used for the server

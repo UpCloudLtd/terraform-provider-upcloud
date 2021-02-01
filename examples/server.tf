@@ -1,3 +1,13 @@
+# set the provider version
+terraform {
+  required_providers {
+    upcloud = {
+      source = "UpCloudLtd/upcloud"
+      version = "~> 2.0"
+    }
+  }
+}
+
 provider "upcloud" {
   # Your UpCloud credentials are read from the environment variables:
   # export UPCLOUD_USERNAME="Username of your UpCloud API user"
@@ -93,17 +103,6 @@ resource "upcloud_storage" "datastorage" {
   #   time      = "0100"
   #   retention = 8
   # }
-}
-
-# add a tag for the server
-resource "upcloud_tag" "ubuntu-tag" {
-  name        = "Ubuntu"
-  description = "Ubuntu"
-
-  # apply tag to our server:
-  servers = [
-    upcloud_server.ubuntu.id,
-  ]
 }
 
 output "Public_ip" {
