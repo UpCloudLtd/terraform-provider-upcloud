@@ -20,9 +20,6 @@ jobs:
       - name: "Checkout source code"
         uses: actions/checkout@v2
 
-      - name: "Create googlesource.com cookie"
-        run: bash scripts/gogetcookie.sh
-
       - name: "Examine Go source code"
         run: make vet
 
