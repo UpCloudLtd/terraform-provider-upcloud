@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"reflect"
 )
 
 func resourceUpCloudObjectStorage() *schema.Resource {
@@ -128,13 +127,12 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 	if d.HasChanges([]string{"size", "access_key", "secret_key", "description"}...) {
 
-
 		req := request.ModifyObjectStorageRequest{ UUID: d.Id() }
 
-		addValueToStructIfChanged(d, &req, "Size", "size")
-		addValueToStructIfChanged(d, &req, "AccessKey", "access_key")
-		addValueToStructIfChanged(d, &req, "SecretKey", "secret_key")
-		addValueToStructIfChanged(d, &req, "Description", "description")
+		req.Size = d.Get("size").(int)
+		req.AccessKey = d.Get("access_key").(string)
+		req.SecretKey = d.Get("secret_key").(string)
+		req.Description = d.Get("description").(string)
 
 		_, err := client.ModifyObjectStorage(&req)
 		if err != nil {
@@ -183,28 +181,4 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	d.Set("created", objectDetails.Created)
 	d.Set("zone", objectDetails.Zone)
 	d.Set("used_space", objectDetails.UsedSpace)
-}
-
-func addValueToStructIfChanged(d *schema.ResourceData, obj interface{}, objField, key string) {
-	if !d.HasChange(key) {
-		return
-	}
-
-	newValue := d.Get(key)
-	field := reflect.ValueOf(obj).Elem().FieldByName(objField)
-	if  !field.IsValid() || !field.CanSet() {
-		// ok to panic here as it would be a programming issue here
-		panic("this object cannot be modified (hint - try passing a pointer to the object)")
-	}
-
-	switch field.Kind() {
-	case reflect.Int:
-		field.SetInt(int64(newValue.(int)))
-	case reflect.String:
-		field.SetString(newValue.(string))
-	case reflect.Bool:
-		field.SetBool(newValue.(bool))
-	default:
-		panic("this function doesn't support this type yet")
-	}
 }
