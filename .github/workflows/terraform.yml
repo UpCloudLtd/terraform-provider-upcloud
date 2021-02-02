@@ -12,21 +12,26 @@ jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
-      - name: setup
+      - name: "Setup Go"
         uses: actions/setup-go@v2
         with:
           go-version: "1.14.x"
-      - uses: actions/checkout@v2
-      - name: install
-        run: bash scripts/gogetcookie.sh
-      - run: make vet
 
-      - name: Unit test sweep
+      - name: "Checkout source code"
+        uses: actions/checkout@v2
+
+      - name: "Create googlesource.com cookie"
+        run: bash scripts/gogetcookie.sh
+
+      - name: "Examine Go source code"
+        run: make vet
+
+      - name: "Run unit tests"
         run: make test
 
-      - name: acceptance test sweep
+      - name: "Run acceptance tests"
         env:
           UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
           UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
-
+        if: env.UPCLOUD_PASSWORD != ''
         run: make testacc
