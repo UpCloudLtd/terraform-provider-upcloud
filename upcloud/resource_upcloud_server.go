@@ -68,6 +68,12 @@ func resourceUpCloudServer() *schema.Resource {
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
 			},
+			"avoid_host": {
+				Description: "Use this to make sure VMs do not reside on specific host. Refers to value from host -attribute. Useful when building HA-environments.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				ForceNew:    true,
+			},
 			"network_interface": {
 				Type:        schema.TypeList,
 				Description: "One or more blocks describing the network interfaces of the server.",

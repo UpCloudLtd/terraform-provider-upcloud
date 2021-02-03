@@ -55,6 +55,8 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		r.PasswordDelivery = deliveryMethod
 	}
 
+	r.AvoidHost = d.Get("avoid_host").(int)
+
 	if template, ok := d.GetOk("template.0"); ok {
 		template := template.(map[string]interface{})
 		if template["title"].(string) == "" {

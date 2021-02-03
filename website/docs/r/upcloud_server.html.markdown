@@ -62,6 +62,7 @@ The following arguments are supported:
 * `plan` - (Optional) The pricing plan used for the server
 * `storage_devices` - (Optional) A list of storage devices associated with the server
 * `login` - (Optional) Configure access credentials to the server
+* `avoid_host` - (Optional) Use this to make sure VMs do not reside on specific host. Refers to value from host -attribute. Useful when building HA-environments
 
 The `storage_devices` block supports:
 
