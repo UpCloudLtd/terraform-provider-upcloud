@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - support for UpCloud ObjectStorage S3 compatible storage.
+- Add host field to the server resource
 
 ## 2.0.0
 

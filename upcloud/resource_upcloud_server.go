@@ -68,6 +68,11 @@ func resourceUpCloudServer() *schema.Resource {
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
 			},
+			"host": {
+				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 			"network_interface": {
 				Type:        schema.TypeList,
 				Description: "One or more blocks describing the network interfaces of the server.",
