@@ -15,32 +15,28 @@ This resource represents a UpCloud Tag resource. Tags are currently not fully su
 The following HCL example shows the creation of a Tag resource.
 
 ```hcl
-    resource "upcloud_server" "my_example_server" {
-      zone     = "fi-hel1"
-      hostname = "mydebian.example.com"
-      plan     = "1xCPU-2GB"
+resource "upcloud_server" "example" {
+  hostname = "terraform.example.tld"
+  zone     = "de-fra1"
+  plan     = "1xCPU-1GB"
 
-      storage_devices {
-        action = "create"
-        size   = 10
-        tier   = "maxiops"
-      }
+  template {
+    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+    size    = 25
+  }
 
-      network_interface {
-        type = "public"
-      }
+  network_interface {
+    type = "public"
+  }
+}
 
-    }
-
-    resource "upcloud_tag" "dev" {
-
-      name = "development"
-      description = "Represents the development environment"
-      servers = [
-        upcloud_server.my_example_server.id,
-
-      ]
-    }
+resource "upcloud_tag" "dev" {
+  name = "development"
+  description = "Represents the development environment"
+  servers = [
+    upcloud_server.example.id,
+  ]
+}
 ```
 
 

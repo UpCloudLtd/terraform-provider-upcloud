@@ -19,6 +19,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - Updated workflow to run acceptance tests when opening pull request / pushing to master
 - Add user-agent header to the requests
 - Can now explicitly set IP address for network interfaces (requires special priviledes for your UpCloud account)
+- Expose metadata field for server resource
 
 ### Changed
 
@@ -34,6 +35,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - Better drift detection [#106](https://github.com/UpCloudLtd/terraform-provider-upcloud/issues/106)
 - Fixed issue where a change in server storages would replace the server network interfaces and recreate the server
 - Addressed issue where a change in server networking would replace the previous storages (the template will still be created anew)
+- Inconsistent documentation
 
 ## 1.0.0
 
@@ -58,12 +60,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 
 - README and examples/README to cover local builds, setup and test execution
-- Go verison to 1.14 and against Go master branch in Travis CI
-- Travis CI file execute to execute website-test covering provider documentation
+- Go version to 1.14 and against Go master branch in Travis CI
+- Travis CI file to execute website-test covering provider documentation
 - Provider uses Terraform Plugin SDK V2
 - resource_upcloud_server expanded with new functionality from UpCloud API 1.3
-- resource_upcloud_storage expaned with new functionalty from UpCloud API 1.3
-- resource_upclopud_tag expanded to implement read function
+- resource_upcloud_storage expaned with new functionality from UpCloud API 1.3
+- resource_upcloud_tag expanded to implement read function
 
 ### Removed
 
