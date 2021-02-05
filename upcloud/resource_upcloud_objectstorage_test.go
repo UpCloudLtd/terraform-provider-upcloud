@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/hashicorp/go-retryablehttp"
@@ -8,9 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -205,6 +205,87 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 	})
 }
 
+func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
+	var providers []*schema.Provider
+
+	const expectedSize = "500"
+	const expectedBucketName1 = "bucket1"
+	const expectedBucketName2 = "bucket2"
+	const expectedBucketName3 = "bucket3"
+	const expectedBucketName4 = "bucket4"
+	const expectedBucketName5 = "bucket5"
+
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedKey, expectedSecret, expectedName2),
+		Steps: []resource.TestStep{
+			{
+				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
+					expectedSize, expectedName2, expectedZone,
+					expectedKey, expectedSecret, expectedBucketName1, expectedBucketName2,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_object_storage.my_storage", "size", expectedSize),
+					resource.TestCheckResourceAttr(
+						"upcloud_object_storage.my_storage", "name", expectedName2),
+					resource.TestCheckResourceAttr(
+						"upcloud_object_storage.my_storage", "zone", expectedZone),
+					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
+				),
+			},
+			{
+				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
+					expectedSize, expectedName2, expectedZone,
+					expectedKey, expectedSecret, expectedBucketName1,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_object_storage.my_storage", "size", expectedSize),
+					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
+					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
+				),
+			},
+			{
+				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
+					expectedSize, expectedName2, expectedZone,
+					expectedKey, expectedSecret, expectedBucketName1, expectedBucketName3, expectedBucketName4,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_object_storage.my_storage", "size", expectedSize),
+					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
+					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName3),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName4),
+				),
+			},
+			{
+				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
+					expectedSize, expectedName2, expectedZone,
+					expectedKey, expectedSecret, expectedBucketName4, expectedBucketName5,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_object_storage.my_storage", "size", expectedSize),
+					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
+					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
+					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
+					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName3),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName4),
+					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName5),
+				),
+			},
+		},
+	})
+}
+
 func testUpCloudObjectStorageInstanceConfig(size, name, description, zone, accessKey, secretKey string) string {
 	return fmt.Sprintf(`
 		resource "upcloud_object_storage" "my_storage" {
@@ -230,6 +311,30 @@ func testUpCloudObjectStorageInstanceDefaultsConfig(size, name, zone, accessKey,
 `, size, name, zone, accessKey, secretKey)
 }
 
+func testUpCloudObjectStorageWithBucketsInstanceConfig(size, name, zone, accessKey, secretKey string, buckets ...string) string {
+	bucketClauses := make([]string, 0, len(buckets))
+	for _, bucket := range buckets {
+		bucketClause := fmt.Sprintf(`
+			bucket {
+				name = "%s"
+			}
+`, bucket)
+
+		bucketClauses = append(bucketClauses, bucketClause)
+	}
+
+	return fmt.Sprintf(`
+		resource "upcloud_object_storage" "my_storage" {
+			size  = %s
+			name = "%s"
+			zone  = "%s"
+			access_key = "%s"
+			secret_key = "%s"
+			%s
+		}
+`, size, name, zone, accessKey, secretKey, strings.Join(bucketClauses, "\n\n"))
+}
+
 func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		exists, err := doesObjectStorageExists(state, accessKey, secretKey)
@@ -237,7 +342,7 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 			return err
 		}
 		if !exists {
-			return fmt.Errorf("could not find bucket %s", name)
+			return fmt.Errorf("could not find instance %s", name)
 		}
 		return nil
 	}
@@ -254,31 +359,64 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 			return err
 		}
 		if exists {
-			return fmt.Errorf("found bucket %s that should have been deleted", name)
+			return fmt.Errorf("found instance %s that should have been deleted", name)
 		}
 		return nil
 	}
 }
 
 func doesObjectStorageExists(state *terraform.State, accessKey, secretKey string) (bool, error) {
-	resources, ok := state.Modules[0].Resources["upcloud_object_storage.my_storage"]
-	if !ok {
-		return false, fmt.Errorf("could not find resources")
-	}
-
-	url, err := url.Parse(resources.Primary.Attributes["url"])
-	if err != nil {
-		return false, err
-	}
-
-	_, err = minio.New(url.Host, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-		Secure: true,
-	})
-
+	_, err := getMinioConnection(state, accessKey, secretKey)
 	if err != nil {
 		return false, err
 	}
 
 	return true, nil
 }
+
+func getMinioConnection(state *terraform.State, accessKey, secretKey string) (*minio.Client, error) {
+	resources, ok := state.Modules[0].Resources["upcloud_object_storage.my_storage"]
+	if !ok {
+		return nil, fmt.Errorf("could not find resources")
+	}
+
+	return getBucketConnection(resources.Primary.Attributes["url"], accessKey, secretKey)
+}
+
+func verifyBucketExists(accessKey, secretKey, name, bucketName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		found, err := bucketExists(state, accessKey, secretKey, name, bucketName)
+		if err != nil {
+			return err
+		}
+
+		if !found {
+			return fmt.Errorf("could not find bucket %s", bucketName)
+		}
+		return nil
+	}
+}
+
+func verifyBucketDoesNotExist(accessKey, secretKey, name, bucketName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		found, err := bucketExists(state, accessKey, secretKey, name, bucketName)
+		if err != nil {
+			return err
+		}
+
+		if found {
+			return fmt.Errorf("found unexpected bucket %s", bucketName)
+		}
+		return nil
+	}
+}
+
+func bucketExists(state *terraform.State, accessKey, secretKey, name, bucketName string) (bool, error) {
+	minio, err := getMinioConnection(state, accessKey, secretKey)
+	if err != nil {
+		return false, err
+	}
+
+	return minio.BucketExists(context.Background(), bucketName)
+}
+
