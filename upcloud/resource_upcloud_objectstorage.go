@@ -322,7 +322,7 @@ func getBuckets(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceD
 
 	// sometimes fails here because the buckets aren't redy yet
 	var bucketInfo []minio.BucketInfo
-	for trys := 0;trys < numRetries;trys++ {
+	for trys := 0; trys < numRetries; trys++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 		bucketInfo, err = conn.ListBuckets(ctx)
 		cancel()
@@ -346,10 +346,10 @@ func getBuckets(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceD
 
 func createObjectStorage(client *service.Service, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
-		err error
+		err        error
 		objStorage *upcloud.ObjectStorageDetails
 	)
-	for try := 0;try < numRetries;try++ {
+	for try := 0; try < numRetries; try++ {
 		// calls to the function seem to fail occasionally, so call it in a retry loop
 		objStorage, err = client.CreateObjectStorage(req)
 		if err == nil {
@@ -362,10 +362,10 @@ func createObjectStorage(client *service.Service, req *request.CreateObjectStora
 
 func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
-		err error
+		err        error
 		objStorage *upcloud.ObjectStorageDetails
 	)
-	for try := 0;try < numRetries;try++ {
+	for try := 0; try < numRetries; try++ {
 		objStorage, err = client.ModifyObjectStorage(req)
 		if err == nil {
 			break

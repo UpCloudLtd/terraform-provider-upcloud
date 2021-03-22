@@ -215,7 +215,6 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 	const expectedBucketName4 = "bucket4"
 	const expectedBucketName5 = "bucket5"
 
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
@@ -419,4 +418,3 @@ func bucketExists(state *terraform.State, accessKey, secretKey, name, bucketName
 
 	return minio.BucketExists(context.Background(), bucketName)
 }
-

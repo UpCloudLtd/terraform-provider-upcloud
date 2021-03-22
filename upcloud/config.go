@@ -33,7 +33,7 @@ func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
 		res *upcloud.Account
 	)
 
-	for trys := 0;trys < numRetries;trys++ {
+	for trys := 0; trys < numRetries; trys++ {
 		res, err = svc.GetAccount()
 		if err == nil {
 			break
