@@ -10,6 +10,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - support for UpCloud ObjectStorage S3 compatible storage.
 - Add host field to the server resource
 
+### Fixed
+
+- Server not started after updating storage device
+
 ## 2.0.0
 
 ### Added
