@@ -438,6 +438,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		if _, err := utils.WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
 			return diag.FromErr(err)
 		}
+		// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
 		server.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
 	} else {
 		if _, err := client.ModifyStorage(&req); err != nil {
@@ -494,6 +495,7 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
+				// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
 				server.VerifyServerStarted(request.StartServerRequest{UUID: serverUUID}, meta)
 			}
 		}

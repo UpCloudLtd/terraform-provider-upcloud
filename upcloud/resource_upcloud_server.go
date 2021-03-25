@@ -506,7 +506,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 		}
 	}
-	if err := server.VerifyServerStarted(request.StartServerRequest{UUID: d.Id()}, meta); err != nil {
+	if err := server.VerifyServerStarted(request.StartServerRequest{UUID: d.Id(), Host: d.Get("host").(int)}, meta); err != nil {
 		return diag.FromErr(err)
 	}
 	return resourceUpCloudServerRead(ctx, d, meta)
