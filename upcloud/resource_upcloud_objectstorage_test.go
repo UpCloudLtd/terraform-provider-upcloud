@@ -16,7 +16,7 @@ import (
 )
 
 const expectedDescription = "My object storage"
-const expectedZone = "fi-hel2"
+const expectedZone = "pl-waw1"
 const expectedKey = "an access key"
 const expectedSecret = "a secret key"
 
