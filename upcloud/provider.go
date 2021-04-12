@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -62,6 +63,7 @@ func Provider() *schema.Provider {
 			"upcloud_tag":                 resourceUpCloudTag(),
 			"upcloud_network":             resourceUpCloudNetwork(),
 			"upcloud_floating_ip_address": resourceUpCloudFloatingIPAddress(),
+			"upcloud_object_storage":      resourceUpCloudObjectStorage(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
@@ -91,11 +93,11 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
 	httpClient.RetryMax = d.Get("retry_max").(int)
 
-	client := client.NewWithHTTPClient(d.Get("username").(string), d.Get("password").(string), httpClient.HTTPClient)
-	client.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", globals.Version)
-	client.SetTimeout(upcloudAPITimeout)
-
-	service := service.New(client)
+	service := newUpCloudServiceConnection(
+		d.Get("username").(string),
+		d.Get("password").(string),
+		httpClient.HTTPClient,
+	)
 
 	_, err := config.checkLogin(service)
 	if err != nil {
@@ -103,4 +105,13 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	return service, diags
+}
+
+func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.Service {
+
+	client := client.NewWithHTTPClient(username, password, httpClient)
+	client.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", globals.Version)
+	client.SetTimeout(upcloudAPITimeout)
+
+	return service.New(client)
 }

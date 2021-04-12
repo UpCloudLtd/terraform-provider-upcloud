@@ -3,6 +3,7 @@ package upcloud
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
@@ -26,7 +27,20 @@ func (c *Config) Client() (*service.Service, error) {
 }
 
 func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
-	res, err := svc.GetAccount()
+	const numRetries = 10
+	var (
+		err error
+		res *upcloud.Account
+	)
+
+	for trys := 0; trys < numRetries; trys++ {
+		res, err = svc.GetAccount()
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Millisecond * 100)
+	}
+
 	if err != nil {
 		svcErr, ok := err.(*upcloud.Error)
 		if ok {
@@ -34,5 +48,6 @@ func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
 		}
 		return nil, fmt.Errorf("[ERROR] Failed to get account due to unspecified error")
 	}
+
 	return res, nil
 }

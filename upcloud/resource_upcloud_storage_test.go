@@ -32,7 +32,7 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 	expectedSize := "10"
 	expectedTier := "maxiops"
 	expectedTitle := "My data collection"
-	expectedZone := "fi-hel1"
+	expectedZone := "pl-waw1"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
