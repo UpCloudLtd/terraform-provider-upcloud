@@ -112,15 +112,15 @@ func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
 		}
 
 		client := testAccProvider.Meta().(*service.Service)
-		firewallRules, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
+
+		_, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
 		})
-		if err != nil {
-			return fmt.Errorf("[WARN] Error listing firewall rules when deleting upcloud firewall rules (%s): %s", rs.Primary.ID, err)
-		}
-
-		if len(firewallRules.FirewallRules) != 0 {
-			return fmt.Errorf("[WARN] Error  %d firewall rules found against server (%s)", len(firewallRules.FirewallRules), rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf(
+				"Error firewall rules still exists after deletion for server (%s)",
+				rs.Primary.ID,
+			)
 		}
 
 	}
