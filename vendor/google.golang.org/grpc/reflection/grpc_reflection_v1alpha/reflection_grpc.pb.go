@@ -11,7 +11,8 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+// Requires gRPC-Go v1.32.0 or later.
+const _ = grpc.SupportPackageIsVersion7
 
 // ServerReflectionClient is the client API for ServerReflection service.
 //
@@ -31,7 +32,7 @@ func NewServerReflectionClient(cc grpc.ClientConnInterface) ServerReflectionClie
 }
 
 func (c *serverReflectionClient) ServerReflectionInfo(ctx context.Context, opts ...grpc.CallOption) (ServerReflection_ServerReflectionInfoClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_ServerReflection_serviceDesc.Streams[0], "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo", opts...)
+	stream, err := c.cc.NewStream(ctx, &ServerReflection_ServiceDesc.Streams[0], "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,12 +75,19 @@ type ServerReflectionServer interface {
 type UnimplementedServerReflectionServer struct {
 }
 
-func (*UnimplementedServerReflectionServer) ServerReflectionInfo(ServerReflection_ServerReflectionInfoServer) error {
+func (UnimplementedServerReflectionServer) ServerReflectionInfo(ServerReflection_ServerReflectionInfoServer) error {
 	return status.Errorf(codes.Unimplemented, "method ServerReflectionInfo not implemented")
 }
 
-func RegisterServerReflectionServer(s *grpc.Server, srv ServerReflectionServer) {
-	s.RegisterService(&_ServerReflection_serviceDesc, srv)
+// UnsafeServerReflectionServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ServerReflectionServer will
+// result in compilation errors.
+type UnsafeServerReflectionServer interface {
+	mustEmbedUnimplementedServerReflectionServer()
+}
+
+func RegisterServerReflectionServer(s grpc.ServiceRegistrar, srv ServerReflectionServer) {
+	s.RegisterService(&ServerReflection_ServiceDesc, srv)
 }
 
 func _ServerReflection_ServerReflectionInfo_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -108,7 +116,10 @@ func (x *serverReflectionServerReflectionInfoServer) Recv() (*ServerReflectionRe
 	return m, nil
 }
 
-var _ServerReflection_serviceDesc = grpc.ServiceDesc{
+// ServerReflection_ServiceDesc is the grpc.ServiceDesc for ServerReflection service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ServerReflection_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "grpc.reflection.v1alpha.ServerReflection",
 	HandlerType: (*ServerReflectionServer)(nil),
 	Methods:     []grpc.MethodDesc{},
