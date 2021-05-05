@@ -348,6 +348,10 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 }
 
 func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource.TestCheckFunc {
+	// The reason of not using doesObjectStorageExists to check the s3 bucket availability is
+	// because of a race condition.
+    // the s3 endpoint is still available few seconds after the API delete call, 
+    // that's why we check against the API and not the resource.
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "upcloud_storage" {
 			continue
