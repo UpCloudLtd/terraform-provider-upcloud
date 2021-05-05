@@ -348,24 +348,21 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 }
 
 func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-
-		for _, rs := range state.RootModule().Resources {
-			if rs.Type != "upcloud_storage" {
-				continue
-			}
-
-			client := testAccProvider.Meta().(*service.Service)
-			_, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
-				UUID: rs.Primary.ID,
-			})
-
-			if err == nil {
-				return fmt.Errorf("found instance %s : %s that should have been deleted", name, rs.Primary.ID)
-			}
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "upcloud_storage" {
+			continue
 		}
-		return nil
+
+		client := testAccProvider.Meta().(*service.Service)
+		_, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
+			UUID: rs.Primary.ID,
+		})
+
+		if err == nil {
+			return fmt.Errorf("found instance %s : %s that should have been deleted", name, rs.Primary.ID)
+		}
 	}
+	return nil
 }
 
 func doesObjectStorageExists(state *terraform.State, accessKey, secretKey string) (bool, error) {
