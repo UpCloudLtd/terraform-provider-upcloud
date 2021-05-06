@@ -3,7 +3,9 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -12,7 +14,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 )
 
 const expectedDescription = "My object storage"
@@ -348,17 +349,36 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 }
 
 func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource.TestCheckFunc {
+	/*
+			The reason of not using doesObjectStorageExists to check the s3 bucket availability is
+			because of a race condition.
+		    the s3 endpoint is still available few seconds after the API delete call,
+		    that's why we check against the API and not the resource.
+	*/
 	return func(state *terraform.State) error {
-		time.Sleep(time.Second * 3)
-		exists, err := doesObjectStorageExists(state, accessKey, secretKey)
-		if err != nil {
-			if err.Error() == "could not find resources" {
-				return nil
+
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "upcloud_storage" {
+				continue
 			}
-			return err
-		}
-		if exists {
-			return fmt.Errorf("found instance %s that should have been deleted", name)
+
+			client := testAccProvider.Meta().(*service.Service)
+			_, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
+				UUID: rs.Primary.ID,
+			})
+
+			if err != nil {
+				svcErr, ok := err.(*upcloud.Error)
+
+				if ok && svcErr.ErrorCode == "404" {
+					return nil
+				}
+				return err
+			}
+
+			if err == nil {
+				return fmt.Errorf("[ERROR] found instance %s : %s that should have been deleted", name, rs.Primary.ID)
+			}
 		}
 		return nil
 	}

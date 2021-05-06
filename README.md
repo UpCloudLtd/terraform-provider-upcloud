@@ -19,7 +19,7 @@ This Terraform provider is a plugin for Terraform which provides capabilities to
 
 ## Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
+* [Terraform](https://www.terraform.io/downloads.html) 0.15.x or later
 
 ## Quick Start
 
