@@ -347,7 +347,7 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 	}
 }
 
-func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource.TestCheckFunc {
+func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string, state *terraform.State) resource.TestCheckFunc {
 	/* 
 		The reason of not using doesObjectStorageExists to check the s3 bucket availability is
 		because of a race condition.
