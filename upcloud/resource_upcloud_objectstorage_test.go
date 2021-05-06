@@ -349,13 +349,13 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 }
 
 func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource.TestCheckFunc {
-	/* 
-		The reason of not using doesObjectStorageExists to check the s3 bucket availability is
-		because of a race condition.
-	    the s3 endpoint is still available few seconds after the API delete call, 
-	    that's why we check against the API and not the resource.
-    */
-    return func(state *terraform.State) error {
+	/*
+			The reason of not using doesObjectStorageExists to check the s3 bucket availability is
+			because of a race condition.
+		    the s3 endpoint is still available few seconds after the API delete call,
+		    that's why we check against the API and not the resource.
+	*/
+	return func(state *terraform.State) error {
 
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "upcloud_storage" {
@@ -370,12 +370,11 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 			if err != nil {
 				svcErr, ok := err.(*upcloud.Error)
 
-				if ok && svcErr.ErrorCode == "404"{
+				if ok && svcErr.ErrorCode == "404" {
 					return nil
 				}
 				return err
 			}
-
 
 			if err == nil {
 				return fmt.Errorf("[ERROR] found instance %s : %s that should have been deleted", name, rs.Primary.ID)
