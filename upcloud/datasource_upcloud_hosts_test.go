@@ -2,11 +2,12 @@ package upcloud
 
 import (
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"strconv"
-	"testing"
 )
 
 func TestAccUpCloudHosts_basic(t *testing.T) {
@@ -49,8 +50,8 @@ func testAccDataSourceUpCloudHostsCheck(resourceName string) resource.TestCheckF
 			return fmt.Errorf("error parsing size of hosts (%s) into integer: %s", hosts, err)
 		}
 
-		if hostsQuantity == 0 {
-			return fmt.Errorf("No hosts found, this is probably a bug.")
+		if hostsQuantity != 0 {
+			return fmt.Errorf("Some hosts have been found, expecting no hosts")
 		}
 
 		return nil
