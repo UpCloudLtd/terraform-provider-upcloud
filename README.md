@@ -19,7 +19,7 @@ This Terraform provider is a plugin for Terraform which provides capabilities to
 
 ## Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) 0.15.x or later
+* [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
 
 ## Quick Start
 
@@ -35,6 +35,16 @@ export UPCLOUD_PASSWORD="verysecretpassword"
 Create a example_create_server.tf file:
 
 ```terraform
+# set the provider
+terraform {
+  required_providers {
+    upcloud = {
+      source = "UpCloudLtd/upcloud"
+      version = "~> 2.0"
+    }
+  }
+}
+
 # Configure the UpCloud provider
 provider "upcloud" {}
 
@@ -210,18 +220,26 @@ To compile the provider, run `go build`. This will build the provider and put th
 $ go build
 ```
 
-In the majority of cases the `make` command will be executed to allow the provider binary to be discovered by Terraform.
+In the majority of cases the `make` command will be executed to build the binary in the correct directory.
 
 ```sh
 $ make
 ```
 
-Symlink the provider into a directory for Terraform to find it:
+The UpCloud provider will be built and placed in the following location under the `~/.terraform.d/plugins` directory.
+The version number will match the value specified in the makefile and in this case the version is 2.0.0.
 
-```sh
-$ mkdir -p $HOME/.terraform.d/plugins
-$ ln -s $GOBIN/terraform-provider-upcloud $HOME/.terraform.d/plugins
 ```
+~/.terraform.d/plugins
+└── registry.upcloud.com
+    └── upcloud
+        └── upcloud
+            └── 2.0.0
+                └── darwin_amd64
+                    └── terraform-provider-upcloud_v2.0.0
+```
+
+After the provider has been built you can then use standard terraform commands as normal.
 
 In order to test the provider, you can simply run `make test`.
 
@@ -271,48 +289,6 @@ This test can be run through the following command
 $ make website-test
 ```
 
-### Consuming local provider with Terraform 0.13.0
-
-With the release of Terraform 0.13.0 the discovery of a locally built provider binary has changed.
-These changes have been made to allow all providers to be discovered from public and provider registries.
-
-The UpCloud makefile has been updated with a new target to build the provider binary into the right location for discovery.
-The following commands will allow you to build and execute terraform with the provider locally.
-
-Update your terraform files with the following terraform configuration block.  A standard name for a file with the following HCL is `version.tf`.
-
-```terraform
-terraform {
-  required_providers {
-    upcloud = {
-      source = "registry.upcloud.com/upcloud/upcloud"
-    }
-  }
-  required_version = ">= 0.13"
-}
-```
-
-The following make command can be executed to build and place the provider in the correct directory location.
-
-```sh
-$ make build_0_13
-```
-
-The UpCloud provider will be built and placed in the following location under the `~/.terraform.d/plugins` directory.
-The version number will match the value specified in the makefile and in this case the version is 0.1.0.
-
-```
-~/.terraform.d/plugins
-└── registry.upcloud.com
-    └── upcloud
-        └── upcloud
-            └── 0.1.0
-                └── darwin_amd64
-                    └── terraform-provider-upcloud_v0.1.0
-```
-
-After the provider has been built you can then use standard terraform commands can be executed as normal.
-
 ### Developing in Docker
 
 You can also develop/build/test in Docker. After you've cloned the repository:
@@ -336,7 +312,7 @@ Build the UpCloud provider:
 
 ```sh
 cd /work
-make build_0_13
+make build
 ```
 
 Run Terraform files, e.g. the examples:
@@ -355,3 +331,18 @@ After exiting the container, you can connect back to the container:
 ```sh
 docker start -ai <container ID here>
 ```
+
+### Consuming local provider with Terraform 0.12.0
+
+With the release of Terraform 0.13.0 the discovery of a locally built provider binary has changed.
+These changes have been made to allow all providers to be discovered from public and provider registries.
+
+The UpCloud makefile supports the old, Terraform 0.12 style where plugin directory structure is not relevant and only the binary name matters.
+
+The following make command can be executed to build and place the provider in the Go binary directory. Make sure your PATH includes the Go binary directory. 
+
+```sh
+$ make build_0_12
+```
+
+After the provider has been built and can be executed, you can then use standard terraform commands as normal.
