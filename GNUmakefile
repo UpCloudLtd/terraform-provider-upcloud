@@ -12,6 +12,10 @@ PROVIDER_PATH=~/.terraform.d/plugins/$(PROVIDER_HOSTNAME)/$(PROVIDER_NAMESPACE)/
 default: build
 
 build: fmtcheck
+	@mkdir -p $(PROVIDER_PATH)
+	go build -o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAMESPACE)_v$(PROVIDER_VERSION)
+
+build_0_12: fmtcheck
 	go install
 
 test: fmtcheck
@@ -73,6 +77,3 @@ endif
 	ln -s ../../../../ext/providers/$(PROVIDER_TYPE)/website/docs $(GOPATH)/src/$(WEBSITE_REPO)/content/source/docs/providers/$(PROVIDER_TYPE) || true
 	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PROVIDER_TYPE)
 
-build_0_13: fmtcheck
-	@mkdir -p $(PROVIDER_PATH)
-	go build -o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAMESPACE)_v$(PROVIDER_VERSION)
