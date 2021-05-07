@@ -2,14 +2,17 @@ package upcloud
 
 import (
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"strconv"
-	"testing"
 )
 
-func TestAccDataSourceUpCloudZones_basic(t *testing.T) {
+const AvailablePublicZones = 12
+
+func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 	var providers []*schema.Provider
 
 	resourceName := "data.upcloud_zones.empty"
@@ -21,7 +24,7 @@ func TestAccDataSourceUpCloudZones_basic(t *testing.T) {
 			{
 				Config: testAccDataSourceUpCloudZonesConfig_empty(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceUpCloudZonesCheck(resourceName),
+					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
 				),
 			},
 		},
@@ -41,7 +44,8 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 			{
 				Config: testAccDataSourceUpCloudZonesConfig_filter(filterType),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceUpCloudZonesCheck(resourceName),
+
+					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
 				),
 			},
@@ -62,7 +66,7 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 			{
 				Config: testAccDataSourceUpCloudZonesConfig_filter(filterType),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceUpCloudZonesCheck(resourceName),
+					testAccDataSourceUpCloudZonesCheck(resourceName, 0),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
 				),
 			},
@@ -83,7 +87,8 @@ func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 			{
 				Config: testAccDataSourceUpCloudZonesConfig_filter(filterType),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceUpCloudZonesCheck(resourceName),
+
+					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
 				),
 			},
@@ -91,7 +96,7 @@ func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 	})
 }
 
-func testAccDataSourceUpCloudZonesCheck(resourceName string) resource.TestCheckFunc {
+func testAccDataSourceUpCloudZonesCheck(resourceName string, expectedResources int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 
@@ -111,8 +116,9 @@ func testAccDataSourceUpCloudZonesCheck(resourceName string) resource.TestCheckF
 			return fmt.Errorf("error parsing names (%s) into integer: %s", zoneIds, err)
 		}
 
-		if zoneIdsQuantity == 0 {
-			return fmt.Errorf("No zone ids found, this is probably a bug.")
+		if zoneIdsQuantity != expectedResources {
+			return fmt.Errorf("Unexpected number of resource (%v), expected %v",
+				zoneIdsQuantity, expectedResources)
 		}
 
 		return nil
