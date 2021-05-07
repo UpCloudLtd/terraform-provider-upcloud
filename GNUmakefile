@@ -5,7 +5,7 @@ WEBSITE_REPO=github.com/hashicorp/terraform-website
 PROVIDER_HOSTNAME=registry.upcloud.com
 PROVIDER_NAMESPACE=upcloud
 PROVIDER_TYPE=upcloud
-PROVIDER_VERSION=0.1.0
+PROVIDER_VERSION=$(shell git describe --abbrev=0 --tags)
 PROVIDER_TARGET=$(shell go env GOOS)_$(shell go env GOARCH)
 PROVIDER_PATH=~/.terraform.d/plugins/$(PROVIDER_HOSTNAME)/$(PROVIDER_NAMESPACE)/$(PROVIDER_TYPE)/$(PROVIDER_VERSION)/$(PROVIDER_TARGET)
 
