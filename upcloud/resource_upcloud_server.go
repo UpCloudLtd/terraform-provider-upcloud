@@ -68,6 +68,11 @@ func resourceUpCloudServer() *schema.Resource {
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
 			},
+			"host": {
+				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 			"network_interface": {
 				Type:        schema.TypeList,
 				Description: "One or more blocks describing the network interfaces of the server.",
@@ -416,7 +421,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := server.VerifyServerStopped(d.Id(), meta); err != nil {
+	if err := server.VerifyServerStopped(request.StopServerRequest{UUID: d.Id()}, meta); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -501,7 +506,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 		}
 	}
-	if err := server.VerifyServerStarted(d.Id(), meta); err != nil {
+	if err := server.VerifyServerStarted(request.StartServerRequest{UUID: d.Id(), Host: d.Get("host").(int)}, meta); err != nil {
 		return diag.FromErr(err)
 	}
 	return resourceUpCloudServerRead(ctx, d, meta)
@@ -513,7 +518,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	var diags diag.Diagnostics
 
 	// Verify server is stopped before deletion
-	if err := server.VerifyServerStopped(d.Id(), meta); err != nil {
+	if err := server.VerifyServerStopped(request.StopServerRequest{UUID: d.Id()}, meta); err != nil {
 		return diag.FromErr(err)
 	}
 	// Delete server

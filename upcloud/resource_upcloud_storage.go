@@ -431,14 +431,15 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 	// need to shut down server if resizing
 	if len(storageDetails.ServerUUIDs) > 0 && d.HasChange("size") {
-		err := server.VerifyServerStopped(storageDetails.ServerUUIDs[0], meta)
+		err := server.VerifyServerStopped(request.StopServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		if _, err := utils.WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
 			return diag.FromErr(err)
 		}
-		server.VerifyServerStarted(d.Id(), meta)
+		// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
+		server.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
 	} else {
 		if _, err := client.ModifyStorage(&req); err != nil {
 			return diag.FromErr(err)
@@ -485,7 +486,7 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
 			// ide devices can only be detached from stopped servers
 			if strings.HasPrefix(storageDevice.Address, "ide") {
-				err = server.VerifyServerStopped(serverUUID, meta)
+				err = server.VerifyServerStopped(request.StopServerRequest{UUID: serverUUID}, meta)
 				if err != nil {
 					return diag.FromErr(err)
 				}
@@ -494,7 +495,8 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
-				server.VerifyServerStarted(serverUUID, meta)
+				// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
+				server.VerifyServerStarted(request.StartServerRequest{UUID: serverUUID}, meta)
 			}
 		}
 	}

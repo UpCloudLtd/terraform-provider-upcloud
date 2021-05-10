@@ -55,6 +55,8 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		r.PasswordDelivery = deliveryMethod
 	}
 
+	r.Host = d.Get("host").(int)
+
 	if template, ok := d.GetOk("template.0"); ok {
 		template := template.(map[string]interface{})
 		if template["title"].(string) == "" {
@@ -151,11 +153,18 @@ func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string
 	return r, deliveryMethod, nil
 }
 
-func VerifyServerStopped(id string, meta interface{}) error {
+func VerifyServerStopped(stopRequest request.StopServerRequest, meta interface{}) error {
+	if stopRequest.Timeout == 0 {
+		stopRequest.Timeout = time.Minute * 2
+	}
+	if stopRequest.StopType == "" {
+		stopRequest.StopType = upcloud.StopTypeSoft
+	}
+
 	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
-		UUID: id,
+		UUID: stopRequest.UUID,
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
@@ -163,18 +172,13 @@ func VerifyServerStopped(id string, meta interface{}) error {
 	}
 	if server.State != upcloud.ServerStateStopped {
 		// Soft stop with 2 minute timeout, after which hard stop occurs
-		stopRequest := &request.StopServerRequest{
-			UUID:     id,
-			StopType: "soft",
-			Timeout:  time.Minute * 2,
-		}
-		log.Printf("[INFO] Stopping server (server UUID: %s)", id)
-		_, err := client.StopServer(stopRequest)
+		log.Printf("[INFO] Stopping server (server UUID: %s)", stopRequest.UUID)
+		_, err := client.StopServer(&stopRequest)
 		if err != nil {
 			return err
 		}
 		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         id,
+			UUID:         stopRequest.UUID,
 			DesiredState: upcloud.ServerStateStopped,
 			Timeout:      time.Minute * 5,
 		})
@@ -185,28 +189,28 @@ func VerifyServerStopped(id string, meta interface{}) error {
 	return nil
 }
 
-func VerifyServerStarted(id string, meta interface{}) error {
+func VerifyServerStarted(startRequest request.StartServerRequest, meta interface{}) error {
+	if startRequest.Timeout == 0 {
+		startRequest.Timeout = time.Minute * 2
+	}
+
 	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
-		UUID: id,
+		UUID: startRequest.UUID,
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
 		return err
 	}
 	if server.State != upcloud.ServerStateStarted {
-		startRequest := &request.StartServerRequest{
-			UUID:    id,
-			Timeout: time.Minute * 2,
-		}
-		log.Printf("[INFO] Starting server (server UUID: %s)", id)
-		_, err := client.StartServer(startRequest)
+		log.Printf("[INFO] Starting server (server UUID: %s)", startRequest.UUID)
+		_, err := client.StartServer(&startRequest)
 		if err != nil {
 			return err
 		}
 		_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-			UUID:         id,
+			UUID:         startRequest.UUID,
 			DesiredState: upcloud.ServerStateStarted,
 			Timeout:      time.Minute * 5,
 		})
