@@ -1,12 +1,9 @@
 name: UpCloud Terraform provider tests
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
-    branches:
-      - master
+    paths:
+      - upcloud/**
 
 jobs:
   Test:
@@ -15,13 +12,10 @@ jobs:
       - name: "Setup Go"
         uses: actions/setup-go@v2
         with:
-          go-version: "1.14.x"
+          go-version: "1.16.x"
 
       - name: "Checkout source code"
         uses: actions/checkout@v2
-
-      - name: "Examine Go source code"
-        run: make vet
 
       - name: "Run unit tests"
         run: make test
