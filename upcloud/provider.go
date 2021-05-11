@@ -80,7 +80,6 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-
 	var diags diag.Diagnostics
 
 	config := Config{
@@ -108,7 +107,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 }
 
 func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.Service {
-
 	client := client.NewWithHTTPClient(username, password, httpClient)
 	client.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", globals.Version)
 	client.SetTimeout(upcloudAPITimeout)

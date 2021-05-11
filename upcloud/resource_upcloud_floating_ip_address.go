@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -154,7 +155,6 @@ func resourceUpCloudFloatingIPAddressDelete(ctx context.Context, d *schema.Resou
 	var diags diag.Diagnostics
 
 	if _, ok := d.GetOk("mac_address"); ok {
-
 		modifyIPAddressRequest := &request.ModifyIPAddressRequest{
 			IPAddress: d.Id(),
 			MAC:       "",

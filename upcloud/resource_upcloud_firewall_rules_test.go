@@ -2,21 +2,23 @@ package upcloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+const firewallRulesResourceName = "upcloud_firewall_rules.my_rule"
+
 func TestUpcloudFirewallRules_basic(t *testing.T) {
 	var providers []*schema.Provider
-
 	var firewallRules upcloud.FirewallRules
-	resourceName := "upcloud_firewall_rules.my_server"
+	resourceName := firewallRulesResourceName
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -67,7 +69,7 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 				),
 			},
 			{
-				Config: testUpcloudFirewallRulesInstanceConfig_update(),
+				Config: testUpcloudFirewallRulesInstanceConfigUpdate(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "2"),
 					testAccCheckFirewallRulesExists(resourceName, &firewallRules),
@@ -81,7 +83,7 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 	var providers []*schema.Provider
 
 	var firewallRules upcloud.FirewallRules
-	resourceName := "upcloud_firewall_rules.my_server"
+	resourceName := firewallRulesResourceName
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -102,11 +104,9 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "upcloud_firewall_rules" {
 			continue
@@ -123,8 +123,8 @@ func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
 				rs.Primary.ID,
 			)
 		}
-
 	}
+
 	return nil
 }
 
@@ -157,9 +157,8 @@ func testAccCheckFirewallRulesExists(resourceName string, firewallRules *upcloud
 	}
 }
 
-func testAccCheckUpCloudFirewallRuleAttributes(firewallRules *upcloud.FirewallRules, index int, action, comment, family, icmpType, protocol, direction, destination_address_start, destination_address_end, destination_port_start, destination_port_end, source_address_start, source_address_end, source_port_start, source_port_end string) resource.TestCheckFunc {
+func testAccCheckUpCloudFirewallRuleAttributes(firewallRules *upcloud.FirewallRules, index int, action, comment, family, icmpType, protocol, direction, destinationAddressStart, destinationAddressEnd, destinationPortStart, destinationPortEnd, sourceAddressStart, sourceAddressEnd, sourcePortStart, sourcePortEnd string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		firewallRule := firewallRules.FirewallRules[index]
 
 		if firewallRule.Action != action {
@@ -186,36 +185,36 @@ func testAccCheckUpCloudFirewallRuleAttributes(firewallRules *upcloud.FirewallRu
 			return fmt.Errorf("Bad direction, expected (%s), got (%s)", direction, firewallRule.Direction)
 		}
 
-		if firewallRule.DestinationAddressStart != destination_address_start {
-			return fmt.Errorf("Bad destination_address_start, expected (%s), got (%s)", destination_address_start, firewallRule.DestinationAddressStart)
+		if firewallRule.DestinationAddressStart != destinationAddressStart {
+			return fmt.Errorf("Bad destination_address_start, expected (%s), got (%s)", destinationAddressStart, firewallRule.DestinationAddressStart)
 		}
 
-		if firewallRule.DestinationAddressEnd != destination_address_end {
-			return fmt.Errorf("Bad destination_address_end, expected (%s), got (%s)", destination_address_end, firewallRule.DestinationAddressEnd)
+		if firewallRule.DestinationAddressEnd != destinationAddressEnd {
+			return fmt.Errorf("Bad destination_address_end, expected (%s), got (%s)", destinationAddressEnd, firewallRule.DestinationAddressEnd)
 		}
 
-		if firewallRule.DestinationPortStart != destination_port_start {
-			return fmt.Errorf("Bad destination_port_start, expected (%s), got (%s)", destination_port_start, firewallRule.DestinationPortStart)
+		if firewallRule.DestinationPortStart != destinationPortStart {
+			return fmt.Errorf("Bad destination_port_start, expected (%s), got (%s)", destinationPortStart, firewallRule.DestinationPortStart)
 		}
 
-		if firewallRule.DestinationPortEnd != destination_port_end {
-			return fmt.Errorf("Bad destination_port_end, expected (%s), got (%s)", destination_port_end, firewallRule.DestinationPortEnd)
+		if firewallRule.DestinationPortEnd != destinationPortEnd {
+			return fmt.Errorf("Bad destination_port_end, expected (%s), got (%s)", destinationPortEnd, firewallRule.DestinationPortEnd)
 		}
 
-		if firewallRule.SourceAddressStart != source_address_start {
-			return fmt.Errorf("Bad source_address_start, expected (%s), got (%s)", source_address_start, firewallRule.SourceAddressStart)
+		if firewallRule.SourceAddressStart != sourceAddressStart {
+			return fmt.Errorf("Bad source_address_start, expected (%s), got (%s)", sourceAddressStart, firewallRule.SourceAddressStart)
 		}
 
-		if firewallRule.SourceAddressEnd != source_address_end {
-			return fmt.Errorf("Bad source_address_end, expected (%s), got (%s)", source_address_end, firewallRule.SourceAddressEnd)
+		if firewallRule.SourceAddressEnd != sourceAddressEnd {
+			return fmt.Errorf("Bad source_address_end, expected (%s), got (%s)", sourceAddressEnd, firewallRule.SourceAddressEnd)
 		}
 
-		if firewallRule.SourcePortStart != source_port_start {
-			return fmt.Errorf("Bad source_port_start, expected (%s), got (%s)", source_port_start, firewallRule.SourcePortStart)
+		if firewallRule.SourcePortStart != sourcePortStart {
+			return fmt.Errorf("Bad source_port_start, expected (%s), got (%s)", sourcePortStart, firewallRule.SourcePortStart)
 		}
 
-		if firewallRule.SourcePortEnd != source_port_end {
-			return fmt.Errorf("Bad source_port_end, expected (%s), got (%s)", source_port_end, firewallRule.SourcePortEnd)
+		if firewallRule.SourcePortEnd != sourcePortEnd {
+			return fmt.Errorf("Bad source_port_end, expected (%s), got (%s)", sourcePortEnd, firewallRule.SourcePortEnd)
 		}
 
 		return nil
@@ -223,7 +222,7 @@ func testAccCheckUpCloudFirewallRuleAttributes(firewallRules *upcloud.FirewallRu
 }
 
 func testUpcloudFirewallRulesInstanceConfig() string {
-	return fmt.Sprintf(`
+	return `
 		resource "upcloud_server" "my_server" {
 		  zone     = "fi-hel1"
 		  hostname = "debian.example.com"
@@ -240,7 +239,7 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 
 		}
 
-		resource "upcloud_firewall_rules" "my_server" {
+		resource "upcloud_firewall_rules" "my_rule" {
 		  server_id = upcloud_server.my_server.id
 
 		  firewall_rule {
@@ -258,11 +257,11 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 			source_address_start = "192.168.1.1"
 		  }
 
-		}`)
+		}`
 }
 
-func testUpcloudFirewallRulesInstanceConfig_update() string {
-	return fmt.Sprintf(`
+func testUpcloudFirewallRulesInstanceConfigUpdate() string {
+	return `
 		resource "upcloud_server" "my_server" {
 		  zone     = "fi-hel1"
 		  hostname = "debian.example.com"
@@ -279,7 +278,7 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 
 		}
 
-		resource "upcloud_firewall_rules" "my_server" {
+		resource "upcloud_firewall_rules" "my_rule" {
 		  server_id = upcloud_server.my_server.id
 
 		  firewall_rule {
@@ -312,5 +311,5 @@ func testUpcloudFirewallRulesInstanceConfig_update() string {
 			source_address_start = "192.168.3.1"
 		  }
 
-		}`)
+		}`
 }

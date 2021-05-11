@@ -2,21 +2,27 @@ package upcloud
 
 import (
 	"fmt"
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strings"
 	"testing"
+
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const (
+	zone                   = "fi-hel1"
+	floatingIPResourceName = "upcloud_floating_ip_address.my_floating_ip"
+)
+
 func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 	var providers []*schema.Provider
 
-	resourceName := "upcloud_floating_ip_address.my_floating_ip"
+	resourceName := floatingIPResourceName
+	expectedZone := zone
 	expectedMacAddress := ""
-	expectedZone := "fi-hel1"
 	expectedFamily := "IPv4"
 	expectedAccess := "public"
 
@@ -42,8 +48,7 @@ func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
 	var providers []*schema.Provider
 
 	serverResourceName := "upcloud_server.my_server"
-	floatingIPResourceName := "upcloud_floating_ip_address.my_floating_ip"
-	expectedZone := "fi-hel1"
+	expectedZone := zone
 	expectedFamily := "IPv4"
 	expectedAccess := "public"
 
@@ -71,7 +76,6 @@ func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
 
 	firstServerResourceName := "upcloud_server.my_first_server"
 	secondServerResourceName := "upcloud_server.my_second_server"
-	floatingIPResourceName := "upcloud_floating_ip_address.my_floating_ip"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -99,7 +103,6 @@ func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
 
 func testAccCheckFloatingIP(floatingIPResourceName, serverResourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		floatingIP := s.RootModule().Resources[floatingIPResourceName]
 		server := s.RootModule().Resources[serverResourceName]
 
@@ -124,8 +127,7 @@ func testAccCheckFloatingIP(floatingIPResourceName, serverResourceName string) r
 
 func TestAccUpcloudFloatingIPAddress_import(t *testing.T) {
 	var providers []*schema.Provider
-
-	resourceName := "upcloud_floating_ip_address.my_floating_ip"
+	resourceName := floatingIPResourceName
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -145,11 +147,9 @@ func TestAccUpcloudFloatingIPAddress_import(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "upcloud_floating_ip_address" {
 			continue
@@ -171,15 +171,14 @@ func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 }
 
 func testUpcloudFloatingIPAddressBasicConfig() string {
-	return fmt.Sprintf(`
+	return `
 		resource "upcloud_floating_ip_address" "my_floating_ip" {
 			zone = "fi-hel1"
 		}
-`)
+`
 }
 
 func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, assignedServerIndex int) string {
-
 	config := strings.Builder{}
 
 	for _, serverName := range serverNames {

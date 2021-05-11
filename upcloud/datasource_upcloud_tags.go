@@ -3,10 +3,11 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 )
 
 func dataSourceUpCloudTags() *schema.Resource {
@@ -44,7 +45,6 @@ func dataSourceUpCloudTags() *schema.Resource {
 }
 
 func dataSourceUpCloudTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -52,13 +52,12 @@ func dataSourceUpCloudTagsRead(ctx context.Context, d *schema.ResourceData, meta
 	tags, err := client.GetTags()
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("Error fetching Tags: %s", err))
+		return diag.FromErr(fmt.Errorf("error fetching tags: %s", err))
 	}
 
 	var values []map[string]interface{}
 
 	for _, tag := range tags.Tags {
-
 		var servers = []string{}
 		for _, server := range tag.Servers {
 			servers = append(servers, server)

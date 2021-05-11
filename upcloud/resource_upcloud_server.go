@@ -313,7 +313,7 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 
 	// set template id from the payload (if passed)
 	if _, ok := d.GetOk("template.0"); ok {
-		d.Set("template", []map[string]interface{}{{
+		_ = d.Set("template", []map[string]interface{}{{
 			"id":      server.StorageDevices[0].UUID,
 			"storage": d.Get("template.0.storage"),
 		}})
@@ -338,16 +338,16 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.Set("hostname", server.Hostname)
-	d.Set("title", server.Title)
-	d.Set("zone", server.Zone)
-	d.Set("cpu", server.CoreNumber)
-	d.Set("mem", server.MemoryAmount)
+	_ = d.Set("hostname", server.Hostname)
+	_ = d.Set("title", server.Title)
+	_ = d.Set("zone", server.Zone)
+	_ = d.Set("cpu", server.CoreNumber)
+	_ = d.Set("mem", server.MemoryAmount)
 
 	networkInterfaces := []map[string]interface{}{}
 	var connIP string
 	for _, iface := range server.Networking.Interfaces {
-		ni := make(map[string]interface{}, 0)
+		ni := make(map[string]interface{})
 		ni["ip_address_family"] = iface.IPAddresses[0].Family
 		ni["ip_address"] = iface.IPAddresses[0].Address
 		if !iface.IPAddresses[0].Floating.Empty() {
@@ -367,12 +367,11 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 
 		if iface.Type == upcloud.NetworkTypePublic &&
 			iface.IPAddresses[0].Family == upcloud.IPAddressFamilyIPv4 {
-
 			connIP = iface.IPAddresses[0].Address
 		}
 	}
 	if len(networkInterfaces) > 0 {
-		d.Set("network_interface", networkInterfaces)
+		_ = d.Set("network_interface", networkInterfaces)
 	}
 
 	storageDevices := []interface{}{}
@@ -381,7 +380,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	for _, serverStorage := range server.StorageDevices {
 		// the template is managed within the server
 		if serverStorage.UUID == d.Get("template.0.id") {
-			d.Set("template", []map[string]interface{}{{
+			_ = d.Set("template", []map[string]interface{}{{
 				"address": serverStorage.Address,
 				"id":      serverStorage.UUID,
 				"size":    serverStorage.Size,
@@ -399,7 +398,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 			})
 		}
 	}
-	d.Set("storage_devices", storageDevices)
+	_ = d.Set("storage_devices", storageDevices)
 
 	// Initialize the connection information.
 	d.SetConnInfo(map[string]string{

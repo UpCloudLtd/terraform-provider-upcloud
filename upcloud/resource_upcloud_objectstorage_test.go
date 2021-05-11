@@ -3,6 +3,10 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -11,9 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/minio/minio-go/v7"
-	"os"
-	"strings"
-	"testing"
 )
 
 const expectedDescription = "My object storage"
@@ -356,7 +357,6 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 		    that's why we check against the API and not the resource.
 	*/
 	return func(state *terraform.State) error {
-
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "upcloud_storage" {
 				continue

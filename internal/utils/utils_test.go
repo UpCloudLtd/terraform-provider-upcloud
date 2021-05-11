@@ -65,15 +65,17 @@ func TestWithRetry(t *testing.T) {
 	fail := func() (interface{}, error) {
 		return nil, fmt.Errorf("")
 	}
+
 	count := 0
 	successAftertree := func() (interface{}, error) {
 		if count < 3 {
 			count++
 			return nil, fmt.Errorf("")
-		} else {
-			return nil, nil
 		}
+
+		return nil, nil
 	}
+
 	if _, err := WithRetry(fail, 3, 0); err == nil {
 		t.Log("should fail")
 		t.Fail()

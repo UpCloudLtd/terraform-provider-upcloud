@@ -2,14 +2,15 @@ package upcloud
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strconv"
-	"time"
 )
 
 func resourceUpCloudFirewallRules() *schema.Resource {
@@ -148,7 +149,6 @@ func resourceUpCloudFirewallRulesCreate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if v, ok := d.GetOk("firewall_rule"); ok {
-
 		var firewallRules []upcloud.FirewallRule
 
 		for _, frMap := range v.([]interface{}) {
@@ -232,7 +232,6 @@ func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceDat
 	var frMaps []map[string]interface{}
 
 	for _, rule := range firewallRules.FirewallRules {
-
 		frMap := map[string]interface{}{
 			"action":                    rule.Action,
 			"comment":                   rule.Comment,
@@ -302,7 +301,6 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if d.HasChange("firewall_rule") {
-
 		v := d.Get("firewall_rule")
 		var firewallRules []upcloud.FirewallRule
 

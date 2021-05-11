@@ -2,6 +2,9 @@ package upcloud
 
 import (
 	"context"
+	"net/url"
+	"time"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -10,8 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"net/url"
-	"time"
 )
 
 const bucketKey = "bucket"
@@ -161,7 +162,6 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*service.Service)
 
 	if d.HasChanges([]string{"size", "access_key", "secret_key", "description"}...) {
-
 		req := request.ModifyObjectStorageRequest{UUID: d.Id()}
 
 		req.Size = d.Get("size").(int)
@@ -227,7 +227,6 @@ func resourceObjectStorageDelete(ctx context.Context, d *schema.ResourceData, m 
 			Summary:  "Unable to delete object storage",
 			Detail:   err.Error(),
 		})
-
 	} else {
 		d.SetId("")
 	}
@@ -236,21 +235,21 @@ func resourceObjectStorageDelete(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceData) diag.Diagnostics {
-	d.Set("name", objectDetails.Name)
-	d.Set("url", objectDetails.URL)
-	d.Set("description", objectDetails.Description)
-	d.Set("size", objectDetails.Size)
-	d.Set("state", objectDetails.State)
-	d.Set("created", objectDetails.Created)
-	d.Set("zone", objectDetails.Zone)
-	d.Set("used_space", objectDetails.UsedSpace)
+	_ = d.Set("name", objectDetails.Name)
+	_ = d.Set("url", objectDetails.URL)
+	_ = d.Set("description", objectDetails.Description)
+	_ = d.Set("size", objectDetails.Size)
+	_ = d.Set("state", objectDetails.State)
+	_ = d.Set("created", objectDetails.Created)
+	_ = d.Set("zone", objectDetails.Zone)
+	_ = d.Set("used_space", objectDetails.UsedSpace)
 
 	buckets, err := getBuckets(objectDetails, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.Set(bucketKey, buckets)
+	_ = d.Set(bucketKey, buckets)
 
 	return diag.Diagnostics{}
 }

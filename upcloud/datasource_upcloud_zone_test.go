@@ -2,9 +2,10 @@ package upcloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"testing"
 )
 
 func TestAccDataSourceUpCloudZone_basic(t *testing.T) {

@@ -21,7 +21,6 @@ func init() {
 	}
 
 	testAccProviderFactories = func(providers *[]*schema.Provider) map[string]func() (*schema.Provider, error) {
-
 		var providerNames = []string{"upcloud"}
 		var factories = make(map[string]func() (*schema.Provider, error), len(providerNames))
 		for _, name := range providerNames {
