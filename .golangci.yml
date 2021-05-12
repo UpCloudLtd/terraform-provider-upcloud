@@ -23,7 +23,7 @@ linters:
     - nakedret
     - nolintlint
     - rowserrcheck
-#    - staticcheck
+    - staticcheck
     - structcheck
     - stylecheck
     - typecheck
