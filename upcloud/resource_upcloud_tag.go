@@ -2,13 +2,14 @@ package upcloud
 
 import (
 	"context"
+	"regexp"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"regexp"
 )
 
 func resourceUpCloudTag() *schema.Resource {
@@ -80,7 +81,6 @@ func resourceUpCloudTagCreate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceUpCloudTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -91,19 +91,18 @@ func resourceUpCloudTagRead(ctx context.Context, d *schema.ResourceData, meta in
 		diag.FromErr(err)
 	}
 
-	tagId := d.Id()
+	tagID := d.Id()
 	var tag *upcloud.Tag
 
 	for _, value := range tags.Tags {
-
-		if value.Name == tagId {
+		if value.Name == tagID {
 			tag = &value
 			break
 		}
 	}
 
 	if tag == nil {
-		return diag.Errorf("Unable to locate tag named %s", tagId)
+		return diag.Errorf("Unable to locate tag named %s", tagID)
 	}
 
 	if err := d.Set("name", tag.Name); err != nil {

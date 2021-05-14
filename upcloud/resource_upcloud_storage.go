@@ -3,9 +3,10 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
@@ -177,7 +178,6 @@ func cloneStorage(
 	title string,
 	zone string,
 	d *schema.ResourceData) diag.Diagnostics {
-
 	cloneStorageRequest := request.CloneStorageRequest{
 		Zone:  zone,
 		Tier:  tier,
@@ -194,6 +194,9 @@ func cloneStorage(
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
 	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	storage, err := client.CloneStorage(&cloneStorageRequest)
 	if err != nil {
@@ -218,6 +221,7 @@ func cloneStorage(
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
 			UUID:         storage.UUID,
 			DesiredState: upcloud.StorageStateOnline,
@@ -240,7 +244,6 @@ func createStorage(
 	title string,
 	zone string,
 	d *schema.ResourceData) diag.Diagnostics {
-
 	var diags diag.Diagnostics
 
 	createStorageRequest := request.CreateStorageRequest{
@@ -278,6 +281,9 @@ func createStorage(
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
 	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	if importReq != nil {
 		importReq.StorageUUID = storage.UUID
@@ -380,6 +386,9 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		_, err := client.WaitForStorageImportCompletion(&request.WaitForStorageImportCompletionRequest{
 			StorageUUID: d.Id(),
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
 		importDetails, err := client.GetStorageImportDetails(&request.GetStorageImportDetailsRequest{
 			UUID: d.Id(),
@@ -398,7 +407,7 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 			},
 		}
 
-		d.Set("import", importBlock)
+		_ = d.Set("import", importBlock)
 	}
 
 	return diags
@@ -438,8 +447,11 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		if _, err := utils.WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
 			return diag.FromErr(err)
 		}
+
 		// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
-		server.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
+		if err = server.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta); err != nil {
+			return diag.FromErr(err)
+		}
 	} else {
 		if _, err := client.ModifyStorage(&req); err != nil {
 			return diag.FromErr(err)
@@ -491,12 +503,19 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 					return diag.FromErr(err)
 				}
 			}
-			utils.WithRetry(func() (interface{}, error) {
+
+			_, err = utils.WithRetry(func() (interface{}, error) {
 				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
 				// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
-				server.VerifyServerStarted(request.StartServerRequest{UUID: serverUUID}, meta)
+				if err = server.VerifyServerStarted(request.StartServerRequest{UUID: serverUUID}, meta); err != nil {
+					return diag.FromErr(err)
+				}
 			}
 		}
 	}

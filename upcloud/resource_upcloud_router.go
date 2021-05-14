@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -41,7 +42,6 @@ func resourceUpCloudRouter() *schema.Resource {
 }
 
 func resourceUpCloudRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -72,7 +72,6 @@ func resourceUpCloudRouterCreate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceUpCloudRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -108,7 +107,6 @@ func resourceUpCloudRouterRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceUpCloudRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	client := meta.(*service.Service)
 
 	opts := &request.ModifyRouterRequest{
@@ -129,7 +127,6 @@ func resourceUpCloudRouterUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceUpCloudRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics

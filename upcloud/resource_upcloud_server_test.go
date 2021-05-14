@@ -35,7 +35,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 }
 
 func testUpcloudServerInstanceConfig() string {
-	return fmt.Sprintf(`
+	return `
 		resource "upcloud_server" "my-server" {
 			zone     = "fi-hel1"
 			hostname = "debian.example.com"
@@ -49,7 +49,7 @@ func testUpcloudServerInstanceConfig() string {
 				type = "utility"
 			}
 		}
-	`)
+	`
 }
 
 func TestUpcloudServer_changePlan(t *testing.T) {

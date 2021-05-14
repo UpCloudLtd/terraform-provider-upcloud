@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
@@ -189,11 +190,12 @@ func resourceUpCloudNetworkRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	d.Set("name", network.Name)
-	d.Set("type", network.Type)
-	d.Set("zone", network.Zone)
+	_ = d.Set("name", network.Name)
+	_ = d.Set("type", network.Type)
+	_ = d.Set("zone", network.Zone)
+
 	if network.Router != "" {
-		d.Set("router", network.Router)
+		_ = d.Set("router", network.Router)
 	}
 
 	if len(network.IPNetworks) > 1 {
@@ -210,7 +212,7 @@ func resourceUpCloudNetworkRead(ctx context.Context, d *schema.ResourceData, met
 			"gateway":            network.IPNetworks[0].Gateway,
 		}
 
-		d.Set("ip_network", []map[string]interface{}{
+		_ = d.Set("ip_network", []map[string]interface{}{
 			ipn,
 		})
 	}

@@ -22,16 +22,18 @@ import (
 )
 
 const (
-	AlpineURL  = "https://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"
-	AlpineHash = "fd805e748f1950a34e354dc8fdfdf2f883237d65f5cdb8bcb47c64b0561d97a5"
+	AlpineURL          = "https://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"
+	AlpineHash         = "fd805e748f1950a34e354dc8fdfdf2f883237d65f5cdb8bcb47c64b0561d97a5"
+	StorageTier        = "maxiops"
+	storageDescription = "My data collection"
 )
 
 func TestAccUpcloudStorage_basic(t *testing.T) {
 	var providers []*schema.Provider
 
 	expectedSize := "10"
-	expectedTier := "maxiops"
-	expectedTitle := "My data collection"
+	expectedTier := StorageTier
+	expectedTitle := storageDescription
 	expectedZone := "pl-waw1"
 
 	resource.Test(t, resource.TestCase{
@@ -63,8 +65,8 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 	var providers []*schema.Provider
 
 	expectedSize := "10"
-	expectedTier := "maxiops"
-	expectedTitle := "My data collection"
+	expectedTier := StorageTier
+	expectedTitle := storageDescription
 	expectedZone := "fi-hel1"
 
 	expectedUpdatedSize := "20"
@@ -187,8 +189,8 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 	var storageDetails upcloud.StorageDetails
 
 	expectedSize := "10"
-	expectedTier := "maxiops"
-	expectedTitle := "My data collection"
+	expectedTier := StorageTier
+	expectedTitle := storageDescription
 	expectedZone := "fi-hel1"
 
 	resource.Test(t, resource.TestCase{
@@ -209,7 +211,6 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func TestAccUpCloudStorage_StorageImport(t *testing.T) {
@@ -238,7 +239,6 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 
 func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 	if os.Getenv(resource.TestEnvVar) != "" {
-
 		var providers []*schema.Provider
 		var storageDetails upcloud.StorageDetails
 
@@ -348,16 +348,6 @@ func testAccCheckClonedStorageSize(resourceName string, expected int, storage *u
 	}
 }
 
-func testAccCheckStorageDetailsDiffer(d1 *upcloud.StorageDetails, d2 *upcloud.StorageDetails) resource.TestCheckFunc {
-	return func(*terraform.State) error {
-		if d1.UUID == d2.UUID {
-			return fmt.Errorf("old storage UUID unexpectedly matches new storage UUID: %s == %s", d1.UUID, d2.UUID)
-		}
-
-		return nil
-	}
-}
-
 func testAccCheckStorageExists(resourceName string, storage *upcloud.StorageDetails) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Look for the full resource name and error if not found
@@ -389,7 +379,6 @@ func testAccCheckStorageExists(resourceName string, storage *upcloud.StorageDeta
 }
 
 func testAccCheckStorageDestroy(s *terraform.State) error {
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "upcloud_storage" {
 			continue
@@ -453,23 +442,6 @@ func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation st
 `, source, sourceLocation)
 }
 
-func testUpcloudStorageInstanceConfigWithStorageImportHash(source, sourceLocation, sourceHash string) string {
-	return fmt.Sprintf(`
-		resource "upcloud_storage" "my_storage" {
-			size  = 10
-			tier  = "maxiops"
-			title = "My Imported with hash data"
-			zone  = "fi-hel1"
-
-			import {
-				source = "%s"
-				source_location = "%s"
-				source_hash = "%s"
-			}
-		}
-`, source, sourceLocation, sourceHash)
-}
-
 func testUpcloudStorageInstanceConfigWithImportAndClone() string {
 	return `
 		resource "upcloud_storage" "my_storage" {
@@ -528,7 +500,10 @@ func createTempImage() (string, *hash.Hash, error) {
 		if err != nil {
 			return "", nil, nil
 		}
-		sum.Write(b)
+		_, err = sum.Write(b)
+		if err != nil {
+			return "", nil, err
+		}
 	}
 
 	return imagePath, &sum, nil

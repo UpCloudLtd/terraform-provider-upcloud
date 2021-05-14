@@ -22,7 +22,7 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceUpCloudZonesConfig_empty(),
+				Config: testAccDataSourceUpCloudZonesConfigEmpty(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
 				),
@@ -34,7 +34,7 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := "public"
+	filterType := PublicFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
@@ -42,7 +42,7 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceUpCloudZonesConfig_filter(filterType),
+				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
 				Check: resource.ComposeTestCheckFunc(
 
 					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
@@ -56,7 +56,7 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := "private"
+	filterType := PrivateFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
@@ -64,7 +64,7 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceUpCloudZonesConfig_filter(filterType),
+				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceUpCloudZonesCheck(resourceName, 0),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
@@ -77,7 +77,7 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := "all"
+	filterType := AllFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
@@ -85,7 +85,7 @@ func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceUpCloudZonesConfig_filter(filterType),
+				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
 				Check: resource.ComposeTestCheckFunc(
 
 					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
@@ -107,7 +107,7 @@ func testAccDataSourceUpCloudZonesCheck(resourceName string, expectedResources i
 		zoneIds, zoneIdsOk := rs.Primary.Attributes["zone_ids.#"]
 
 		if !zoneIdsOk {
-			return fmt.Errorf("zone_ids attribute is missing.")
+			return fmt.Errorf("zone_ids attribute is missing")
 		}
 
 		zoneIdsQuantity, err := strconv.Atoi(zoneIds)
@@ -117,7 +117,7 @@ func testAccDataSourceUpCloudZonesCheck(resourceName string, expectedResources i
 		}
 
 		if zoneIdsQuantity != expectedResources {
-			return fmt.Errorf("Unexpected number of resource (%v), expected %v",
+			return fmt.Errorf("unexpected number of resource (%v), expected %v",
 				zoneIdsQuantity, expectedResources)
 		}
 
@@ -125,13 +125,13 @@ func testAccDataSourceUpCloudZonesCheck(resourceName string, expectedResources i
 	}
 }
 
-func testAccDataSourceUpCloudZonesConfig_empty() string {
+func testAccDataSourceUpCloudZonesConfigEmpty() string {
 	return `
 data "upcloud_zones" "empty" {}
 `
 }
 
-func testAccDataSourceUpCloudZonesConfig_filter(filterType string) string {
+func testAccDataSourceUpCloudZonesConfigFilter(filterType string) string {
 	return fmt.Sprintf(`
 data "upcloud_zones" "%[1]s" {
 	filter_type = "%[1]s"

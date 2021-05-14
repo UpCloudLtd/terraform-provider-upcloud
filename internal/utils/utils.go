@@ -53,14 +53,6 @@ func FilterNetworks(vs []upcloud.Network, fns ...func(upcloud.Network) (bool, er
 	return vsf, nil
 }
 
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-
-	return y
-}
-
 // WithRetry attempts to call the provided function until it has been successfully called or the number of calls exceeds retries delaying the consecutive calls by given delay
 func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration) (interface{}, error) {
 	var err error
@@ -75,9 +67,8 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 		res, err = fn()
 		if err == nil {
 			return res, nil
-		} else {
-			continue
 		}
+		continue
 	}
 	return nil, err
 }

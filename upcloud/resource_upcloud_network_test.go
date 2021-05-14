@@ -187,7 +187,6 @@ func testAccNetworkConfig(
 	dhcp bool,
 	dhcpDefaultRoute bool,
 	router bool) string {
-
 	return testAccNetworkConfigWithFamily(name, zone, address, gateway, "IPv4", dhcp, dhcpDefaultRoute, router)
 }
 
@@ -200,7 +199,6 @@ func testAccNetworkConfigWithFamily(
 	dhcp bool,
 	dhcpDefaultRoute bool,
 	router bool) string {
-
 	config := strings.Builder{}
 
 	config.WriteString(fmt.Sprintf(`

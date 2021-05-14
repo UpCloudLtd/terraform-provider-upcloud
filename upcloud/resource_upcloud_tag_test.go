@@ -2,14 +2,14 @@ package upcloud
 
 import (
 	"fmt"
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strings"
 	"testing"
 
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccUpcloudTag_basic(t *testing.T) {
@@ -59,7 +59,6 @@ func TestAccUpCloudTag_import(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.TestCheckFunc {
@@ -91,7 +90,6 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 }
 
 func testAccCheckTagDestroy(s *terraform.State) error {
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "upcloud_tag" {
 			continue
@@ -113,7 +111,6 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 }
 
 func testUpcloudTagInstanceConfig(names []string) string {
-
 	config := strings.Builder{}
 
 	for _, name := range names {

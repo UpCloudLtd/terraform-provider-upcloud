@@ -3,10 +3,11 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 )
 
 func dataSourceUpCloudHosts() *schema.Resource {
@@ -48,13 +49,12 @@ func dataSourceUpCloudHostsRead(ctx context.Context, d *schema.ResourceData, met
 	hosts, err := client.GetHosts()
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("Error fetching Hosts: %s", err))
+		return diag.FromErr(fmt.Errorf("error fetching hosts: %s", err))
 	}
 
 	var values []map[string]interface{}
 
 	for _, host := range hosts.Hosts {
-
 		value := map[string]interface{}{
 			"host_id":     host.ID,
 			"description": host.Description,

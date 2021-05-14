@@ -2,11 +2,12 @@ package upcloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"testing"
 )
 
 func TestAccDataSourceUpCloudTags_basic(t *testing.T) {
@@ -20,7 +21,7 @@ func TestAccDataSourceUpCloudTags_basic(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceUpCloudTagsConfig_empty(tagName),
+				Config: testAccDataSourceUpCloudTagsConfigEmpty(tagName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceUpCloudTagsCheck(resourceName),
 				),
@@ -40,14 +41,14 @@ func testAccDataSourceUpCloudTagsCheck(resourceName string) resource.TestCheckFu
 		_, tagsOk := rs.Primary.Attributes["tags.#"]
 
 		if !tagsOk {
-			return fmt.Errorf("tags attribute is missing.")
+			return fmt.Errorf("tags attribute is missing")
 		}
 
 		return nil
 	}
 }
 
-func testAccDataSourceUpCloudTagsConfig_empty(tagName string) string {
+func testAccDataSourceUpCloudTagsConfigEmpty(tagName string) string {
 	return fmt.Sprintf(`
 resource "upcloud_tag" "empty" {
 

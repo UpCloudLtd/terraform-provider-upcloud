@@ -35,7 +35,6 @@ func dataSourceUpCloudZone() *schema.Resource {
 }
 
 func resourceUpCloudZoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -43,19 +42,19 @@ func resourceUpCloudZoneRead(ctx context.Context, d *schema.ResourceData, meta i
 	zones, err := client.GetZones()
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("Error fetching Zones: %s", err))
+		return diag.FromErr(fmt.Errorf("error fetching zones: %s", err))
 	}
 
 	var locatedZone upcloud.Zone
 
 	if v, ok := d.GetOk("name"); ok {
-		zoneId := v.(string)
+		zoneID := v.(string)
 		zones := utils.FilterZones(zones.Zones, func(zone upcloud.Zone) bool {
-			return zone.ID == zoneId
+			return zone.ID == zoneID
 		})
 
 		if len(zones) > 1 {
-			return diag.FromErr(fmt.Errorf("Error multiple Zones located: %s", err))
+			return diag.FromErr(fmt.Errorf("error multiple zones located: %s", err))
 		}
 
 		locatedZone = zones[0]

@@ -2,14 +2,14 @@ package upcloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"testing"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -88,7 +88,6 @@ func TestAccUpCloudRouter_import(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resource.TestCheckFunc {
@@ -123,7 +122,6 @@ func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resou
 
 func testAccCheckUpCloudRouterAttributes(router *upcloud.Router, name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		// Confirm the remote router has the following attributes
 		if router.Name != name {
 			return fmt.Errorf("Bad name, expected (%s), got (%s)", name, router.Name)
@@ -134,7 +132,6 @@ func testAccCheckUpCloudRouterAttributes(router *upcloud.Router, name string) re
 }
 
 func testAccCheckRouterDestroy(s *terraform.State) error {
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "upcloud_router" {
 			continue

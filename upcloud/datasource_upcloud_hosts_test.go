@@ -20,7 +20,7 @@ func TestAccUpCloudHosts_basic(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceUpCloudHostsConfig_empty(),
+				Config: testAccDataSourceUpCloudHostsConfigEmpty(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceUpCloudHostsCheck(resourceName),
 				),
@@ -31,7 +31,6 @@ func TestAccUpCloudHosts_basic(t *testing.T) {
 
 func testAccDataSourceUpCloudHostsCheck(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		rs, ok := s.RootModule().Resources[resourceName]
 
 		if !ok {
@@ -41,7 +40,7 @@ func testAccDataSourceUpCloudHostsCheck(resourceName string) resource.TestCheckF
 		hosts, hostsOk := rs.Primary.Attributes["hosts.#"]
 
 		if !hostsOk {
-			return fmt.Errorf("hosts attribute is missing.")
+			return fmt.Errorf("hosts attribute is missing")
 		}
 
 		hostsQuantity, err := strconv.Atoi(hosts)
@@ -51,14 +50,14 @@ func testAccDataSourceUpCloudHostsCheck(resourceName string) resource.TestCheckF
 		}
 
 		if hostsQuantity != 0 {
-			return fmt.Errorf("Some hosts have been found, expecting no hosts")
+			return fmt.Errorf("some hosts have been found, expecting no hosts")
 		}
 
 		return nil
 	}
 }
 
-func testAccDataSourceUpCloudHostsConfig_empty() string {
+func testAccDataSourceUpCloudHostsConfigEmpty() string {
 	return `
 data "upcloud_hosts" "empty" {}
 `
