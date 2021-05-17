@@ -54,7 +54,7 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 	var providers []*schema.Provider
 
 	var firewallRules upcloud.FirewallRules
-	resourceName := "upcloud_firewall_rules.my_server"
+	resourceName := "upcloud_firewall_rules.my_rule"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
