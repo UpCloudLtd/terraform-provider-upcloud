@@ -343,6 +343,13 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	_ = d.Set("zone", server.Zone)
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
+	_ = d.Set("metadata", server.Metadata.Bool())
+	_ = d.Set("plan", server.Plan)
+	if server.Firewall == "on" {
+		_ = d.Set("firewall", true)
+	} else {
+		_ = d.Set("firewall", false)
+	}
 
 	networkInterfaces := []map[string]interface{}{}
 	var connIP string
@@ -426,6 +433,8 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 	r.Hostname = d.Get("hostname").(string)
 	r.Title = fmt.Sprintf("%s (managed by terraform)", r.Hostname)
+
+	r.Metadata = upcloud.FromBool(d.Get("metadata").(bool))
 
 	if d.Get("firewall").(bool) {
 		r.Firewall = "on"
@@ -515,7 +524,6 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 				}
 			}
 		}
-
 	}
 
 	if _, err := client.ModifyServer(r); err != nil {
