@@ -176,6 +176,7 @@ func resourceUpCloudServer() *schema.Resource {
 				Description: "The pricing plan used for the server",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 			"storage_devices": {
 				Description: "A list of storage devices associated with the server",
