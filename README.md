@@ -149,7 +149,7 @@ resource "upcloud_server" "example" {
 }
 ```
 
-Terraform 0.12 or earlier:
+Terraform 0.12 or earlier ([build the provider locally first](#consuming-local-provider-with-terraform-0120)):
 
 ```terraform
 # configure the provider
@@ -157,7 +157,6 @@ provider "upcloud" {
   # Your UpCloud credentials are read from the environment variables:
   # export UPCLOUD_USERNAME="Username of your UpCloud API user"
   # export UPCLOUD_PASSWORD="Password of your UpCloud API user"
-  version = "~> 2.0"
 }
 
 # create a server
