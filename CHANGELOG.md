@@ -85,4 +85,4 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 [Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/2.0.0...HEAD
 [2.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/1.0.0...2.0.0
 [1.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/0.1.0...1.0.0
-[0.0.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/releases/tag/0.1.0
+[0.1.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/releases/tag/0.1.0
