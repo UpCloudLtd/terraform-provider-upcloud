@@ -225,6 +225,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"size": {
 							Description:  "The size of the storage in gigabytes",
 							Type:         schema.TypeInt,
+							Computed:     true,
 							Optional:     true,
 							ValidateFunc: validation.IntBetween(10, 2048),
 						},
