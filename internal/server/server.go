@@ -220,3 +220,87 @@ func VerifyServerStarted(startRequest request.StartServerRequest, meta interface
 	}
 	return nil
 }
+
+// RemoveOldServerTags removes tags from server.
+// deletes the tag if no server left with the tag name
+func RemoveOldServerTags(service *service.Service, serverUUID string, tags []string) error {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	if _, err := service.UntagServer(&request.UntagServerRequest{
+		UUID: serverUUID,
+		Tags: tags,
+	}); err != nil {
+		return err
+	}
+
+	currTags, err := service.GetTags()
+	if err != nil {
+		return err
+	}
+
+	// Remove unused tags
+	for _, currTag := range currTags.Tags {
+		for _, tag := range tags {
+			if tag == currTag.Name {
+				// remove tag from server if it's empty
+				if len(currTag.Servers) == 0 {
+					if err := service.DeleteTag(&request.DeleteTagRequest{
+						Name: currTag.Name,
+					}); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// AddNewServerTags adds tags to server, updates existing tags if any
+func AddNewServerTags(service *service.Service, serverUUID string, tags []string) error {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	currTags, err := service.GetTags()
+	if err != nil {
+		return err
+	}
+
+OUTER:
+	for _, tag := range tags {
+		for _, currTag := range currTags.Tags {
+			if tag == currTag.Name {
+				continue OUTER
+			}
+		}
+		// tag don't exist let's create it
+		if _, err := service.CreateTag(&request.CreateTagRequest{
+			Tag: upcloud.Tag{
+				Name: tag,
+			},
+		}); err != nil {
+			return err
+		}
+	}
+
+	if _, err := service.TagServer(&request.TagServerRequest{
+		UUID: serverUUID,
+		Tags: tags,
+	}); err != nil {
+		return nil
+	}
+
+	return nil
+}
+
+func UpdateServerTags(service *service.Service, serverUUID string, oldTags, newTags []string) error {
+	if err := RemoveOldServerTags(service, serverUUID, oldTags); err != nil {
+		return err
+	}
+
+	return AddNewServerTags(service, serverUUID, newTags)
+}

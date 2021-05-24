@@ -8,6 +8,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -67,6 +68,14 @@ func resourceUpCloudServer() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
+			},
+			"tags": {
+				Description: "The server related tags",
+				Type:        schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
 			},
 			"host": {
 				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",
@@ -299,16 +308,31 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	server, err := client.CreateServer(r)
+	serverDetails, err := client.CreateServer(r)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(server.UUID)
-	log.Printf("[INFO] Server %s with UUID %s created", server.Title, server.UUID)
+	d.SetId(serverDetails.UUID)
+	log.Printf("[INFO] Server %s with UUID %s created", serverDetails.Title, serverDetails.UUID)
 
-	server, err = client.WaitForServerState(&request.WaitForServerStateRequest{
-		UUID:         server.UUID,
+	// add server tags
+	if _, ok := d.GetOk("tags"); ok {
+		tags := utils.ExpandStrings(d.Get("tags"))
+		if err := server.AddNewServerTags(client, serverDetails.UUID, tags); err != nil {
+			return diag.FromErr(err)
+		}
+
+		if _, err := client.TagServer(&request.TagServerRequest{
+			UUID: serverDetails.UUID,
+			Tags: tags,
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	serverDetails, err = client.WaitForServerState(&request.WaitForServerStateRequest{
+		UUID:         serverDetails.UUID,
 		DesiredState: upcloud.ServerStateStarted,
 		Timeout:      time.Minute * 25,
 	})
@@ -316,7 +340,7 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	// set template id from the payload (if passed)
 	if _, ok := d.GetOk("template.0"); ok {
 		_ = d.Set("template", []map[string]interface{}{{
-			"id":      server.StorageDevices[0].UUID,
+			"id":      serverDetails.StorageDevices[0].UUID,
 			"storage": d.Get("template.0.storage"),
 		}})
 	}
@@ -347,6 +371,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	_ = d.Set("mem", server.MemoryAmount)
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
+	_ = d.Set("tags", server.Tags)
 	if server.Firewall == "on" {
 		_ = d.Set("firewall", true)
 	} else {
@@ -433,15 +458,26 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	r := &request.ModifyServerRequest{
 		UUID: d.Id(),
 	}
+
 	r.Hostname = d.Get("hostname").(string)
 	r.Title = fmt.Sprintf("%s (managed by terraform)", r.Hostname)
-
 	r.Metadata = upcloud.FromBool(d.Get("metadata").(bool))
 
 	if d.Get("firewall").(bool) {
 		r.Firewall = "on"
 	} else {
 		r.Firewall = "off"
+	}
+	if _, ok := d.GetOk("tags"); ok {
+		if d.HasChange("tags") {
+			oldTags, newTags := d.GetChange("tags")
+
+			if err := server.UpdateServerTags(
+				client, d.Id(),
+				utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags)); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
 	// handle changes that need reboot

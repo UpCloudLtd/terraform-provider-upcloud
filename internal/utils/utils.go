@@ -72,3 +72,13 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 	}
 	return nil, err
 }
+
+// ExpandStrings expands a terraform interface to slice of str
+func ExpandStrings(data interface{}) []string {
+	strSlice := []string{}
+	for _, s := range data.([]interface{}) {
+		strSlice = append(strSlice, s.(string))
+	}
+
+	return strSlice
+}
