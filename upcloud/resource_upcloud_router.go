@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -127,14 +128,29 @@ func resourceUpCloudRouterUpdate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceUpCloudRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
-
 	var diags diag.Diagnostics
 
-	opts := &request.DeleteRouterRequest{
+	router, err := client.GetRouterDetails(&request.GetRouterDetailsRequest{
 		UUID: d.Id(),
+	})
+
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	err := client.DeleteRouter(opts)
+	if len(router.AttachedNetworks) > 0 {
+		for _, network := range router.AttachedNetworks {
+			err := client.DetachNetworkRouter(&request.DetachNetworkRouterRequest{
+				NetworkUUID: network.NetworkUUID,
+			})
+			if err != nil {
+				return diag.FromErr(fmt.Errorf("cannot detach from network %v: %w", network.NetworkUUID, err))
+			}
+		}
+	}
+	err = client.DeleteRouter(&request.DeleteRouterRequest{
+		UUID: d.Id(),
+	})
 
 	if err != nil {
 		return diag.FromErr(err)
