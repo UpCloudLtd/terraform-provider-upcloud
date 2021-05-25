@@ -234,11 +234,6 @@ func resourceUpCloudNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 		req.Name = v.(string)
 	}
 
-	if d.HasChange("router") {
-		_, v := d.GetChange("router")
-		req.Router = v.(string)
-	}
-
 	if d.HasChange("ip_network") {
 		v := d.Get("ip_network")
 
