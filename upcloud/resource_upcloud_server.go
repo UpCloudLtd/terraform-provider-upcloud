@@ -176,6 +176,7 @@ func resourceUpCloudServer() *schema.Resource {
 				Description: "The pricing plan used for the server",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 			"storage_devices": {
 				Description: "A list of storage devices associated with the server",
@@ -225,6 +226,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"size": {
 							Description:  "The size of the storage in gigabytes",
 							Type:         schema.TypeInt,
+							Computed:     true,
 							Optional:     true,
 							ValidateFunc: validation.IntBetween(10, 2048),
 						},
@@ -343,6 +345,13 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	_ = d.Set("zone", server.Zone)
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
+	_ = d.Set("metadata", server.Metadata.Bool())
+	_ = d.Set("plan", server.Plan)
+	if server.Firewall == "on" {
+		_ = d.Set("firewall", true)
+	} else {
+		_ = d.Set("firewall", false)
+	}
 
 	networkInterfaces := []map[string]interface{}{}
 	var connIP string
@@ -420,13 +429,14 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := server.VerifyServerStopped(request.StopServerRequest{UUID: d.Id()}, meta); err != nil {
-		return diag.FromErr(err)
-	}
 
 	r := &request.ModifyServerRequest{
 		UUID: d.Id(),
 	}
+	r.Hostname = d.Get("hostname").(string)
+	r.Title = fmt.Sprintf("%s (managed by terraform)", r.Hostname)
+
+	r.Metadata = upcloud.FromBool(d.Get("metadata").(bool))
 
 	if d.Get("firewall").(bool) {
 		r.Firewall = "on"
@@ -434,80 +444,98 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		r.Firewall = "off"
 	}
 
-	if plan, ok := d.GetOk("plan"); ok {
-		r.Plan = plan.(string)
-	} else {
-		r.CoreNumber = d.Get("cpu").(int)
-		r.MemoryAmount = d.Get("mem").(int)
+	// handle changes that need reboot
+	if d.HasChanges("plan", "cpu", "mem", "template", "storage_devices") {
+		if err := server.VerifyServerStopped(
+			request.StopServerRequest{
+				UUID: d.Id(),
+			},
+			meta,
+		); err != nil {
+			return diag.FromErr(err)
+		}
+
+		if plan, ok := d.GetOk("plan"); ok {
+			r.Plan = plan.(string)
+		} else {
+			r.CoreNumber = d.Get("cpu").(int)
+			r.MemoryAmount = d.Get("mem").(int)
+			r.Plan = "custom"
+		}
+
+		// handle the template
+		if d.HasChanges("template.0.title", "template.0.size", "template.0.backup_rule") {
+			template := d.Get("template.0").(map[string]interface{})
+			if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
+				UUID:  template["id"].(string),
+				Size:  template["size"].(int),
+				Title: template["title"].(string),
+				BackupRule: storage.BackupRule(
+					d.Get("template.0.backup_rule.0").(map[string]interface{}),
+				),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+		// should reattach if address changed
+		if d.HasChange("template.0.address") {
+			o, n := d.GetChange("template.0.address")
+			if _, err := client.DetachStorage(&request.DetachStorageRequest{
+				ServerUUID: d.Id(),
+				Address:    o.(string),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+			if _, err := client.AttachStorage(&request.AttachStorageRequest{
+				Address:     n.(string),
+				ServerUUID:  d.Id(),
+				StorageUUID: d.Get("template.0.id").(string),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		// handle the other storage devices
+		if d.HasChange("storage_devices") {
+			o, n := d.GetChange("storage_devices")
+
+			// detach the devices that should be detached or should be re-attached with different parameters
+			for _, rawStorageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+				storageDevice := rawStorageDevice.(map[string]interface{})
+				if serverDetails.StorageDevice(storageDevice["storage"].(string)) == nil {
+					continue
+				}
+				if _, err := client.DetachStorage(&request.DetachStorageRequest{
+					ServerUUID: d.Id(),
+					Address:    storageDevice["address"].(string),
+				}); err != nil {
+					return diag.FromErr(err)
+				}
+			}
+
+			// attach the storages that are new or have changed
+			for _, rawStorageDevice := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
+				storageDevice := rawStorageDevice.(map[string]interface{})
+				if _, err := client.AttachStorage(&request.AttachStorageRequest{
+					ServerUUID:  d.Id(),
+					Address:     storageDevice["address"].(string),
+					StorageUUID: storageDevice["storage"].(string),
+					Type:        storageDevice["type"].(string),
+				}); err != nil {
+					return diag.FromErr(err)
+				}
+			}
+		}
 	}
-	r.Hostname = d.Get("hostname").(string)
 
 	if _, err := client.ModifyServer(r); err != nil {
 		return diag.FromErr(err)
 	}
 
-	// handle the template
-	if d.HasChanges("template.0.title", "template.0.size", "template.0.backup_rule") {
-		template := d.Get("template.0").(map[string]interface{})
-		if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
-			UUID:       template["id"].(string),
-			Size:       template["size"].(int),
-			Title:      template["title"].(string),
-			BackupRule: storage.BackupRule(d.Get("template.0.backup_rule.0").(map[string]interface{})),
-		}); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	// should reattach if address changed
-	if d.HasChange("template.0.address") {
-		o, n := d.GetChange("template.0.address")
-		if _, err := client.DetachStorage(&request.DetachStorageRequest{
-			ServerUUID: d.Id(),
-			Address:    o.(string),
-		}); err != nil {
-			return diag.FromErr(err)
-		}
-		if _, err := client.AttachStorage(&request.AttachStorageRequest{
-			Address:     n.(string),
-			ServerUUID:  d.Id(),
-			StorageUUID: d.Get("template.0.id").(string),
-		}); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	// handle the other storage devices
-	if d.HasChange("storage_devices") {
-		o, n := d.GetChange("storage_devices")
-
-		// detach the devices that should be detached or should be re-attached with different parameters
-		for _, storageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
-			if serverDetails.StorageDevice(storageDevice.(map[string]interface{})["storage"].(string)) == nil {
-				continue
-			}
-			if _, err := client.DetachStorage(&request.DetachStorageRequest{
-				ServerUUID: d.Id(),
-				Address:    storageDevice.(map[string]interface{})["address"].(string),
-			}); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-		// attach the storages that are new or have changed
-		for _, storageDevice := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
-			storageDevice := storageDevice.(map[string]interface{})
-			if _, err := client.AttachStorage(&request.AttachStorageRequest{
-				ServerUUID:  d.Id(),
-				Address:     storageDevice["address"].(string),
-				StorageUUID: storageDevice["storage"].(string),
-				Type:        storageDevice["type"].(string),
-			}); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
 	if err := server.VerifyServerStarted(request.StartServerRequest{UUID: d.Id(), Host: d.Get("host").(int)}, meta); err != nil {
 		return diag.FromErr(err)
 	}
+
 	return resourceUpCloudServerRead(ctx, d, meta)
 }
 
