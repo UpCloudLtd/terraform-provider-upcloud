@@ -15,6 +15,8 @@ type Network interface {
 	GetNetworkDetails(r *request.GetNetworkDetailsRequest) (*upcloud.Network, error)
 	ModifyNetwork(r *request.ModifyNetworkRequest) (*upcloud.Network, error)
 	DeleteNetwork(r *request.DeleteNetworkRequest) error
+	AttachNetworkRouter(r *request.AttachNetworkRouterRequest) error
+	DetachNetworkRouter(r *request.DetachNetworkRouterRequest) error
 	GetServerNetworks(r *request.GetServerNetworksRequest) (*upcloud.Networking, error)
 	CreateNetworkInterface(r *request.CreateNetworkInterfaceRequest) (*upcloud.Interface, error)
 	ModifyNetworkInterface(r *request.ModifyNetworkInterfaceRequest) (*upcloud.Interface, error)
@@ -123,6 +125,28 @@ func (s *Service) DeleteNetwork(r *request.DeleteNetworkRequest) error {
 		return parseJSONServiceError(err)
 	}
 
+	return nil
+}
+
+// AttachNetworkRouter attaches a router to the specified network.
+func (s *Service) AttachNetworkRouter(r *request.AttachNetworkRouterRequest) error {
+	requestBody, _ := json.Marshal(r)
+	_, err := s.client.PerformJSONPutRequest(s.client.CreateRequestURL(r.RequestURL()), requestBody)
+
+	if err != nil {
+		return parseJSONServiceError(err)
+	}
+	return nil
+}
+
+// DetachNetworkRouter detaches a router from the specified network.
+func (s *Service) DetachNetworkRouter(r *request.DetachNetworkRouterRequest) error {
+	requestBody, _ := json.Marshal(r)
+	_, err := s.client.PerformJSONPutRequest(s.client.CreateRequestURL(r.RequestURL()), requestBody)
+
+	if err != nil {
+		return parseJSONServiceError(err)
+	}
 	return nil
 }
 

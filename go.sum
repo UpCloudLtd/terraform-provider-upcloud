@@ -42,6 +42,8 @@ github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jB
 github.com/Microsoft/go-winio v0.4.16/go.mod h1:XB6nPKklQyQ7GC9LdcBEcBl8PF76WugXOPRXwdLnMv0=
 github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210127073406-2964ed7e5972 h1:OUrt9phz41jCKOgqu3Iq8KH+5OfyfgcdFT28R9QLN0Y=
 github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210127073406-2964ed7e5972/go.mod h1:nKv1Y0cTJTGYSd3lEcFfEnbPPiIj3gT4lJzV0ZfTlpQ=
+github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210525102709-661419a1956b h1:WDp7g7xKKvXJvfEPicT8A7dLwMDgEN5cb5fgnsgvzJw=
+github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210525102709-661419a1956b/go.mod h1:nKv1Y0cTJTGYSd3lEcFfEnbPPiIj3gT4lJzV0ZfTlpQ=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=
 github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=

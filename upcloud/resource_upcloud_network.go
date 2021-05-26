@@ -234,11 +234,6 @@ func resourceUpCloudNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 		req.Name = v.(string)
 	}
 
-	if d.HasChange("router") {
-		_, v := d.GetChange("router")
-		req.Router = v.(string)
-	}
-
 	if d.HasChange("ip_network") {
 		v := d.Get("ip_network")
 
@@ -263,6 +258,18 @@ func resourceUpCloudNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	network, err := client.ModifyNetwork(&req)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if d.HasChange("router") {
+		_, v := d.GetChange("router")
+		if v.(string) == "" {
+			err = client.DetachNetworkRouter(&request.DetachNetworkRouterRequest{NetworkUUID: d.Id()})
+		} else {
+			err = client.AttachNetworkRouter(&request.AttachNetworkRouterRequest{NetworkUUID: d.Id(), RouterUUID: v.(string)})
+		}
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	d.SetId(network.UUID)
