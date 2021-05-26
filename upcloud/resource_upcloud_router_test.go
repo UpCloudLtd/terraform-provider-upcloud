@@ -111,14 +111,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 				ResourceName:      "upcloud_router.terraform_test_router",
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateCheck: func(states []*terraform.InstanceState) error {
-					for _, s := range states {
-						if s.Attributes["attached_networks.#"] != "1" {
-							return fmt.Errorf("expected 1 network, got %v", s.Attributes["attached_networks.#"])
-						}
-					}
-					return nil
-				},
+				Check:             resource.TestCheckResourceAttr("upcloud_router.terraform_test_router", "attached_networks.#", "1"),
 			},
 			{
 				// and then change them to detached
@@ -132,14 +125,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 				ResourceName:      "upcloud_router.terraform_test_router",
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateCheck: func(states []*terraform.InstanceState) error {
-					for _, s := range states {
-						if s.Attributes["attached_networks.#"] != "0" {
-							return fmt.Errorf("expected 0 networks, got %v", s.Attributes["attached_networks.#"])
-						}
-					}
-					return nil
-				},
+				Check:             resource.TestCheckResourceAttr("upcloud_router.terraform_test_router", "attached_networks.#", "0"),
 			},
 		},
 	})
@@ -166,14 +152,7 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 				ResourceName:      "upcloud_router.terraform_test_router",
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateCheck: func(states []*terraform.InstanceState) error {
-					for _, s := range states {
-						if s.Attributes["attached_networks.#"] != "1" {
-							return fmt.Errorf("expected 1 network, got %v", s.Attributes["attached_networks.#"])
-						}
-					}
-					return nil
-				},
+				Check:             resource.TestCheckResourceAttr("upcloud_router.terraform_test_router", "attached_networks.#", "1"),
 			},
 			{
 				// and then try to delete the router
