@@ -189,13 +189,17 @@ func cloneStorage(
 		cloneStorageRequest.UUID = block["id"].(string)
 	}
 
-	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
+	originalStorageDevice, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
 		UUID:         cloneStorageRequest.UUID,
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if originalStorageDevice.Size > size {
+		return diag.Errorf("cloned storage device should be at least the same size as the original one")
 	}
 
 	storage, err := client.CloneStorage(&cloneStorageRequest)
