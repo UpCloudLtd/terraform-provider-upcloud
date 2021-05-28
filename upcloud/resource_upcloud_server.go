@@ -199,10 +199,11 @@ func resourceUpCloudServer() *schema.Resource {
 							Required:    true,
 						},
 						"address": {
-							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
-							Type:        schema.TypeString,
-							Computed:    true,
-							Optional:    true,
+							Description:  "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
+							Type:         schema.TypeString,
+							Computed:     true,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"scsi", "virtio", "ide"}, false),
 						},
 						"type": {
 							Description:  "The device type the storage will be attached as",
@@ -212,6 +213,13 @@ func resourceUpCloudServer() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"disk", "cdrom"}, false),
 						},
 					},
+				},
+				Set: func(v interface{}) int {
+					// compute a consistent hash for this TypeSet, mendatory
+					m := v.(map[string]interface{})
+					return schema.HashString(
+						fmt.Sprintf("%s-%s", m["storage"].(string), m["address"].(string)),
+					)
 				},
 			},
 			"template": {
@@ -415,7 +423,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 		// the template is managed within the server
 		if serverStorage.UUID == d.Get("template.0.id") {
 			_ = d.Set("template", []map[string]interface{}{{
-				"address": serverStorage.Address,
+				"address": utils.StorageAddressFormat(serverStorage.Address),
 				"id":      serverStorage.UUID,
 				"size":    serverStorage.Size,
 				"title":   serverStorage.Title,
@@ -426,7 +434,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 			}})
 		} else {
 			storageDevices = append(storageDevices, map[string]interface{}{
-				"address": serverStorage.Address,
+				"address": utils.StorageAddressFormat(serverStorage.Address),
 				"storage": serverStorage.UUID,
 				"type":    serverStorage.Type,
 			})
@@ -518,12 +526,12 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			o, n := d.GetChange("template.0.address")
 			if _, err := client.DetachStorage(&request.DetachStorageRequest{
 				ServerUUID: d.Id(),
-				Address:    o.(string),
+				Address:    utils.StorageAddressFormat(o.(string)),
 			}); err != nil {
 				return diag.FromErr(err)
 			}
 			if _, err := client.AttachStorage(&request.AttachStorageRequest{
-				Address:     n.(string),
+				Address:     utils.StorageAddressFormat(n.(string)),
 				ServerUUID:  d.Id(),
 				StorageUUID: d.Get("template.0.id").(string),
 			}); err != nil {
@@ -538,12 +546,13 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			// detach the devices that should be detached or should be re-attached with different parameters
 			for _, rawStorageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
 				storageDevice := rawStorageDevice.(map[string]interface{})
-				if serverDetails.StorageDevice(storageDevice["storage"].(string)) == nil {
+				serverStorageDevice := serverDetails.StorageDevice(storageDevice["storage"].(string))
+				if serverStorageDevice == nil {
 					continue
 				}
 				if _, err := client.DetachStorage(&request.DetachStorageRequest{
 					ServerUUID: d.Id(),
-					Address:    storageDevice["address"].(string),
+					Address:    serverStorageDevice.Address,
 				}); err != nil {
 					return diag.FromErr(err)
 				}
@@ -554,7 +563,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 				storageDevice := rawStorageDevice.(map[string]interface{})
 				if _, err := client.AttachStorage(&request.AttachStorageRequest{
 					ServerUUID:  d.Id(),
-					Address:     storageDevice["address"].(string),
+					Address:     utils.StorageAddressFormat(storageDevice["address"].(string)),
 					StorageUUID: storageDevice["storage"].(string),
 					Type:        storageDevice["type"].(string),
 				}); err != nil {
