@@ -15,6 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.8
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
+	github.com/hashicorp/terraform-plugin-docs v0.4.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.6.1
 	github.com/hashicorp/terraform-plugin-test/v2 v2.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864 // indirect
