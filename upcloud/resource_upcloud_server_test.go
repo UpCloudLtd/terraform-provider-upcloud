@@ -20,7 +20,24 @@ func TestUpcloudServer_basic(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudServerInstanceConfig(),
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+						tags = [
+						"foo",
+						"bar"
+						]
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "zone"),
 					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "hostname"),
@@ -28,28 +45,16 @@ func TestUpcloudServer_basic(t *testing.T) {
 						"upcloud_server.my-server", "zone", "fi-hel1"),
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "hostname", "debian.example.com"),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.0", "foo",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.1", "bar",
+					),
 				),
 			},
 		},
 	})
-}
-
-func testUpcloudServerInstanceConfig() string {
-	return `
-		resource "upcloud_server" "my-server" {
-			zone     = "fi-hel1"
-			hostname = "debian.example.com"
-
-			template {
-					storage = "01000000-0000-4000-8000-000020050100"
-					size = 10
-			}
-
-			network_interface {
-				type = "utility"
-			}
-		}
-	`
 }
 
 func TestUpcloudServer_changePlan(t *testing.T) {
@@ -71,6 +76,103 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "plan", "2xCPU-4GB"),
+				),
+			},
+		},
+	})
+}
+
+func TestUpcloudServerUpdateTags(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				// setup server with tags
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+						tags = [
+						"foo",
+						"bar"
+						]
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.0", "foo",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.1", "bar",
+					),
+				),
+			},
+			{
+				// tags update
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+						tags = [
+						"newfoo",
+						"newbar"
+						]
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.0", "newfoo",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.1", "newbar",
+					),
+				),
+			},
+			{
+				// tag removal
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+						tags = [
+						"newfoo",
+						]
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.0", "newfoo",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "tags.#", "1",
+					),
 				),
 			},
 		},
