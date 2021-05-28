@@ -264,7 +264,7 @@ func resourceUpCloudServer() *schema.Resource {
 						"user": {
 							Description: "Username to be create to access the server",
 							Type:        schema.TypeString,
-							Required:    true,
+							Optional:    true,
 						},
 						"keys": {
 							Description: "A list of ssh keys to access the server",
