@@ -66,6 +66,7 @@ resource "upcloud_server" "example" {
 - **metadata** (Boolean) Is the metadata service active for the server
 - **plan** (String) The pricing plan used for the server
 - **storage_devices** (Block Set) A list of storage devices associated with the server (see [below for nested schema](#nestedblock--storage_devices))
+- **tags** (List of String) The server related tags
 - **template** (Block List, Max: 1) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
 - **user_data** (String) Defines URL for a server setup script, or the script body itself
 
@@ -97,15 +98,12 @@ Read-Only:
 <a id="nestedblock--login"></a>
 ### Nested Schema for `login`
 
-Required:
-
-- **user** (String) Username to be create to access the server
-
 Optional:
 
 - **create_password** (Boolean) Indicates a password should be create to allow access
 - **keys** (List of String) A list of ssh keys to access the server
 - **password_delivery** (String) The delivery method for the server’s root password
+- **user** (String) Username to be create to access the server
 
 
 <a id="nestedblock--storage_devices"></a>
