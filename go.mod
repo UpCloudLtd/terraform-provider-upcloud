@@ -1,6 +1,6 @@
 module github.com/UpCloudLtd/terraform-provider-upcloud
 
-go 1.14
+go 1.16
 
 require (
 	github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210525102709-661419a1956b
@@ -15,9 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.8
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
-	github.com/hashicorp/terraform-plugin-docs v0.4.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.6.1
-	github.com/hashicorp/terraform-plugin-test/v2 v2.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.6 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
