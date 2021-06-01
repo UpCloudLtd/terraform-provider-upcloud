@@ -10,11 +10,13 @@ builds:
     # usage by users in CI/CD systems like Terraform Cloud where
     # they are unable to install libraries.
     - CGO_ENABLED=0
+    - GO_MODULE_NAME=github.com/UpCloudLtd/terraform-provider-upcloud
   mod_timestamp: '{{ .CommitTimestamp }}'
   flags:
     - -trimpath
   ldflags:
-    - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
+    - -s -w
+    - -X {{.Env.GO_MODULE_NAME}}/internal/globals.Version={{.Version}}
   goos:
     - freebsd
     - windows
@@ -37,6 +39,7 @@ checksum:
   algorithm: sha256
 signs:
   - artifacts: checksum
+    cmd: bash
     args:
       - '-c'
       - >-
