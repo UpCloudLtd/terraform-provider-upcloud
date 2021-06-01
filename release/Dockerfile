@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.14
+ARG GO_VERSION=1.16
 FROM golang:$GO_VERSION
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install unzip
