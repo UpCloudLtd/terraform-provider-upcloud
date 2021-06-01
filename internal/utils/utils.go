@@ -7,8 +7,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 )
 
-var RetryDelay = 1000
-
 func FilterZoneIds(vs []upcloud.Zone, f func(upcloud.Zone) bool) []string {
 	vsf := make([]string, 0)
 	for _, v := range vs {
