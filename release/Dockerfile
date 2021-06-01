@@ -3,8 +3,8 @@ FROM golang:$GO_VERSION
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y unzip
 
-ARG GORELEASER_URL=https://github.com/goreleaser/goreleaser/releases/download/v0.145.0/goreleaser_Linux_x86_64.tar.gz
-ARG GORELEASER_SHA256=2ea97ea7d5c1210470d23944188987d85c51768b3d7d3cf7bccb76393b57c44a
+ARG GORELEASER_URL=https://github.com/goreleaser/goreleaser/releases/download/v0.168.0/goreleaser_Linux_x86_64.tar.gz
+ARG GORELEASER_SHA256=6611e8fc645671b002af8c646eae9777a1daa68682e0c30475e0a689c2dbad2f
 WORKDIR /go/goreleaser
 RUN set -x && \
     GORELEASER=$(basename $GORELEASER_URL) && \
