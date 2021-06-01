@@ -2,18 +2,24 @@ TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 
+MODULE   = $(shell env GO111MODULE=on $(GO) list -m)
+VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
+			cat $(CURDIR)/.version 2> /dev/null || echo v0)
+
 PROVIDER_HOSTNAME=registry.upcloud.com
 PROVIDER_NAMESPACE=upcloud
 PROVIDER_TYPE=upcloud
-PROVIDER_VERSION=$(shell git describe --abbrev=0 --tags)
 PROVIDER_TARGET=$(shell go env GOOS)_$(shell go env GOARCH)
-PROVIDER_PATH=~/.terraform.d/plugins/$(PROVIDER_HOSTNAME)/$(PROVIDER_NAMESPACE)/$(PROVIDER_TYPE)/$(PROVIDER_VERSION)/$(PROVIDER_TARGET)
+PROVIDER_PATH=~/.terraform.d/plugins/$(PROVIDER_HOSTNAME)/$(PROVIDER_NAMESPACE)/$(PROVIDER_TYPE)/$(VERSION)/$(PROVIDER_TARGET)
 
 default: build
 
 build: fmtcheck
 	@mkdir -p $(PROVIDER_PATH)
-	go build -o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAMESPACE)_v$(PROVIDER_VERSION)
+	go build \
+		-tags release \
+		-ldflags '-X $(MODULE)/internal/globals.Version=$(VERSION)' \
+		-o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAMESPACE)_v$(VERSION)
 
 build_0_12: fmtcheck
 	go install

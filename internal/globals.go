@@ -1,3 +1,6 @@
 package globals
 
-var Version = "2.0.0"
+var (
+	// Version contains the current software version from git.
+	Version = "dev"
+)
