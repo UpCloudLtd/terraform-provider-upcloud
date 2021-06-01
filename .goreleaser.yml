@@ -38,17 +38,16 @@ checksum:
 signs:
   - artifacts: checksum
     args:
-      # if you are using this in a GitHub action or some other automated pipeline, you 
-      # need to pass the batch flag to indicate its not interactive.
-      - "--batch"
-      - "--local-user"
-      - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
-      - "--output"
-      - "${signature}"
-      - "--detach-sign"
-      - "${artifact}"
+      - '-c'
+      - >-
+          set -ex &&
+          vault write -field=signature {{ .Env.VAULT_SIGNER_PATH }}
+          input=@<(base64 ${artifact}) | base64 -d > ${signature}
 release:
-  # If you want to manually examine the release before its live, uncomment this line:
-  # draft: true
+  draft: true
+  github:
+    # These do not currently support templating
+    owner: UpCloudLtd
+    name: terraform-provider-upcloud
 changelog:
   skip: true
