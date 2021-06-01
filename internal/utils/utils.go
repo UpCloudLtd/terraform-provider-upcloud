@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
@@ -81,4 +82,14 @@ func ExpandStrings(data interface{}) []string {
 	}
 
 	return strSlice
+}
+
+// StorageAddressFormat takes the address in any format and extracts the bus
+// type only (ide/scsi/virtio)
+func StorageAddressFormat(address string) string {
+	if ret := strings.Split(address, ":"); len(ret) > 0 {
+		return ret[0]
+	}
+
+	return ""
 }

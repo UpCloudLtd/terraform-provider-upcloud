@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterNetworks(t *testing.T) {
@@ -89,4 +91,19 @@ func TestWithRetry(t *testing.T) {
 		t.Log("should fail")
 		t.Fail()
 	}
+}
+
+func TestStorageAddressFormat(t *testing.T) {
+	storageAddressWithAddress := "virtio:1"
+	storageAddressWithoutAddress := "scsi"
+	storageAddressEmpty := ""
+
+	ret := StorageAddressFormat(storageAddressWithAddress)
+	assert.Equal(t, ret, "virtio")
+
+	ret = StorageAddressFormat(storageAddressWithoutAddress)
+	assert.Equal(t, ret, "scsi")
+
+	ret = StorageAddressFormat(storageAddressEmpty)
+	assert.Equal(t, ret, "")
 }

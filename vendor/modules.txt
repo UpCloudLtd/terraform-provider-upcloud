@@ -234,9 +234,14 @@ github.com/modern-go/reflect2
 # github.com/oklog/run v1.1.0
 ## explicit
 github.com/oklog/run
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
 # github.com/rs/xid v1.3.0
 ## explicit
 github.com/rs/xid
+# github.com/stretchr/testify v1.7.0
+## explicit
+github.com/stretchr/testify/assert
 # github.com/ulikunitz/xz v0.5.8
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
@@ -463,3 +468,5 @@ google.golang.org/protobuf/types/pluginpb
 # gopkg.in/ini.v1 v1.62.0
 ## explicit
 gopkg.in/ini.v1
+# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+gopkg.in/yaml.v3
