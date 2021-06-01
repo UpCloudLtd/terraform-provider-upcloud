@@ -5,14 +5,35 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [v2.1.0]
+
 ### Added
 
-- support for UpCloud ObjectStorage S3 compatible storage.
+- Support for UpCloud ObjectStorage S3 compatible storage.
 - Add host field to the server resource
+- server: add tags attribute support (#150) 
+- chore: Add more examples
 
 ### Fixed
 
 - Server not started after updating storage device
+- router: fix creation of attachedNetworks for routers #144
+- chore: fix example in upcloud_tag #125
+- server: prevent some attribute update from restarting (#146) 
+- router: allow detaching router and deleting attached routers (#151) 
+- storage: check size before cloning a device (#152)
+- storage: fix address formating (#153)
+
+### Changed
+
+- Update documentation
+- Update README
+
+### Deprecated
+
+- tag resource
+- zone and zones datasources
+- tag datasource
 
 ## [2.0.0]
 
