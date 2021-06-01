@@ -34,7 +34,7 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := PublicFilter
+	filterType := publicFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
@@ -56,7 +56,7 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := PrivateFilter
+	filterType := privateFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
@@ -77,7 +77,7 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := AllFilter
+	filterType := allFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{

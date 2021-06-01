@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	AllFilter     = "all"
-	PublicFilter  = "public"
-	PrivateFilter = "private"
+	allFilter     = "all"
+	publicFilter  = "public"
+	privateFilter = "private"
 )
 
 func dataSourceUpCloudZones() *schema.Resource {
@@ -31,8 +31,8 @@ func dataSourceUpCloudZones() *schema.Resource {
 			"filter_type": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Default:      AllFilter,
-				ValidateFunc: validation.StringInSlice([]string{AllFilter, PublicFilter, PrivateFilter}, false),
+				Default:      allFilter,
+				ValidateFunc: validation.StringInSlice([]string{allFilter, publicFilter, privateFilter}, false),
 			},
 		},
 	}
@@ -57,9 +57,9 @@ func dataSourceUpCloudZonesRead(ctx context.Context, d *schema.ResourceData, met
 
 	zoneIds := utils.FilterZoneIds(zones.Zones, func(zone upcloud.Zone) bool {
 		switch filterType {
-		case PrivateFilter:
+		case privateFilter:
 			return zone.Public != upcloud.True
-		case PublicFilter:
+		case publicFilter:
 			return zone.Public == upcloud.True
 		default:
 			return true
