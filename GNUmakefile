@@ -2,7 +2,7 @@ TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 
-MODULE   = $(shell env GO111MODULE=on $(GO) list -m)
+MODULE   = $(shell env GO111MODULE=on go list -m)
 VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
 			cat $(CURDIR)/.version 2> /dev/null || echo v0)
 
@@ -18,7 +18,7 @@ build: fmtcheck
 	@mkdir -p $(PROVIDER_PATH)
 	go build \
 		-tags release \
-		-ldflags '-X $(MODULE)/internal/globals.Version=$(VERSION)' \
+		-ldflags '-X $(MODULE)/internal/config.Version=$(VERSION)' \
 		-o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAMESPACE)_v$(VERSION)
 
 build_0_12: fmtcheck
