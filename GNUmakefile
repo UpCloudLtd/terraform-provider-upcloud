@@ -3,8 +3,9 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 
 MODULE   = $(shell env GO111MODULE=on go list -m)
-VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
+GIT_VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
 			cat $(CURDIR)/.version 2> /dev/null || echo v0)
+VERSION = $(shell echo $(GIT_VERSION) | sed 's/^v//' | sed 's/-.*//')
 
 PROVIDER_HOSTNAME=registry.upcloud.com
 PROVIDER_NAMESPACE=upcloud
@@ -18,7 +19,7 @@ build: fmtcheck
 	@mkdir -p $(PROVIDER_PATH)
 	go build \
 		-tags release \
-		-ldflags '-X $(MODULE)/internal/config.Version=$(VERSION)' \
+		-ldflags '-X $(MODULE)/internal/config.Version=$(GIT_VERSION)' \
 		-o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAMESPACE)_v$(VERSION)
 
 build_0_12: fmtcheck
