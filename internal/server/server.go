@@ -46,6 +46,9 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	if attr, ok := d.GetOk("plan"); ok {
 		r.Plan = attr.(string)
 	}
+	if attr, ok := d.GetOk("simple_backups"); ok {
+		r.SimpleBackup = attr.(string)
+	}
 	if login, ok := d.GetOk("login"); ok {
 		loginOpts, deliveryMethod, err := buildLoginOpts(login, meta)
 		if err != nil {

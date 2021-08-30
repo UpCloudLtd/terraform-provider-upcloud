@@ -305,6 +305,12 @@ func resourceUpCloudServer() *schema.Resource {
 					},
 				},
 			},
+			"simple_backups": {
+				Description: "Simple backups rule",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -379,6 +385,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	_ = d.Set("mem", server.MemoryAmount)
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
+	_ = d.Set("simple_backups", server.SimpleBackup)
 
 	// XXX: server.Tags returns an empty slice rather than nil when it's empty
 	if len(server.Tags) > 0 {
@@ -491,6 +498,11 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 				return diag.FromErr(err)
 			}
 		}
+	}
+	if simpleBackup, ok := d.GetOk("simple_backups"); ok {
+		r.SimpleBackup = simpleBackup.(string)
+	} else {
+		r.SimpleBackup = "no"
 	}
 
 	// handle changes that need reboot
