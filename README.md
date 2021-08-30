@@ -251,6 +251,21 @@ value specified in the makefile and in this case the version is 2.0.0.
 
 After the provider has been built you can then use standard terraform commands.
 
+Use this provider config with the local version:
+
+```
+terraform {
+  required_providers {
+    upcloud = {
+      source = "registry.upcloud.com/upcloud/upcloud"
+      version = "~> 2.1"
+    }
+  }
+}
+```
+
+**Testing**
+
 In order to test the provider, you can simply run `make test`.
 
 ```sh
@@ -313,7 +328,8 @@ Run Terraform files, e.g. the examples:
 
 ```sh
 cd /tmp
-cp /work/examples/01_server.tf .
+cp /work/examples/server.tf .
+# change the provider source in server.tf to "registry.upcloud.com/upcloud/upcloud"
 export UPCLOUD_USERNAME="upcloud-api-access-enabled-user"
 export UPCLOUD_PASSWORD="verysecretpassword"
 terraform init
@@ -336,7 +352,7 @@ The UpCloud makefile supports the old, Terraform 0.12 style where plugin
 directory structure is not relevant and only the binary name matters.
 
 The following make command can be executed to build and place the provider in
-the Go binary directory. Make sure your PATH includes the Go binary directory. 
+the Go binary directory. Make sure your PATH includes the Go binary directory.
 
 ```sh
 make build_0_12
