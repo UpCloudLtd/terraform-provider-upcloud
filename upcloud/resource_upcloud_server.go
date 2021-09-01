@@ -308,7 +308,7 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"simple_backup": {
 				Description: "Simple backup schedule configuration",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
 				Elem: &schema.Resource{
