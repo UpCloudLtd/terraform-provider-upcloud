@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -307,10 +308,11 @@ func resourceUpCloudServer() *schema.Resource {
 				},
 			},
 			"simple_backup": {
-				Description: "Simple backup schedule configuration",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
+				Description:   "Simple backup schedule configuration",
+				Type:          schema.TypeList,
+				MaxItems:      1,
+				Optional:      true,
+				ConflictsWith: []string{"template.0.backup_rule"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"plan": {
@@ -320,10 +322,10 @@ func resourceUpCloudServer() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"dailies", "weeklies", "monthlies"}, false),
 						},
 						"time": {
-							Description: "Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).",
-							Type:        schema.TypeString,
-							Required:    true,
-							// TODO add validation
+							Description:  "Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{4}$`), "Time must be 4 digits in a hhmm format"),
 						},
 					},
 				},
