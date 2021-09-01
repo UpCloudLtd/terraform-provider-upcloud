@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
@@ -305,11 +306,27 @@ func resourceUpCloudServer() *schema.Resource {
 					},
 				},
 			},
-			"simple_backups": {
-				Description: "Simple backups rule",
-				Type:        schema.TypeString,
+			"simple_backup": {
+				Description: "Simple backup schedule configuration",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"plan": {
+							Description:  "Simple backup plan. Accepted values: dailies, weeklies, monthlies.",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"dailies", "weeklies", "monthlies"}, false),
+						},
+						"time": {
+							Description: "Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).",
+							Type:        schema.TypeString,
+							Required:    true,
+							// TODO add validation
+						},
+					},
+				},
 			},
 		},
 	}
@@ -396,6 +413,15 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 		_ = d.Set("firewall", true)
 	} else {
 		_ = d.Set("firewall", false)
+	}
+	if server.SimpleBackup != "no" {
+		p := strings.Split(server.SimpleBackup, ",")
+		simpleBackup := map[string]interface{}{
+			"time": p[0],
+			"plan": p[1],
+		}
+
+		_ = d.Set("simple_backup", []map[string]interface{}{simpleBackup})
 	}
 
 	networkInterfaces := []map[string]interface{}{}
@@ -499,10 +525,11 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 		}
 	}
-	if simpleBackup, ok := d.GetOk("simple_backups"); ok {
-		r.SimpleBackup = simpleBackup.(string)
-	} else {
-		r.SimpleBackup = "no"
+
+	if sb, ok := d.GetOk("simple_backup"); ok {
+		if d.HasChange("simple_backup") {
+			r.SimpleBackup = server.BuildSimpleBackupOpts(sb)
+		}
 	}
 
 	// handle changes that need reboot
