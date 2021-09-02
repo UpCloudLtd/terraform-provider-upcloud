@@ -13,7 +13,7 @@ linters:
   # please keep these sorted alphabetically
   #
   enable:
-    ## - asciicheck # not enabled in our initial configuration, proposal: ENABLE
+    - asciicheck # not enabled in our initial configuration, proposal: ENABLE
     # - bodyclose # enabled in our initial configuration, proposal: DISABLE
     #? - cyclop # not enabled in our initial configuration, proposal: NOT SURE - consider the options
     - deadcode # enabled by default, proposal: KEEP
@@ -22,9 +22,9 @@ linters:
     ## - dupl # not enabled in our initial configuration, proposal: ENABLE
     ## - durationcheck # not enabled in our initial configuration, proposal: ENABLE
     - errcheck # enabled by default, proposal: KEEP
-    ## - errname # not enabled in our initial configuration, proposal: ENABLE
+    - errname # not enabled in our initial configuration, proposal: ENABLE
     ## - errorlint # not enabled in our initial configuration, proposal: ENABLE
-    ## - exhaustive # not enabled in our initial configuration, proposal: ENABLE
+    - exhaustive # not enabled in our initial configuration, proposal: ENABLE
     # - exhaustivestruct # not enabled in our initial configuration, proposal: DO NOT ENABLE
     ## - exportloopref # not enabled in our initial configuration, proposal: ENABLE
     ## - forbidigo # not enabled in our initial configuration, proposal: ENABLE
@@ -53,7 +53,7 @@ linters:
     - gosimple # enabled by default, proposal: KEEP
     - govet # enabled by default, proposal: KEEP
     ## - ifshort # not enabled in our initial configuration, proposal: ENABLE
-    ## - importas # not enabled in our initial configuration, proposal: ENABLE
+    - importas # not enabled in our initial configuration, proposal: ENABLE
     - ineffassign # enabled by default
     # - interfacer # deprecated
     #? - lll # not enabled in our initial configuration, proposal: NOT SURE
@@ -64,16 +64,16 @@ linters:
     #? - nestif # not enabled in our initial configuration, proposal: NOT SURE
     ## - nilerr # not enabled in our initial configuration, proposal: ENABLE
     # - nlreturn # not enabled in our initial configuration, proposal: DO NOT ENABLE, prefer whitespace
-    ## - noctx # not enabled in our initial configuration, proposal: ENABLE
+    - noctx # not enabled in our initial configuration, proposal: ENABLE
     - nolintlint # enabled in our initial configuration, proposal: KEEP
     ## - paralleltest # not enabled in our initial configuration, proposal: ENABLE
     ## - prealloc # not enabled in our initial configuration, proposal: ENABLE
-    ## - predeclared # not enabled in our initial configuration, proposal: ENABLE
+    - predeclared # not enabled in our initial configuration, proposal: ENABLE
     #? - promlinter # not enabled in our initial configuration, proposal: NOT SURE - do we need this?
     - revive # enabled in our initial configuration, proposal: KEEP
     - rowserrcheck # enabled in our initial configuration, proposal: KEEP or DISABLE if not required any more
     # - scopelint # deprecated
-    ## - sqlclosecheck # not enabled in our initial configuration, proposal: ENABLE
+    - sqlclosecheck # not enabled in our initial configuration, proposal: ENABLE
     - staticcheck # enabled by default, proposal: KEEP
     - structcheck # enabled by default, proposal: KEEP
     - stylecheck # enabled in our initial configuration, proposal: NOT SURE - debatable style
@@ -86,7 +86,7 @@ linters:
     #? - unparam # enabled in our initial configuration, proposal: NOT SURE
     - unused # enabled by default, proposal: KEEP
     - varcheck # enabled by default, proposal: KEEP
-    ## - wastedassign # not enabled in our initial configuration, proposal: ENABLE
+    - wastedassign # not enabled in our initial configuration, proposal: ENABLE
     - whitespace # enabled in our initial configuration, proposal: KEEP
     #? - wrapcheck # not enabled in our initial configuration, proposal: NOT SURE - a lot of work to enable but good reasoning
     # - wsl # not enabled in our initial configuration, proposal: DO NOT ENABLE, prefer whitespace
