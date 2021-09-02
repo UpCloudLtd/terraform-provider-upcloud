@@ -19,7 +19,7 @@ linters:
     - deadcode # enabled by default, proposal: KEEP
     # - depguard # enabled in our initial configuration, proposal: DISABLE
     - dogsled # enabled in our initial configuration, proposal: leaning KEEP
-    ## - dupl # not enabled in our initial configuration, proposal: ENABLE
+    - dupl # not enabled in our initial configuration, proposal: ENABLE
     ## - durationcheck # not enabled in our initial configuration, proposal: ENABLE
     - errcheck # enabled by default, proposal: KEEP
     - errname # not enabled in our initial configuration, proposal: ENABLE

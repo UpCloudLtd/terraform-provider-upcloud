@@ -149,52 +149,7 @@ func resourceUpCloudFirewallRulesCreate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if v, ok := d.GetOk("firewall_rule"); ok {
-		var firewallRules []upcloud.FirewallRule
-
-		for _, frMap := range v.([]interface{}) {
-			rule := frMap.(map[string]interface{})
-
-			destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
-			if destinationPortStart == "0" {
-				destinationPortStart = ""
-			}
-
-			destinationPortEnd := strconv.Itoa(rule["destination_port_end"].(int))
-			if destinationPortEnd == "0" {
-				destinationPortEnd = ""
-			}
-
-			sourcePortStart := strconv.Itoa(rule["source_port_start"].(int))
-			if sourcePortStart == "0" {
-				sourcePortStart = ""
-			}
-
-			sourcePortEnd := strconv.Itoa(rule["source_port_end"].(int))
-			if sourcePortEnd == "0" {
-				sourcePortEnd = ""
-			}
-
-			firewallRule := upcloud.FirewallRule{
-				Action:                  rule["action"].(string),
-				Comment:                 rule["comment"].(string),
-				DestinationAddressStart: rule["destination_address_start"].(string),
-				DestinationAddressEnd:   rule["destination_address_end"].(string),
-				DestinationPortStart:    destinationPortStart,
-				DestinationPortEnd:      destinationPortEnd,
-				Direction:               rule["direction"].(string),
-				Family:                  rule["family"].(string),
-				ICMPType:                rule["icmp_type"].(string),
-				Protocol:                rule["protocol"].(string),
-				SourceAddressStart:      rule["source_address_start"].(string),
-				SourceAddressEnd:        rule["source_address_end"].(string),
-				SourcePortStart:         sourcePortStart,
-				SourcePortEnd:           sourcePortEnd,
-			}
-
-			firewallRules = append(firewallRules, firewallRule)
-		}
-
-		opts.FirewallRules = firewallRules
+		opts.FirewallRules = buildFirewallRules(v)
 	}
 
 	if _, err := client.WaitForServerState(&request.WaitForServerStateRequest{
@@ -301,53 +256,7 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if d.HasChange("firewall_rule") {
-		v := d.Get("firewall_rule")
-		var firewallRules []upcloud.FirewallRule
-
-		for _, frMap := range v.([]interface{}) {
-			rule := frMap.(map[string]interface{})
-
-			destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
-			if destinationPortStart == "0" {
-				destinationPortStart = ""
-			}
-
-			destinationPortEnd := strconv.Itoa(rule["destination_port_end"].(int))
-			if destinationPortEnd == "0" {
-				destinationPortEnd = ""
-			}
-
-			sourcePortStart := strconv.Itoa(rule["source_port_start"].(int))
-			if sourcePortStart == "0" {
-				sourcePortStart = ""
-			}
-
-			sourcePortEnd := strconv.Itoa(rule["source_port_end"].(int))
-			if sourcePortEnd == "0" {
-				sourcePortEnd = ""
-			}
-
-			firewallRule := upcloud.FirewallRule{
-				Action:                  rule["action"].(string),
-				Comment:                 rule["comment"].(string),
-				DestinationAddressStart: rule["destination_address_start"].(string),
-				DestinationAddressEnd:   rule["destination_address_end"].(string),
-				DestinationPortStart:    destinationPortStart,
-				DestinationPortEnd:      destinationPortEnd,
-				Direction:               rule["direction"].(string),
-				Family:                  rule["family"].(string),
-				ICMPType:                rule["icmp_type"].(string),
-				Protocol:                rule["protocol"].(string),
-				SourceAddressStart:      rule["source_address_start"].(string),
-				SourceAddressEnd:        rule["source_address_end"].(string),
-				SourcePortStart:         sourcePortStart,
-				SourcePortEnd:           sourcePortEnd,
-			}
-
-			firewallRules = append(firewallRules, firewallRule)
-		}
-
-		opts.FirewallRules = firewallRules
+		opts.FirewallRules = buildFirewallRules(d.Get("firewall_rule"))
 	}
 
 	err = client.CreateFirewallRules(opts)
@@ -357,6 +266,50 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	return resourceUpCloudFirewallRulesRead(ctx, d, meta)
+}
+
+func buildFirewallRules(v interface{}) (firewallRules []upcloud.FirewallRule) {
+	for _, frMap := range v.([]interface{}) {
+		rule := frMap.(map[string]interface{})
+
+		destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
+		if destinationPortStart == "0" {
+			destinationPortStart = ""
+		}
+
+		destinationPortEnd := strconv.Itoa(rule["destination_port_end"].(int))
+		if destinationPortEnd == "0" {
+			destinationPortEnd = ""
+		}
+
+		sourcePortStart := strconv.Itoa(rule["source_port_start"].(int))
+		if sourcePortStart == "0" {
+			sourcePortStart = ""
+		}
+
+		sourcePortEnd := strconv.Itoa(rule["source_port_end"].(int))
+		if sourcePortEnd == "0" {
+			sourcePortEnd = ""
+		}
+
+		firewallRules = append(firewallRules, upcloud.FirewallRule{
+			Action:                  rule["action"].(string),
+			Comment:                 rule["comment"].(string),
+			DestinationAddressStart: rule["destination_address_start"].(string),
+			DestinationAddressEnd:   rule["destination_address_end"].(string),
+			DestinationPortStart:    destinationPortStart,
+			DestinationPortEnd:      destinationPortEnd,
+			Direction:               rule["direction"].(string),
+			Family:                  rule["family"].(string),
+			ICMPType:                rule["icmp_type"].(string),
+			Protocol:                rule["protocol"].(string),
+			SourceAddressStart:      rule["source_address_start"].(string),
+			SourceAddressEnd:        rule["source_address_end"].(string),
+			SourcePortStart:         sourcePortStart,
+			SourcePortEnd:           sourcePortEnd,
+		})
+	}
+	return firewallRules
 }
 
 func resourceUpCloudFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
