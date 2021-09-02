@@ -320,3 +320,36 @@ func UpdateServerTags(service *service.Service, serverUUID string, oldTags, newT
 
 	return AddNewServerTags(service, serverUUID, newTags)
 }
+
+// ValidateServerAndStorageBackupRules checks if the server and (to be) attached storages have conflicting backup rules.
+func ValidateServerAndStorageBackupRules(service *service.Service, d *schema.ResourceData) error {
+	if _, ok := d.GetOk("simple_backup"); ok {
+		if attr, ok := d.GetOk("storage_devices"); ok {
+			sds := attr.(*schema.Set).List()
+
+			for _, i := range sds {
+				e := i.(map[string]interface{})
+				id := e["storage"]
+
+				sd, err := service.GetStorageDetails(&request.GetStorageDetailsRequest{
+					UUID: id.(string),
+				})
+
+				if err != nil {
+					return err
+				}
+
+				if sd.BackupRule != nil && sd.BackupRule.Time != "" {
+					return fmt.Errorf("invalid configuration; server with simple backup schedule cannot have storages with their own backup rule attached (check storage %s - %s)", sd.Title, sd.UUID)
+				}
+			}
+		}
+
+		// If there is no storage_devices block - no need to do anything. Also no need to check the template
+		// as setting simple_backup option for the server and backup_rule for the template is not allowed on the schema level
+		return nil
+	}
+
+	// If no simple backup option is set for server - no need to do anything
+	return nil
+}

@@ -341,6 +341,12 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	err = server.ValidateServerAndStorageBackupRules(client, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	serverDetails, err := client.CreateServer(r)
 	if err != nil {
 		return diag.FromErr(err)
@@ -424,6 +430,8 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 		}
 
 		_ = d.Set("simple_backup", []map[string]interface{}{simpleBackup})
+	} else {
+		_ = d.Set("simple_backup", nil)
 	}
 
 	networkInterfaces := []map[string]interface{}{}
@@ -495,6 +503,11 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+
+	err := server.ValidateServerAndStorageBackupRules(client, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
