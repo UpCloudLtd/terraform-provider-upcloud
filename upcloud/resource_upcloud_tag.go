@@ -96,6 +96,7 @@ func resourceUpCloudTagRead(ctx context.Context, d *schema.ResourceData, meta in
 
 	for _, value := range tags.Tags {
 		if value.Name == tagID {
+			//nolint:exportloopref // this points to the loop variable, but it does not matter as we break out immediately
 			tag = &value
 			break
 		}

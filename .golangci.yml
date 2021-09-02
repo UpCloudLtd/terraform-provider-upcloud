@@ -26,7 +26,7 @@ linters:
     - errorlint # not enabled in our initial configuration, proposal: ENABLE
     - exhaustive # not enabled in our initial configuration, proposal: ENABLE
     # - exhaustivestruct # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    ## - exportloopref # not enabled in our initial configuration, proposal: ENABLE
+    - exportloopref # not enabled in our initial configuration, proposal: ENABLE
     ## - forbidigo # not enabled in our initial configuration, proposal: ENABLE
     ## - forcetypeassert # not enabled in our initial configuration, proposal: ENABLE
     #? - funlen # not enabled in our initial configuration, proposal: NOT SURE
