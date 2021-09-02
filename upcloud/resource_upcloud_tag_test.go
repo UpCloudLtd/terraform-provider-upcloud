@@ -98,7 +98,7 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 		client := testAccProvider.Meta().(*service.Service)
 		tags, err := client.GetTags()
 		if err != nil {
-			return fmt.Errorf("[WARN] Error listing tags when deleting upcloud tag (%s): %s", rs.Primary.ID, err)
+			return fmt.Errorf("[WARN] Error listing tags when deleting upcloud tag (%s): %w", rs.Primary.ID, err)
 		}
 
 		for _, tag := range tags.Tags {

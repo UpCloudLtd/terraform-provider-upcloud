@@ -52,7 +52,7 @@ func dataSourceUpCloudTagsRead(ctx context.Context, d *schema.ResourceData, meta
 	tags, err := client.GetTags()
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error fetching tags: %s", err))
+		return diag.FromErr(fmt.Errorf("error fetching tags: %w", err))
 	}
 
 	var values []map[string]interface{}

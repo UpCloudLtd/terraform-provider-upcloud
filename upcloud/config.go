@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -42,8 +43,8 @@ func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
 	}
 
 	if err != nil {
-		svcErr, ok := err.(*upcloud.Error)
-		if ok {
+		var svcErr *upcloud.Error
+		if errors.As(err, &svcErr) {
 			return nil, fmt.Errorf("[ERROR] Failed to get account, error was %s: '%s'", svcErr.ErrorCode, svcErr.ErrorMessage)
 		}
 		return nil, fmt.Errorf("[ERROR] Failed to get account due to unspecified error")

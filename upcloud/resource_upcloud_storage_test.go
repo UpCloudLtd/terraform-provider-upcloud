@@ -387,7 +387,7 @@ func testAccCheckStorageDestroy(s *terraform.State) error {
 		client := testAccProvider.Meta().(*service.Service)
 		storages, err := client.GetStorages(&request.GetStoragesRequest{})
 		if err != nil {
-			return fmt.Errorf("[WARN] Error listing storage when deleting upcloud storage (%s): %s", rs.Primary.ID, err)
+			return fmt.Errorf("[WARN] Error listing storage when deleting upcloud storage (%s): %w", rs.Primary.ID, err)
 		}
 
 		for _, storage := range storages.Storages {

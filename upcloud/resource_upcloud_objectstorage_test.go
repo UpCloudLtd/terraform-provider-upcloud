@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -368,9 +369,9 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 			})
 
 			if err != nil {
-				svcErr, ok := err.(*upcloud.Error)
+				var svcErr *upcloud.Error
 
-				if ok && svcErr.ErrorCode == "404" {
+				if errors.As(err, &svcErr) && svcErr.ErrorCode == "404" {
 					return nil
 				}
 				return err

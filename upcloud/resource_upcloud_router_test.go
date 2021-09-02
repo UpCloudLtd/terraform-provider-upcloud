@@ -328,7 +328,7 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 		client := testAccProvider.Meta().(*service.Service)
 		routers, err := client.GetRouters()
 		if err != nil {
-			return fmt.Errorf("[WARN] Error listing routers when deleting upcloud router (%s): %s", rs.Primary.ID, err)
+			return fmt.Errorf("[WARN] Error listing routers when deleting upcloud router (%s): %w", rs.Primary.ID, err)
 		}
 
 		for _, router := range routers.Routers {
@@ -348,7 +348,7 @@ func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
 		case "upcloud_router":
 			routers, err := client.GetRouters()
 			if err != nil {
-				return fmt.Errorf("[WARN] Error listing routers when deleting upcloud router (%s): %s", rs.Primary.ID, err)
+				return fmt.Errorf("[WARN] Error listing routers when deleting upcloud router (%s): %w", rs.Primary.ID, err)
 			}
 
 			for _, router := range routers.Routers {
@@ -360,7 +360,7 @@ func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
 		case "upcloud_network":
 			networks, err := client.GetNetworks()
 			if err != nil {
-				return fmt.Errorf("[WARN] Error listing networks when deleting upcloud network (%s): %s", rs.Primary.ID, err)
+				return fmt.Errorf("[WARN] Error listing networks when deleting upcloud network (%s): %w", rs.Primary.ID, err)
 			}
 
 			for _, network := range networks.Networks {

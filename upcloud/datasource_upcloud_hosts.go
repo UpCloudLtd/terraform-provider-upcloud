@@ -49,7 +49,7 @@ func dataSourceUpCloudHostsRead(ctx context.Context, d *schema.ResourceData, met
 	hosts, err := client.GetHosts()
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error fetching hosts: %s", err))
+		return diag.FromErr(fmt.Errorf("error fetching hosts: %w", err))
 	}
 
 	var values []map[string]interface{}

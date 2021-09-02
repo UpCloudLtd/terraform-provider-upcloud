@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
 const (
@@ -46,13 +47,13 @@ func dataSourceUpCloudZonesRead(ctx context.Context, d *schema.ResourceData, met
 	zones, err := client.GetZones()
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error fetching zones: %s", err))
+		return diag.FromErr(fmt.Errorf("error fetching zones: %w", err))
 	}
 
 	filterType, ok := d.GetOk("filter_type")
 
 	if !ok {
-		return diag.FromErr(fmt.Errorf("error getting filter_type: %s", err))
+		return diag.FromErr(fmt.Errorf("error getting filter_type: %w", err))
 	}
 
 	zoneIds := utils.FilterZoneIds(zones.Zones, func(zone upcloud.Zone) bool {
@@ -67,7 +68,7 @@ func dataSourceUpCloudZonesRead(ctx context.Context, d *schema.ResourceData, met
 	})
 
 	if err := d.Set("zone_ids", zoneIds); err != nil {
-		return diag.FromErr(fmt.Errorf("error setting zone_ids: %s", err))
+		return diag.FromErr(fmt.Errorf("error setting zone_ids: %w", err))
 	}
 	d.SetId(time.Now().UTC().String())
 

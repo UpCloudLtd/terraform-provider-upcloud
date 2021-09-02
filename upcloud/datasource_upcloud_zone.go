@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
 func dataSourceUpCloudZone() *schema.Resource {
@@ -42,7 +43,7 @@ func resourceUpCloudZoneRead(ctx context.Context, d *schema.ResourceData, meta i
 	zones, err := client.GetZones()
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error fetching zones: %s", err))
+		return diag.FromErr(fmt.Errorf("error fetching zones: %w", err))
 	}
 
 	var locatedZone upcloud.Zone
@@ -54,18 +55,18 @@ func resourceUpCloudZoneRead(ctx context.Context, d *schema.ResourceData, meta i
 		})
 
 		if len(zones) > 1 {
-			return diag.FromErr(fmt.Errorf("error multiple zones located: %s", err))
+			return diag.FromErr(fmt.Errorf("error multiple zones located: %w", err))
 		}
 
 		locatedZone = zones[0]
 	}
 
 	if err := d.Set("description", locatedZone.Description); err != nil {
-		return diag.FromErr(fmt.Errorf("error setting zone description: %s", err))
+		return diag.FromErr(fmt.Errorf("error setting zone description: %w", err))
 	}
 
 	if err := d.Set("public", locatedZone.Public.Bool()); err != nil {
-		return diag.FromErr(fmt.Errorf("error setting zone public state: %s", err))
+		return diag.FromErr(fmt.Errorf("error setting zone public state: %w", err))
 	}
 
 	d.SetId(locatedZone.ID)

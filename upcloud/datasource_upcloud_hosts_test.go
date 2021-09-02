@@ -46,7 +46,7 @@ func testAccDataSourceUpCloudHostsCheck(resourceName string) resource.TestCheckF
 		hostsQuantity, err := strconv.Atoi(hosts)
 
 		if err != nil {
-			return fmt.Errorf("error parsing size of hosts (%s) into integer: %s", hosts, err)
+			return fmt.Errorf("error parsing size of hosts (%s) into integer: %w", hosts, err)
 		}
 
 		if hostsQuantity != 0 {
