@@ -31,7 +31,3 @@ linters:
 #    - unparam
     - varcheck
     - whitespace
-
-linters-settings:
-  goconst:
-    min-len: 5
