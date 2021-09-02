@@ -73,7 +73,7 @@ func testAccNetworksConfig(zone string, filterName string) string {
 	builder.WriteString("}")
 
 	s := builder.String()
-	fmt.Println(s)
+	// fmt.Println(s)
 
 	return s
 }
