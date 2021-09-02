@@ -8,10 +8,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
@@ -88,8 +89,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	httpClient := retryablehttp.NewClient()
-	httpClient.RetryWaitMin = time.Duration(d.Get("retry_wait_min_sec").(int)) * time.Second
-	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
+	httpClient.RetryWaitMin = time.Duration(d.Get("retry_wait_min_sec").(int) * int(time.Second))
+	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int) * int(time.Second))
 	httpClient.RetryMax = d.Get("retry_max").(int)
 
 	service := newUpCloudServiceConnection(
