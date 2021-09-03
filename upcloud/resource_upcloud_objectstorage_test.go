@@ -127,6 +127,7 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 	const expectedUpdatedSize = "1000"
 	const expectedUpdatedDescription = "My Updated data collection"
 	const expectedUpdatedKey = "an updated access key"
+	//#nosec G101 // these are mock credentials
 	const expectedUpdatedSecret = "an updated secret"
 
 	resource.Test(t, resource.TestCase{
@@ -177,6 +178,7 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 	const expectedSize = "500"
 	const expectedUpdatedSize = "1000"
 	const expectedUpdatedKey = "an updated access key"
+	//#nosec G101 // these are mock credentials
 	const expectedUpdatedSecret = "an updated secret"
 
 	resource.Test(t, resource.TestCase{

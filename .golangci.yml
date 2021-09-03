@@ -49,7 +49,7 @@ linters:
     #? - gomoddirectives # not enabled in our initial configuration, proposal: NOT SURE - clarify dbaas need + implications
     # - gomodguard # not enabled in our initial configuration, proposal: DO NOT ENABLE
     - goprintffuncname # enabled in our initial configuration, proposal: KEEP
-    ## - gosec # enabled in our initial configuration, proposal: KEEP
+    - gosec # enabled in our initial configuration, proposal: KEEP
     - gosimple # enabled by default, proposal: KEEP
     - govet # enabled by default, proposal: KEEP
     ## - ifshort # not enabled in our initial configuration, proposal: ENABLE

@@ -493,6 +493,7 @@ func createTempImage() (string, *hash.Hash, error) {
 
 	sum := sha256.New()
 	for i := 0; i < 100000000; i++ {
+		//#nosec G404 // creating mock files, strong random number generators are not required
 		b := []byte{byte(rand.Int())}
 		_, err := f.Write(b)
 		if err != nil {
