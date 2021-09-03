@@ -81,7 +81,7 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"tags": {
 				Description: "The server related tags",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
