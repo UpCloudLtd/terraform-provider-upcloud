@@ -150,8 +150,7 @@ func resourceUpCloudTagUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		r.Tag.Servers = serversList
 	}
 
-	_, err := client.ModifyTag(r)
-	if err != nil {
+	if _, err := client.ModifyTag(r); err != nil {
 		return diag.FromErr(err)
 	}
 

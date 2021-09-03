@@ -52,7 +52,7 @@ linters:
     - gosec # enabled in our initial configuration, proposal: KEEP
     - gosimple # enabled by default, proposal: KEEP
     - govet # enabled by default, proposal: KEEP
-    ## - ifshort # not enabled in our initial configuration, proposal: ENABLE
+    - ifshort # not enabled in our initial configuration, proposal: ENABLE
     - importas # not enabled in our initial configuration, proposal: ENABLE
     - ineffassign # enabled by default
     # - interfacer # deprecated
