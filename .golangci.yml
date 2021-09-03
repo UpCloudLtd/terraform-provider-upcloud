@@ -57,7 +57,7 @@ linters:
     - ineffassign # enabled by default
     # - interfacer # deprecated
     #? - lll # not enabled in our initial configuration, proposal: NOT SURE
-    ## - makezero # not enabled in our initial configuration, proposal: ENABLE
+    - makezero # not enabled in our initial configuration, proposal: ENABLE
     # - maligned # deprecated
     - misspell # enabled in our initial configuration, proposal: KEEP
     - nakedret # enabled in our initial configuration, proposal: KEEP

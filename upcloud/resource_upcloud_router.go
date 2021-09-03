@@ -58,8 +58,8 @@ func resourceUpCloudRouterCreate(ctx context.Context, d *schema.ResourceData, me
 
 	attachedNetworks := make([]string, len(router.AttachedNetworks))
 
-	for _, network := range router.AttachedNetworks {
-		attachedNetworks = append(attachedNetworks, network.NetworkUUID)
+	for i, network := range router.AttachedNetworks {
+		attachedNetworks[i] = network.NetworkUUID
 	}
 
 	if err := d.Set("attached_networks", attachedNetworks); err != nil {
