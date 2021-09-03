@@ -254,8 +254,8 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	return diag.Diagnostics{}
 }
 
-func getBucketConnection(URL, accessKey, secretKey string) (*minio.Client, error) {
-	urlObj, err := url.Parse(URL)
+func getBucketConnection(bucketUrl, accessKey, secretKey string) (*minio.Client, error) {
+	urlObj, err := url.Parse(bucketUrl)
 	if err != nil {
 		return nil, err
 	}

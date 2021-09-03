@@ -8,15 +8,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
 func resourceUpCloudStorage() *schema.Resource {
@@ -456,10 +457,8 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		if err = server.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta); err != nil {
 			return diag.FromErr(err)
 		}
-	} else {
-		if _, err := client.ModifyStorage(&req); err != nil {
-			return diag.FromErr(err)
-		}
+	} else if _, err := client.ModifyStorage(&req); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return resourceUpCloudStorageRead(ctx, d, meta)

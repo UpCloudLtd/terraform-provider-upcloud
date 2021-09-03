@@ -35,7 +35,7 @@ linters:
     # - gochecknoinits # not enabled in our initial configuration, proposal: DO NOT ENABLE
     #? - gocognit # not enabled in our initial configuration, proposal: NOT SURE - consider the options
     - goconst # enabled in our initial configuration, proposal: KEEP
-    ## - gocritic # enabled in our initial configuration, proposal: KEEP
+    - gocritic # enabled in our initial configuration, proposal: KEEP
     #? - gocyclo # not enabled in our initial configuration, proposal: NOT SURE - consider the options
     ## - godot # not enabled in our initial configuration, proposal: ENABLE
     #? - godox # not enabled in our initial configuration, proposal: NOT SURE - consider the argument made
