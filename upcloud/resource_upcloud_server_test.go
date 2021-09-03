@@ -132,6 +132,67 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 	})
 }
 
+func TestUpcloudServer_simpleBackup(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+
+						simple_backup {
+							time = "0300"
+							plan = "dailies"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "0300"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "dailies"),
+				),
+			},
+			{
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+
+						simple_backup {
+							time = "2200"
+							plan = "weeklies"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2200"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "weeklies"),
+				),
+			},
+		},
+	})
+}
+
 func TestUpcloudServerUpdateTags(t *testing.T) {
 	var providers []*schema.Provider
 
