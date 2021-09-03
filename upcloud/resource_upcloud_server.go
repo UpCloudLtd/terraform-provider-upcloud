@@ -342,11 +342,6 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	err = server.ValidateServerAndStorageBackupRules(client, d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	serverDetails, err := client.CreateServer(r)
 	if err != nil {
 		return diag.FromErr(err)
@@ -503,11 +498,6 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
-
-	err := server.ValidateServerAndStorageBackupRules(client, d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
