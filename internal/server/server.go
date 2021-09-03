@@ -222,7 +222,7 @@ func VerifyServerStarted(startRequest request.StartServerRequest, meta interface
 }
 
 // RemoveOldServerTags removes tags from server.
-// deletes the tag if no server left with the tag name
+// deletes the tag if no server left with the tag name.
 func RemoveOldServerTags(service *service.Service, serverUUID string, tags []string) error {
 	if len(tags) == 0 {
 		return nil
@@ -259,7 +259,7 @@ func RemoveOldServerTags(service *service.Service, serverUUID string, tags []str
 	return nil
 }
 
-// AddNewServerTags adds tags to server, updates existing tags if any
+// AddNewServerTags adds tags to server, updates existing tags if any.
 func AddNewServerTags(service *service.Service, serverUUID string, tags []string) error {
 	if len(tags) == 0 {
 		return nil

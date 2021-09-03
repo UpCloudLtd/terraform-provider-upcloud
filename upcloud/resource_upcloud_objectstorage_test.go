@@ -76,7 +76,7 @@ func init() {
 	})
 }
 
-// TestMain is boilerplate needed for -sweep command line parameters to work
+// TestMain is boilerplate needed for -sweep command line parameters to work.
 func TestMain(m *testing.M) {
 	resource.TestMain(m)
 }

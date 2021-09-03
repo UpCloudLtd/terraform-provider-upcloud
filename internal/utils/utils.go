@@ -52,7 +52,7 @@ func FilterNetworks(vs []upcloud.Network, fns ...func(upcloud.Network) (bool, er
 	return vsf, nil
 }
 
-// WithRetry attempts to call the provided function until it has been successfully called or the number of calls exceeds retries delaying the consecutive calls by given delay
+// WithRetry attempts to call the provided function until it has been successfully called or the number of calls exceeds retries delaying the consecutive calls by given delay.
 func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration) (interface{}, error) {
 	var err error
 	var res interface{}
@@ -72,7 +72,7 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 	return nil, err
 }
 
-// ExpandStrings expands a terraform interface to slice of str
+// ExpandStrings expands a terraform interface to slice of str.
 func ExpandStrings(data interface{}) []string {
 	strSlice := []string{}
 	for _, s := range data.([]interface{}) {
@@ -83,7 +83,7 @@ func ExpandStrings(data interface{}) []string {
 }
 
 // StorageAddressFormat takes the address in any format and extracts the bus
-// type only (ide/scsi/virtio)
+// type only (ide/scsi/virtio).
 func StorageAddressFormat(address string) string {
 	if ret := strings.Split(address, ":"); len(ret) > 0 {
 		return ret[0]
