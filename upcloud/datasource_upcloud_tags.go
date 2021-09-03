@@ -54,7 +54,7 @@ func dataSourceUpCloudTagsRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(fmt.Errorf("error fetching tags: %w", err))
 	}
 
-	var values []map[string]interface{}
+	values := make([]map[string]interface{}, 0, len(tags.Tags))
 
 	for _, tag := range tags.Tags {
 		servers := []string{}

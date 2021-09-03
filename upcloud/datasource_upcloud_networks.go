@@ -5,12 +5,13 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
 func dataSourceNetworks() *schema.Resource {
@@ -163,7 +164,7 @@ func dataSourceNetworksRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	// Map the received data to the Terraform resource.
-	var networks []map[string]interface{}
+	networks := make([]map[string]interface{}, 0, len(filteredNetworks))
 	for _, fn := range filteredNetworks {
 		n := map[string]interface{}{
 			"name": fn.Name,

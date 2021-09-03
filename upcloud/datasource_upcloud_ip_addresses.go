@@ -80,7 +80,7 @@ func dataSourceUpCloudIPAddressesRead(ctx context.Context, d *schema.ResourceDat
 		diag.FromErr(err)
 	}
 
-	var values []map[string]interface{}
+	values := make([]map[string]interface{}, 0, len(ipAddresses.IPAddresses))
 
 	for _, ipAddress := range ipAddresses.IPAddresses {
 		value := map[string]interface{}{

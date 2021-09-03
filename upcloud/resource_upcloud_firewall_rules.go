@@ -183,7 +183,7 @@ func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	var frMaps []map[string]interface{}
+	frMaps := make([]map[string]interface{}, 0, len(firewallRules.FirewallRules))
 
 	for _, rule := range firewallRules.FirewallRules {
 		frMap := map[string]interface{}{

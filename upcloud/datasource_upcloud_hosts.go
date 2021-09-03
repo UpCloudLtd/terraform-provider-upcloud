@@ -51,7 +51,7 @@ func dataSourceUpCloudHostsRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(fmt.Errorf("error fetching hosts: %w", err))
 	}
 
-	var values []map[string]interface{}
+	values := make([]map[string]interface{}, 0, len(hosts.Hosts))
 
 	for _, host := range hosts.Hosts {
 		value := map[string]interface{}{
