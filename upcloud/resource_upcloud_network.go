@@ -284,7 +284,6 @@ func resourceUpCloudNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 		UUID: d.Id(),
 	}
 	err := client.DeleteNetwork(&req)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

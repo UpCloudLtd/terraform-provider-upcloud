@@ -76,7 +76,6 @@ func dataSourceUpCloudIPAddressesRead(ctx context.Context, d *schema.ResourceDat
 	var diags diag.Diagnostics
 
 	ipAddresses, err := client.GetIPAddresses()
-
 	if err != nil {
 		diag.FromErr(err)
 	}

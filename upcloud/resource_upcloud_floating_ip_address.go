@@ -77,7 +77,6 @@ func resourceUpCloudFloatingIPAddressCreate(ctx context.Context, d *schema.Resou
 	}
 
 	ipAddress, err := client.AssignIPAddress(assignIPAddressRequest)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -101,7 +100,6 @@ func resourceUpCloudFloatingIPAddressRead(ctx context.Context, d *schema.Resourc
 	}
 
 	ipAddress, err := client.GetIPAddressDetails(getIPAddressDetailsRequest)
-
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -171,7 +169,6 @@ func resourceUpCloudFloatingIPAddressDelete(ctx context.Context, d *schema.Resou
 	}
 
 	err := client.ReleaseIPAddress(releaseIPAddressRequest)
-
 	if err != nil {
 		diag.FromErr(err)
 	}

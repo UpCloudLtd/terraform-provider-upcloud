@@ -145,7 +145,6 @@ func testAccCheckFirewallRulesExists(resourceName string, firewallRules *upcloud
 		latest, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
 		})
-
 		if err != nil {
 			return err
 		}

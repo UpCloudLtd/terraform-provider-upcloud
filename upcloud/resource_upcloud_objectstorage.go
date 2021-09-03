@@ -15,8 +15,10 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-const bucketKey = "bucket"
-const numRetries = 5
+const (
+	bucketKey  = "bucket"
+	numRetries = 5
+)
 
 func resourceUpCloudObjectStorage() *schema.Resource {
 	return &schema.Resource{
@@ -150,7 +152,6 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 	objectDetails, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
 		UUID: uuid,
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -187,7 +188,6 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 			d.Get("access_key").(string),
 			d.Get("secret_key").(string),
 		)
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -314,7 +314,6 @@ func getBuckets(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceD
 		d.Get("access_key").(string),
 		d.Get("secret_key").(string),
 	)
-
 	if err != nil {
 		return nil, err
 	}

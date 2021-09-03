@@ -41,7 +41,7 @@ linters:
     #? - godox # not enabled in our initial configuration, proposal: NOT SURE - consider the argument made
     # - goerr113 # not enabled in our initial configuration, proposal: DO NOT ENABLE
     # - gofmt # enabled in our initial configuration, proposal: DISABLE, use gofumpt instead
-    ## - gofumpt # not enabled in our initial configuration, proposal: ENABLE
+    - gofumpt # not enabled in our initial configuration, proposal: ENABLE
     # - goheader # not enabled in our initial configuration, proposal: DO NOT ENABLE
     # - goimports # enabled in our initial configuration, proposal: DISABLE, use gci instead
     # - golint # deprecated

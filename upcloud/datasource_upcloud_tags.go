@@ -50,7 +50,6 @@ func dataSourceUpCloudTagsRead(ctx context.Context, d *schema.ResourceData, meta
 	var diags diag.Diagnostics
 
 	tags, err := client.GetTags()
-
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching tags: %w", err))
 	}
@@ -58,7 +57,7 @@ func dataSourceUpCloudTagsRead(ctx context.Context, d *schema.ResourceData, meta
 	var values []map[string]interface{}
 
 	for _, tag := range tags.Tags {
-		var servers = []string{}
+		servers := []string{}
 		for _, server := range tag.Servers {
 			servers = append(servers, server)
 		}

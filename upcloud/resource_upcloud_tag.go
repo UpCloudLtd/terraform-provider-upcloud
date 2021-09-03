@@ -70,7 +70,6 @@ func resourceUpCloudTagCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	tag, err := client.CreateTag(createTagRequest)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -86,7 +85,6 @@ func resourceUpCloudTagRead(ctx context.Context, d *schema.ResourceData, meta in
 	var diags diag.Diagnostics
 
 	tags, err := client.GetTags()
-
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -114,7 +112,7 @@ func resourceUpCloudTagRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	var servers = []string{}
+	servers := []string{}
 	for _, server := range tag.Servers {
 		servers = append(servers, server)
 	}
@@ -150,7 +148,6 @@ func resourceUpCloudTagUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	_, err := client.ModifyTag(r)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -167,7 +164,6 @@ func resourceUpCloudTagDelete(ctx context.Context, d *schema.ResourceData, meta 
 		Name: d.Id(),
 	}
 	err := client.DeleteTag(deleteTagRequest)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

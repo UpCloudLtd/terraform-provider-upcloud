@@ -350,7 +350,6 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		UUID: d.Id(),
 	}
 	storage, err := client.GetStorageDetails(r)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

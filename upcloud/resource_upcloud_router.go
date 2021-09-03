@@ -52,7 +52,6 @@ func resourceUpCloudRouterCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	router, err := client.CreateRouter(opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -82,7 +81,6 @@ func resourceUpCloudRouterRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	router, err := client.GetRouterDetails(opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -118,7 +116,6 @@ func resourceUpCloudRouterUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	_, err := client.ModifyRouter(opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -133,7 +130,6 @@ func resourceUpCloudRouterDelete(ctx context.Context, d *schema.ResourceData, me
 	router, err := client.GetRouterDetails(&request.GetRouterDetailsRequest{
 		UUID: d.Id(),
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

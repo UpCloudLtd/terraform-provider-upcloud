@@ -79,7 +79,6 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 					&request.GetStoragesRequest{
 						Type: upcloud.StorageTypeTemplate,
 					})
-
 				if err != nil {
 					return nil, err
 				}

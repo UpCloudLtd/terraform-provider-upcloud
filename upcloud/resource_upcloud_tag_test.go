@@ -77,7 +77,6 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		// Use the API SDK to locate the remote resource.
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetTags()
-
 		if err != nil {
 			return err
 		}

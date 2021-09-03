@@ -18,20 +18,24 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-const expectedDescription = "My object storage"
-const expectedZone = "pl-waw1"
-const expectedKey = "an access key"
-const expectedSecret = "a secret key"
+const (
+	expectedDescription = "My object storage"
+	expectedZone        = "pl-waw1"
+	expectedKey         = "an access key"
+	expectedSecret      = "a secret key"
+)
 
-const expectedName1 = "test-name1"
-const expectedName2 = "test-name2"
-const expectedName3 = "test-name3"
+const (
+	expectedName1 = "test-name1"
+	expectedName2 = "test-name2"
+	expectedName3 = "test-name3"
+)
 
 func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
 		Name: "object_storage_cleanup",
 		F: func(region string) error {
-			var nameMap = map[string]interface{}{
+			nameMap := map[string]interface{}{
 				expectedName1: nil,
 				expectedName2: nil,
 				expectedName3: nil,
@@ -367,7 +371,6 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 			_, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
 				UUID: rs.Primary.ID,
 			})
-
 			if err != nil {
 				var svcErr *upcloud.Error
 

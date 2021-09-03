@@ -111,7 +111,6 @@ func testAccDataSourceUpCloudZonesCheck(resourceName string, expectedResources i
 		}
 
 		zoneIdsQuantity, err := strconv.Atoi(zoneIds)
-
 		if err != nil {
 			return fmt.Errorf("error parsing names (%s) into integer: %w", zoneIds, err)
 		}

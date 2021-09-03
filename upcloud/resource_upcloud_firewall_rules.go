@@ -179,7 +179,6 @@ func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	firewallRules, err := client.GetFirewallRules(opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -250,7 +249,6 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	err := client.CreateFirewallRules(opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

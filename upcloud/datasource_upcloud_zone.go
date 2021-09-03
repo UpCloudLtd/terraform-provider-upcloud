@@ -41,7 +41,6 @@ func resourceUpCloudZoneRead(ctx context.Context, d *schema.ResourceData, meta i
 	var diags diag.Diagnostics
 
 	zones, err := client.GetZones()
-
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching zones: %w", err))
 	}
