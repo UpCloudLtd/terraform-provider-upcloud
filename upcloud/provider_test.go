@@ -44,6 +44,7 @@ func TestProvider(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
+	t.Helper()
 	if v := os.Getenv("UPCLOUD_USERNAME"); v == "" {
 		t.Fatal("UPCLOUD_USERNAME must be set for acceptance tests")
 	}

@@ -79,7 +79,7 @@ linters:
     - stylecheck # enabled in our initial configuration, proposal: NOT SURE - debatable style
     # - tagliatelle # not enabled in our initial configuration, proposal: DO NOT ENABLE
     ## - testpackage # not enabled in our initial configuration, proposal: ENABLE
-    ## - thelper # not enabled in our initial configuration, proposal: ENABLE
+    - thelper # not enabled in our initial configuration, proposal: ENABLE
     ## - tparallel # not enabled in our initial configuration, proposal: ENABLE
     - typecheck # enabled by default, proposal: KEEP
     - unconvert # enabled in our initial configuration, proposal: KEEP
