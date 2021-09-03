@@ -62,7 +62,7 @@ linters:
     - misspell # enabled in our initial configuration, proposal: KEEP
     - nakedret # enabled in our initial configuration, proposal: KEEP
     #? - nestif # not enabled in our initial configuration, proposal: NOT SURE
-    ## - nilerr # not enabled in our initial configuration, proposal: ENABLE
+    - nilerr # not enabled in our initial configuration, proposal: ENABLE
     # - nlreturn # not enabled in our initial configuration, proposal: DO NOT ENABLE, prefer whitespace
     - noctx # not enabled in our initial configuration, proposal: ENABLE
     - nolintlint # enabled in our initial configuration, proposal: KEEP

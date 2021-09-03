@@ -497,7 +497,7 @@ func createTempImage() (string, *hash.Hash, error) {
 		b := []byte{byte(rand.Int())}
 		_, err := f.Write(b)
 		if err != nil {
-			return "", nil, nil
+			return "", nil, err
 		}
 		_, err = sum.Write(b)
 		if err != nil {
