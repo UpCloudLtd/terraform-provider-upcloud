@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"fmt"
@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	tfupcloud "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 func TestAccUpcloudTag_basic(t *testing.T) {
@@ -18,8 +20,8 @@ func TestAccUpcloudTag_basic(t *testing.T) {
 	expectedNames := []string{"dev", "test"}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -42,8 +44,8 @@ func TestAccUpCloudTag_import(t *testing.T) {
 	expectedNames := []string{"dev"}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -75,7 +77,7 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
+		client := tfupcloud.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetTags()
 		if err != nil {
 			return err
@@ -94,7 +96,7 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := tfupcloud.TestAccProvider.Meta().(*service.Service)
 		tags, err := client.GetTags()
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing tags when deleting upcloud tag (%s): %w", rs.Primary.ID, err)

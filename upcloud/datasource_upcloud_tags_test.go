@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 func TestAccDataSourceUpCloudTags_basic(t *testing.T) {
@@ -17,8 +19,8 @@ func TestAccDataSourceUpCloudTags_basic(t *testing.T) {
 	tagName := fmt.Sprintf("tag-%s", acctest.RandString(10))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudTagsConfigEmpty(tagName),

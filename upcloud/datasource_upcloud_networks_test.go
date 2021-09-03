@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"fmt"
@@ -12,14 +12,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 func TestAccUpCloudNetworksNoZone(t *testing.T) {
 	var providers []*schema.Provider
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("", ""),
@@ -33,8 +35,8 @@ func TestAccUpCloudNetworksWithZone(t *testing.T) {
 	var providers []*schema.Provider
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("fi-hel1", ""),
@@ -48,8 +50,8 @@ func TestAccUpCloudNetworksWithFilter(t *testing.T) {
 	var providers []*schema.Provider
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("", "^Public.*"),

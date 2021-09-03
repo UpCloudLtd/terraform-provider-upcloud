@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 const AvailablePublicZones = 12
@@ -18,8 +20,8 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 	resourceName := "data.upcloud_zones.empty"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigEmpty(),
@@ -34,12 +36,12 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := publicFilter
+	filterType := upcloud.PublicFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
@@ -56,12 +58,12 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := privateFilter
+	filterType := upcloud.PrivateFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
@@ -77,12 +79,12 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 	var providers []*schema.Provider
 
-	filterType := allFilter
+	filterType := upcloud.AllFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),

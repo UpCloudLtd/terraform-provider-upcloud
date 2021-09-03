@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"fmt"
@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	tfupcloud "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 const firewallRulesResourceName = "upcloud_firewall_rules.my_rule"
@@ -21,8 +23,8 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 	resourceName := firewallRulesResourceName
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -57,8 +59,8 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 	resourceName := "upcloud_firewall_rules.my_rule"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -86,8 +88,8 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 	resourceName := firewallRulesResourceName
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -112,7 +114,7 @@ func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := tfupcloud.TestAccProvider.Meta().(*service.Service)
 
 		_, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
@@ -141,7 +143,7 @@ func testAccCheckFirewallRulesExists(resourceName string, firewallRules *upcloud
 			return fmt.Errorf("No Firewall ID is set")
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := tfupcloud.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
 		})

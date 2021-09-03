@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 func TestAccDataSourceUpCloudZone_basic(t *testing.T) {
@@ -18,8 +20,8 @@ func TestAccDataSourceUpCloudZone_basic(t *testing.T) {
 	expectedPublic := "true"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZoneConfig(expectedZoneName),

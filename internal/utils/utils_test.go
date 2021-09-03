@@ -1,4 +1,4 @@
-package utils
+package utils_test
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
 func TestFilterNetworks(t *testing.T) {
@@ -38,7 +40,7 @@ func TestFilterNetworks(t *testing.T) {
 		},
 	}
 
-	filtered, err := FilterNetworks(toFilter, func(n upcloud.Network) (bool, error) {
+	filtered, err := utils.FilterNetworks(toFilter, func(n upcloud.Network) (bool, error) {
 		return regexp.MatchString("^a.*", n.Name)
 	})
 	if err != nil {
@@ -50,7 +52,7 @@ func TestFilterNetworks(t *testing.T) {
 		t.Fail()
 	}
 
-	filtered2, err := FilterNetworks(toFilter, func(n upcloud.Network) (bool, error) {
+	filtered2, err := utils.FilterNetworks(toFilter, func(n upcloud.Network) (bool, error) {
 		return regexp.MatchString("^.*d.*$", n.Name)
 	})
 	if err != nil {
@@ -78,16 +80,16 @@ func TestWithRetry(t *testing.T) {
 		return nil, nil
 	}
 
-	if _, err := WithRetry(fail, 3, 0); err == nil {
+	if _, err := utils.WithRetry(fail, 3, 0); err == nil {
 		t.Log("should fail")
 		t.Fail()
 	}
-	if _, err := WithRetry(successAftertree, 4, 0); err != nil {
+	if _, err := utils.WithRetry(successAftertree, 4, 0); err != nil {
 		t.Log("should not fail")
 		t.Fail()
 	}
 	count = 0
-	if _, err := WithRetry(successAftertree, 3, 0); err == nil {
+	if _, err := utils.WithRetry(successAftertree, 3, 0); err == nil {
 		t.Log("should fail")
 		t.Fail()
 	}
@@ -98,12 +100,12 @@ func TestStorageAddressFormat(t *testing.T) {
 	storageAddressWithoutAddress := "scsi"
 	storageAddressEmpty := ""
 
-	ret := StorageAddressFormat(storageAddressWithAddress)
+	ret := utils.StorageAddressFormat(storageAddressWithAddress)
 	assert.Equal(t, ret, "virtio")
 
-	ret = StorageAddressFormat(storageAddressWithoutAddress)
+	ret = utils.StorageAddressFormat(storageAddressWithoutAddress)
 	assert.Equal(t, ret, "scsi")
 
-	ret = StorageAddressFormat(storageAddressEmpty)
+	ret = utils.StorageAddressFormat(storageAddressEmpty)
 	assert.Equal(t, ret, "")
 }

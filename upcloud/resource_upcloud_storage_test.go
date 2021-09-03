@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"crypto/sha256"
@@ -19,6 +19,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	tfupcloud "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 const (
@@ -37,8 +39,8 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 	expectedZone := "pl-waw1"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone),
@@ -75,8 +77,8 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 	expectedUpdatedZone := "fi-hel2"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone),
@@ -116,8 +118,8 @@ func TestAccUpcloudStorage_basic_backupRule(t *testing.T) {
 	expectedRetention := "365"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfigWithBackupRule(expectedInterval, expectedTime, expectedRetention),
@@ -151,8 +153,8 @@ func TestAccUpcloudStorage_backupRule_update(t *testing.T) {
 	expectedUpdatedRetention := "730"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfigWithBackupRule(expectedInterval, expectedTime, expectedRetention),
@@ -194,8 +196,8 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 	expectedZone := "fi-hel1"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -218,8 +220,8 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 	var storageDetails upcloud.StorageDetails
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -250,8 +252,8 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 		sha256sum := hex.EncodeToString((*sum).Sum(nil))
 
 		resource.Test(t, resource.TestCase{
-			PreCheck:          func() { testAccPreCheck(t) },
-			ProviderFactories: testAccProviderFactories(&providers),
+			PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+			ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 			CheckDestroy:      testAccCheckStorageDestroy,
 			Steps: []resource.TestStep{
 				{
@@ -274,8 +276,8 @@ func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 	var providers []*schema.Provider
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -292,8 +294,8 @@ func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
 	var providers []*schema.Provider
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -310,8 +312,8 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 	var storageDetailsClone upcloud.StorageDetails
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
+		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -331,7 +333,7 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 func testAccCheckClonedStorageSize(resourceName string, expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
+		client := tfupcloud.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
 			UUID: storage.UUID,
 		})
@@ -361,7 +363,7 @@ func testAccCheckStorageExists(resourceName string, storage *upcloud.StorageDeta
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
+		client := tfupcloud.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
@@ -382,7 +384,7 @@ func testAccCheckStorageDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := tfupcloud.TestAccProvider.Meta().(*service.Service)
 		storages, err := client.GetStorages(&request.GetStoragesRequest{})
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing storage when deleting upcloud storage (%s): %w", rs.Primary.ID, err)

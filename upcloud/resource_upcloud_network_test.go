@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"errors"
@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 func TestAccUpCloudNetwork_basic(t *testing.T) {
@@ -23,8 +25,8 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
@@ -52,8 +54,8 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
@@ -94,8 +96,8 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true),
@@ -124,8 +126,8 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
@@ -168,8 +170,8 @@ func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false),

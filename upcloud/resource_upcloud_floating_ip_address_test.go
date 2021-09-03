@@ -1,4 +1,4 @@
-package upcloud
+package upcloud_test
 
 import (
 	"fmt"
@@ -10,6 +10,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 )
 
 const (
@@ -27,8 +29,8 @@ func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 	expectedAccess := "public"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressBasicConfig(),
@@ -53,8 +55,8 @@ func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
 	expectedAccess := "public"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"my_server"}, 0),
@@ -78,8 +80,8 @@ func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
 	secondServerResourceName := "upcloud_server.my_second_server"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"my_first_server", "my_second_server"}, 0),
@@ -130,8 +132,8 @@ func TestAccUpcloudFloatingIPAddress_import(t *testing.T) {
 	resourceName := floatingIPResourceName
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { upcloud.AccPreCheck(t) },
+		ProviderFactories: upcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFloatingIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -155,7 +157,7 @@ func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := upcloud.TestAccProvider.Meta().(*service.Service)
 		addresses, err := client.GetIPAddresses()
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing Floating IP Addresses when deleting upcloud floating IP Address (%s): %w", rs.Primary.ID, err)

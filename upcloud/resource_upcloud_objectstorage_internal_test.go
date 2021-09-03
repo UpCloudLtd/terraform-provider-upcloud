@@ -91,8 +91,8 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 	const expectedSize = "250"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { AccPreCheck(t) },
+		ProviderFactories: TestAccProviderFactories(&providers),
 		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedKey, expectedSecret, expectedName1),
 		Steps: []resource.TestStep{
 			{
@@ -131,8 +131,8 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 	const expectedUpdatedSecret = "an updated secret"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { AccPreCheck(t) },
+		ProviderFactories: TestAccProviderFactories(&providers),
 		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, expectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -182,8 +182,8 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 	const expectedUpdatedSecret = "an updated secret"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { AccPreCheck(t) },
+		ProviderFactories: TestAccProviderFactories(&providers),
 		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, expectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -225,8 +225,8 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 	const expectedBucketName5 = "bucket5"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:          func() { AccPreCheck(t) },
+		ProviderFactories: TestAccProviderFactories(&providers),
 		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedKey, expectedSecret, expectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -369,7 +369,7 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 				continue
 			}
 
-			client := testAccProvider.Meta().(*service.Service)
+			client := TestAccProvider.Meta().(*service.Service)
 			_, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
 				UUID: rs.Primary.ID,
 			})
