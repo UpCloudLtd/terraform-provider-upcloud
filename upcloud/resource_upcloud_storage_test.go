@@ -494,7 +494,7 @@ func createTempImage() (string, *hash.Hash, error) {
 	defer f.Close()
 
 	sum := sha256.New()
-	for i := 0; i < 100000000; i++ {
+	for i := 0; i < 1000; i++ {
 		b := []byte{byte(rand.Int())}
 		_, err := f.Write(b)
 		if err != nil {
