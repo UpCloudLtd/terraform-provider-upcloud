@@ -298,7 +298,7 @@ func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testUpcloudStorageInstanceConfigWithImportAndClone(),
-				ExpectError: regexp.MustCompile("ConflictsWith"),
+				ExpectError: regexp.MustCompile("conflicts with"),
 			},
 		},
 	})
