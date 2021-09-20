@@ -16,7 +16,7 @@ func TestAccDataSourceUpCloudTags_basic(t *testing.T) {
 	resourceName := "data.upcloud_tags.empty"
 	tagName := fmt.Sprintf("tag-%s", acctest.RandString(10))
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{

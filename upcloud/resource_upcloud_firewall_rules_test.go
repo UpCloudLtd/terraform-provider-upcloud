@@ -20,7 +20,7 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 	var firewallRules upcloud.FirewallRules
 	resourceName := firewallRulesResourceName
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
@@ -56,7 +56,7 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 	var firewallRules upcloud.FirewallRules
 	resourceName := "upcloud_firewall_rules.my_rule"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
@@ -85,7 +85,7 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 	var firewallRules upcloud.FirewallRules
 	resourceName := firewallRulesResourceName
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,

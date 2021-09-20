@@ -22,7 +22,7 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -51,7 +51,7 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -93,7 +93,7 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -123,7 +123,7 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -167,7 +167,7 @@ func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{

@@ -26,7 +26,7 @@ func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 	expectedFamily := "IPv4"
 	expectedAccess := "public"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -129,7 +129,7 @@ func TestAccUpcloudFloatingIPAddress_import(t *testing.T) {
 	var providers []*schema.Provider
 	resourceName := floatingIPResourceName
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckFloatingIPAddressDestroy,
