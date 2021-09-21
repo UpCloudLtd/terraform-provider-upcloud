@@ -15,7 +15,7 @@ func TestAccUpCloudHosts_basic(t *testing.T) {
 
 	resourceName := "data.upcloud_hosts.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{

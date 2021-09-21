@@ -17,7 +17,7 @@ import (
 func TestAccUpCloudNetworksNoZone(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -32,7 +32,7 @@ func TestAccUpCloudNetworksNoZone(t *testing.T) {
 func TestAccUpCloudNetworksWithZone(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -47,13 +47,17 @@ func TestAccUpCloudNetworksWithZone(t *testing.T) {
 func TestAccUpCloudNetworksWithFilter(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("", "^Public.*"),
-				Check:  testAccNetworks("data.upcloud_networks.my_example_networks", "", "^Public.*"),
+				Check: testAccNetworks(
+					"data.upcloud_networks.my_example_networks",
+					"",
+					"^Public.*",
+				),
 			},
 		},
 	})

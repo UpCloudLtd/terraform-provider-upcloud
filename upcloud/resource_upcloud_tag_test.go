@@ -7,6 +7,7 @@ import (
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -14,10 +15,11 @@ import (
 
 func TestAccUpcloudTag_basic(t *testing.T) {
 	var providers []*schema.Provider
+	tag1 := acctest.RandString(10)
+	tag2 := acctest.RandString(10)
+	expectedNames := []string{tag1, tag2}
 
-	expectedNames := []string{"dev", "test"}
-
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckTagDestroy,
@@ -25,10 +27,18 @@ func TestAccUpcloudTag_basic(t *testing.T) {
 			{
 				Config: testUpcloudTagInstanceConfig(expectedNames),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("upcloud_tag.my_tag_dev", "name"),
-					resource.TestCheckResourceAttr("upcloud_tag.my_tag_dev", "name", expectedNames[0]),
-					resource.TestCheckResourceAttrSet("upcloud_tag.my_tag_test", "name"),
-					resource.TestCheckResourceAttr("upcloud_tag.my_tag_test", "name", expectedNames[1]),
+					resource.TestCheckResourceAttrSet("upcloud_tag.my_tag_1", "name"),
+					resource.TestCheckResourceAttr(
+						"upcloud_tag.my_tag_1",
+						"name",
+						expectedNames[0],
+					),
+					resource.TestCheckResourceAttrSet("upcloud_tag.my_tag_2", "name"),
+					resource.TestCheckResourceAttr(
+						"upcloud_tag.my_tag_2",
+						"name",
+						expectedNames[1],
+					),
 				),
 			},
 		},
@@ -39,9 +49,10 @@ func TestAccUpCloudTag_import(t *testing.T) {
 	var providers []*schema.Provider
 	var tags upcloud.Tags
 
-	expectedNames := []string{"dev"}
+	tag1 := acctest.RandString(10)
+	expectedNames := []string{tag1}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckTagDestroy,
@@ -49,11 +60,11 @@ func TestAccUpCloudTag_import(t *testing.T) {
 			{
 				Config: testUpcloudTagInstanceConfig(expectedNames),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTagsExists("upcloud_tag.my_tag_dev", &tags),
+					testAccCheckTagsExists("upcloud_tag.my_tag_1", &tags),
 				),
 			},
 			{
-				ResourceName:      "upcloud_tag.my_tag_dev",
+				ResourceName:      "upcloud_tag.my_tag_1",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -77,7 +88,6 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		// Use the API SDK to locate the remote resource.
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetTags()
-
 		if err != nil {
 			return err
 		}
@@ -98,12 +108,19 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 		client := testAccProvider.Meta().(*service.Service)
 		tags, err := client.GetTags()
 		if err != nil {
-			return fmt.Errorf("[WARN] Error listing tags when deleting upcloud tag (%s): %s", rs.Primary.ID, err)
+			return fmt.Errorf(
+				"[WARN] Error listing tags when deleting upcloud tag (%s): %s",
+				rs.Primary.ID,
+				err,
+			)
 		}
 
 		for _, tag := range tags.Tags {
 			if tag.Name == rs.Primary.ID {
-				return fmt.Errorf("[WARN] Tried deleting tag (%s), but was still found", rs.Primary.ID)
+				return fmt.Errorf(
+					"[WARN] Tried deleting tag (%s), but was still found",
+					rs.Primary.ID,
+				)
 			}
 		}
 	}
@@ -113,12 +130,12 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 func testUpcloudTagInstanceConfig(names []string) string {
 	config := strings.Builder{}
 
-	for _, name := range names {
+	for idx, name := range names {
 		config.WriteString(fmt.Sprintf(`
 		resource "upcloud_tag" "my_tag_%s" {
   			name = "%s"
   			description = "Represents the %s environment"
-		}`, name, name, name))
+		}`, fmt.Sprint(idx+1), name, name))
 	}
 
 	return config.String()

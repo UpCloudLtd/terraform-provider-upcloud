@@ -36,7 +36,7 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 	expectedTitle := storageDescription
 	expectedZone := "pl-waw1"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -74,7 +74,7 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 	expectedUpdatedTitle := "My Updated data collection"
 	expectedUpdatedZone := "fi-hel2"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -150,7 +150,7 @@ func TestAccUpcloudStorage_backupRule_update(t *testing.T) {
 	expectedUpdatedTime := "1300"
 	expectedUpdatedRetention := "730"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -193,7 +193,7 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 	expectedTitle := storageDescription
 	expectedZone := "fi-hel1"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
@@ -217,7 +217,7 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 	var providers []*schema.Provider
 	var storageDetails upcloud.StorageDetails
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
@@ -249,7 +249,7 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 		}
 		sha256sum := hex.EncodeToString((*sum).Sum(nil))
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			PreCheck:          func() { testAccPreCheck(t) },
 			ProviderFactories: testAccProviderFactories(&providers),
 			CheckDestroy:      testAccCheckStorageDestroy,
@@ -273,7 +273,7 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
@@ -291,14 +291,14 @@ func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testUpcloudStorageInstanceConfigWithImportAndClone(),
-				ExpectError: regexp.MustCompile("ConflictsWith"),
+				ExpectError: regexp.MustCompile("conflicts with"),
 			},
 		},
 	})
@@ -309,7 +309,7 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 	var storageDetailsPlain upcloud.StorageDetails
 	var storageDetailsClone upcloud.StorageDetails
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
@@ -494,7 +494,7 @@ func createTempImage() (string, *hash.Hash, error) {
 	defer f.Close()
 
 	sum := sha256.New()
-	for i := 0; i < 100000000; i++ {
+	for i := 0; i < 1000; i++ {
 		b := []byte{byte(rand.Int())}
 		_, err := f.Write(b)
 		if err != nil {

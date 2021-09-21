@@ -17,7 +17,7 @@ func TestAccDataSourceUpCloudZone_basic(t *testing.T) {
 	expectedDescription := "London #1"
 	expectedPublic := "true"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{

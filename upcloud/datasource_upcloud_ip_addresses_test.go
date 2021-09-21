@@ -14,7 +14,7 @@ func TestAccDataSourceUpCloudIPAddresses_basic(t *testing.T) {
 
 	resourceName := "data.upcloud_ip_addresses.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{

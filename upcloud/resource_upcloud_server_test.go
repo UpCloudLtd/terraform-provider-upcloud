@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"strings"
 	"testing"
@@ -15,7 +16,7 @@ import (
 func TestUpcloudServer_basic(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -60,7 +61,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 func TestUpcloudServer_changePlan(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -85,7 +86,7 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 func TestUpcloudServerUpdateTags(t *testing.T) {
 	var providers []*schema.Provider
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -184,7 +185,7 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 
 	var serverID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -456,6 +457,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	`)
 
 	for i, ni := range nis {
+		netID := rand.Intn(255)
 		if ni.network {
 			builder.WriteString(fmt.Sprintf(`
 				resource "upcloud_network" "test_network_%d" {
@@ -470,9 +472,10 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, i, i, 14+i, 14+i))
+			`, i, i, netID, netID))
 		}
 
+		netID = rand.Intn(255)
 		if ni.newNetwork {
 			builder.WriteString(fmt.Sprintf(`
 				resource "upcloud_network" "test_network_%d" {
@@ -487,7 +490,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, 10+i, 10+i, 24+i, 24+i))
+			`, 10+i, 10+i, netID, netID))
 		}
 	}
 

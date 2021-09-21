@@ -17,7 +17,7 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 
 	resourceName := "data.upcloud_zones.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -37,7 +37,7 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 	filterType := publicFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -59,7 +59,7 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 	filterType := privateFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -80,7 +80,7 @@ func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 	filterType := allFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
