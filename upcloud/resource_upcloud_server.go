@@ -379,7 +379,12 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	_ = d.Set("mem", server.MemoryAmount)
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
-	_ = d.Set("tags", server.Tags)
+
+	// XXX: server.Tags returns an empty slice rather than nil when it's empty
+	if len(server.Tags) > 0 {
+		_ = d.Set("tags", server.Tags)
+	}
+
 	if server.Firewall == "on" {
 		_ = d.Set("firewall", true)
 	} else {

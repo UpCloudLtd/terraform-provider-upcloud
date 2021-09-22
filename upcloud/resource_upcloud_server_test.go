@@ -13,6 +13,55 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+func TestUpcloudServer_minimal(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_server" "min" {
+            hostname = "min-server" 
+						zone     = "fi-hel2"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.min", "zone", "fi-hel2"),
+					resource.TestCheckResourceAttr("upcloud_server.min", "hostname", "min-server"),
+					resource.TestCheckNoResourceAttr("upcloud_server.min", "tags"),
+				),
+			},
+			{
+				Config: `
+					resource "upcloud_server" "min" {
+            hostname = "min-server" 
+						zone     = "fi-hel2"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				ExpectNonEmptyPlan: false, //ensure nothing changed
+			},
+		},
+	})
+}
+
 func TestUpcloudServer_basic(t *testing.T) {
 	var providers []*schema.Provider
 
