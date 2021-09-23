@@ -19,7 +19,7 @@ func TestAccUpCloudRouter(t *testing.T) {
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterDestroy,
@@ -42,7 +42,7 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 	updateName := fmt.Sprintf("tf-test-update-%s", acctest.RandString(10))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterDestroy,
@@ -94,7 +94,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 	var providers []*schema.Provider
 	var router upcloud.Router
 	var network upcloud.Network
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterNetworkDestroy,
