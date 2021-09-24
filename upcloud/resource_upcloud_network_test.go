@@ -93,7 +93,7 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
@@ -123,7 +123,7 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
