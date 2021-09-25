@@ -125,7 +125,7 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 }
 
 func BuildSimpleBackupOpts(v interface{}) string {
-	e := v.([]interface{})[0]
+	e := v.(*schema.Set).List()[0]
 	m := e.(map[string]interface{})
 
 	if time, ok := m["time"]; ok {

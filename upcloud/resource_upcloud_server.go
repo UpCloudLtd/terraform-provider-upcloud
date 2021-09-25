@@ -309,7 +309,7 @@ func resourceUpCloudServer() *schema.Resource {
 			},
 			"simple_backup": {
 				Description:   "Simple backup schedule configuration",
-				Type:          schema.TypeList,
+				Type:          schema.TypeSet,
 				MaxItems:      1,
 				Optional:      true,
 				ConflictsWith: []string{"template.0.backup_rule"},
@@ -405,7 +405,6 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	_ = d.Set("mem", server.MemoryAmount)
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
-	_ = d.Set("simple_backups", server.SimpleBackup)
 
 	// XXX: server.Tags returns an empty slice rather than nil when it's empty
 	if len(server.Tags) > 0 {
@@ -424,9 +423,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 			"plan": p[1],
 		}
 
-		_ = d.Set("simple_backup", []map[string]interface{}{simpleBackup})
-	} else {
-		_ = d.Set("simple_backup", nil)
+		_ = d.Set("simple_backup", []interface{}{simpleBackup})
 	}
 
 	networkInterfaces := []map[string]interface{}{}
