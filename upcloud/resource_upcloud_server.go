@@ -504,7 +504,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	// Stop the server if the requested changes require it
-	if d.HasChanges("plan", "cpu", "mem", "template", "storage_devices") {
+	if d.HasChanges("plan", "cpu", "mem", "template.0.size", "storage_devices") {
 		err := server.VerifyServerStopped(request.StopServerRequest{
 			UUID: d.Id(),
 		},
