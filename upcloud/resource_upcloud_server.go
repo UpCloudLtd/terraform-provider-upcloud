@@ -532,23 +532,22 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange(("simple_backup")) {
 		if sb, ok := d.GetOk("simple_backup"); ok {
-
 			// Special handling for a situation where user adds simple backup rule for the server
 			// and removes backup_rule from a template with one apply. This needs to be done
 			// to prevent backup rule conflict error. We do not need to check if user removed
 			// template backup rule from the config, because having it together with server
 			// simple backup is not allowed on schema level
 			if _, ok := d.GetOk("template.0"); ok {
-				templateId := d.Get("template.0.id").(string)
+				templateID := d.Get("template.0.id").(string)
 
-				tmpl, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: templateId})
+				tmpl, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: templateID})
 				if err != nil {
 					return diag.FromErr(err)
 				}
 
 				if tmpl.BackupRule != nil && tmpl.BackupRule.Interval != "" {
 					r := &request.ModifyStorageRequest{
-						UUID:       templateId,
+						UUID:       templateID,
 						BackupRule: &upcloud.BackupRule{},
 					}
 
