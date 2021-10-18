@@ -493,8 +493,35 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	return diags
 }
 
+func templateBackupRuleReplacedWithSimpleBackups(d *schema.ResourceData) bool {
+	if !d.HasChange("simple_backup") || !d.HasChange("template.0.backup_rule") {
+		return false
+	}
+
+	sb, sbOk := d.GetOk("simple_backup")
+	if !sbOk {
+		return false
+	}
+
+	simpleBackup := sb.(*schema.Set).List()[0].(map[string]interface{})
+	if simpleBackup["interval"] == "" {
+		return false
+	}
+
+	tbr, tbrOk := d.GetOk("template.0.backup_rule.0")
+	templateBackupRule := tbr.(map[string]interface{})
+	if tbrOk && templateBackupRule["interval"] != "" {
+		return false
+	}
+
+	return true
+}
+
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+
+	replaced := templateBackupRuleReplacedWithSimpleBackups(d)
+	log.Printf("\n\n\n[DEBUG] Template backup rule got replaced with simple backup: %v\n\n\n", replaced)
 
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
@@ -537,7 +564,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			// to prevent backup rule conflict error. We do not need to check if user removed
 			// template backup rule from the config, because having it together with server
 			// simple backup is not allowed on schema level
-			if _, ok := d.GetOk("template.0"); ok {
+			if templateBackupRuleReplacedWithSimpleBackups(d) {
 				templateID := d.Get("template.0.id").(string)
 
 				tmpl, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: templateID})
@@ -552,6 +579,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 					}
 
 					if _, err := client.ModifyStorage(r); err != nil {
+						log.Print("[DEBUG] Shit fucked up during modify storage (in server)")
 						return diag.FromErr(err)
 					}
 				}
@@ -574,6 +602,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if _, err := client.ModifyServer(r); err != nil {
+		log.Print("[DEBUG] Shit fucked up during modify server")
 		return diag.FromErr(err)
 	}
 
@@ -598,16 +627,15 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		r.Size = template["size"].(int)
 		r.Title = template["title"].(string)
 
-		if d.HasChange("template.0.backup_rule") {
+		if d.HasChange("template.0.backup_rule") && !templateBackupRuleReplacedWithSimpleBackups(d) {
 			if backupRule, ok := d.GetOk("template.0.backup_rule.0"); ok {
 				rule := backupRule.(map[string]interface{})
-				if rule["interval"] != "" {
-					r.BackupRule = storage.BackupRule(rule)
-				}
+				r.BackupRule = storage.BackupRule(rule)
 			}
 		}
 
 		if _, err := client.ModifyStorage(r); err != nil {
+			log.Print("[DEBUG] Template update sie zesral")
 			return diag.FromErr(err)
 		}
 	}
