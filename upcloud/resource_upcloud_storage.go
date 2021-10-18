@@ -430,10 +430,16 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	req := request.ModifyStorageRequest{
-		UUID:       d.Id(),
-		Size:       d.Get("size").(int),
-		Title:      d.Get("title").(string),
-		BackupRule: storage.BackupRule(d.Get("backup_rule.0").(map[string]interface{})),
+		UUID:  d.Id(),
+		Size:  d.Get("size").(int),
+		Title: d.Get("title").(string),
+	}
+
+	if br, ok := d.GetOk("backup_rule.0"); ok {
+		backupRule := storage.BackupRule(br.(map[string]interface{}))
+		if backupRule.Interval != "" {
+			req.BackupRule = backupRule
+		}
 	}
 
 	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{

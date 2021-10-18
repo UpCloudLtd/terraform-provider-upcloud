@@ -547,10 +547,9 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 				}
 
 				if tmpl.BackupRule != nil && tmpl.BackupRule.Interval != "" {
-					backupRule := d.Get("template.0.backup_rule.0").(map[string]interface{})
 					r := &request.ModifyStorageRequest{
 						UUID:       templateId,
-						BackupRule: storage.BackupRule(backupRule),
+						BackupRule: &upcloud.BackupRule{},
 					}
 
 					if _, err := client.ModifyStorage(r); err != nil {
