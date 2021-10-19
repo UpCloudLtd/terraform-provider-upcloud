@@ -670,6 +670,16 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			}); err != nil {
 				return diag.FromErr(err)
 			}
+
+			// Remove backup rule from the detached storage, if it was a result of simple backup setting
+			if _, ok := d.GetOk("simple_backup"); ok {
+				if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
+					UUID:       serverStorageDevice.UUID,
+					BackupRule: &upcloud.BackupRule{},
+				}); err != nil {
+					return diag.FromErr(err)
+				}
+			}
 		}
 
 		// attach the storages that are new or have changed
