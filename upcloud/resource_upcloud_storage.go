@@ -370,17 +370,19 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
-		backupRule := []interface{}{
-			map[string]interface{}{
-				"interval":  storage.BackupRule.Interval,
-				"time":      storage.BackupRule.Time,
-				"retention": storage.BackupRule.Retention,
-			},
-		}
+	if _, ok := d.GetOk("backup_rule"); ok {
+		if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
+			backupRule := []interface{}{
+				map[string]interface{}{
+					"interval":  storage.BackupRule.Interval,
+					"time":      storage.BackupRule.Time,
+					"retention": storage.BackupRule.Retention,
+				},
+			}
 
-		if err := d.Set("backup_rule", backupRule); err != nil {
-			return diag.FromErr(err)
+			if err := d.Set("backup_rule", backupRule); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -435,10 +437,14 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		Title: d.Get("title").(string),
 	}
 
-	if br, ok := d.GetOk("backup_rule.0"); ok {
-		backupRule := storage.BackupRule(br.(map[string]interface{}))
-		if backupRule.Interval != "" {
-			req.BackupRule = backupRule
+	if d.HasChange("backup_rule") {
+		if br, ok := d.GetOk("backup_rule.0"); ok {
+			backupRule := storage.BackupRule(br.(map[string]interface{}))
+			if backupRule.Interval == "" {
+				req.BackupRule = &upcloud.BackupRule{}
+			} else {
+				req.BackupRule = backupRule
+			}
 		}
 	}
 

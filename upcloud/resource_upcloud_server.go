@@ -520,9 +520,6 @@ func templateBackupRuleReplacedWithSimpleBackups(d *schema.ResourceData) bool {
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	replaced := templateBackupRuleReplacedWithSimpleBackups(d)
-	log.Printf("\n\n\n[DEBUG] Template backup rule got replaced with simple backup: %v\n\n\n", replaced)
-
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
@@ -579,7 +576,6 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 					}
 
 					if _, err := client.ModifyStorage(r); err != nil {
-						log.Print("[DEBUG] Shit fucked up during modify storage (in server)")
 						return diag.FromErr(err)
 					}
 				}
@@ -602,7 +598,6 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if _, err := client.ModifyServer(r); err != nil {
-		log.Print("[DEBUG] Shit fucked up during modify server")
 		return diag.FromErr(err)
 	}
 
