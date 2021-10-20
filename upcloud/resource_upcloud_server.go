@@ -630,7 +630,6 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		if _, err := client.ModifyStorage(r); err != nil {
-			log.Print("[DEBUG] Template update sie zesral")
 			return diag.FromErr(err)
 		}
 	}
