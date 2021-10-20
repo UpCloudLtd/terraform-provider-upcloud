@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
@@ -266,7 +265,6 @@ func resourceUpCloudServer() *schema.Resource {
 							ForceNew:    true,
 							Required:    true,
 						},
-						"backup_rule": storage.BackupRuleSchema(),
 					},
 				},
 			},
@@ -434,8 +432,6 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 				"title":   serverStorage.Title,
 				"storage": d.Get("template.0.storage"),
 				"tier":    serverStorage.Tier,
-				// NOTE: backupRule cannot be derived from server.storageDevices payload, will not sync if changed elsewhere
-				"backup_rule": d.Get("template.0.backup_rule"),
 			}})
 		} else {
 			storageDevices = append(storageDevices, map[string]interface{}{
@@ -513,15 +509,12 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		// handle the template
-		if d.HasChanges("template.0.title", "template.0.size", "template.0.backup_rule") {
+		if d.HasChanges("template.0.title", "template.0.size") {
 			template := d.Get("template.0").(map[string]interface{})
 			if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
 				UUID:  template["id"].(string),
 				Size:  template["size"].(int),
 				Title: template["title"].(string),
-				BackupRule: storage.BackupRule(
-					d.Get("template.0.backup_rule.0").(map[string]interface{}),
-				),
 			}); err != nil {
 				return diag.FromErr(err)
 			}

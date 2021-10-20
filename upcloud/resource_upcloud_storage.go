@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
@@ -128,7 +127,6 @@ func resourceUpCloudStorage() *schema.Resource {
 					},
 				},
 			},
-			"backup_rule": storage.BackupRuleSchema(),
 		},
 	}
 }
@@ -269,10 +267,6 @@ func createStorage(
 		}
 	}
 
-	if v, ok := d.GetOk("backup_rule.0"); ok {
-		createStorageRequest.BackupRule = storage.BackupRule(v.(map[string]interface{}))
-	}
-
 	storage, err := client.CreateStorage(&createStorageRequest)
 	if err != nil {
 		return diag.FromErr(err)
@@ -370,20 +364,6 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
-		backupRule := []interface{}{
-			map[string]interface{}{
-				"interval":  storage.BackupRule.Interval,
-				"time":      storage.BackupRule.Time,
-				"retention": storage.BackupRule.Retention,
-			},
-		}
-
-		if err := d.Set("backup_rule", backupRule); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
 	if v, ok := d.GetOk("import"); ok {
 		configImportBlock := v.(*schema.Set).List()[0].(map[string]interface{})
 
@@ -430,10 +410,9 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	req := request.ModifyStorageRequest{
-		UUID:       d.Id(),
-		Size:       d.Get("size").(int),
-		Title:      d.Get("title").(string),
-		BackupRule: storage.BackupRule(d.Get("backup_rule.0").(map[string]interface{})),
+		UUID:  d.Id(),
+		Size:  d.Get("size").(int),
+		Title: d.Get("title").(string),
 	}
 
 	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{

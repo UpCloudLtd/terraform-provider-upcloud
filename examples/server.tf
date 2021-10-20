@@ -45,12 +45,6 @@ resource "upcloud_server" "ubuntu" {
 
     # UUID also works:
     # storage = "01000000-0000-4000-8000-000030200200"
-
-    backup_rule {
-      interval  = "daily"
-      time      = "0100"
-      retention = 8
-    }
   }
 
   # attach an extra storage device (configured below)
@@ -97,12 +91,6 @@ resource "upcloud_storage" "datastorage" {
   # zone needs to match server's zone:
   zone  = "de-fra1"
   tier  = "maxiops"
-
-  # backup_rule {
-  #   interval  = "daily"
-  #   time      = "0100"
-  #   retention = 8
-  # }
 }
 
 output "Public_ip" {

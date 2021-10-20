@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
@@ -68,9 +67,6 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 			Size:    template["size"].(int),
 			Storage: template["storage"].(string),
 			Title:   template["title"].(string),
-		}
-		if attr, ok := d.GetOk("template.0.backup_rule.0"); ok {
-			serverStorageDevice.BackupRule = storage.BackupRule(attr.(map[string]interface{}))
 		}
 		if source := template["storage"].(string); source != "" {
 			// Assume template name is given and attempt map name to UUID

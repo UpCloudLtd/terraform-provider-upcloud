@@ -44,13 +44,6 @@ resource "upcloud_server" "example" {
 
     # Use all the space allotted by the selected simple plan
     size = 25
-
-    # Enable backups
-    backup_rule {
-      interval  = "daily"
-      time      = "0100"
-      retention = 8
-    }
   }
 
   # Configuring connection details

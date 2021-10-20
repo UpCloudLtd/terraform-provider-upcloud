@@ -108,82 +108,6 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 	})
 }
 
-func TestAccUpcloudStorage_basic_backupRule(t *testing.T) {
-	var providers []*schema.Provider
-
-	expectedInterval := "daily"
-	expectedTime := "2200"
-	expectedRetention := "365"
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		Steps: []resource.TestStep{
-			{
-				Config: testUpcloudStorageInstanceConfigWithBackupRule(expectedInterval, expectedTime, expectedRetention),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "backup_rule.0.interval"),
-					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "backup_rule.0.time"),
-					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "backup_rule.0.retention"),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.#", "1"),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.interval", expectedInterval),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.time", expectedTime),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.retention", expectedRetention),
-				),
-			},
-		},
-	})
-}
-
-func TestAccUpcloudStorage_backupRule_update(t *testing.T) {
-	var providers []*schema.Provider
-
-	expectedInterval := "daily"
-	expectedTime := "2200"
-	expectedRetention := "365"
-
-	expectedUpdatedInterval := "thu"
-	expectedUpdatedTime := "1300"
-	expectedUpdatedRetention := "730"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		Steps: []resource.TestStep{
-			{
-				Config: testUpcloudStorageInstanceConfigWithBackupRule(expectedInterval, expectedTime, expectedRetention),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.#", "1"),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.interval", expectedInterval),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.time", expectedTime),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.retention", expectedRetention),
-				),
-			},
-			{
-				Config: testUpcloudStorageInstanceConfigWithBackupRule(expectedUpdatedInterval, expectedUpdatedTime, expectedUpdatedRetention),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.#", "1"),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.interval", expectedUpdatedInterval),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.time", expectedUpdatedTime),
-					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.retention", expectedUpdatedRetention),
-				),
-			},
-		},
-	})
-}
-
 func TestAccUpCloudStorage_import(t *testing.T) {
 	var providers []*schema.Provider
 	var storageDetails upcloud.StorageDetails
@@ -408,22 +332,6 @@ func testUpcloudStorageInstanceConfig(size, tier, title, zone string) string {
 			zone  = "%s"
 		}
 `, size, tier, title, zone)
-}
-
-func testUpcloudStorageInstanceConfigWithBackupRule(interval, time, retention string) string {
-	return fmt.Sprintf(`
-		resource "upcloud_storage" "my_storage" {
-			size  = 10
-			tier  = "maxiops"
-			title = "My data collection"
-			zone  = "fi-hel1"
-			backup_rule {
-				interval = "%s"
-				time = "%s"
-				retention = "%s"
-			}
-		}
-`, interval, time, retention)
 }
 
 func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation string) string {
