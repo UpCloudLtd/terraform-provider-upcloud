@@ -64,7 +64,8 @@ func Provider() *schema.Provider {
 			"upcloud_network":             resourceUpCloudNetwork(),
 			"upcloud_floating_ip_address": resourceUpCloudFloatingIPAddress(),
 			"upcloud_object_storage":      resourceUpCloudObjectStorage(),
-			"upcloud_backup":              resourceUpCloudServerBackup(),
+			"upcloud_server_backup":       resourceUpCloudServerBackup(),
+			"upcloud_storage_backup":      resourceUpCloudStorageBackup(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

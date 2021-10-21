@@ -63,7 +63,6 @@ func resourceUpCloudServerBackupRead(ctx context.Context, d *schema.ResourceData
 
 	client := meta.(*service.Service)
 
-	// Check if server exists
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{UUID: d.Get("server").(string)})
 	if err != nil {
 		return diag.FromErr(err)
