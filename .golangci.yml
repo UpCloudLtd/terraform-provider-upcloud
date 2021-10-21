@@ -13,92 +13,107 @@ linters:
   # please keep these sorted alphabetically
   #
   enable:
-    - asciicheck # not enabled in our initial configuration, proposal: ENABLE
-    # - bodyclose # enabled in our initial configuration, proposal: DISABLE
-    #? - cyclop # not enabled in our initial configuration, proposal: NOT SURE - consider the options
-    - deadcode # enabled by default, proposal: KEEP
-    # - depguard # enabled in our initial configuration, proposal: DISABLE
-    - dogsled # enabled in our initial configuration, proposal: leaning KEEP
-    - dupl # not enabled in our initial configuration, proposal: ENABLE
-    - durationcheck # not enabled in our initial configuration, proposal: ENABLE
-    - errcheck # enabled by default, proposal: KEEP
-    - errname # not enabled in our initial configuration, proposal: ENABLE
-    - errorlint # not enabled in our initial configuration, proposal: ENABLE
-    - exhaustive # not enabled in our initial configuration, proposal: ENABLE
-    # - exhaustivestruct # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    - exportloopref # not enabled in our initial configuration, proposal: ENABLE
-    - forbidigo # not enabled in our initial configuration, proposal: ENABLE
-    ### DISABLED FOR TERRAFDRM PROVIDER ONLY - forcetypeassert # not enabled in our initial configuration, proposal: ENABLE
-    #? - funlen # not enabled in our initial configuration, proposal: NOT SURE
-    #? - gci # not enabled in our initial configuration, proposal: NOT SURE
-    # - gochecknoglobals # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    # - gochecknoinits # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    #? - gocognit # not enabled in our initial configuration, proposal: NOT SURE - consider the options
-    - goconst # enabled in our initial configuration, proposal: KEEP
-    - gocritic # enabled in our initial configuration, proposal: KEEP
-    #? - gocyclo # not enabled in our initial configuration, proposal: NOT SURE - consider the options
-    - godot # not enabled in our initial configuration, proposal: ENABLE
-    #? - godox # not enabled in our initial configuration, proposal: NOT SURE - consider the argument made
-    # - goerr113 # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    # - gofmt # enabled in our initial configuration, proposal: DISABLE, use gofumpt instead
-    - gofumpt # not enabled in our initial configuration, proposal: ENABLE
-    # - goheader # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    # - goimports # enabled in our initial configuration, proposal: DISABLE, use gci instead
-    # - golint # deprecated
-    #? - gomnd # not enabled in our initial configuration, proposal: NOT SURE
-    #? - gomoddirectives # not enabled in our initial configuration, proposal: NOT SURE - clarify dbaas need + implications
-    # - gomodguard # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    - goprintffuncname # enabled in our initial configuration, proposal: KEEP
-    - gosec # enabled in our initial configuration, proposal: KEEP
-    - gosimple # enabled by default, proposal: KEEP
-    - govet # enabled by default, proposal: KEEP
-    - ifshort # not enabled in our initial configuration, proposal: ENABLE
-    - importas # not enabled in our initial configuration, proposal: ENABLE
-    - ineffassign # enabled by default
-    # - interfacer # deprecated
-    #? - lll # not enabled in our initial configuration, proposal: NOT SURE
-    - makezero # not enabled in our initial configuration, proposal: ENABLE
-    # - maligned # deprecated
-    - misspell # enabled in our initial configuration, proposal: KEEP
-    - nakedret # enabled in our initial configuration, proposal: KEEP
-    #? - nestif # not enabled in our initial configuration, proposal: NOT SURE
-    - nilerr # not enabled in our initial configuration, proposal: ENABLE
-    # - nlreturn # not enabled in our initial configuration, proposal: DO NOT ENABLE, prefer whitespace
-    - noctx # not enabled in our initial configuration, proposal: ENABLE
-    - nolintlint # enabled in our initial configuration, proposal: KEEP
-    ## - paralleltest # not enabled in our initial configuration, proposal: ENABLE
-    - prealloc # not enabled in our initial configuration, proposal: ENABLE
-    - predeclared # not enabled in our initial configuration, proposal: ENABLE
-    #? - promlinter # not enabled in our initial configuration, proposal: NOT SURE - do we need this?
-    - revive # enabled in our initial configuration, proposal: KEEP
-    - rowserrcheck # enabled in our initial configuration, proposal: KEEP or DISABLE if not required any more
-    # - scopelint # deprecated
-    - sqlclosecheck # not enabled in our initial configuration, proposal: ENABLE
-    - staticcheck # enabled by default, proposal: KEEP
-    - structcheck # enabled by default, proposal: KEEP
-    - stylecheck # enabled in our initial configuration, proposal: NOT SURE - debatable style
-    # - tagliatelle # not enabled in our initial configuration, proposal: DO NOT ENABLE
-    - testpackage # not enabled in our initial configuration, proposal: ENABLE
-    - thelper # not enabled in our initial configuration, proposal: ENABLE
-    ## - tparallel # not enabled in our initial configuration, proposal: ENABLE
-    - typecheck # enabled by default, proposal: KEEP
-    - unconvert # enabled in our initial configuration, proposal: KEEP
-    #? - unparam # enabled in our initial configuration, proposal: NOT SURE
-    - unused # enabled by default, proposal: KEEP
-    - varcheck # enabled by default, proposal: KEEP
-    - wastedassign # not enabled in our initial configuration, proposal: ENABLE
-    - whitespace # enabled in our initial configuration, proposal: KEEP
-    #? - wrapcheck # not enabled in our initial configuration, proposal: NOT SURE - a lot of work to enable but good reasoning
-    # - wsl # not enabled in our initial configuration, proposal: DO NOT ENABLE, prefer whitespace
+    - asciicheck
+    - bodyclose
+    ## - cyclop # DISABLE
+    - deadcode
+    ## - depguard # DISABLE
+    - dogsled
+    - dupl
+    ## - durationcheck # DISABLE
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    ## - exhaustivestruct # DISABLE
+    - exportloopref
+    - forbidigo
+    ### DISABLED FOR TERRAFDRM PROVIDER ONLY - forcetypeassert
+    # - funlen # OPTIONAL
+    ## - gci # DISABLE
+    # - gochecknoglobals # OPTIONAL
+    # - gochecknoinits # OPTIONAL
+    ## - gocognit # DISABLE
+    - goconst
+    - gocritic
+    ## - gocyclo # DISABLE
+    - godot
+    # - godox # OPTIONAL
+    ## - goerr113 # DISABLE
+    ## - gofmt # DISABLE
+    - gofumpt
+    ## - goheader # DISABLE
+    ## - goimports # DISABLE
+    ### - golint # deprecated
+    ## - gomnd # DISABLE
+    # - gomoddirectives # OPTIONAL
+    ## - gomodguard # DISABLE
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ifshort
+    - importas
+    - ineffassign
+    ### - interfacer # deprecated
+    ## - lll # DISABLE
+    - makezero
+    ### - maligned # deprecated
+    - misspell
+    - nakedret
+    # - nestif # OPTIONAL
+    - nilerr
+    ## - nlreturn # DISABLE
+    - noctx
+    - nolintlint
+    ### DISABLED FOR TERRAFDRM PROVIDER ONLY, but should be enabled? - paralleltest
+    - prealloc
+    - predeclared
+    ## - promlinter # DISABLE
+    - revive
+    - rowserrcheck
+    ### - scopelint # deprecated
+    - sqlclosecheck
+    - staticcheck
+    - structcheck
+    ## - stylecheck # DISABLE
+    ## - tagliatelle # DISABLE
+    - testpackage
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    ## - unparam # DSIABLE
+    - unused
+    - varcheck
+    - wastedassign
+    - whitespace
+    # - wrapcheck # OPTIONAL
+    ## - wsl # DISABLE
+
+output:
+  # make issues output unique by line, default is true
+  uniq-by-line: false
+
 issues:
   exclude:
+    # disable warning about acronym capitalization, eg Id should 'ID'. Our convention is still in flux and this would break backwards compatibility.
     - "var-naming: .*should be.*"
+    # disable warning about underscore in package names. capitalization, eg Id should 'ID'. Our convention is still in flux and this would break backwards compatibility.
     - "var-naming: don't use an underscore in package name"
+  # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
+  max-same-issues: 0
+
 linters-settings:
-  stylecheck:
-    checks: [ "all", "-ST1003" ]
-  gomnd:
-      settings:
-        mnd:
-          ignored-functions:
-            - strconv.Parse*
+  gocritic:
+    disabled-checks:
+      # this is disabled due to commentFormatting not really understanding machine-readable comments and forcing an extra space for (some of) them
+      - commentFormatting
+  importas:
+    no-unaliased: true
+    alias:
+      # enforce using `pkgerrors` alias for importing `github.com/pkg/errors`
+      - pkg: github.com/pkg/errors
+        alias: pkgerrors

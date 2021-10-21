@@ -21,7 +21,7 @@ func TestAccUpCloudRouter(t *testing.T) {
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
 		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterDestroy,
@@ -44,7 +44,7 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 	updateName := fmt.Sprintf("tf-test-update-%s", acctest.RandString(10))
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
 		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterDestroy,
@@ -72,7 +72,7 @@ func TestAccUpCloudRouter_import(t *testing.T) {
 
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-import-%s", acctest.RandString(10))
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
 		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterDestroy,
@@ -96,7 +96,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 	var providers []*schema.Provider
 	var router upcloud.Router
 	var network upcloud.Network
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
 		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterNetworkDestroy,
@@ -108,14 +108,14 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 					  name = "testrouter"
 					}
 					
-					resource "upcloud_network" "terraform_test_network" {
+					resource "upcloud_network" "terraform_test_network_d" {
 					  name = "testnetwork"
 					  zone = "fi-hel1"
 					
 					  router = upcloud_router.terraform_test_router.id
 					
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.20.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
@@ -123,7 +123,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 					`,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists("upcloud_router.terraform_test_router", &router),
-					testAccCheckNetworkExists("upcloud_network.terraform_test_network", &network),
+					testAccCheckNetworkExists("upcloud_network.terraform_test_network_d", &network),
 					testAccRouterAttachedNetworksCount(&router, 1),
 					// make sure network and router are attached to each other
 					testAccNetworkRouterAttached(&network, &router),
@@ -136,14 +136,14 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 					  name = "testrouter"
 					}
 					
-					resource "upcloud_network" "terraform_test_network" {
+					resource "upcloud_network" "terraform_test_network_d" {
 					  name = "testnetwork"
 					  zone = "fi-hel1"
 					
 					  # router = upcloud_router.terraform_test_router.id 
 					
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.20.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
@@ -151,7 +151,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 					`,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists("upcloud_router.terraform_test_router", &router),
-					testAccCheckNetworkExists("upcloud_network.terraform_test_network", &network),
+					testAccCheckNetworkExists("upcloud_network.terraform_test_network_d", &network),
 					testAccRouterAttachedNetworksCount(&router, 0),
 					// make sure network and router are NOT attached to each other
 					testAccNetworkRouterNotAttached(&network, &router),
@@ -161,11 +161,12 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 	})
 }
 
+/*
 func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 	var providers []*schema.Provider
 	var router upcloud.Router
 	var network upcloud.Network
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { tfupcloud.AccPreCheck(t) },
 		ProviderFactories: tfupcloud.TestAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterNetworkDestroy,
@@ -176,15 +177,15 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 					resource "upcloud_router" "terraform_test_router" {
 					  name = "testrouter"
 					}
-					
+
 					resource "upcloud_network" "terraform_test_network" {
 					  name = "testnetwork"
 					  zone = "fi-hel1"
-					
+
 					  router = upcloud_router.terraform_test_router.id
-					
+
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.30.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
@@ -204,15 +205,15 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 					# resource "upcloud_router" "terraform_test_router" {
 					#   name = "testrouter"
 					# }
-					
+
 					resource "upcloud_network" "terraform_test_network" {
 					  name = "testnetwork"
 					  zone = "fi-hel1"
-					
+
 					  # router = upcloud_router.terraform_test_router.id
-					
+
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.30.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
@@ -227,8 +228,8 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 			},
 		},
 	})
-}
-
+}.
+*/
 func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Look for the full resource name and error if not found
@@ -258,6 +259,7 @@ func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resou
 	}
 }
 
+/*
 func testAccCheckRouterDoesntExist(resourceName string, router *upcloud.Router) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Look for the full resource name in root module (internal state)
@@ -277,8 +279,8 @@ func testAccCheckRouterDoesntExist(resourceName string, router *upcloud.Router) 
 
 		return nil
 	}
-}
-
+}.
+*/
 func testAccCheckNetworkExists(resourceName string, network *upcloud.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Look for the full resource name and error if not found
@@ -376,9 +378,9 @@ func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
 
 func testAccRouterConfig(name string) string {
 	return fmt.Sprintf(`
-resource "upcloud_router" "my_example_router" {
+resource "upcloud_router" "my_example_router_%s" {
   name = "%s"
-}`, name)
+}`, name, name)
 }
 
 func testAccNetworkRouterAttached(network *upcloud.Network, router *upcloud.Router) resource.TestCheckFunc {
@@ -417,6 +419,7 @@ func testAccNetworkRouterNotAttached(network *upcloud.Network, router *upcloud.R
 	}
 }
 
+/*
 func testAccNetworkNoRouterAttachment(network *upcloud.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if network.Router != "" {
@@ -424,8 +427,8 @@ func testAccNetworkNoRouterAttachment(network *upcloud.Network) resource.TestChe
 		}
 		return nil
 	}
-}
-
+}.
+*/
 func testAccRouterAttachedNetworksCount(router *upcloud.Router, expectedAttachedNetworksCount int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if len(router.AttachedNetworks) != expectedAttachedNetworksCount {

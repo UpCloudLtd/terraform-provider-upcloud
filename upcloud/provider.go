@@ -1,9 +1,13 @@
 package upcloud
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -96,7 +100,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	service := newUpCloudServiceConnection(
 		d.Get("username").(string),
 		d.Get("password").(string),
-		httpClient.HTTPClient,
+		logging(httpClient.HTTPClient),
 	)
 
 	_, err := config.checkLogin(service)
@@ -105,6 +109,49 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	return service, diags
+}
+
+type loggingRoundTripper struct {
+	client *http.Client
+}
+
+type closeBuffer struct {
+	*bytes.Buffer
+}
+
+func (c closeBuffer) Close() error {
+	return nil
+}
+
+func (l loggingRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
+	var postBody []byte
+	if request.Method == "POST" {
+		postBody, request.Body = readAndCloneReader(request.Body)
+	}
+	res, err := l.client.Transport.RoundTrip(request)
+	_, _ = fmt.Fprintf(os.Stdout, "RTRIP\n%v %v\n", request.Method, request.URL)
+	if len(postBody) > 0 {
+		_, _ = fmt.Fprintln(os.Stdout, string(postBody))
+	}
+	var responseBody []byte
+	newRes := *res
+	responseBody, newRes.Body = readAndCloneReader(res.Body)
+	if res.StatusCode >= 300 {
+		_, _ = fmt.Fprintf(os.Stdout, "%v %v\n%v\n%v\n", res.StatusCode, res.Status, string(responseBody), err)
+	}
+	return &newRes, err
+}
+
+func readAndCloneReader(body io.ReadCloser) ([]byte, io.ReadCloser) {
+	read, _ := ioutil.ReadAll(body)
+	return read, closeBuffer{bytes.NewBuffer(read)}
+}
+
+func logging(httpClient *http.Client) *http.Client {
+	loggingTransport := loggingRoundTripper{client: httpClient}
+	return &http.Client{
+		Transport: loggingTransport,
+	}
 }
 
 func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.Service {
