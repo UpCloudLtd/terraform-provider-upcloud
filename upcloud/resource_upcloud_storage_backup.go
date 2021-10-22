@@ -63,11 +63,18 @@ func setStorageBackupRule(d *schema.ResourceData, client *service.Service) error
 		},
 	}
 
-	if _, err := client.ModifyStorage(req); err != nil {
-		return err
-	}
+	_, err := client.ModifyStorage(req)
 
-	return nil
+	return err
+}
+
+func removeStorageBackupRule(storageID string, client *service.Service) error {
+	_, err := client.ModifyStorage(&request.ModifyStorageRequest{
+		UUID:       storageID,
+		BackupRule: &upcloud.BackupRule{},
+	})
+
+	return err
 }
 
 func resourceUpCloudStorageBackupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -105,6 +112,14 @@ func resourceUpCloudStorageBackupRead(ctx context.Context, d *schema.ResourceDat
 func resourceUpCloudStorageBackupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
+	o, n := d.GetChange("storage")
+	oldStorageID := o.(string)
+	newStorageId := n.(string)
+
+	if oldStorageID != newStorageId {
+		removeStorageBackupRule(oldStorageID, client)
+	}
+
 	err := setStorageBackupRule(d, client)
 	if err != nil {
 		return diag.FromErr(err)
@@ -119,11 +134,7 @@ func resourceUpCloudStorageBackupDelete(ctx context.Context, d *schema.ResourceD
 	client := meta.(*service.Service)
 
 	storageId, _ := d.GetChange("storage")
-	_, err := client.ModifyStorage(&request.ModifyStorageRequest{
-		UUID:       storageId.(string),
-		BackupRule: &upcloud.BackupRule{},
-	})
-
+	err := removeStorageBackupRule(storageId.(string), client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
