@@ -23,25 +23,6 @@ The following HCL example shows the creation of a storage resource.
     }
 ```
 
-The following HCL example shows the creation of a storage resource with the
-optional backup rule.  This storage resource will be backed up daily at 01:00
-hours and each backup will be retained for 8 days.
-
-```hcl
-    resource "upcloud_storage" "example_storage_backup" {
-      size  = 10
-      tier  = "maxiops"
-      title = "My data collection backup"
-      zone  = "fi-hel1"
-
-      backup_rule {
-        interval  = "daily"
-        time      = "0100"
-        retention = 8
-      }
-    }
-```
-
 The following HCL example shows the creation of the storage resource with the
 optional import block.  This storage resource will have its content imported
 from an accessible website:
@@ -135,21 +116,10 @@ creation of a server resource which will attach the created storage resource.
 
 ### Optional
 
-- **backup_rule** (Block List, Max: 1) The criteria to backup the storage (see [below for nested schema](#nestedblock--backup_rule))
 - **clone** (Block Set, Max: 1) Block defining another storage/template to clone to storage (see [below for nested schema](#nestedblock--clone))
 - **id** (String) The ID of this resource.
 - **import** (Block Set, Max: 1) Block defining external data to import to storage (see [below for nested schema](#nestedblock--import))
 - **tier** (String) The storage tier to use
-
-<a id="nestedblock--backup_rule"></a>
-### Nested Schema for `backup_rule`
-
-Required:
-
-- **interval** (String) The weekday when the backup is created
-- **retention** (Number) The number of days before a backup is automatically deleted
-- **time** (String) The time of day when the backup is created
-
 
 <a id="nestedblock--clone"></a>
 ### Nested Schema for `clone`

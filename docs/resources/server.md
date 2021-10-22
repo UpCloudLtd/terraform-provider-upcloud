@@ -24,12 +24,6 @@ resource "upcloud_server" "example" {
   template {
     storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
     size    = 25
-
-    backup_rule {
-      interval  = "daily"
-      time      = "0100"
-      retention = 8
-    }
   }
 
   network_interface {
@@ -129,7 +123,6 @@ Required:
 Optional:
 
 - **address** (String) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
-- **backup_rule** (Block List, Max: 1) The criteria to backup the storage (see [below for nested schema](#nestedblock--template--backup_rule))
 - **size** (Number) The size of the storage in gigabytes
 - **title** (String) A short, informative description
 
@@ -137,15 +130,6 @@ Read-Only:
 
 - **id** (String) The unique identifier for the storage
 - **tier** (String) The storage tier to use
-
-<a id="nestedblock--template--backup_rule"></a>
-### Nested Schema for `template.backup_rule`
-
-Required:
-
-- **interval** (String) The weekday when the backup is created
-- **retention** (Number) The number of days before a backup is automatically deleted
-- **time** (String) The time of day when the backup is created
 
 ## Import
 
