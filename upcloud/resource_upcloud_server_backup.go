@@ -44,11 +44,11 @@ func resourceUpCloudServerBackup() *schema.Resource {
 }
 
 func setServerSimpleBackup(d *schema.ResourceData, client *service.Service) error {
-	serverId := d.Get("server").(string)
+	serverID := d.Get("server").(string)
 	time := d.Get("time").(string)
 	plan := d.Get("plan").(string)
 
-	req := &request.ModifyServerRequest{UUID: serverId, SimpleBackup: fmt.Sprintf("%s,%s", time, plan)}
+	req := &request.ModifyServerRequest{UUID: serverID, SimpleBackup: fmt.Sprintf("%s,%s", time, plan)}
 	_, err := client.ModifyServer(req)
 
 	return err
@@ -87,11 +87,11 @@ func resourceUpCloudServerBackupRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	if serverDetails.SimpleBackup != "" && serverDetails.SimpleBackup != "no" {
-		d.Set("server", serverDetails.UUID)
+		_ = d.Set("server", serverDetails.UUID)
 
 		simpleBackup := strings.Split(serverDetails.SimpleBackup, ",")
-		d.Set("time", simpleBackup[0])
-		d.Set("plan", simpleBackup[1])
+		_ = d.Set("time", simpleBackup[0])
+		_ = d.Set("plan", simpleBackup[1])
 	}
 
 	return diags
@@ -101,11 +101,11 @@ func resourceUpCloudServerBackupUpdate(ctx context.Context, d *schema.ResourceDa
 	client := meta.(*service.Service)
 
 	o, n := d.GetChange("server")
-	oldServerId := o.(string)
-	newServerId := n.(string)
+	oldServerID := o.(string)
+	newServerID := n.(string)
 
-	if oldServerId != newServerId {
-		if err := removeServerSimpleBackup(oldServerId, client); err != nil {
+	if oldServerID != newServerID {
+		if err := removeServerSimpleBackup(oldServerID, client); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -121,8 +121,8 @@ func resourceUpCloudServerBackupUpdate(ctx context.Context, d *schema.ResourceDa
 func resourceUpCloudServerBackupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	serverId, _ := d.GetChange("server")
-	err := removeServerSimpleBackup(serverId.(string), client)
+	serverID, _ := d.GetChange("server")
+	err := removeServerSimpleBackup(serverID.(string), client)
 
 	if err != nil {
 		return diag.FromErr(err)

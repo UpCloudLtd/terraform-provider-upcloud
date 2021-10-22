@@ -49,13 +49,13 @@ func resourceUpCloudStorageBackup() *schema.Resource {
 }
 
 func setStorageBackupRule(d *schema.ResourceData, client *service.Service) error {
-	storageId := d.Get("storage").(string)
+	storageIS := d.Get("storage").(string)
 	time := d.Get("time").(string)
 	interval := d.Get("interval").(string)
 	retention := d.Get("retention").(int)
 
 	req := &request.ModifyStorageRequest{
-		UUID: storageId,
+		UUID: storageIS,
 		BackupRule: &upcloud.BackupRule{
 			Time:      time,
 			Interval:  interval,
@@ -100,10 +100,10 @@ func resourceUpCloudStorageBackupRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	if storageDetails.BackupRule != nil && storageDetails.BackupRule.Interval != "" {
-		d.Set("storage", storageDetails.UUID)
-		d.Set("time", storageDetails.BackupRule.Time)
-		d.Set("interval", storageDetails.BackupRule.Interval)
-		d.Set("retention", storageDetails.BackupRule.Retention)
+		_ = d.Set("storage", storageDetails.UUID)
+		_ = d.Set("time", storageDetails.BackupRule.Time)
+		_ = d.Set("interval", storageDetails.BackupRule.Interval)
+		_ = d.Set("retention", storageDetails.BackupRule.Retention)
 	}
 
 	return diags
@@ -114,10 +114,13 @@ func resourceUpCloudStorageBackupUpdate(ctx context.Context, d *schema.ResourceD
 
 	o, n := d.GetChange("storage")
 	oldStorageID := o.(string)
-	newStorageId := n.(string)
+	newStorageID := n.(string)
 
-	if oldStorageID != newStorageId {
-		removeStorageBackupRule(oldStorageID, client)
+	if oldStorageID != newStorageID {
+		err := removeStorageBackupRule(oldStorageID, client)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	err := setStorageBackupRule(d, client)
@@ -133,8 +136,8 @@ func resourceUpCloudStorageBackupDelete(ctx context.Context, d *schema.ResourceD
 
 	client := meta.(*service.Service)
 
-	storageId, _ := d.GetChange("storage")
-	err := removeStorageBackupRule(storageId.(string), client)
+	storageID, _ := d.GetChange("storage")
+	err := removeStorageBackupRule(storageID.(string), client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
