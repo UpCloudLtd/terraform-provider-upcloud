@@ -8,10 +8,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
@@ -56,14 +57,18 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server":              resourceUpCloudServer(),
-			"upcloud_router":              resourceUpCloudRouter(),
-			"upcloud_storage":             resourceUpCloudStorage(),
-			"upcloud_firewall_rules":      resourceUpCloudFirewallRules(),
-			"upcloud_tag":                 resourceUpCloudTag(),
-			"upcloud_network":             resourceUpCloudNetwork(),
-			"upcloud_floating_ip_address": resourceUpCloudFloatingIPAddress(),
-			"upcloud_object_storage":      resourceUpCloudObjectStorage(),
+			"upcloud_server":                            resourceUpCloudServer(),
+			"upcloud_router":                            resourceUpCloudRouter(),
+			"upcloud_storage":                           resourceUpCloudStorage(),
+			"upcloud_firewall_rules":                    resourceUpCloudFirewallRules(),
+			"upcloud_tag":                               resourceUpCloudTag(),
+			"upcloud_network":                           resourceUpCloudNetwork(),
+			"upcloud_floating_ip_address":               resourceUpCloudFloatingIPAddress(),
+			"upcloud_object_storage":                    resourceUpCloudObjectStorage(),
+			"upcloud_managed_database_postgresql":       resourceUpCloudManagedDatabasePostgreSQL(),
+			"upcloud_managed_database_mysql":            resourceUpCloudManagedDatabaseMySQL(),
+			"upcloud_managed_database_user":             resourceUpCloudManagedDatabaseUser(),
+			"upcloud_managed_database_logical_database": resourceUpCloudManagedDatabaseLogicalDatabase(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

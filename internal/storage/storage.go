@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
