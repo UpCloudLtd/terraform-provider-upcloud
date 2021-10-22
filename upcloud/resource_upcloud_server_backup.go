@@ -17,9 +17,9 @@ import (
 
 func resourceUpCloudServerBackup() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceUpCloudServerBackupSet,
+		CreateContext: resourceUpCloudServerBackupCreate,
 		ReadContext:   resourceUpCloudServerBackupRead,
-		UpdateContext: resourceUpCloudServerBackupSet,
+		UpdateContext: resourceUpCloudServerBackupUpdate,
 		DeleteContext: resourceUpCloudServerBackupDelete,
 		Schema: map[string]*schema.Schema{
 			"server": {
@@ -43,17 +43,35 @@ func resourceUpCloudServerBackup() *schema.Resource {
 	}
 }
 
-func resourceUpCloudServerBackupSet(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
-
+func setServerSimpleBackup(d *schema.ResourceData, client *service.Service) error {
 	serverId := d.Get("server").(string)
 	time := d.Get("time").(string)
 	plan := d.Get("plan").(string)
 
 	req := &request.ModifyServerRequest{UUID: serverId, SimpleBackup: fmt.Sprintf("%s,%s", time, plan)}
-	if _, err := client.ModifyServer(req); err != nil {
+	_, err := client.ModifyServer(req)
+
+	return err
+}
+
+func removeServerSimpleBackup(serverID string, client *service.Service) error {
+	_, err := client.ModifyServer(&request.ModifyServerRequest{
+		UUID:         serverID,
+		SimpleBackup: "no",
+	})
+
+	return err
+}
+
+func resourceUpCloudServerBackupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*service.Service)
+
+	err := setServerSimpleBackup(d, client)
+	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return resourceUpCloudServerBackupRead(ctx, d, meta)
 }
@@ -69,7 +87,6 @@ func resourceUpCloudServerBackupRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	if serverDetails.SimpleBackup != "" && serverDetails.SimpleBackup != "no" {
-		d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 		d.Set("server", serverDetails.UUID)
 
 		simpleBackup := strings.Split(serverDetails.SimpleBackup, ",")
@@ -80,13 +97,34 @@ func resourceUpCloudServerBackupRead(ctx context.Context, d *schema.ResourceData
 	return diags
 }
 
+func resourceUpCloudServerBackupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*service.Service)
+
+	o, n := d.GetChange("server")
+	oldServerId := o.(string)
+	newServerId := n.(string)
+
+	if oldServerId != newServerId {
+		if err := removeServerSimpleBackup(oldServerId, client); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	err := setServerSimpleBackup(d, client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return resourceUpCloudServerBackupRead(ctx, d, meta)
+}
+
 func resourceUpCloudServerBackupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	serverId, _ := d.GetChange("server")
+	err := removeServerSimpleBackup(serverId.(string), client)
 
-	req := &request.ModifyServerRequest{UUID: serverId.(string), SimpleBackup: "no"}
-	if _, err := client.ModifyServer(req); err != nil {
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
