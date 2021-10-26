@@ -223,10 +223,11 @@ func resourceUpCloudServer() *schema.Resource {
 				},
 			},
 			"template": {
-				Description: "Block describing the preconfigured operating system",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
+				Description:  "Block describing the preconfigured operating system",
+				Type:         schema.TypeList,
+				Optional:     true,
+				MaxItems:     1,
+				AtLeastOneOf: []string{"storage_devices", "template"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
