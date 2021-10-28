@@ -150,6 +150,13 @@ Required:
 - **retention** (Number) The number of days before a backup is automatically deleted
 - **time** (String) The time of day when the backup is created
 
+Notes:
+
+Please keep in mind that it's not possible to have a server with `backup_rule` attached to a server with `simple_backup` specified.
+Such configurations will throw errors during execution.
+
+Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, it is advised to never switch between `simple_backup` on the server and individual storages `backup_rule`s in one apply.
+If you want to switch from using server simple backup to per-storage defined backup rules, please first remove `simple_backup` block from a server, run `terraform apply`, then add `backup_rule` to desired storages and run `terraform apply` again.
 
 <a id="nestedblock--clone"></a>
 ### Nested Schema for `clone`
