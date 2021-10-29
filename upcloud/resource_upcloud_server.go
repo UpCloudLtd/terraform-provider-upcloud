@@ -581,7 +581,8 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 				}
 			}
 
-			r.SimpleBackup = server.BuildSimpleBackupOpts(sb)
+			simpleBackupAttrs := sb.(*schema.Set).List()[0].(map[string]interface{})
+			r.SimpleBackup = server.BuildSimpleBackupOpts(simpleBackupAttrs)
 		} else {
 			r.SimpleBackup = "no"
 		}
