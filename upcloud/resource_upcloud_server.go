@@ -493,7 +493,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	return diags
 }
 
-func templateBackupRuleReplacedWithSimpleBackups(d *schema.ResourceData) bool {
+func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d *schema.ResourceData) bool {
 	if !d.HasChange("simple_backup") || !d.HasChange("template.0.backup_rule") {
 		return false
 	}
@@ -561,7 +561,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			// to prevent backup rule conflict error. We do not need to check if user removed
 			// template backup rule from the config, because having it together with server
 			// simple backup is not allowed on schema level
-			if templateBackupRuleReplacedWithSimpleBackups(d) {
+			if hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d) {
 				templateID := d.Get("template.0.id").(string)
 
 				tmpl, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: templateID})
@@ -623,7 +623,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		r.Size = template["size"].(int)
 		r.Title = template["title"].(string)
 
-		if d.HasChange("template.0.backup_rule") && !templateBackupRuleReplacedWithSimpleBackups(d) {
+		if d.HasChange("template.0.backup_rule") && !hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d) {
 			if backupRule, ok := d.GetOk("template.0.backup_rule.0"); ok {
 				rule := backupRule.(map[string]interface{})
 				r.BackupRule = storage.BackupRule(rule)
