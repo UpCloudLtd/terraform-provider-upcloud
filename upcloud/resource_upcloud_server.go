@@ -561,6 +561,8 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			// to prevent backup rule conflict error. We do not need to check if user removed
 			// template backup rule from the config, because having it together with server
 			// simple backup is not allowed on schema level
+			// Also see notes for simple_backup block in server resource docs for more insight:
+			// https://github.com/UpCloudLtd/terraform-provider-upcloud/blob/master/docs/resources/server.md#nested-schema-for-simple_backup
 			if hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d) {
 				templateID := d.Get("template.0.id").(string)
 
