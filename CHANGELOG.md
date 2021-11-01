@@ -9,19 +9,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
- - feat: simple backups support (#188)
- - chore: add docs for releasing (#189)
+ - Added simple backups support (#188)
 
 ### Fixed
 
-- fix(makefile): local dev build (#172)
-- enachange test duration with paralelism (#176)
-- fix(server): prevent empty tags from replanning (#178)
-- fix: make sure either storage devices or template are required on the server resource
-
-### Removed
-
-- chore: remove broken release.yml workflow (#184)
+- Prevent empty tags from replanning a server (#178)
+- Make sure either storage devices or template are required on the server resource
 
 ## [2.1.1]
 
