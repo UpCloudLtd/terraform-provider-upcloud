@@ -15,10 +15,10 @@ RUN set -x && \
 
 ARG VAULT_URL=https://releases.hashicorp.com/vault/1.5.4/vault_1.5.4_linux_amd64.zip
 ARG VAULT_SHA256=50156e687b25b253a63c83b649184c79a1311f862c36f4ba16fd020ece4ed3b3
-ARG VAULT_GPG_KEY=72D7468F
 ARG VAULT_GPG_FINGERPRINT=C874011F0AB405110D02105534365D9472D7468F
 ARG VAULT_SUMFILE_URL=https://releases.hashicorp.com/vault/1.5.4/vault_1.5.4_SHA256SUMS
 ARG VAULT_SUMFILE_SIG_URL=https://releases.hashicorp.com/vault/1.5.4/vault_1.5.4_SHA256SUMS.sig
+COPY hashicorp.asc /usr/share/keyrings/
 WORKDIR /go/vault
 RUN set -x && \
     VAULT=$(basename $VAULT_URL) && \
@@ -28,7 +28,7 @@ RUN set -x && \
     curl -L $VAULT_SUMFILE_URL > $VAULT_SUMFILE && \
     curl -L $VAULT_SUMFILE_SIG_URL > $VAULT_SUMFILE_SIG && \
     rm -rf ~/.gnupg && \
-    gpg --receive-keys --keyserver ipv4.pool.sks-keyservers.net $VAULT_GPG_KEY && \
+    gpg --import /usr/share/keyrings/hashicorp.asc && \
     gpg --list-keys && \
     gpg --check-signatures $VAULT_GPG_FINGERPRINT && \
     gpg --verify $VAULT_SUMFILE_SIG  $VAULT_SUMFILE && \
