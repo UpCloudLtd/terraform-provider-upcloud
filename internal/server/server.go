@@ -46,6 +46,10 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	if attr, ok := d.GetOk("plan"); ok {
 		r.Plan = attr.(string)
 	}
+	if attr, ok := d.GetOk("simple_backup"); ok {
+		simpleBackupAttrs := attr.(*schema.Set).List()[0].(map[string]interface{})
+		r.SimpleBackup = BuildSimpleBackupOpts(simpleBackupAttrs)
+	}
 	if login, ok := d.GetOk("login"); ok {
 		loginOpts, deliveryMethod, err := buildLoginOpts(login, meta)
 		if err != nil {
@@ -119,6 +123,16 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	}
 
 	return r, nil
+}
+
+func BuildSimpleBackupOpts(attrs map[string]interface{}) string {
+	if time, ok := attrs["time"]; ok {
+		if plan, ok := attrs["plan"]; ok {
+			return fmt.Sprintf("%s,%s", time, plan)
+		}
+	}
+
+	return "no"
 }
 
 func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string, error) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
@@ -306,6 +308,29 @@ func resourceUpCloudServer() *schema.Resource {
 					},
 				},
 			},
+			"simple_backup": {
+				Description:   "Simple backup schedule configuration",
+				Type:          schema.TypeSet,
+				MaxItems:      1,
+				Optional:      true,
+				ConflictsWith: []string{"template.0.backup_rule"},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"plan": {
+							Description:  "Simple backup plan. Accepted values: dailies, weeklies, monthlies.",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"dailies", "weeklies", "monthlies"}, false),
+						},
+						"time": {
+							Description:  "Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{4}$`), "Time must be 4 digits in a hhmm format"),
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -317,6 +342,7 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	serverDetails, err := client.CreateServer(r)
 	if err != nil {
 		return diag.FromErr(err)
@@ -391,6 +417,15 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	} else {
 		_ = d.Set("firewall", false)
 	}
+	if server.SimpleBackup != "no" {
+		p := strings.Split(server.SimpleBackup, ",")
+		simpleBackup := map[string]interface{}{
+			"time": p[0],
+			"plan": p[1],
+		}
+
+		_ = d.Set("simple_backup", []interface{}{simpleBackup})
+	}
 
 	networkInterfaces := []map[string]interface{}{}
 	var connIP string
@@ -459,6 +494,30 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	return diags
 }
 
+func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d *schema.ResourceData) bool {
+	if !d.HasChange("simple_backup") || !d.HasChange("template.0.backup_rule") {
+		return false
+	}
+
+	sb, sbOk := d.GetOk("simple_backup")
+	if !sbOk {
+		return false
+	}
+
+	simpleBackup := sb.(*schema.Set).List()[0].(map[string]interface{})
+	if simpleBackup["interval"] == "" {
+		return false
+	}
+
+	tbr, tbrOk := d.GetOk("template.0.backup_rule.0")
+	templateBackupRule := tbr.(map[string]interface{})
+	if tbrOk && templateBackupRule["interval"] != "" {
+		return false
+	}
+
+	return true
+}
+
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
@@ -467,6 +526,19 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	})
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// Stop the server if the requested changes require it
+	if d.HasChanges("plan", "cpu", "mem", "template.0.size", "storage_devices") {
+		err := server.VerifyServerStopped(request.StopServerRequest{
+			UUID: d.Id(),
+		},
+			meta,
+		)
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	r := &request.ModifyServerRequest{
@@ -482,6 +554,57 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	} else {
 		r.Firewall = "off"
 	}
+
+	if d.HasChange(("simple_backup")) {
+		if sb, ok := d.GetOk("simple_backup"); ok {
+			// Special handling for a situation where user adds simple backup rule for the server
+			// and removes backup_rule from a template with one apply. This needs to be done
+			// to prevent backup rule conflict error. We do not need to check if user removed
+			// template backup rule from the config, because having it together with server
+			// simple backup is not allowed on schema level
+			// Also see notes for simple_backup block in server resource docs for more insight:
+			// https://github.com/UpCloudLtd/terraform-provider-upcloud/blob/master/docs/resources/server.md#nested-schema-for-simple_backup
+			if hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d) {
+				templateID := d.Get("template.0.id").(string)
+
+				tmpl, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: templateID})
+				if err != nil {
+					return diag.FromErr(err)
+				}
+
+				if tmpl.BackupRule != nil && tmpl.BackupRule.Interval != "" {
+					r := &request.ModifyStorageRequest{
+						UUID:       templateID,
+						BackupRule: &upcloud.BackupRule{},
+					}
+
+					if _, err := client.ModifyStorage(r); err != nil {
+						return diag.FromErr(err)
+					}
+				}
+			}
+
+			simpleBackupAttrs := sb.(*schema.Set).List()[0].(map[string]interface{})
+			r.SimpleBackup = server.BuildSimpleBackupOpts(simpleBackupAttrs)
+		} else {
+			r.SimpleBackup = "no"
+		}
+	}
+
+	if d.HasChanges("plan", "cpu", "mem") {
+		if plan, ok := d.GetOk("plan"); ok {
+			r.Plan = plan.(string)
+		} else {
+			r.CoreNumber = d.Get("cpu").(int)
+			r.MemoryAmount = d.Get("mem").(int)
+			r.Plan = "custom"
+		}
+	}
+
+	if _, err := client.ModifyServer(r); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if _, ok := d.GetOk("tags"); ok {
 		if d.HasChange("tags") {
 			oldTags, newTags := d.GetChange("tags")
@@ -494,93 +617,86 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	// handle changes that need reboot
-	if d.HasChanges("plan", "cpu", "mem", "template", "storage_devices") {
-		if err := server.VerifyServerStopped(
-			request.StopServerRequest{
-				UUID: d.Id(),
-			},
-			meta,
-		); err != nil {
+	// handle the template
+	if d.HasChanges("template.0.title", "template.0.size", "template.0.backup_rule") {
+		template := d.Get("template.0").(map[string]interface{})
+		r := &request.ModifyStorageRequest{}
+
+		r.UUID = template["id"].(string)
+		r.Size = template["size"].(int)
+		r.Title = template["title"].(string)
+
+		if d.HasChange("template.0.backup_rule") && !hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d) {
+			if backupRule, ok := d.GetOk("template.0.backup_rule.0"); ok {
+				rule := backupRule.(map[string]interface{})
+				r.BackupRule = storage.BackupRule(rule)
+			}
+		}
+
+		if _, err := client.ModifyStorage(r); err != nil {
 			return diag.FromErr(err)
-		}
-
-		if plan, ok := d.GetOk("plan"); ok {
-			r.Plan = plan.(string)
-		} else {
-			r.CoreNumber = d.Get("cpu").(int)
-			r.MemoryAmount = d.Get("mem").(int)
-			r.Plan = "custom"
-		}
-
-		// handle the template
-		if d.HasChanges("template.0.title", "template.0.size", "template.0.backup_rule") {
-			template := d.Get("template.0").(map[string]interface{})
-			if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
-				UUID:  template["id"].(string),
-				Size:  template["size"].(int),
-				Title: template["title"].(string),
-				BackupRule: storage.BackupRule(
-					d.Get("template.0.backup_rule.0").(map[string]interface{}),
-				),
-			}); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-		// should reattach if address changed
-		if d.HasChange("template.0.address") {
-			o, n := d.GetChange("template.0.address")
-			if _, err := client.DetachStorage(&request.DetachStorageRequest{
-				ServerUUID: d.Id(),
-				Address:    utils.StorageAddressFormat(o.(string)),
-			}); err != nil {
-				return diag.FromErr(err)
-			}
-			if _, err := client.AttachStorage(&request.AttachStorageRequest{
-				Address:     utils.StorageAddressFormat(n.(string)),
-				ServerUUID:  d.Id(),
-				StorageUUID: d.Get("template.0.id").(string),
-			}); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-
-		// handle the other storage devices
-		if d.HasChange("storage_devices") {
-			o, n := d.GetChange("storage_devices")
-
-			// detach the devices that should be detached or should be re-attached with different parameters
-			for _, rawStorageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
-				storageDevice := rawStorageDevice.(map[string]interface{})
-				serverStorageDevice := serverDetails.StorageDevice(storageDevice["storage"].(string))
-				if serverStorageDevice == nil {
-					continue
-				}
-				if _, err := client.DetachStorage(&request.DetachStorageRequest{
-					ServerUUID: d.Id(),
-					Address:    serverStorageDevice.Address,
-				}); err != nil {
-					return diag.FromErr(err)
-				}
-			}
-
-			// attach the storages that are new or have changed
-			for _, rawStorageDevice := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
-				storageDevice := rawStorageDevice.(map[string]interface{})
-				if _, err := client.AttachStorage(&request.AttachStorageRequest{
-					ServerUUID:  d.Id(),
-					Address:     utils.StorageAddressFormat(storageDevice["address"].(string)),
-					StorageUUID: storageDevice["storage"].(string),
-					Type:        storageDevice["type"].(string),
-				}); err != nil {
-					return diag.FromErr(err)
-				}
-			}
 		}
 	}
 
-	if _, err := client.ModifyServer(r); err != nil {
-		return diag.FromErr(err)
+	// should reattach if address changed
+	if d.HasChange("template.0.address") {
+		o, n := d.GetChange("template.0.address")
+		if _, err := client.DetachStorage(&request.DetachStorageRequest{
+			ServerUUID: d.Id(),
+			Address:    utils.StorageAddressFormat(o.(string)),
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+		if _, err := client.AttachStorage(&request.AttachStorageRequest{
+			Address:     utils.StorageAddressFormat(n.(string)),
+			ServerUUID:  d.Id(),
+			StorageUUID: d.Get("template.0.id").(string),
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// handle the other storage devices
+	if d.HasChange("storage_devices") {
+		o, n := d.GetChange("storage_devices")
+
+		// detach the devices that should be detached or should be re-attached with different parameters
+		for _, rawStorageDevice := range o.(*schema.Set).Difference(n.(*schema.Set)).List() {
+			storageDevice := rawStorageDevice.(map[string]interface{})
+			serverStorageDevice := serverDetails.StorageDevice(storageDevice["storage"].(string))
+			if serverStorageDevice == nil {
+				continue
+			}
+			if _, err := client.DetachStorage(&request.DetachStorageRequest{
+				ServerUUID: d.Id(),
+				Address:    serverStorageDevice.Address,
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+
+			// Remove backup rule from the detached storage, if it was a result of simple backup setting
+			if _, ok := d.GetOk("simple_backup"); ok {
+				if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
+					UUID:       serverStorageDevice.UUID,
+					BackupRule: &upcloud.BackupRule{},
+				}); err != nil {
+					return diag.FromErr(err)
+				}
+			}
+		}
+
+		// attach the storages that are new or have changed
+		for _, rawStorageDevice := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
+			storageDevice := rawStorageDevice.(map[string]interface{})
+			if _, err := client.AttachStorage(&request.AttachStorageRequest{
+				ServerUUID:  d.Id(),
+				Address:     utils.StorageAddressFormat(storageDevice["address"].(string)),
+				StorageUUID: storageDevice["storage"].(string),
+				Type:        storageDevice["type"].(string),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
 	if err := server.VerifyServerStarted(request.StartServerRequest{UUID: d.Id(), Host: d.Get("host").(int)}, meta); err != nil {
