@@ -5,6 +5,24 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [2.1.2]
+
+### Added
+
+ - feat: simple backups support (#188)
+ - chore: add docs for releasing (#189)
+
+### Fixed
+
+- fix(makefile): local dev build (#172)
+- enachange test duration with paralelism (#176)
+- fix(server): prevent empty tags from replanning (#178)
+- fix: make sure either storage devices or template are required on the server resource
+
+### Removed
+
+- chore: remove broken release.yml workflow (#184)
+
 ## [2.1.1]
 
 ### Fixed
@@ -109,7 +127,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/2.0.0...v2.1.0
 [2.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/1.0.0...2.0.0
