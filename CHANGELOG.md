@@ -9,7 +9,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
- - Added simple backups support (#188)
+- Added simple backups support (#188)
 
 ### Fixed
 
