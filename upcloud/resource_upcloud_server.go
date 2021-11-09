@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var cloudServerTitleLength int = 64
+const cloudServerTitleLength int = 64
 
 func resourceUpCloudServer() *schema.Resource {
 	return &schema.Resource{
@@ -761,7 +761,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 func cloudServerDefaultTitleFromHostname(hostname string) string {
-	suffix := " (managed by terraform)"
+	const suffix string = " (managed by terraform)"
 	if len(hostname)+len(suffix) > cloudServerTitleLength {
 		hostname = fmt.Sprintf("%s...", hostname[:cloudServerTitleLength-len(suffix)-3])
 	}
