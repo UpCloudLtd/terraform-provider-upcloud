@@ -57,6 +57,7 @@ resource "upcloud_server" "example" {
 
 ### Optional
 
+- **title** (String) A short, informational description
 - **cpu** (Number) The number of CPU for the server
 - **firewall** (Boolean) Are firewall rules active for the server
 - **host** (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts

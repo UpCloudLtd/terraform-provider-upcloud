@@ -903,3 +903,11 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 
 	return builder.String()
 }
+
+func TestCloudServerDefaultTitle(t *testing.T) {
+	want := "terraformterraformterraformterraformte... (managed by terraform)"
+	got := cloudServerDefaultTitleFromHostname("terraformterraformterraformterraformterraformterraformterraform")
+	if want != got {
+		t.Errorf("cloudServerDefaultTitleFromHostname failed want '%s' got '%s'", want, got)
+	}
+}
