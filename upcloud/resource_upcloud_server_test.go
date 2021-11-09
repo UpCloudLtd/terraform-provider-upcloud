@@ -74,6 +74,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 					resource "upcloud_server" "my-server" {
 						zone     = "fi-hel1"
 						hostname = "debian.example.com"
+						title    = "Debian"
 						tags = [
 						"foo",
 						"bar"
@@ -100,6 +101,9 @@ func TestUpcloudServer_basic(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "tags.1", "bar",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "title", "Debian",
 					),
 				),
 			},
