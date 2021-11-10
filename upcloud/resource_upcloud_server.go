@@ -763,7 +763,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 func cloudServerDefaultTitleFromHostname(hostname string) string {
 	const suffix string = " (managed by terraform)"
 	if len(hostname)+len(suffix) > cloudServerTitleLength {
-		hostname = fmt.Sprintf("%s...", hostname[:cloudServerTitleLength-len(suffix)-3])
+		hostname = fmt.Sprintf("%s…", hostname[:cloudServerTitleLength-len(suffix)-1])
 	}
 	return fmt.Sprintf("%s%s", hostname, suffix)
 }
