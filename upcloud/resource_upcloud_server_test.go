@@ -909,7 +909,6 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 }
 
 func TestCloudServerDefaultTitle(t *testing.T) {
-
 	want := "terraformterraformterraformterraformterr… (managed by terraform)"
 	got := cloudServerDefaultTitleFromHostname("terraformterraformterraformterraformterraformterraformterraform")
 	if want != got {
