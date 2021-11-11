@@ -17,7 +17,6 @@ func BuildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 	r := &request.CreateServerRequest{
 		Zone:     d.Get("zone").(string),
 		Hostname: d.Get("hostname").(string),
-		Title:    fmt.Sprintf("%s (managed by terraform)", d.Get("hostname").(string)),
 	}
 
 	if attr, ok := d.GetOk("firewall"); ok {
