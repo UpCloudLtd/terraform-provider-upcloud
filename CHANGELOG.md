@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Added title field to the server resource
 
+### Fixed
+
+- server: fix custom plan updates (cpu/mem)
+
 ## [2.1.2]
 
 ### Added
