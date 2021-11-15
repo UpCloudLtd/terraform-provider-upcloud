@@ -13,6 +13,59 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+func TestUpcloudServer_customPlan(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_server" "custom" {
+            			hostname = "custom-server" 
+						zone     = "fi-hel2"
+						cpu      = "1"
+						mem		 = "1024"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.custom", "plan", "custom"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "cpu", "1"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "mem", "1024"),
+				),
+			},
+			{
+				Config: `
+					resource "upcloud_server" "custom" {
+            			hostname = "custom-server" 
+						zone     = "fi-hel2"
+						cpu      = "2"
+						mem		 = "2048"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.custom", "plan", "custom"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "cpu", "2"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "mem", "2048"),
+				),
+			},
+		},
+	})
+}
+
 func TestUpcloudServer_minimal(t *testing.T) {
 	var providers []*schema.Provider
 

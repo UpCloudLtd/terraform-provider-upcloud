@@ -611,7 +611,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChanges("plan", "cpu", "mem") {
-		if plan, ok := d.GetOk("plan"); ok {
+		if plan, ok := d.GetOk("plan"); ok && plan.(string) != "custom" {
 			r.Plan = plan.(string)
 		} else {
 			r.CoreNumber = d.Get("cpu").(int)
