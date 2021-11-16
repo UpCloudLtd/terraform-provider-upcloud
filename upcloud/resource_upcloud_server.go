@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const cloudServerTitleLength int = 64
+const serverTitleLength int = 128
 
 func resourceUpCloudServer() *schema.Resource {
 	return &schema.Resource{
@@ -42,7 +42,7 @@ func resourceUpCloudServer() *schema.Resource {
 				Description:  "A short, informational description",
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringLenBetween(1, cloudServerTitleLength),
+				ValidateFunc: validation.StringLenBetween(1, serverTitleLength),
 			},
 			"zone": {
 				Description: "The zone in which the server will be hosted",
@@ -349,7 +349,7 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	if _, ok := d.GetOk("title"); ok {
 		r.Title = d.Get("title").(string)
 	} else {
-		r.Title = cloudServerDefaultTitleFromHostname(d.Get("hostname").(string))
+		r.Title = serverDefaultTitleFromHostname(d.Get("hostname").(string))
 	}
 
 	serverDetails, err := client.CreateServer(r)
@@ -409,7 +409,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 	_ = d.Set("hostname", server.Hostname)
-	if server.Title != cloudServerDefaultTitleFromHostname(server.Hostname) {
+	if server.Title != serverDefaultTitleFromHostname(server.Hostname) {
 		_ = d.Set("title", server.Title)
 	} else {
 		_ = d.Set("title", nil)
@@ -563,7 +563,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	if attr, ok := d.GetOk("title"); ok {
 		r.Title = attr.(string)
 	} else {
-		r.Title = cloudServerDefaultTitleFromHostname(d.Get("hostname").(string))
+		r.Title = serverDefaultTitleFromHostname(d.Get("hostname").(string))
 	}
 
 	r.Metadata = upcloud.FromBool(d.Get("metadata").(bool))
@@ -760,10 +760,10 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-func cloudServerDefaultTitleFromHostname(hostname string) string {
+func serverDefaultTitleFromHostname(hostname string) string {
 	const suffix string = " (managed by terraform)"
-	if len(hostname)+len(suffix) > cloudServerTitleLength {
-		hostname = fmt.Sprintf("%s…", hostname[:cloudServerTitleLength-len(suffix)-1])
+	if len(hostname)+len(suffix) > serverTitleLength {
+		hostname = fmt.Sprintf("%s…", hostname[:serverTitleLength-len(suffix)-1])
 	}
 	return fmt.Sprintf("%s%s", hostname, suffix)
 }
