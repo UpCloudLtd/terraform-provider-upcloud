@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const serverTitleLength int = 128
+const serverTitleLength int = 255
 
 func resourceUpCloudServer() *schema.Resource {
 	return &schema.Resource{

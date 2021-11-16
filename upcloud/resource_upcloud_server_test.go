@@ -962,8 +962,10 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 }
 
 func TestServerDefaultTitle(t *testing.T) {
-	want := "terraformterraformterraformterraformterraformterraformterraformterraformterraformterraformterraformterra… (managed by terraform)"
-	got := serverDefaultTitleFromHostname("terraformterraformterraformterraformterraformterraformterraformterraformterraformterraformterraformterraformterraformterraform")
+	longHostname := strings.Repeat("x", 255)
+	suffixLength := 24
+	want := fmt.Sprintf("%s… (managed by terraform)", longHostname[0:255-suffixLength])
+	got := serverDefaultTitleFromHostname(longHostname)
 	if want != got {
 		t.Errorf("cloudServerDefaultTitleFromHostname failed want '%s' got '%s'", want, got)
 	}
