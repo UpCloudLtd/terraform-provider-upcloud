@@ -866,7 +866,7 @@ func serverValidateHostname(hostname string) error {
 	}
 
 	if labelLen > labelMaxLen {
-		return fmt.Errorf("%s label is not in the range 1 - 63", hostname)
+		return fmt.Errorf("%s label is not in the range %d - %d", hostname, minLen, labelMaxLen)
 	}
 
 	if !nonNumeric {
