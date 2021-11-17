@@ -13,6 +13,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - server: fix custom plan updates (cpu/mem)
 
+### Changed
+
+- server: new hostname validator
+
 ## [2.1.2]
 
 ### Added
