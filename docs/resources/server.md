@@ -72,10 +72,6 @@ resource "upcloud_server" "example" {
 - **user_data** (String) Defines URL for a server setup script, or the script body itself
 - **simple_backup** (Block Set, Max: 1) Configure simple backup rule for the server (see [below for nested schema](#nestedblock--simple_backup))
 
-### Read-Only
-
-- **title** (String) A short, informational description
-
 <a id="nestedblock--network_interface"></a>
 ### Nested Schema for `network_interface`
 
