@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- firewall: fix missing server_id when importing firewall resource
+
 ## [2.1.3]
 
 ### Added
