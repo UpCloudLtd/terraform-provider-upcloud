@@ -85,16 +85,16 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 							ForceNew:     true,
 							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty),
 						},
-						"source_port_end": {
+						"source_port_start": {
 							Type:         schema.TypeInt,
-							Description:  "The source port range ends from this port number",
+							Description:  "The source port range starts from this port number",
 							Optional:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.IsPortNumber,
 						},
-						"source_port_start": {
+						"source_port_end": {
 							Type:         schema.TypeInt,
-							Description:  "The source port range starts from this port number",
+							Description:  "The source port range ends from this port number",
 							Optional:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.IsPortNumber,
@@ -284,6 +284,10 @@ func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("server_id", d.Id()); err != nil {
+		return diag.FromErr(err)
+	}
+
 	return diags
 }
 
@@ -306,7 +310,6 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 
 		for _, frMap := range v.([]interface{}) {
 			rule := frMap.(map[string]interface{})
-
 			destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
 			if destinationPortStart == "0" {
 				destinationPortStart = ""
