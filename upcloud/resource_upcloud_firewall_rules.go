@@ -90,14 +90,14 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 							Description:  "The source port range starts from this port number",
 							Optional:     true,
 							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumberOrZero,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"source_port_end": {
 							Type:         schema.TypeInt,
 							Description:  "The source port range ends from this port number",
 							Optional:     true,
 							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumberOrZero,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"destination_address_start": {
 							Type:         schema.TypeString,
@@ -118,14 +118,14 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 							Description:  "The destination port range starts from this port number",
 							Optional:     true,
 							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumberOrZero,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"destination_port_end": {
 							Type:         schema.TypeInt,
 							Description:  "The destination port range ends from this port number",
 							Optional:     true,
 							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumberOrZero,
+							ValidateFunc: validation.IsPortNumber,
 						},
 						"comment": {
 							Type:         schema.TypeString,
