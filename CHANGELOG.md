@@ -9,6 +9,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - server: validate plan and zone field values before executing API commands
 
+- Support for debuggers like Delve
+
+### Fixed
+
+- firewall: fix missing server_id when importing firewall resource
 
 ## [2.1.3]
 

@@ -347,6 +347,11 @@ After exiting the container, you can connect back to the container:
 docker start -ai <container ID here>
 ```
 
+### Debugging
+
+UpCloud provider can be run in debug mode using a debugger such as Delve.  
+For more information, see [Terraform docs](https://www.terraform.io/docs/extend/debugging.html#starting-a-provider-in-debug-mode)
+
 ### Consuming local provider with Terraform 0.12.0
 
 With the release of Terraform 0.13.0 the discovery of a locally built provider
