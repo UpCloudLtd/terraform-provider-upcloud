@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -959,6 +960,103 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	}
 
 	return builder.String()
+}
+
+func TestUpcloudServer_updatePreChecks(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "fi-hel2"
+						plan     = "1xCPU-1GB"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("upcloud_server.pre-checks", "plan"),
+				),
+			},
+			{
+				// Test updating with invalid plan
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "fi-hel2"
+						plan     = "1xCPU-1G"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				ExpectNonEmptyPlan: true,
+				ExpectError:        regexp.MustCompile("expected plan to be one of"),
+				Check:              resource.TestCheckResourceAttr("upcloud_server.pre-checks", "plan", "1xCPU-1GB"),
+			},
+		}})
+}
+
+func TestUpcloudServer_createPreChecks(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				// Test creating with invalid plan
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "fi-hel2"
+						plan     = "1xCPU-1G"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				ExpectNonEmptyPlan: true,
+				ExpectError:        regexp.MustCompile("expected plan to be one of"),
+			},
+			{
+				// Test creating with invalid zone
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "_fi-hel2"
+						plan     = "1xCPU-1GB"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				ExpectNonEmptyPlan: true,
+				ExpectError:        regexp.MustCompile("expected zone to be one of"),
+			},
+		}})
 }
 
 func TestServerDefaultTitle(t *testing.T) {

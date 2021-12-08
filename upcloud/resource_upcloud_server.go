@@ -341,6 +341,14 @@ func resourceUpCloudServer() *schema.Resource {
 func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
+	if err := serverValidatePlan(client, d.Get("plan").(string)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := serverValidateZone(client, d.Get("zone").(string)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	r, err := server.BuildServerOpts(d, meta)
 	if err != nil {
 		return diag.FromErr(err)
@@ -534,6 +542,13 @@ func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d *schema.ResourceData) 
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
+	planHasChange := d.HasChange("plan")
+	if planHasChange {
+		if err := serverValidatePlan(client, d.Get("plan").(string)); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
@@ -542,7 +557,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	// Stop the server if the requested changes require it
-	if d.HasChanges("plan", "cpu", "mem", "template.0.size", "storage_devices") {
+	if d.HasChanges("cpu", "mem", "template.0.size", "storage_devices") || planHasChange {
 		err := server.VerifyServerStopped(request.StopServerRequest{
 			UUID: d.Id(),
 		},
@@ -610,7 +625,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	if d.HasChanges("plan", "cpu", "mem") {
+	if d.HasChanges("cpu", "mem") || planHasChange {
 		if plan, ok := d.GetOk("plan"); ok && plan.(string) != "custom" {
 			r.Plan = plan.(string)
 		} else {
@@ -874,4 +889,37 @@ func serverValidateHostname(hostname string) error {
 	}
 
 	return nil
+}
+
+func serverValidatePlan(service *service.Service, plan string) error {
+	if plan == "" {
+		return nil
+	}
+	plans, err := service.GetPlans()
+	if err != nil {
+		return err
+	}
+	availablePlans := make([]string, 0)
+	for _, p := range plans.Plans {
+		if p.Name == plan {
+			return nil
+		}
+		availablePlans = append(availablePlans, p.Name)
+	}
+	return fmt.Errorf("expected plan to be one of [%s], got %s", strings.Join(availablePlans, ", "), plan)
+}
+
+func serverValidateZone(service *service.Service, zone string) error {
+	zones, err := service.GetZones()
+	if err != nil {
+		return err
+	}
+	availableZones := make([]string, 0)
+	for _, z := range zones.Zones {
+		if z.ID == zone {
+			return nil
+		}
+		availableZones = append(availableZones, z.ID)
+	}
+	return fmt.Errorf("expected zone to be one of [%s], got %s", strings.Join(availableZones, ", "), zone)
 }
