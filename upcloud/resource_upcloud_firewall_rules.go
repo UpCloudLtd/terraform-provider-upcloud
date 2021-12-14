@@ -63,8 +63,7 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 							Description:  "The protocol this rule will be applied to",
 							Optional:     true,
 							ForceNew:     true,
-							Default:      "tcp",
-							ValidateFunc: validation.StringInSlice([]string{"tcp", "udp", "icmp"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"", "tcp", "udp", "icmp"}, false),
 						},
 						"icmp_type": {
 							Type:         schema.TypeString,

@@ -29,7 +29,7 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 			{
 				Config: testUpcloudFirewallRulesInstanceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "2"),
 					testAccCheckFirewallRulesExists(resourceName, &firewallRules),
 					testAccCheckUpCloudFirewallRuleAttributes(&firewallRules, 0, "accept",
 						"Allow SSH from this network",
@@ -41,6 +41,20 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 						"",
 						"22",
 						"22",
+						"192.168.1.1",
+						"192.168.1.255",
+						"",
+						""),
+					testAccCheckUpCloudFirewallRuleAttributes(&firewallRules, 1, "drop",
+						"Drop all connection from ip range",
+						"IPv4",
+						"",
+						"",
+						"in",
+						"",
+						"",
+						"",
+						"",
 						"192.168.1.1",
 						"192.168.1.255",
 						"",
@@ -65,7 +79,7 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 			{
 				Config: testUpcloudFirewallRulesInstanceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "2"),
 					testAccCheckFirewallRulesExists(resourceName, &firewallRules),
 				),
 			},
@@ -253,6 +267,15 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 			family = "IPv4"
 			icmp_type = ""
 			protocol = "tcp"
+			source_address_end = "192.168.1.255"
+			source_address_start = "192.168.1.1"
+		  }
+
+		  firewall_rule {
+			action = "drop"
+			comment = "Drop all connection from ip range"
+			direction = "in"
+			family = "IPv4"
 			source_address_end = "192.168.1.255"
 			source_address_start = "192.168.1.1"
 		  }
