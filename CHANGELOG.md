@@ -15,6 +15,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - firewall: fix missing server_id when importing firewall resource
 
+### Changed
+
+- Upgraded terraform-plugin-sdk from v2.7.1 to v2.10.0
+
 ## [2.1.3]
 
 ### Added
