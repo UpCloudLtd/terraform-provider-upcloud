@@ -82,14 +82,14 @@ Optional:
 - **comment** (String) Freeform comment string for the rule
 - **destination_address_end** (String) The destination address range ends from this address
 - **destination_address_start** (String) The destination address range starts from this address
-- **destination_port_end** (Number) The destination port range ends from this port number
-- **destination_port_start** (Number) The destination port range starts from this port number
+- **destination_port_end** (String) The destination port range ends from this port number
+- **destination_port_start** (String) The destination port range starts from this port number
 - **icmp_type** (String) The ICMP type
 - **protocol** (String) The protocol this rule will be applied to
 - **source_address_end** (String) The source address range ends from this address
 - **source_address_start** (String) The source address range starts from this address
-- **source_port_end** (Number) The source port range ends from this port number
-- **source_port_start** (Number) The source port range starts from this port number
+- **source_port_end** (String) The source port range ends from this port number
+- **source_port_start** (String) The source port range starts from this port number
 
 ## Import
 
