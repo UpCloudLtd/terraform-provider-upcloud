@@ -328,7 +328,7 @@ func TestFirewallRuleValidateOptionalPort(t *testing.T) {
 		t.Error("firewallRuleValidateOptionalPort failed 'abc' is not valid port")
 	}
 
-	if diag := firewallRuleValidateOptionalPort("0", p); len(diag) > 1 {
+	if diag := firewallRuleValidateOptionalPort("0", p); len(diag) < 1 {
 		t.Error("firewallRuleValidateOptionalPort failed '0' is not valid port")
 	}
 
