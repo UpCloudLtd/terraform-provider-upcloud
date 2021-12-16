@@ -371,17 +371,23 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
-		backupRule := []interface{}{
-			map[string]interface{}{
-				"interval":  storage.BackupRule.Interval,
-				"time":      storage.BackupRule.Time,
-				"retention": storage.BackupRule.Retention,
-			},
-		}
+	// This means the changes to the backup_rule will only be tracked if the user has
+	// backup_rule block in their tf config (or just removed it from there). This is
+	// to avoid conflicting backup rules when using simple_backups with server that storage
+	// is attached to
+	if _, ok := d.GetOk("backup_rule"); ok {
+		if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
+			backupRule := []interface{}{
+				map[string]interface{}{
+					"interval":  storage.BackupRule.Interval,
+					"time":      storage.BackupRule.Time,
+					"retention": storage.BackupRule.Retention,
+				},
+			}
 
-		if err := d.Set("backup_rule", backupRule); err != nil {
-			return diag.FromErr(err)
+			if err := d.Set("backup_rule", backupRule); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -431,10 +437,20 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	req := request.ModifyStorageRequest{
-		UUID:       d.Id(),
-		Size:       d.Get("size").(int),
-		Title:      d.Get("title").(string),
-		BackupRule: storage.BackupRule(d.Get("backup_rule.0").(map[string]interface{})),
+		UUID:  d.Id(),
+		Size:  d.Get("size").(int),
+		Title: d.Get("title").(string),
+	}
+
+	if d.HasChange("backup_rule") {
+		if br, ok := d.GetOk("backup_rule.0"); ok {
+			backupRule := storage.BackupRule(br.(map[string]interface{}))
+			if backupRule.Interval == "" {
+				req.BackupRule = &upcloud.BackupRule{}
+			} else {
+				req.BackupRule = backupRule
+			}
+		}
 	}
 
 	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{

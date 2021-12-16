@@ -52,7 +52,6 @@ resource "upcloud_router" "example_router" {
 
 ### Read-Only
 
-- **servers** (Set of Object) A list of attached servers (see [below for nested schema](#nestedatt--servers))
 - **type** (String) The network type
 
 <a id="nestedblock--ip_network"></a>
@@ -69,15 +68,6 @@ Optional:
 - **dhcp_default_route** (Boolean) Is the gateway the DHCP default route?
 - **dhcp_dns** (Set of String) The DNS servers given by DHCP
 - **gateway** (String) Gateway address given by DHCP
-
-
-<a id="nestedatt--servers"></a>
-### Nested Schema for `servers`
-
-Read-Only:
-
-- **id** (String)
-- **title** (String)
 
 ## Import
 

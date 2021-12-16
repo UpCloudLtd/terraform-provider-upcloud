@@ -5,6 +5,47 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- server: validate plan and zone field values before executing API commands
+
+- Support for debuggers like Delve
+
+### Fixed
+
+- firewall: fix missing server_id when importing firewall resource
+- firewall: change port types from int to string to avoid having zero values in state when importing rules with undefined port number(s).
+- firewall: remove proto field's default value "tcp" as this prevents settings optional fields value to null and update validator to accept empty string which corresponds to any protocol
+
+### Changed
+
+- Upgraded terraform-plugin-sdk from v2.7.1 to v2.10.0
+
+## [2.1.3]
+
+### Added
+
+- Added title field to the server resource
+
+### Fixed
+
+- server: fix custom plan updates (cpu/mem)
+
+### Changed
+
+- server: new hostname validator
+
+## [2.1.2]
+
+### Added
+
+- Added simple backups support (#188)
+
+### Fixed
+
+- Prevent empty tags from replanning a server (#178)
+- Make sure either storage devices or template are required on the server resource
+
 ## [2.1.1]
 
 ### Fixed
@@ -109,7 +150,9 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.3...HEAD
+[2.1.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.2...v2.1.3
+[2.1.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/2.0.0...v2.1.0
 [2.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/1.0.0...2.0.0

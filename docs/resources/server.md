@@ -57,6 +57,7 @@ resource "upcloud_server" "example" {
 
 ### Optional
 
+- **title** (String) A short, informational description
 - **cpu** (Number) The number of CPU for the server
 - **firewall** (Boolean) Are firewall rules active for the server
 - **host** (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
@@ -69,10 +70,7 @@ resource "upcloud_server" "example" {
 - **tags** (List of String) The server related tags
 - **template** (Block List, Max: 1) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
 - **user_data** (String) Defines URL for a server setup script, or the script body itself
-
-### Read-Only
-
-- **title** (String) A short, informational description
+- **simple_backup** (Block Set, Max: 1) Configure simple backup rule for the server (see [below for nested schema](#nestedblock--simple_backup))
 
 <a id="nestedblock--network_interface"></a>
 ### Nested Schema for `network_interface`
@@ -146,6 +144,22 @@ Required:
 - **interval** (String) The weekday when the backup is created
 - **retention** (Number) The number of days before a backup is automatically deleted
 - **time** (String) The time of day when the backup is created
+
+<a id="nestedblock--simple_backup"></a>
+### Nested Schema for `simple_backup`
+
+Required:
+
+- **plan** (String) Simple backup plan. One of "dailies", "weeklies", "monthlies"
+- **time** (String) Exact time at which the backup should be taken, in hhmm format (eg. "2200")
+
+Notes:
+
+The idea behind simple backups is to provide a simplified way of backing up *all* of the storages attached to a given server. This means you cannot have simple backup set for a server,
+and then some individual `backup_rule`s on the storages attached to said server. Such configuration will throw an error during execution. This also apply to `backup_rule`s set for server templates.
+
+Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, it is advised to never switch between `simple_backup` on the server and individual storages `backup_rule`s in one apply.
+If you want to switch from using server simple backup to per-storage defined backup rules, please first remove `simple_backup` block from a server, run `terraform apply`, then add `backup_rule` to desired storages and run `terraform apply` again.
 
 ## Import
 

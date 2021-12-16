@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -12,6 +13,59 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
+
+func TestUpcloudServer_customPlan(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_server" "custom" {
+            			hostname = "custom-server" 
+						zone     = "fi-hel2"
+						cpu      = "1"
+						mem		 = "1024"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.custom", "plan", "custom"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "cpu", "1"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "mem", "1024"),
+				),
+			},
+			{
+				Config: `
+					resource "upcloud_server" "custom" {
+            			hostname = "custom-server" 
+						zone     = "fi-hel2"
+						cpu      = "2"
+						mem		 = "2048"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.custom", "plan", "custom"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "cpu", "2"),
+					resource.TestCheckResourceAttr("upcloud_server.custom", "mem", "2048"),
+				),
+			},
+		},
+	})
+}
 
 func TestUpcloudServer_minimal(t *testing.T) {
 	var providers []*schema.Provider
@@ -74,6 +128,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 					resource "upcloud_server" "my-server" {
 						zone     = "fi-hel1"
 						hostname = "debian.example.com"
+						title    = "Debian"
 						tags = [
 						"foo",
 						"bar"
@@ -101,6 +156,9 @@ func TestUpcloudServer_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "tags.1", "bar",
 					),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.my-server", "title", "Debian",
+					),
 				),
 			},
 		},
@@ -126,6 +184,364 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "plan", "2xCPU-4GB"),
+				),
+			},
+		},
+	})
+}
+
+func TestUpcloudServer_simpleBackup(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				// basic setup
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+
+						simple_backup {
+							time = "0300"
+							plan = "dailies"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "0300"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "dailies"),
+				),
+			},
+			{
+				// change simple backup config
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+
+						simple_backup {
+							time = "2200"
+							plan = "weeklies"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2200"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "weeklies"),
+				),
+			},
+			{
+				// replace simple backup with backup rule on the template
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+								backup_rule {
+									time = "0010"
+									interval = "mon"
+									retention = 2
+								}
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.time", "0010"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.interval", "mon"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.retention", "2"),
+					resource.TestCheckNoResourceAttr("upcloud_server.my-server", "simple_backup"),
+				),
+			},
+			{
+				// adjust backup rule on the template
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+								backup_rule {
+									time = "0010"
+									interval = "tue"
+									retention = 3
+								}
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.time", "0010"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.interval", "tue"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.retention", "3"),
+				),
+			},
+			{
+				// replace template backup rule back with simple backup
+				Config: `
+					resource "upcloud_server" "my-server" {
+						zone     = "fi-hel1"
+						hostname = "debian.example.com"
+
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						simple_backup {
+							time = "2300"
+							plan = "dailies"
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2300"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "dailies"),
+					resource.TestCheckNoResourceAttr("upcloud_server.my-server", "template.0.backup_rule"),
+				),
+			},
+		},
+	})
+}
+
+func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				// basic setup
+				Config: `
+					resource "upcloud_storage" "addon" {
+						title = "addon"
+						size = 10
+						zone = "pl-waw1"
+						
+						backup_rule {
+							time = "0100"
+							interval = "mon"
+							retention = 2
+						}
+					}
+					
+					resource "upcloud_server" "my-server" {
+						zone = "pl-waw1"
+						plan = "1xCPU-1GB"
+						hostname = "main1"
+						
+						template {
+							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							size = 10
+						}
+					
+						network_interface {
+							type = "public"
+						}
+					
+						storage_devices {
+							storage = upcloud_storage.addon.id
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.time", "0100"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.interval", "mon"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.retention", "2"),
+				),
+			},
+			{
+				// replace additional storages backup rule with simple backup
+				Config: `
+					resource "upcloud_storage" "addon" {
+						title = "addon"
+						size = 10
+						zone = "pl-waw1"
+					}
+					
+					resource "upcloud_server" "my-server" {
+						zone = "pl-waw1"
+						plan = "1xCPU-1GB"
+						hostname = "main1"
+						
+						template {
+							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							size = 10
+						}
+					
+						network_interface {
+							type = "public"
+						}
+
+						simple_backup {
+							time = "2200"
+							plan = "dailies"
+						}
+					
+						storage_devices {
+							storage = upcloud_storage.addon.id
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2200"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "dailies"),
+					resource.TestCheckNoResourceAttr("upcloud_storage.addon", "backup_rule"),
+				),
+			},
+			{
+				// Update simple backup while storage is attached
+				Config: `
+					resource "upcloud_storage" "addon" {
+						title = "addon"
+						size = 10
+						zone = "pl-waw1"
+					}
+					
+					resource "upcloud_server" "my-server" {
+						zone = "pl-waw1"
+						plan = "1xCPU-1GB"
+						hostname = "main1"
+						
+						template {
+							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							size = 10
+						}
+					
+						network_interface {
+							type = "public"
+						}
+
+						simple_backup {
+							time = "2300"
+							plan = "weeklies"
+						}
+					
+						storage_devices {
+							storage = upcloud_storage.addon.id
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2300"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "weeklies"),
+					resource.TestCheckNoResourceAttr("upcloud_storage.addon", "backup_rule"),
+				),
+			},
+
+			{
+				// Delete simple backups while storage is attached
+				Config: `
+					resource "upcloud_storage" "addon" {
+						title = "addon"
+						size = 10
+						zone = "pl-waw1"
+					}
+					
+					resource "upcloud_server" "my-server" {
+						zone = "pl-waw1"
+						plan = "1xCPU-1GB"
+						hostname = "main1"
+						
+						template {
+							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							size = 10
+						}
+					
+						network_interface {
+							type = "public"
+						}
+					
+						storage_devices {
+							storage = upcloud_storage.addon.id
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("upcloud_server.my-server", "simple_backup"),
+					resource.TestCheckNoResourceAttr("upcloud_storage.addon", "backup_rule"),
+				),
+			},
+
+			{
+				// Add backup rule to additional storage and to the template
+				Config: `
+					resource "upcloud_storage" "addon" {
+						title = "addon"
+						size = 10
+						zone = "pl-waw1"
+
+						backup_rule {
+							time = "0100"
+							interval = "mon"
+							retention = 2
+						}
+					}
+					
+					resource "upcloud_server" "my-server" {
+						zone = "pl-waw1"
+						plan = "1xCPU-1GB"
+						hostname = "main1"
+						
+						template {
+							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							size = 10
+
+							backup_rule {
+								time = "2200"
+								interval = "daily"
+								retention = 4
+							}
+						}
+					
+						network_interface {
+							type = "public"
+						}
+					
+						storage_devices {
+							storage = upcloud_storage.addon.id
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.time", "2200"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.interval", "daily"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.retention", "4"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.time", "0100"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.interval", "mon"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.retention", "2"),
 				),
 			},
 		},
@@ -544,4 +960,161 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	}
 
 	return builder.String()
+}
+
+func TestUpcloudServer_updatePreChecks(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "fi-hel2"
+						plan     = "1xCPU-1GB"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("upcloud_server.pre-checks", "plan"),
+				),
+			},
+			{
+				// Test updating with invalid plan
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "fi-hel2"
+						plan     = "1xCPU-1G"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				ExpectNonEmptyPlan: true,
+				ExpectError:        regexp.MustCompile("expected plan to be one of"),
+				Check:              resource.TestCheckResourceAttr("upcloud_server.pre-checks", "plan", "1xCPU-1GB"),
+			},
+		}})
+}
+
+func TestUpcloudServer_createPreChecks(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				// Test creating with invalid plan
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "fi-hel2"
+						plan     = "1xCPU-1G"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				ExpectNonEmptyPlan: true,
+				ExpectError:        regexp.MustCompile("expected plan to be one of"),
+			},
+			{
+				// Test creating with invalid zone
+				Config: `
+					resource "upcloud_server" "pre-checks" {
+            			hostname = "pre-checks" 
+						zone     = "_fi-hel2"
+						plan     = "1xCPU-1GB"
+						template {
+								storage = "01000000-0000-4000-8000-000020050100"
+								size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				ExpectNonEmptyPlan: true,
+				ExpectError:        regexp.MustCompile("expected zone to be one of"),
+			},
+		}})
+}
+
+func TestServerDefaultTitle(t *testing.T) {
+	longHostname := strings.Repeat("x", 255)
+	suffixLength := 24
+	want := fmt.Sprintf("%s… (managed by terraform)", longHostname[0:255-suffixLength])
+	got := serverDefaultTitleFromHostname(longHostname)
+	if want != got {
+		t.Errorf("cloudServerDefaultTitleFromHostname failed want '%s' got '%s'", want, got)
+	}
+
+	want = "terraform (managed by terraform)"
+	got = serverDefaultTitleFromHostname("terraform")
+	if want != got {
+		t.Errorf("cloudServerDefaultTitleFromHostname failed want '%s' got '%s'", want, got)
+	}
+}
+
+func TestServerValidateHostname(t *testing.T) {
+	labelMaxLen := 63
+	validNames := []string{
+		"example",
+		"Example",
+		"0example",
+		"example.com",
+		"example.co.uk",
+		"0.0.0.0.com",
+		"a",
+		strings.Repeat("a", labelMaxLen),
+		fmt.Sprintf("%s.%s.%s.%s", strings.Repeat("a", labelMaxLen), strings.Repeat("b", labelMaxLen), strings.Repeat("c", labelMaxLen), strings.Repeat("d", labelMaxLen-2)),
+		fmt.Sprintf("example.%s.%s.com", strings.Repeat("e", labelMaxLen), strings.Repeat("e", labelMaxLen)),
+	}
+
+	invalidNames := []string{
+		".example",
+		".-example",
+		"0",
+		"0.0.0.0",
+		"example..com",
+		"example.",
+		"example.com.",
+		"bücher.tld",
+		".",
+		strings.Repeat("a", labelMaxLen+1),
+		fmt.Sprintf("example.%s.com", strings.Repeat("a", labelMaxLen+1)),
+		fmt.Sprintf("%s.%s.%s.%s", strings.Repeat("a", labelMaxLen), strings.Repeat("b", labelMaxLen), strings.Repeat("c", labelMaxLen), strings.Repeat("d", labelMaxLen)),
+	}
+
+	for _, name := range validNames {
+		if err := serverValidateHostname(name); err != nil {
+			t.Errorf("serverValidateHostname failed '%s' is valid name: %s", name, err)
+		}
+	}
+
+	for _, name := range invalidNames {
+		err := serverValidateHostname(name)
+		if err == nil {
+			t.Errorf("serverValidateHostname failed '%s' is valid name", name)
+		}
+	}
 }

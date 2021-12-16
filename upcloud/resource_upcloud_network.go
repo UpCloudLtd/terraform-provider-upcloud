@@ -110,25 +110,6 @@ func resourceUpCloudNetwork() *schema.Resource {
 				Description: "The UUID of a router",
 				Optional:    true,
 			},
-			"servers": {
-				Type:        schema.TypeSet,
-				Description: "A list of attached servers",
-				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:        schema.TypeString,
-							Description: "The UUID of the server",
-							Computed:    true,
-						},
-						"title": {
-							Type:        schema.TypeString,
-							Description: "The short description of the server",
-							Computed:    true,
-						},
-					},
-				},
-			},
 		},
 	}
 }

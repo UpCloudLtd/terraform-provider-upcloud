@@ -7,6 +7,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
@@ -28,7 +29,7 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 			{
 				Config: testUpcloudFirewallRulesInstanceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "2"),
 					testAccCheckFirewallRulesExists(resourceName, &firewallRules),
 					testAccCheckUpCloudFirewallRuleAttributes(&firewallRules, 0, "accept",
 						"Allow SSH from this network",
@@ -40,6 +41,20 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 						"",
 						"22",
 						"22",
+						"192.168.1.1",
+						"192.168.1.255",
+						"",
+						""),
+					testAccCheckUpCloudFirewallRuleAttributes(&firewallRules, 1, "drop",
+						"Drop all connection from ip range",
+						"IPv4",
+						"",
+						"",
+						"in",
+						"",
+						"",
+						"",
+						"",
 						"192.168.1.1",
 						"192.168.1.255",
 						"",
@@ -64,7 +79,7 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 			{
 				Config: testUpcloudFirewallRulesInstanceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "firewall_rule.#", "2"),
 					testAccCheckFirewallRulesExists(resourceName, &firewallRules),
 				),
 			},
@@ -97,10 +112,9 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"server_id"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -257,6 +271,15 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 			source_address_start = "192.168.1.1"
 		  }
 
+		  firewall_rule {
+			action = "drop"
+			comment = "Drop all connection from ip range"
+			direction = "in"
+			family = "IPv4"
+			source_address_end = "192.168.1.255"
+			source_address_start = "192.168.1.1"
+		  }
+
 		}`
 }
 
@@ -312,4 +335,27 @@ func testUpcloudFirewallRulesInstanceConfigUpdate() string {
 		  }
 
 		}`
+}
+
+func TestFirewallRuleValidateOptionalPort(t *testing.T) {
+	p := cty.Path{}
+	if diag := firewallRuleValidateOptionalPort("1", p); len(diag) > 0 {
+		t.Error(diag[0].Detail)
+	}
+
+	if diag := firewallRuleValidateOptionalPort("65535", p); len(diag) > 0 {
+		t.Error(diag[0].Detail)
+	}
+
+	if diag := firewallRuleValidateOptionalPort("abc", p); len(diag) < 1 {
+		t.Error("firewallRuleValidateOptionalPort failed 'abc' is not valid port")
+	}
+
+	if diag := firewallRuleValidateOptionalPort("0", p); len(diag) < 1 {
+		t.Error("firewallRuleValidateOptionalPort failed '0' is not valid port")
+	}
+
+	if diag := firewallRuleValidateOptionalPort("65536", p); len(diag) < 1 {
+		t.Error("firewallRuleValidateOptionalPort failed '65536' is not valid port")
+	}
 }

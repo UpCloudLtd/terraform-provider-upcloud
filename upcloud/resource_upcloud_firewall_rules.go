@@ -2,12 +2,14 @@ package upcloud
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -61,8 +63,7 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 							Description:  "The protocol this rule will be applied to",
 							Optional:     true,
 							ForceNew:     true,
-							Default:      "tcp",
-							ValidateFunc: validation.StringInSlice([]string{"tcp", "udp", "icmp"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"", "tcp", "udp", "icmp"}, false),
 						},
 						"icmp_type": {
 							Type:         schema.TypeString,
@@ -85,19 +86,19 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 							ForceNew:     true,
 							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty),
 						},
-						"source_port_end": {
-							Type:         schema.TypeInt,
-							Description:  "The source port range ends from this port number",
-							Optional:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumber,
-						},
 						"source_port_start": {
-							Type:         schema.TypeInt,
-							Description:  "The source port range starts from this port number",
-							Optional:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumber,
+							Type:             schema.TypeString,
+							Description:      "The source port range starts from this port number",
+							Optional:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: firewallRuleValidateOptionalPort,
+						},
+						"source_port_end": {
+							Type:             schema.TypeString,
+							Description:      "The source port range ends from this port number",
+							Optional:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: firewallRuleValidateOptionalPort,
 						},
 						"destination_address_start": {
 							Type:         schema.TypeString,
@@ -114,18 +115,18 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty),
 						},
 						"destination_port_start": {
-							Type:         schema.TypeInt,
-							Description:  "The destination port range starts from this port number",
-							Optional:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumber,
+							Type:             schema.TypeString,
+							Description:      "The destination port range starts from this port number",
+							Optional:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: firewallRuleValidateOptionalPort,
 						},
 						"destination_port_end": {
-							Type:         schema.TypeInt,
-							Description:  "The destination port range ends from this port number",
-							Optional:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.IsPortNumber,
+							Type:             schema.TypeString,
+							Description:      "The destination port range ends from this port number",
+							Optional:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: firewallRuleValidateOptionalPort,
 						},
 						"comment": {
 							Type:         schema.TypeString,
@@ -153,42 +154,21 @@ func resourceUpCloudFirewallRulesCreate(ctx context.Context, d *schema.ResourceD
 
 		for _, frMap := range v.([]interface{}) {
 			rule := frMap.(map[string]interface{})
-
-			destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
-			if destinationPortStart == "0" {
-				destinationPortStart = ""
-			}
-
-			destinationPortEnd := strconv.Itoa(rule["destination_port_end"].(int))
-			if destinationPortEnd == "0" {
-				destinationPortEnd = ""
-			}
-
-			sourcePortStart := strconv.Itoa(rule["source_port_start"].(int))
-			if sourcePortStart == "0" {
-				sourcePortStart = ""
-			}
-
-			sourcePortEnd := strconv.Itoa(rule["source_port_end"].(int))
-			if sourcePortEnd == "0" {
-				sourcePortEnd = ""
-			}
-
 			firewallRule := upcloud.FirewallRule{
 				Action:                  rule["action"].(string),
 				Comment:                 rule["comment"].(string),
 				DestinationAddressStart: rule["destination_address_start"].(string),
 				DestinationAddressEnd:   rule["destination_address_end"].(string),
-				DestinationPortStart:    destinationPortStart,
-				DestinationPortEnd:      destinationPortEnd,
+				DestinationPortStart:    rule["destination_port_start"].(string),
+				DestinationPortEnd:      rule["destination_port_end"].(string),
 				Direction:               rule["direction"].(string),
 				Family:                  rule["family"].(string),
 				ICMPType:                rule["icmp_type"].(string),
 				Protocol:                rule["protocol"].(string),
 				SourceAddressStart:      rule["source_address_start"].(string),
 				SourceAddressEnd:        rule["source_address_end"].(string),
-				SourcePortStart:         sourcePortStart,
-				SourcePortEnd:           sourcePortEnd,
+				SourcePortStart:         rule["source_port_start"].(string),
+				SourcePortEnd:           rule["source_port_end"].(string),
 			}
 
 			firewallRules = append(firewallRules, firewallRule)
@@ -237,50 +217,26 @@ func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceDat
 			"comment":                   rule.Comment,
 			"destination_address_end":   rule.DestinationAddressEnd,
 			"destination_address_start": rule.DestinationAddressStart,
+			"destination_port_start":    rule.DestinationPortStart,
+			"destination_port_end":      rule.DestinationPortEnd,
 			"direction":                 rule.Direction,
 			"family":                    rule.Family,
 			"icmp_type":                 rule.ICMPType,
 			"protocol":                  rule.Protocol,
 			"source_address_end":        rule.SourceAddressEnd,
 			"source_address_start":      rule.SourceAddressStart,
-		}
-
-		if rule.DestinationPortEnd != "" {
-			value, err := strconv.Atoi(rule.DestinationPortEnd)
-			if err != nil {
-				diag.FromErr(err)
-			}
-			frMap["destination_port_end"] = value
-		}
-
-		if rule.DestinationPortStart != "" {
-			value, err := strconv.Atoi(rule.DestinationPortStart)
-			if err != nil {
-				diag.FromErr(err)
-			}
-			frMap["destination_port_start"] = value
-		}
-
-		if rule.SourcePortEnd != "" {
-			value, err := strconv.Atoi(rule.SourcePortEnd)
-			if err != nil {
-				diag.FromErr(err)
-			}
-			frMap["source_port_end"] = value
-		}
-
-		if rule.SourcePortStart != "" {
-			value, err := strconv.Atoi(rule.SourcePortStart)
-			if err != nil {
-				diag.FromErr(err)
-			}
-			frMap["source_port_start"] = value
+			"source_port_start":         rule.SourcePortStart,
+			"source_port_end":           rule.SourcePortEnd,
 		}
 
 		frMaps = append(frMaps, frMap)
 	}
 
 	if err := d.Set("firewall_rule", frMaps); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("server_id", d.Id()); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -307,41 +263,21 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 		for _, frMap := range v.([]interface{}) {
 			rule := frMap.(map[string]interface{})
 
-			destinationPortStart := strconv.Itoa(rule["destination_port_start"].(int))
-			if destinationPortStart == "0" {
-				destinationPortStart = ""
-			}
-
-			destinationPortEnd := strconv.Itoa(rule["destination_port_end"].(int))
-			if destinationPortEnd == "0" {
-				destinationPortEnd = ""
-			}
-
-			sourcePortStart := strconv.Itoa(rule["source_port_start"].(int))
-			if sourcePortStart == "0" {
-				sourcePortStart = ""
-			}
-
-			sourcePortEnd := strconv.Itoa(rule["source_port_end"].(int))
-			if sourcePortEnd == "0" {
-				sourcePortEnd = ""
-			}
-
 			firewallRule := upcloud.FirewallRule{
 				Action:                  rule["action"].(string),
 				Comment:                 rule["comment"].(string),
 				DestinationAddressStart: rule["destination_address_start"].(string),
 				DestinationAddressEnd:   rule["destination_address_end"].(string),
-				DestinationPortStart:    destinationPortStart,
-				DestinationPortEnd:      destinationPortEnd,
+				DestinationPortStart:    rule["destination_port_start"].(string),
+				DestinationPortEnd:      rule["destination_port_end"].(string),
 				Direction:               rule["direction"].(string),
 				Family:                  rule["family"].(string),
 				ICMPType:                rule["icmp_type"].(string),
 				Protocol:                rule["protocol"].(string),
 				SourceAddressStart:      rule["source_address_start"].(string),
 				SourceAddressEnd:        rule["source_address_end"].(string),
-				SourcePortStart:         sourcePortStart,
-				SourcePortEnd:           sourcePortEnd,
+				SourcePortStart:         rule["source_port_start"].(string),
+				SourcePortEnd:           rule["source_port_end"].(string),
 			}
 
 			firewallRules = append(firewallRules, firewallRule)
@@ -382,5 +318,50 @@ func resourceUpCloudFirewallRulesDelete(ctx context.Context, d *schema.ResourceD
 	}
 
 	d.SetId("")
+	return diags
+}
+
+func firewallRuleValidateOptionalPort(v interface{}, path cty.Path) diag.Diagnostics {
+	const (
+		portMin int = 1
+		portMax int = 65535
+	)
+	var diags diag.Diagnostics
+	val, ok := v.(string)
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity:      diag.Error,
+			Summary:       "Bad type",
+			Detail:        "expected type to be string",
+			AttributePath: path,
+		})
+		return diags
+	}
+
+	if val == "" {
+		return diags
+	}
+
+	i, err := strconv.Atoi(val)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity:      diag.Error,
+			Summary:       "Bad port format",
+			Detail:        fmt.Sprintf("%s is not valid number", val),
+			AttributePath: path,
+		})
+		return diags
+	}
+
+	if portMin > i || i > portMax {
+		diags = append(diags, diag.Diagnostic{
+			Severity:      diag.Error,
+			Summary:       "Bad port",
+			Detail:        fmt.Sprintf("%s is not within valid port range %d - %d", val, portMin, portMax),
+			AttributePath: path,
+		})
+		return diags
+	}
+
 	return diags
 }

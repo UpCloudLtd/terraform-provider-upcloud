@@ -208,6 +208,11 @@ resource "upcloud_server" "example" {
 For more examples, check the `examples/` directory or visit
 [official Terraform documentation](https://registry.terraform.io/providers/UpCloudLtd/upcloud/latest/docs).
 
+## Known issues
+- `BACKUP_RULE_CONFLICT` when updating server `simple_backup` and storage `backup_rule` in one apply
+
+  Removing `simple_backup` from a server and adding `backup_rule` to a storage attached to that same server in one apply operation will throw the `BACKUP_RULE_CONFLICT` error. This is caused by the fact that updating backup rules has to be done in a specific order that is not possible to achieve with Terraform. The workaround for this issue is to first remove `simple_backup` from the server, apply the change, and then add `backup_rule` to a desired storage and apply the change separately.
+
 ## Developing the Provider
 
 If you wish to work on the provider, you'll first need
@@ -341,6 +346,11 @@ After exiting the container, you can connect back to the container:
 ```sh
 docker start -ai <container ID here>
 ```
+
+### Debugging
+
+UpCloud provider can be run in debug mode using a debugger such as Delve.  
+For more information, see [Terraform docs](https://www.terraform.io/docs/extend/debugging.html#starting-a-provider-in-debug-mode)
 
 ### Consuming local provider with Terraform 0.12.0
 
