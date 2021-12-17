@@ -98,7 +98,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateAsPoweredOff(t *testing.T) {
 						plan = "1x1xCPU-2GB-25GB"
 						title = "testtitle"
 						zone = "fi-hel1"
-						powered = "true"
+						powered = true
 					}`, rName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceIdentifier, "powered", "true"),
@@ -136,4 +136,32 @@ func TestAccUpcloudManagedDatabaseMySQL_Create(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestIsManagedDatabaseFullyCreated(t *testing.T) {
+	db := &upcloud.ManagedDatabase{
+		Backups: make([]upcloud.ManagedDatabaseBackup, 0),
+		State:   upcloud.ManagedDatabaseStatePoweroff,
+		Users:   make([]upcloud.ManagedDatabaseUser, 0),
+	}
+	if isManagedDatabaseFullyCreated(db) {
+		t.Errorf("isManagedDatabaseFullyCreated failed want false got true %+v", db)
+	}
+
+	db.State = upcloud.ManagedDatabaseStateRunning
+	db.Backups = append(db.Backups, upcloud.ManagedDatabaseBackup{})
+	if isManagedDatabaseFullyCreated(db) {
+		t.Errorf("isManagedDatabaseFullyCreated failed want false got true %+v", db)
+	}
+
+	db.Users = append(db.Users, upcloud.ManagedDatabaseUser{})
+	db.Backups = make([]upcloud.ManagedDatabaseBackup, 0)
+	if isManagedDatabaseFullyCreated(db) {
+		t.Errorf("isManagedDatabaseFullyCreated failed want false got true %+v", db)
+	}
+
+	db.Backups = append(db.Backups, upcloud.ManagedDatabaseBackup{})
+	if !isManagedDatabaseFullyCreated(db) {
+		t.Errorf("isManagedDatabaseFullyCreated failed want true got false %+v", db)
+	}
 }

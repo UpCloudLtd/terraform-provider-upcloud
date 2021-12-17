@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -291,9 +292,27 @@ func resourceUpCloudManagedDatabaseCreate(serviceType upcloud.ManagedDatabaseSer
 			return diag.FromErr(err)
 		}
 		d.SetId(details.UUID)
+
 		log.Printf("[INFO] managed database %v (%v) created", details.UUID, d.Get("name"))
 
-		return resourceUpCloudManagedDatabaseUpdate(ctx, d, meta)
+		if !d.Get("powered").(bool) {
+			if err = waitManagedDatabaseFullyCreated(ctx, client, details); err != nil {
+				// return warning so that next apply will only shutdown database instead of recreating it
+				d := resourceUpCloudManagedDatabaseRead(ctx, d, meta)
+				d = append(d, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  err.Error(),
+				})
+				return d
+			}
+
+			_, err := client.ShutdownManagedDatabase(&request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			log.Printf("[INFO] managed database %v (%v) is powered off", d.Id(), d.Get("name"))
+		}
+		return resourceUpCloudManagedDatabaseRead(ctx, d, meta)
 	}
 }
 
@@ -312,10 +331,7 @@ func resourceUpCloudManagedDatabaseRead(ctx context.Context, d *schema.ResourceD
 func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	var updated bool
-
-	// Skip modifying these changes if are creating a new resource
-	if !d.IsNewResource() && d.HasChanges("plan", "title", "zone",
+	if d.HasChanges("plan", "title", "zone",
 		"maintenance_window_dow", "maintenance_window_time", "properties.0") {
 		req := request.ModifyManagedDatabaseRequest{UUID: d.Id()}
 		req.Plan = d.Get("plan").(string)
@@ -339,34 +355,23 @@ func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.Resourc
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		updated = true
+		log.Printf("[INFO] managed database %v (%v) updated", d.Id(), d.Get("name"))
 	}
 
-	// Weirdly, if this is a new resource then we need to evaluate the power state as the defaults are ignored
-	// in terraform in create phase.
-	if d.IsNewResource() || d.HasChange("powered") {
-		doPowerOn := !d.IsNewResource() && d.Get("powered").(bool)
-		doPowerOff := !d.Get("powered").(bool)
-		if doPowerOn {
+	if d.HasChange("powered") {
+		if d.Get("powered").(bool) {
 			_, err := client.StartManagedDatabase(&request.StartManagedDatabaseRequest{UUID: d.Id()})
 			if err != nil {
 				return diag.FromErr(err)
 			}
 			log.Printf("[INFO] managed database %v (%v) is powered on", d.Id(), d.Get("name"))
-			updated = true
-		}
-		if doPowerOff {
+		} else {
 			_, err := client.ShutdownManagedDatabase(&request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
 			if err != nil {
 				return diag.FromErr(err)
 			}
 			log.Printf("[INFO] managed database %v (%v) is powered off", d.Id(), d.Get("name"))
-			updated = true
 		}
-	}
-
-	if updated {
-		log.Printf("[INFO] managed database %v (%v) updated", d.Id(), d.Get("name"))
 	}
 
 	return resourceUpCloudManagedDatabaseRead(ctx, d, meta)
@@ -691,4 +696,28 @@ func buildManagedDatabasePropertiesSchema(serviceType upcloud.ManagedDatabaseSer
 		overrideManagedDatabasePropertiesIgnoreClearing(),
 	)
 	return upcloudschema.GenerateTerraformSchemaFromJSONSchema(jsonSchema, overrides)
+}
+
+func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Service, db *upcloud.ManagedDatabase) error {
+	const maxRetries int = 100
+	var err error
+	for i := 0; i <= maxRetries; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			if db, err = client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: db.UUID}); err != nil {
+				return err
+			}
+			if isManagedDatabaseFullyCreated(db) {
+				return nil
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
+	return errors.New("max retries reached while waiting for managed database instance to be created")
+}
+
+func isManagedDatabaseFullyCreated(db *upcloud.ManagedDatabase) bool {
+	return db.State == upcloud.ManagedDatabaseStateRunning && len(db.Backups) > 0 && len(db.Users) > 0
 }
