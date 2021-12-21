@@ -15,6 +15,7 @@ import (
 
 func dataSourceNetworks() *schema.Resource {
 	return &schema.Resource{
+		Description: "Use this data source to get the available UpCloud networks.",
 		ReadContext: dataSourceNetworksRead,
 		Schema: map[string]*schema.Schema{
 			"zone": {

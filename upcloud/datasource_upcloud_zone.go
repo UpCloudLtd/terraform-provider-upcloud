@@ -13,6 +13,7 @@ import (
 
 func dataSourceUpCloudZone() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data-source is deprecated.",
 		ReadContext: resourceUpCloudZoneRead,
 		Schema: map[string]*schema.Schema{
 			"name": {

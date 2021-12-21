@@ -1,0 +1,1 @@
+terraform import upcloud_floating_ip_address.my_new_floating_address 94.237.114.205

@@ -17,6 +17,7 @@ import (
 
 func resourceUpCloudNetwork() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource represents an SDN private network that cloud servers from the same zone can be attached to.",
 		ReadContext:   resourceUpCloudNetworkRead,
 		CreateContext: resourceUpCloudNetworkCreate,
 		UpdateContext: resourceUpCloudNetworkUpdate,

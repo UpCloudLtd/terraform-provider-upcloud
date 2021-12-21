@@ -13,6 +13,7 @@ import (
 
 func resourceUpCloudFloatingIPAddress() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource represents a UpCloud floating IP address resource.",
 		CreateContext: resourceUpCloudFloatingIPAddressCreate,
 		ReadContext:   resourceUpCloudFloatingIPAddressRead,
 		UpdateContext: resourceUpCloudFloatingIPAddressUpdate,
