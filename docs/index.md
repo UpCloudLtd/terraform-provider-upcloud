@@ -2,12 +2,12 @@
 layout: ""
 page_title: "Provider: UpCloud"
 description: |-
-  The UpCloud Terraform Provider enables organisations to control resources provided by the UpCloud platforw.
+  The UpCloud Terraform Provider enables organisations to control resources provided by the UpCloud platform.
 ---
 
 # UpCloud Provider
 
-The UpCloud Terraform Provider enables organisations to control resources provided by the UpCloud platforw.
+The UpCloud Terraform Provider enables organisations to control resources provided by the UpCloud platform.
 
 
 ## Example Usage
