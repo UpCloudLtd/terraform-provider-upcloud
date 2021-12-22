@@ -12,6 +12,7 @@ import (
 
 func dataSourceUpCloudTags() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data-source is deprecated.",
 		ReadContext: dataSourceUpCloudTagsRead,
 		Schema: map[string]*schema.Schema{
 			"tags": {

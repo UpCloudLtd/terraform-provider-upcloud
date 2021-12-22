@@ -14,6 +14,7 @@ import (
 
 func resourceUpCloudTag() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource is deprecated, use tags schema in server resource",
 		CreateContext: resourceUpCloudTagCreate,
 		ReadContext:   resourceUpCloudTagRead,
 		UpdateContext: resourceUpCloudTagUpdate,

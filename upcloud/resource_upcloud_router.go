@@ -12,6 +12,9 @@ import (
 
 func resourceUpCloudRouter() *schema.Resource {
 	return &schema.Resource{
+		Description: `This resource represents a generated UpCloud router resource. 
+		Routers can be used to connect multiple Private Networks. 
+		UpCloud Servers on any attached network can communicate directly with each other.`,
 		CreateContext: resourceUpCloudRouterCreate,
 		ReadContext:   resourceUpCloudRouterRead,
 		UpdateContext: resourceUpCloudRouterUpdate,

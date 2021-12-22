@@ -3,125 +3,104 @@
 page_title: "upcloud_storage Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Manages UpCloud Storage devices
+  Manages UpCloud storage block devices.
 ---
 
 # upcloud_storage (Resource)
 
 Manages UpCloud storage block devices.
 
-## Example
+## Example Usage
 
-The following HCL example shows the creation of a storage resource.
+```terraform
+# Storage resource.
+resource "upcloud_storage" "example_storage" {
+  size  = 10
+  tier  = "maxiops"
+  title = "My data collection"
+  zone  = "fi-hel1"
+}
 
-```hcl
-    resource "upcloud_storage" "example_storage" {
-      size  = 10
-      tier  = "maxiops"
-      title = "My data collection"
-      zone  = "fi-hel1"
-    }
-```
+# Storage resource with the optional backup rule. 
+# This storage resource will be backed up daily at 01:00 hours and each backup will be retained for 8 days.
+resource "upcloud_storage" "example_storage_backup" {
+  size  = 10
+  tier  = "maxiops"
+  title = "My data collection backup"
+  zone  = "fi-hel1"
 
-The following HCL example shows the creation of a storage resource with the
-optional backup rule.  This storage resource will be backed up daily at 01:00
-hours and each backup will be retained for 8 days.
+  backup_rule {
+    interval  = "daily"
+    time      = "0100"
+    retention = 8
+  }
+}
 
-```hcl
-    resource "upcloud_storage" "example_storage_backup" {
-      size  = 10
-      tier  = "maxiops"
-      title = "My data collection backup"
-      zone  = "fi-hel1"
+# Storage resource with the optional import block. 
+# This storage resource will have its content imported from an accessible website:
+resource "upcloud_storage" "example_storage_backup" {
+  size  = 10
+  tier  = "maxiops"
+  title = "My imported data"
+  zone  = "fi-hel1"
 
-      backup_rule {
-        interval  = "daily"
-        time      = "0100"
-        retention = 8
-      }
-    }
-```
+  import {
+    source          = "http_import"
+    source_location = "http://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"
+  }
+}
 
-The following HCL example shows the creation of the storage resource with the
-optional import block.  This storage resource will have its content imported
-from an accessible website:
+# Storage resource with the optional import block. 
+# This storage resource will have its content imported from a local file:
+resource "upcloud_storage" "example_storage_backup" {
+  size  = 10
+  tier  = "maxiops"
+  title = "My imported data"
+  zone  = "fi-hel1"
 
-```hcl
-    resource "upcloud_storage" "example_storage_backup" {
-      size  = 10
-      tier  = "maxiops"
-      title = "My imported data"
-      zone  = "fi-hel1"
+  import {
+    source          = "direct_upload"
+    source_location = "/tmp/upload_image.img"
+    source_hash     = filesha256("/tmp/upload_image.img")
+  }
+}
 
-      import {
-        source = "http_import"
-        source_location = "http://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"
-      }
-    }
-```
+# Storage resource with the optional clone block. 
+# This storage resource will be cloned from the referenced storage ID. 
+# The reference storage should either not be attached to a server or that server be stopped. 
+# If the storage to clone is not the specified size the storage will be resized after cloning.
+resource "upcloud_storage" "example_storage_clone" {
+  size  = 20
+  tier  = "maxiops"
+  title = "My cloned data"
+  zone  = "fi-hel1"
 
-The following HCL example shows the creation of the storage resource with the
-optional import block. This storage resource will have its content imported
-from a local file:
+  clone {
+    id = "01f936c9-38b2-4a10-b1fe-ad43d3078246"
+  }
+}
 
-```hcl
-    resource "upcloud_storage" "example_storage_backup" {
-      size  = 10
-      tier  = "maxiops"
-      title = "My imported data"
-      zone  = "fi-hel1"
+# Storage resource with the creation of a server resource which will attach the created storage resource.
+resource "upcloud_storage" "example_storage" {
+  size  = 20
+  tier  = "maxiops"
+  title = "My storage"
+  zone  = "fi-hel1"
+}
 
-      import {
-        source = "direct_upload"
-        source_location = "/tmp/upload_image.img"
-        source_hash = filesha256("/tmp/upload_image.img")
-      }
-    }
-```
+resource "upcloud_server" "example_server" {
+  zone     = "fi-hel1"
+  plan     = "1xCPU-1GB"
+  hostname = "terraform.example.tld"
 
-The following HCL example shows the creation of the storage resource with the
-optional clone block. This storage resource will be cloned from the referenced
-storage ID. The reference storage should either not be attached to a server or
-that server be stopped. If the storage to clone is not the specified size the
-storage will be resized after cloning.
+  network_interface {
+    type = "public"
+  }
 
-```hcl
-    resource "upcloud_storage" "example_storage_clone" {
-      size  = 20
-      tier  = "maxiops"
-      title = "My cloned data"
-      zone  = "fi-hel1"
-
-      clone {
-        id = "01f936c9-38b2-4a10-b1fe-ad43d3078246"
-      }
-    }
-```
-
-The following HCL example shows the creation of the storage resource with the
-creation of a server resource which will attach the created storage resource.
-
-```hcl
-    resource "upcloud_storage" "example_storage" {
-      size  = 20
-      tier  = "maxiops"
-      title = "My storage"
-      zone  = "fi-hel1"
-    }
-
-    resource "upcloud_server" "example_server" {
-      zone     = "fi-hel1"
-      plan     = "1xCPU-1GB"
-      hostname = "terraform.example.tld"
-
-      network_interface {
-        type = "public"
-      }
-
-      storage_devices {
-        storage = upcloud_storage.example_storage[0].id
-      }
-    }
+  storage_devices {
+    storage = upcloud_storage.example_storage[0].id
+  }
+}
 ```
 
 <!-- schema generated by tfplugindocs -->
@@ -135,7 +114,14 @@ creation of a server resource which will attach the created storage resource.
 
 ### Optional
 
-- **backup_rule** (Block List, Max: 1) The criteria to backup the storage (see [below for nested schema](#nestedblock--backup_rule))
+- **backup_rule** (Block List, Max: 1) The criteria to backup the storage  
+		Please keep in mind that it's not possible to have a server with backup_rule attached to a server with simple_backup specified.
+		Such configurations will throw errors during execution.  
+		Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, 
+		it is advised to never switch between simple_backup on the server and individual storages backup_rules in one apply.
+		If you want to switch from using server simple backup to per-storage defined backup rules, 
+		please first remove simple_backup block from a server, run 'terraform apply', 
+		then add 'backup_rule' to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--backup_rule))
 - **clone** (Block Set, Max: 1) Block defining another storage/template to clone to storage (see [below for nested schema](#nestedblock--clone))
 - **id** (String) The ID of this resource.
 - **import** (Block Set, Max: 1) Block defining external data to import to storage (see [below for nested schema](#nestedblock--import))
@@ -150,13 +136,6 @@ Required:
 - **retention** (Number) The number of days before a backup is automatically deleted
 - **time** (String) The time of day when the backup is created
 
-Notes:
-
-Please keep in mind that it's not possible to have a server with `backup_rule` attached to a server with `simple_backup` specified.
-Such configurations will throw errors during execution.
-
-Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, it is advised to never switch between `simple_backup` on the server and individual storages `backup_rule`s in one apply.
-If you want to switch from using server simple backup to per-storage defined backup rules, please first remove `simple_backup` block from a server, run `terraform apply`, then add `backup_rule` to desired storages and run `terraform apply` again.
 
 <a id="nestedblock--clone"></a>
 ### Nested Schema for `clone`
@@ -185,9 +164,8 @@ Read-Only:
 
 ## Import
 
-Existing UpCloud storage can be imported into the current Terraform state
-through the assigned UUID.
+Import is supported using the following syntax:
 
-```hcl
-  terraform import upcloud_storage.example_storage 0128ae5a-91dd-4ebf-bd1e-304c47f2c652
+```shell
+terraform import upcloud_storage.example_storage 0128ae5a-91dd-4ebf-bd1e-304c47f2c652
 ```

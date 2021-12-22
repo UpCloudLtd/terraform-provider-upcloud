@@ -3,19 +3,17 @@
 page_title: "upcloud_network Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Manages UpCloud networks
+  This resource represents an SDN private network that cloud servers from the same zone can be attached to.
 ---
 
 # upcloud_network (Resource)
 
-This resource represents an SDN private network that cloud servers from the
-same zone can be attached to.
+This resource represents an SDN private network that cloud servers from the same zone can be attached to.
 
-## Example
+## Example Usage
 
-### SDN network with a router
-
-```hcl
+```terraform
+# SDN network with a router
 resource "upcloud_network" "example_network" {
   name = "example_private_net"
   zone = "nl-ams1"
@@ -26,8 +24,8 @@ resource "upcloud_network" "example_network" {
     address            = "10.0.0.0/24"
     dhcp               = true
     dhcp_default_route = false
-    family  = "IPv4"
-    gateway = "10.0.0.1"
+    family             = "IPv4"
+    gateway            = "10.0.0.1"
   }
 }
 
@@ -71,9 +69,8 @@ Optional:
 
 ## Import
 
-Existing UpCloud networks can be imported into the current Terraform state
-through the assigned UUID.
+Import is supported using the following syntax:
 
-```hcl
+```shell
 terraform import upcloud_network.my_example_network 03e44422-07b8-4798-a597-c8eab1fa64df
 ```

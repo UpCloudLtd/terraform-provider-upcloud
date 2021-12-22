@@ -1,0 +1,1 @@
+terraform import upcloud_network.my_example_network 03e44422-07b8-4798-a597-c8eab1fa64df

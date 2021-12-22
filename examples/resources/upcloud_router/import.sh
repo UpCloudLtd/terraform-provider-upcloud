@@ -1,0 +1,1 @@
+terraform import upcloud_router.my_example_router 049d7ca2-757e-4fb1-a833-f87ee056547a
