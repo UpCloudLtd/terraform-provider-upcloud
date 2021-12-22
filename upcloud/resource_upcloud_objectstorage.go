@@ -20,6 +20,7 @@ const numRetries = 5
 
 func resourceUpCloudObjectStorage() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.",
 		CreateContext: resourceObjectStorageCreate,
 		ReadContext:   resourceObjectStorageRead,
 		UpdateContext: resourceObjectStorageUpdate,

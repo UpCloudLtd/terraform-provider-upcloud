@@ -3,33 +3,25 @@
 page_title: "upcloud_networks Data Source - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Get information on available UpCloud networks.
+  Use this data source to get the available UpCloud networks.
 ---
 
 # upcloud_networks (Data Source)
 
-Use this data source to get the available UpCloud [networks][1].
+Use this data source to get the available UpCloud networks.
 
-## Example
+## Example Usage
 
-The following example will return all available networks:
-
-```hcl
+```terraform
+# return all available networks
 data "upcloud_networks" "upcloud" {}
-```
 
-The following example will return all available networks within a zone:
-
-```hcl
+# return all available networks within a zone
 data "upcloud_networks" "upcloud_by_zone" {
   zone = "fi-hel1"
 }
-```
 
-The following example will return all available networks filtered by a
-regular expression on the name of the network:
-
-```hcl
+# return all available networks filtered by a regular expression on the name of the network
 data "upcloud_networks" "upcloud_by_zone" {
   filter_name = "^Public.*"
 }
@@ -81,4 +73,4 @@ Read-Only:
 - **id** (String)
 - **title** (String)
 
-[1]: https://upcloud.com/products/software-defined-networking/
+

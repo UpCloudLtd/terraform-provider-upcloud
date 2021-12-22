@@ -3,19 +3,16 @@
 page_title: "upcloud_ip_addresses Data Source - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Gets UpCloud IP Addresses datasource  
+  Returns a set of IP Addresses that are associated with the UpCloud account.
 ---
 
 # upcloud_ip_addresses (Data Source)
 
 Returns a set of IP Addresses that are associated with the UpCloud account.
 
-## Example
+## Example Usage
 
-The following example will return a complete set of IP addresses associated
-with the account.
-
-```hcl
+```terraform
 data "upcloud_ip_addresses" "all_ip_addresses" {}
 ```
 
@@ -44,3 +41,5 @@ Read-Only:
 - **ptr_record** (String)
 - **server** (String)
 - **zone** (String)
+
+

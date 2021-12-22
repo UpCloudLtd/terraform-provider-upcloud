@@ -11,6 +11,7 @@ import (
 
 func dataSourceUpCloudIPAddresses() *schema.Resource {
 	return &schema.Resource{
+		Description: "Returns a set of IP Addresses that are associated with the UpCloud account.",
 		ReadContext: dataSourceUpCloudIPAddressesRead,
 		Schema: map[string]*schema.Schema{
 			"addresses": {

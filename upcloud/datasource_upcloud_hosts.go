@@ -12,6 +12,9 @@ import (
 
 func dataSourceUpCloudHosts() *schema.Resource {
 	return &schema.Resource{
+		Description: `Returns a list of available UpCloud hosts. 
+		A host identifies the host server that virtual machines are run on. 
+		Only hosts on private cloud to which the calling account has access to are available through this resource.`,
 		ReadContext: dataSourceUpCloudHostsRead,
 		Schema: map[string]*schema.Schema{
 			"hosts": {

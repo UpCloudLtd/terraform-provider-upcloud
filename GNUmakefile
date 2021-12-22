@@ -62,4 +62,6 @@ test-compile:
 update-deps:
 	go mod vendor
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_13
+docs:
+	tfplugindocs
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_13 docs

@@ -1,0 +1,1 @@
+terraform import upcloud_server.example_server ead4544f-10bf-42a3-b98a-a0fea2e2ad14

@@ -22,6 +22,7 @@ import (
 
 func resourceUpCloudStorage() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Manages UpCloud storage block devices.",
 		CreateContext: resourceUpCloudStorageCreate,
 		ReadContext:   resourceUpCloudStorageRead,
 		UpdateContext: resourceUpCloudStorageUpdate,

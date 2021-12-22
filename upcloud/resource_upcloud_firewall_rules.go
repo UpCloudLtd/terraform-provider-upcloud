@@ -17,6 +17,11 @@ import (
 
 func resourceUpCloudFirewallRules() *schema.Resource {
 	return &schema.Resource{
+		Description: `This resource represents a generated list of UpCloud firewall rules. 
+		Firewall rules are used in conjunction with UpCloud servers. 
+		Each server has its own firewall rules. 
+		The firewall is enabled on all network interfaces except ones attached to private virtual networks. 
+		The maximum number of firewall rules per server is 1000.`,
 		CreateContext: resourceUpCloudFirewallRulesCreate,
 		ReadContext:   resourceUpCloudFirewallRulesRead,
 		UpdateContext: resourceUpCloudFirewallRulesUpdate,

@@ -3,18 +3,20 @@
 page_title: "upcloud_router Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Manages Upcloud router resource
+  This resource represents a generated UpCloud router resource.
+          Routers can be used to connect multiple Private Networks.
+          UpCloud Servers on any attached network can communicate directly with each other.
 ---
 
 # upcloud_router (Resource)
 
-This resource represents a generated UpCloud router resource. Routers can be
-used to connect multiple Private Networks.  UpCloud Servers on any attached
-network can communicate directly with each other.
+This resource represents a generated UpCloud router resource. 
+		Routers can be used to connect multiple Private Networks. 
+		UpCloud Servers on any attached network can communicate directly with each other.
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "upcloud_router" "my_example_router" {
   name = "My Example Router"
 }
@@ -38,8 +40,8 @@ resource "upcloud_router" "my_example_router" {
 
 ## Import
 
-Existing UpCloud routers can be imported into the current Terraform state through the assigned UUID.
+Import is supported using the following syntax:
 
-```hcl
+```shell
 terraform import upcloud_router.my_example_router 049d7ca2-757e-4fb1-a833-f87ee056547a
 ```

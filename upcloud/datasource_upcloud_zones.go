@@ -21,6 +21,7 @@ const (
 
 func dataSourceUpCloudZones() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data-source is deprecated.",
 		ReadContext: dataSourceUpCloudZonesRead,
 		Schema: map[string]*schema.Schema{
 			"zone_ids": {
