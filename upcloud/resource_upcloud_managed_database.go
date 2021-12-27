@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"strings"
 	"time"
 
@@ -295,23 +296,33 @@ func resourceUpCloudManagedDatabaseCreate(serviceType upcloud.ManagedDatabaseSer
 
 		log.Printf("[INFO] managed database %v (%v) created", details.UUID, d.Get("name"))
 
-		if !d.Get("powered").(bool) {
-			if err = waitManagedDatabaseFullyCreated(ctx, client, details); err != nil {
-				// return warning so that next apply will only shutdown database instead of recreating it
-				d := resourceUpCloudManagedDatabaseRead(ctx, d, meta)
-				d = append(d, diag.Diagnostic{
-					Severity: diag.Warning,
-					Summary:  err.Error(),
-				})
-				return d
-			}
+		if err = waitManagedDatabaseFullyCreated(ctx, client, details); err != nil {
+			d := resourceUpCloudManagedDatabaseRead(ctx, d, meta)
+			d = append(d, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  err.Error(),
+			})
+			return d
+		}
 
+		if !d.Get("powered").(bool) {
 			_, err := client.ShutdownManagedDatabase(&request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
 			if err != nil {
 				return diag.FromErr(err)
 			}
 			log.Printf("[INFO] managed database %v (%v) is powered off", d.Id(), d.Get("name"))
 		}
+
+		if err = waitServiceNameToPropagate(ctx, details.ServiceURIParams.Host); err != nil {
+			// return warning if DNS name is not yet available
+			d := resourceUpCloudManagedDatabaseRead(ctx, d, meta)
+			d = append(d, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  err.Error(),
+			})
+			return d
+		}
+
 		return resourceUpCloudManagedDatabaseRead(ctx, d, meta)
 	}
 }
@@ -720,4 +731,28 @@ func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Servic
 
 func isManagedDatabaseFullyCreated(db *upcloud.ManagedDatabase) bool {
 	return db.State == upcloud.ManagedDatabaseStateRunning && len(db.Backups) > 0 && len(db.Users) > 0
+}
+
+func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
+	const maxRetries int = 12
+	var ips []net.IPAddr
+	for i := 0; i <= maxRetries; i++ {
+		if ips, err = net.DefaultResolver.LookupIPAddr(ctx, name); err != nil {
+			switch e := err.(type) {
+			case *net.DNSError:
+				if !e.IsNotFound && !e.IsTemporary {
+					return err
+				}
+			default:
+				return err
+			}
+		}
+
+		if len(ips) > 0 {
+			return nil
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+	return errors.New("max retries reached while waiting for service name to propagate")
 }

@@ -1,8 +1,10 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -163,5 +165,24 @@ func TestIsManagedDatabaseFullyCreated(t *testing.T) {
 	db.Backups = append(db.Backups, upcloud.ManagedDatabaseBackup{})
 	if !isManagedDatabaseFullyCreated(db) {
 		t.Errorf("isManagedDatabaseFullyCreated failed want true got false %+v", db)
+	}
+}
+
+func TestWaitServiceNameToPropagate(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+	name := "upcloud.com"
+	if err := waitServiceNameToPropagate(ctx, name); err != nil {
+		t.Errorf("waitServiceNameToPropagate failed %+v", err)
+	}
+}
+
+func TestWaitServiceNameToPropagateContextTimeout(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1)
+	defer cancel()
+	name := "upcloud.com"
+	if err := waitServiceNameToPropagate(ctx, name); err == nil {
+		d, _ := ctx.Deadline()
+		t.Errorf("waitServiceNameToPropagate failed didn't timeout before deadline %s", d.Format(time.RFC3339))
 	}
 }

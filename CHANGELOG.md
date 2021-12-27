@@ -8,7 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - server: validate plan and zone field values before executing API commands
-
+- Support for UpCloud Managed Databases
 - Support for debuggers like Delve
 
 ### Fixed
