@@ -3,7 +3,6 @@
 </a>
 
 # UpCloud Terraform Provider
-[![tests](https://github.com/UpCloudLtd/terraform-provider-upcloud/actions/workflows/terraform.yml/badge.svg?event=pull_request&branch=)](https://github.com/UpCloudLtd/terraform-provider-upcloud/actions/workflows/terraform.yml)
 
 This Terraform plugin allows managing different UpCloud products with
 terraform.
