@@ -8,7 +8,4 @@ terraform {
 }
 
 provider "upcloud" {
-  username = "<Your username>"
-  password = "<Your password>"
 }
-
