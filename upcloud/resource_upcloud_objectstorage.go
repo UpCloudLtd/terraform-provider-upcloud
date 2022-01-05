@@ -79,7 +79,7 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 				Computed: true,
 			},
 			bucketKey: {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -127,7 +127,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 			return diag.FromErr(err)
 		}
 
-		for _, bucketDetails := range v.([]interface{}) {
+		for _, bucketDetails := range v.(*schema.Set).List() {
 			details := bucketDetails.(map[string]interface{})
 
 			err = conn.MakeBucket(ctx, details["name"].(string), minio.MakeBucketOptions{})
