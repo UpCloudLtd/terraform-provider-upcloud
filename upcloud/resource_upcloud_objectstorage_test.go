@@ -238,6 +238,13 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 			{
 				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
 					expectedSize, objectStorageTestExpectedName2, objectStorageTestExpectedZone,
+					objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName2, expectedBucketName1,
+				),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
+					expectedSize, objectStorageTestExpectedName2, objectStorageTestExpectedZone,
 					objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(

@@ -273,12 +273,12 @@ func getNewAndDeletedBucketNames(d *schema.ResourceData) ([]string, []string) {
 
 	before, after := d.GetChange(bucketKey)
 
-	for _, item := range before.([]interface{}) {
+	for _, item := range before.(*schema.Set).List() {
 		valueMap := item.(map[string]interface{})
 		beforeNames = append(beforeNames, valueMap["name"].(string))
 	}
 
-	for _, item := range after.([]interface{}) {
+	for _, item := range after.(*schema.Set).List() {
 		valueMap := item.(map[string]interface{})
 		afterNames = append(afterNames, valueMap["name"].(string))
 	}
