@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
@@ -15,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/minio/minio-go/v7"
-	"github.com/rs/xid"
 )
 
 const expectedDescription = "My object storage"
@@ -24,10 +24,10 @@ const expectedKey = "an access key"
 const expectedSecret = "a secret key"
 const runPrefix = "testacc-"
 
-var runID = xid.New().String()
-var expectedName1 = fmt.Sprintf("%s%s-1", runPrefix, runID)
-var expectedName2 = fmt.Sprintf("%s%s-2", runPrefix, runID)
-var expectedName3 = fmt.Sprintf("%s%s-3", runPrefix, runID)
+var runID = time.Now().Unix()
+var expectedName1 = fmt.Sprintf("%s%d-1", runPrefix, runID)
+var expectedName2 = fmt.Sprintf("%s%d-2", runPrefix, runID)
+var expectedName3 = fmt.Sprintf("%s%d-3", runPrefix, runID)
 
 func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
