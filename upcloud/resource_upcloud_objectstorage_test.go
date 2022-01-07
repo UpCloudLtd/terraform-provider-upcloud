@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/upcloud/request"
@@ -17,25 +18,21 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-const expectedDescription = "My object storage"
-const expectedZone = "pl-waw1"
-const expectedKey = "an access key"
-const expectedSecret = "a secret key"
+const objectStorageTestExpectedDescription = "My object storage"
+const objectStorageTestExpectedZone = "pl-waw1"
+const objectStorageTestExpectedKey = "an access key"
+const objectStorageTestExpectedSecret = "a secret key"
+const objectStorageTestRunPrefix = "testacc-"
 
-const expectedName1 = "test-name1"
-const expectedName2 = "test-name2"
-const expectedName3 = "test-name3"
+var objectStorageTestRunID = time.Now().Unix()
+var objectStorageTestExpectedName1 = fmt.Sprintf("%s%d-1", objectStorageTestRunPrefix, objectStorageTestRunID)
+var objectStorageTestExpectedName2 = fmt.Sprintf("%s%d-2", objectStorageTestRunPrefix, objectStorageTestRunID)
+var objectStorageTestExpectedName3 = fmt.Sprintf("%s%d-3", objectStorageTestRunPrefix, objectStorageTestRunID)
 
 func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
 		Name: "object_storage_cleanup",
 		F: func(region string) error {
-			var nameMap = map[string]interface{}{
-				expectedName1: nil,
-				expectedName2: nil,
-				expectedName3: nil,
-			}
-
 			username, ok := os.LookupEnv("UPCLOUD_USERNAME")
 			if !ok {
 				return fmt.Errorf("UPCLOUD_USERNAME must be set for acceptance tests")
@@ -56,8 +53,7 @@ func init() {
 			}
 
 			for _, objectStorage := range objectStorages.ObjectStorages {
-				_, found := nameMap[objectStorage.Name]
-				if !found {
+				if !strings.HasPrefix(objectStorage.Name, objectStorageTestRunPrefix) {
 					continue
 				}
 
@@ -88,11 +84,11 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedKey, expectedSecret, expectedName1),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName1),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceConfig(
-					expectedSize, expectedName1, expectedDescription, expectedZone, expectedKey, expectedSecret,
+					expectedSize, objectStorageTestExpectedName1, objectStorageTestExpectedDescription, objectStorageTestExpectedZone, objectStorageTestExpectedKey, objectStorageTestExpectedSecret,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("upcloud_object_storage.my_storage", "size"),
@@ -102,12 +98,12 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "name", expectedName1),
+						"upcloud_object_storage.my_storage", "name", objectStorageTestExpectedName1),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "description", expectedDescription),
+						"upcloud_object_storage.my_storage", "description", objectStorageTestExpectedDescription),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "zone", expectedZone),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName1),
+						"upcloud_object_storage.my_storage", "zone", objectStorageTestExpectedZone),
+					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName1),
 				),
 			},
 		},
@@ -127,30 +123,30 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, expectedName2),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceConfig(
-					expectedSize, expectedName2, expectedDescription, expectedZone, expectedKey, expectedSecret,
+					expectedSize, objectStorageTestExpectedName2, objectStorageTestExpectedDescription, objectStorageTestExpectedZone, objectStorageTestExpectedKey, objectStorageTestExpectedSecret,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "name", expectedName2),
+						"upcloud_object_storage.my_storage", "name", objectStorageTestExpectedName2),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "description", expectedDescription),
+						"upcloud_object_storage.my_storage", "description", objectStorageTestExpectedDescription),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "zone", expectedZone),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
+						"upcloud_object_storage.my_storage", "zone", objectStorageTestExpectedZone),
+					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
 				),
 			},
 			{
 				Config: testUpCloudObjectStorageInstanceConfig(
 					expectedUpdatedSize,
-					expectedName2,
+					objectStorageTestExpectedName2,
 					expectedUpdatedDescription,
-					expectedZone,
+					objectStorageTestExpectedZone,
 					expectedUpdatedKey,
 					expectedUpdatedSecret,
 				),
@@ -159,7 +155,7 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 						"upcloud_object_storage.my_storage", "size", expectedUpdatedSize),
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "description", expectedUpdatedDescription),
-					verifyObjectStorageExists(expectedUpdatedKey, expectedUpdatedSecret, expectedName2),
+					verifyObjectStorageExists(expectedUpdatedKey, expectedUpdatedSecret, objectStorageTestExpectedName2),
 				),
 			},
 		},
@@ -177,24 +173,24 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, expectedName2),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceDefaultsConfig(
-					expectedSize, expectedName3, expectedZone, expectedKey, expectedSecret,
+					expectedSize, objectStorageTestExpectedName3, objectStorageTestExpectedZone, objectStorageTestExpectedKey, objectStorageTestExpectedSecret,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "zone", expectedZone),
+						"upcloud_object_storage.my_storage", "zone", objectStorageTestExpectedZone),
 				),
 			},
 			{
 				Config: testUpCloudObjectStorageInstanceDefaultsConfig(
 					expectedUpdatedSize,
-					expectedName3,
-					expectedZone,
+					objectStorageTestExpectedName3,
+					objectStorageTestExpectedZone,
 					expectedUpdatedKey,
 					expectedUpdatedSecret,
 				),
@@ -220,67 +216,67 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedKey, expectedSecret, expectedName2),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
-					expectedSize, expectedName2, expectedZone,
-					expectedKey, expectedSecret, expectedBucketName1, expectedBucketName2,
+					expectedSize, objectStorageTestExpectedName2, objectStorageTestExpectedZone,
+					objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1, expectedBucketName2,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "name", expectedName2),
+						"upcloud_object_storage.my_storage", "name", objectStorageTestExpectedName2),
 					resource.TestCheckResourceAttr(
-						"upcloud_object_storage.my_storage", "zone", expectedZone),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
+						"upcloud_object_storage.my_storage", "zone", objectStorageTestExpectedZone),
+					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
 				),
 			},
 			{
 				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
-					expectedSize, expectedName2, expectedZone,
-					expectedKey, expectedSecret, expectedBucketName1,
+					expectedSize, objectStorageTestExpectedName2, objectStorageTestExpectedZone,
+					objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
-					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
+					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
 				),
 			},
 			{
 				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
-					expectedSize, expectedName2, expectedZone,
-					expectedKey, expectedSecret, expectedBucketName1, expectedBucketName3, expectedBucketName4,
+					expectedSize, objectStorageTestExpectedName2, objectStorageTestExpectedZone,
+					objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1, expectedBucketName3, expectedBucketName4,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
-					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName3),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName4),
+					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName3),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName4),
 				),
 			},
 			{
 				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
-					expectedSize, expectedName2, expectedZone,
-					expectedKey, expectedSecret, expectedBucketName4, expectedBucketName5,
+					expectedSize, objectStorageTestExpectedName2, objectStorageTestExpectedZone,
+					objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName4, expectedBucketName5,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
-					verifyObjectStorageExists(expectedKey, expectedSecret, expectedName2),
-					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName1),
-					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName2),
-					verifyBucketDoesNotExist(expectedKey, expectedSecret, expectedName2, expectedBucketName3),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName4),
-					verifyBucketExists(expectedKey, expectedSecret, expectedName2, expectedBucketName5),
+					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName3),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName4),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName5),
 				),
 			},
 		},
