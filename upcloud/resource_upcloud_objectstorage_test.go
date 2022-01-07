@@ -15,26 +15,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/minio/minio-go/v7"
+	"github.com/rs/xid"
 )
 
 const expectedDescription = "My object storage"
 const expectedZone = "pl-waw1"
 const expectedKey = "an access key"
 const expectedSecret = "a secret key"
+const runPrefix = "testacc-"
 
-const expectedName1 = "test-name1"
-const expectedName2 = "test-name2"
-const expectedName3 = "test-name3"
+var runID = xid.New().String()
+var expectedName1 = fmt.Sprintf("%s%s-1", runPrefix, runID)
+var expectedName2 = fmt.Sprintf("%s%s-2", runPrefix, runID)
+var expectedName3 = fmt.Sprintf("%s%s-3", runPrefix, runID)
 
 func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
 		Name: "object_storage_cleanup",
 		F: func(region string) error {
-			var nameMap = map[string]interface{}{
-				expectedName1: nil,
-				expectedName2: nil,
-				expectedName3: nil,
-			}
 
 			username, ok := os.LookupEnv("UPCLOUD_USERNAME")
 			if !ok {
@@ -56,8 +54,7 @@ func init() {
 			}
 
 			for _, objectStorage := range objectStorages.ObjectStorages {
-				_, found := nameMap[objectStorage.Name]
-				if !found {
+				if !strings.HasPrefix(objectStorage.Name, runPrefix) {
 					continue
 				}
 
