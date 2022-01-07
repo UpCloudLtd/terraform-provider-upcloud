@@ -33,7 +33,6 @@ func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
 		Name: "object_storage_cleanup",
 		F: func(region string) error {
-
 			username, ok := os.LookupEnv("UPCLOUD_USERNAME")
 			if !ok {
 				return fmt.Errorf("UPCLOUD_USERNAME must be set for acceptance tests")
