@@ -290,6 +290,13 @@ func resourceUpCloudManagedDatabaseCreate(serviceType upcloud.ManagedDatabaseSer
 			)
 		}
 
+		if d.HasChange("maintenance_window_dow") || d.HasChange("maintenance_window_time") {
+			req.Maintenance = request.ManagedDatabaseMaintenanceTimeRequest{
+				DayOfWeek: d.Get("maintenance_window_dow").(string),
+				Time:      d.Get("maintenance_window_time").(string),
+			}
+		}
+
 		details, err := client.CreateManagedDatabase(&req)
 		if err != nil {
 			return diag.FromErr(err)
@@ -350,12 +357,11 @@ func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.Resourc
 		req.Plan = d.Get("plan").(string)
 		req.Title = d.Get("title").(string)
 		req.Zone = d.Get("zone").(string)
-		if d.HasChange("maintenance_window_dow") {
+		if d.HasChange("maintenance_window_dow") || d.HasChange("maintenance_window_time") {
 			req.Maintenance.DayOfWeek = d.Get("maintenance_window_dow").(string)
-		}
-		if d.HasChange("maintenance_window_time") {
 			req.Maintenance.Time = d.Get("maintenance_window_time").(string)
 		}
+
 		if d.HasChange("properties.0") {
 			req.Properties = buildManagedDatabasePropertiesFromResourceData(
 				d,

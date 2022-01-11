@@ -27,7 +27,8 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 						plan = "1x1xCPU-2GB-25GB"
 						title = "testtitle"
 						zone = "fi-hel1"
-
+						maintenance_window_time = "10:00:00"
+  						maintenance_window_dow = "friday"
 						properties {
 							public_access = true
 							ip_filter = ["10.0.0.1/32"]
@@ -39,6 +40,8 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceIdentifier, "title", "testtitle"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "zone", "fi-hel1"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "powered", "true"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_time", "10:00:00"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.0", "10.0.0.1/32"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
 					resource.TestCheckResourceAttrSet(resourceIdentifier, "service_uri"),
@@ -51,13 +54,16 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 						plan = "1x1xCPU-2GB-25GB"
 						title = "testtitle modified"
 						zone = "fi-hel1"
-
+						maintenance_window_time = "11:00:00"
+						maintenance_window_dow = "friday"
 						properties {
 							ip_filter = []
 						}
 					}`, rName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceIdentifier, "title", "testtitle modified"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_time", "11:00:00"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.public_access", "false"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.#", "0"),
 				),
