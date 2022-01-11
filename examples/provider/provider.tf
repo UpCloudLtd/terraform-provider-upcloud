@@ -1,5 +1,10 @@
 terraform {
-  required_version = ">= 0.12.0"
+  required_providers {
+    upcloud = {
+      source  = "UpCloudLtd/upcloud"
+      version = "~> 2.0"
+    }
+  }
 }
 
 provider "upcloud" {
@@ -7,6 +12,3 @@ provider "upcloud" {
   password = "<Your password>"
 }
 
-resource "upcloud_server" "myserver" {
-  # ...
-}

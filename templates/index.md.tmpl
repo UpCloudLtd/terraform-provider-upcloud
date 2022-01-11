@@ -9,9 +9,109 @@ description: |-
 
 The UpCloud Terraform Provider enables organisations to control resources provided by the UpCloud platform.
 
+## Configure provider
+### Using environment variables
+Define credentials using `UPCLOUD_USERNAME` and `UPCLOUD_PASSWORD` environment variables.  
+{{tffile "examples/provider/provider_env.tf"}}
 
-## Example Usage
 
+
+### Using configuration arguments
 {{tffile "examples/provider/provider.tf"}}
 
 {{ .SchemaMarkdown | trimspace }}
+
+## Using the provider
+
+### Requirements
+
+* [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
+
+
+It's recommended to configure your credentials using environment variable:
+
+```sh
+export UPCLOUD_USERNAME="upcloud-api-access-enabled-user"
+export UPCLOUD_PASSWORD="verysecretpassword"
+```
+
+To allow API access to your UpCloud account, you need to allow API connections
+by visiting [Account-page](https://hub.upcloud.com/account) in your UpCloud
+Hub. We recommend you to set up a sub-account specifically for the API usage
+with its own username and password, as it allows you to assign specific
+permissions for increased security:
+
+1. Open the [People-page](https://hub.upcloud.com/people) in the UpCloud Hub
+2. Click **Add** in top-right corner and fill in the required details, and
+   check the **Allow API connections** checkbox to enable API for the
+   sub-account. You can also limit the API connections to a specific IP address
+   or address range for additional security
+3. Click the **Create subaccount** button at the bottom left of the page to
+   create the sub-account
+
+Below is an example configuration on how to create a server using the Terraform
+provider with Terraform 0.13 or later:
+
+```terraform
+# set the provider version
+terraform {
+  required_providers {
+    upcloud = {
+      source = "UpCloudLtd/upcloud"
+      version = "~> 2.0"
+    }
+  }
+}
+
+# configure the provider
+provider "upcloud" {
+  # Your UpCloud credentials are read from the environment variables:
+  # export UPCLOUD_USERNAME="Username of your UpCloud API user"
+  # export UPCLOUD_PASSWORD="Password of your UpCloud API user"
+}
+
+# create a server
+resource "upcloud_server" "example" {
+  hostname = "terraform.example.tld"
+  zone     = "de-fra1"
+  plan     = "1xCPU-1GB"
+
+  # Declare network interfaces
+  network_interface {
+    type = "public"
+  }
+
+  network_interface {
+    type = "utility"
+  }
+
+  # Include at least one public SSH key
+  login {
+    user = "terraform"
+    keys = [
+      "<YOUR SSH PUBLIC KEY>",
+    ]
+    create_password = false
+  }
+
+  # Provision the server with Ubuntu
+  template {
+    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+
+    # Use all the space allotted by the selected simple plan
+    size = 25
+
+    # Enable backups
+    backup_rule {
+      interval  = "daily"
+      time      = "0100"
+      retention = 8
+    }
+  }
+}
+```
+
+## Known issues
+- `BACKUP_RULE_CONFLICT` when updating server `simple_backup` and storage `backup_rule` in one apply
+
+  Removing `simple_backup` from a server and adding `backup_rule` to a storage attached to that same server in one apply operation will throw the `BACKUP_RULE_CONFLICT` error. This is caused by the fact that updating backup rules has to be done in a specific order that is not possible to achieve with Terraform. The workaround for this issue is to first remove `simple_backup` from the server, apply the change, and then add `backup_rule` to a desired storage and apply the change separately.
