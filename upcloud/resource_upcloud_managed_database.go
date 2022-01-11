@@ -33,6 +33,7 @@ var resourceUpcloudManagedDatabaseModifiableStates = []upcloud.ManagedDatabaseSt
 
 func resourceUpCloudManagedDatabasePostgreSQL() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource represents PostgreSQL managed database",
 		CreateContext: resourceUpCloudManagedDatabaseCreate(managedDatabaseTypePostgreSQL),
 		ReadContext:   resourceUpCloudManagedDatabaseRead,
 		UpdateContext: resourceUpCloudManagedDatabaseUpdate,
@@ -46,6 +47,7 @@ func resourceUpCloudManagedDatabasePostgreSQL() *schema.Resource {
 
 func resourceUpCloudManagedDatabaseMySQL() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource represents MySQL managed database",
 		CreateContext: resourceUpCloudManagedDatabaseCreate(managedDatabaseTypeMySQL),
 		ReadContext:   resourceUpCloudManagedDatabaseRead,
 		UpdateContext: resourceUpCloudManagedDatabaseUpdate,

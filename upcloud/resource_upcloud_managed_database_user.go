@@ -15,6 +15,7 @@ import (
 
 func resourceUpCloudManagedDatabaseUser() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource represents a user in managed database",
 		CreateContext: resourceUpCloudManagedDatabaseUserCreate,
 		ReadContext:   resourceUpCloudManagedDatabaseUserRead,
 		UpdateContext: resourceUpCloudManagedDatabaseUserUpdate,

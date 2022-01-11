@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_user Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  
+  This resource represents a user in managed database
 ---
 
 # upcloud_managed_database_user (Resource)
 
-
+This resource represents a user in managed database
 
 ## Example Usage
 

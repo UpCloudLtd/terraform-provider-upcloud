@@ -16,6 +16,7 @@ import (
 
 func resourceUpCloudManagedDatabaseLogicalDatabase() *schema.Resource {
 	return &schema.Resource{
+		Description:   "This resource represents a logical database in managed database",
 		CreateContext: resourceUpCloudManagedDatabaseLogicalDatabaseCreate,
 		ReadContext:   resourceUpCloudManagedDatabaseLogicalDatabaseRead,
 		DeleteContext: resourceUpCloudManagedDatabaseLogicalDatabaseDelete,

@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_postgresql Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  
+  This resource represents PostgreSQL managed database
 ---
 
 # upcloud_managed_database_postgresql (Resource)
 
-
+This resource represents PostgreSQL managed database
 
 ## Example Usage
 
