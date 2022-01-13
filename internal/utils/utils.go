@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 )
 
 func FilterZoneIds(vs []upcloud.Zone, f func(upcloud.Zone) bool) []string {
