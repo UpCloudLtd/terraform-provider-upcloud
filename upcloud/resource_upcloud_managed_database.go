@@ -760,7 +760,7 @@ func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
 			return nil
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 	return errors.New("max retries reached while waiting for service name to propagate")
 }
