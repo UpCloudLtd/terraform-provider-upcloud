@@ -59,7 +59,7 @@ func schemaUpCloudManagedDatabaseUser() map[string]*schema.Schema {
 			Sensitive:    true,
 			Computed:     true,
 			Optional:     true,
-			ValidateFunc: validation.StringLenBetween(8, 50),
+			ValidateFunc: validation.StringLenBetween(8, 256),
 		},
 		"type": {
 			Description: "Type of the user. Only normal type users can be created",
