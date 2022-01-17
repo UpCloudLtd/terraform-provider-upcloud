@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -22,6 +23,8 @@ import (
 )
 
 const serverTitleLength int = 255
+
+var errSubaccountCouldNotModifyTags = errors.New("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to")
 
 func resourceUpCloudServer() *schema.Resource {
 	return &schema.Resource{
@@ -351,6 +354,16 @@ func resourceUpCloudServer() *schema.Resource {
 func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
+	tags, tagsExists := d.GetOk("tags")
+	if tagsExists {
+		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			return diag.FromErr(errSubaccountCouldNotModifyTags)
+		}
+	}
+
 	if err := serverValidatePlan(client, d.Get("plan").(string)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -379,8 +392,8 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[INFO] Server %s with UUID %s created", serverDetails.Title, serverDetails.UUID)
 
 	// add server tags
-	if _, ok := d.GetOk("tags"); ok {
-		tags := utils.ExpandStrings(d.Get("tags"))
+	if tagsExists {
+		tags := utils.ExpandStrings(tags)
 		if err := server.AddNewServerTags(client, serverDetails.UUID, tags); err != nil {
 			return diag.FromErr(err)
 		}
@@ -559,6 +572,16 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	tagsHasChange := d.HasChange("tags")
+	if tagsHasChange {
+		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			return diag.FromErr(errSubaccountCouldNotModifyTags)
+		}
+	}
+
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
@@ -649,15 +672,12 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if _, ok := d.GetOk("tags"); ok {
-		if d.HasChange("tags") {
-			oldTags, newTags := d.GetChange("tags")
-
-			if err := server.UpdateServerTags(
-				client, d.Id(),
-				utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags)); err != nil {
-				return diag.FromErr(err)
-			}
+	if _, ok := d.GetOk("tags"); ok && tagsHasChange {
+		oldTags, newTags := d.GetChange("tags")
+		if err := server.UpdateServerTags(
+			client, d.Id(),
+			utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags)); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
