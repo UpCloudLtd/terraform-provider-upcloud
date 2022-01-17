@@ -22,7 +22,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Upgraded terraform-plugin-sdk from v2.7.1 to v2.10.0
 
-## [2.1.3]
+## [2.1.3] - 2021-11-18
 
 ### Added
 
@@ -36,7 +36,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - server: new hostname validator
 
-## [2.1.2]
+## [2.1.2] - 2021-11-01
 
 ### Added
 
@@ -47,13 +47,13 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - Prevent empty tags from replanning a server (#178)
 - Make sure either storage devices or template are required on the server resource
 
-## [2.1.1]
+## [2.1.1] - 2021-06-22
 
 ### Fixed
 
 - fix(client): fix user-agent value (#165)
 
-## [2.1.0]
+## [2.1.0] - 2021-06-01
 
 ### Added
 
@@ -83,7 +83,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - zone and zones datasources
 - tag datasource
 
-## [2.0.0]
+## [2.0.0] - 2021-01-27
 
 ### Added
 
@@ -111,11 +111,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - Addressed issue where a change in server networking would replace the previous storages (the template will still be created anew)
 - Inconsistent documentation
 
-## [1.0.0]
+## [1.0.0] - 2020-10-19
 
 Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 
-## [0.1.0]
+## [0.1.0] - 2020-09-24
 
 ### Added
 
