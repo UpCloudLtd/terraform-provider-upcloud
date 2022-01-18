@@ -17,6 +17,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - firewall: change port types from int to string to avoid having zero values in state when importing rules with undefined port number(s).
 - firewall: remove proto field's default value "tcp" as this prevents settings optional fields value to null and update validator to accept empty string which corresponds to any protocol
 - object storage: fix issue where order of storage buckets in an object storage resource would incorrectly trigger changes
+- server: return more descriptive error message if subaccount tries to edit server tags
 
 ### Changed
 
