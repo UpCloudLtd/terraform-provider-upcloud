@@ -372,23 +372,17 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	// This means the changes to the backup_rule will only be tracked if the user has
-	// backup_rule block in their tf config (or just removed it from there). This is
-	// to avoid conflicting backup rules when using simple_backups with server that storage
-	// is attached to
-	if _, ok := d.GetOk("backup_rule"); ok {
-		if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
-			backupRule := []interface{}{
-				map[string]interface{}{
-					"interval":  storage.BackupRule.Interval,
-					"time":      storage.BackupRule.Time,
-					"retention": storage.BackupRule.Retention,
-				},
-			}
+	if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
+		backupRule := []interface{}{
+			map[string]interface{}{
+				"interval":  storage.BackupRule.Interval,
+				"time":      storage.BackupRule.Time,
+				"retention": storage.BackupRule.Retention,
+			},
+		}
 
-			if err := d.Set("backup_rule", backupRule); err != nil {
-				return diag.FromErr(err)
-			}
+		if err := d.Set("backup_rule", backupRule); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 

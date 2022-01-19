@@ -188,18 +188,13 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 	var providers []*schema.Provider
 	var storageDetails upcloud.StorageDetails
 
-	expectedSize := "10"
-	expectedTier := StorageTier
-	expectedTitle := storageDescription
-	expectedZone := "fi-hel1"
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone),
+				Config: testUpcloudStorageInstanceConfigWithBackupRule("daily", "0700", "7"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckStorageExists("upcloud_storage.my_storage", &storageDetails),
 				),
