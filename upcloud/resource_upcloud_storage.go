@@ -372,11 +372,13 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	// This means the changes to the backup_rule will only be tracked if the user has
-	// backup_rule block in their tf config (or just removed it from there). This is
-	// to avoid conflicting backup rules when using simple_backups with server that storage
-	// is attached to
-	if _, ok := d.GetOk("backup_rule"); ok {
+	simpleBackupEnabled, err := isStorageSimpleBackupEnabled(client, d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	// Set backup_rule only if simple backup is not in use.
+	// This is to avoid conflicting backup rules when using simple_backups with server that storage is attached to
+	if !simpleBackupEnabled {
 		if storage.BackupRule != nil && storage.BackupRule.Retention > 0 {
 			backupRule := []interface{}{
 				map[string]interface{}{
@@ -552,4 +554,21 @@ func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	return diags
+}
+
+func isStorageSimpleBackupEnabled(service *service.Service, storageID string) (bool, error) {
+	details, err := service.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: storageID})
+	if err != nil {
+		return false, err
+	}
+	for _, srvID := range details.ServerUUIDs {
+		srv, err := service.GetServerDetails(&request.GetServerDetailsRequest{UUID: srvID})
+		if err != nil {
+			return false, err
+		}
+		if srv.SimpleBackup != "no" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
