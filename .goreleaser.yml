@@ -16,7 +16,7 @@ builds:
     - -trimpath
   ldflags:
     - -s -w
-    - -X {{.Env.GO_MODULE_NAME}}/internal/globals.Version={{.Version}}
+    - -X {{.Env.GO_MODULE_NAME}}/internal/config.Version={{.Version}}
   goos:
     - freebsd
     - windows
