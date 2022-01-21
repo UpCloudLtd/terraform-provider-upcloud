@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - storage: fix missing backup_rule when importing resource
+- provider: fix user-agent for release builds
 
 ## [2.1.4] - 2022-01-18
 
