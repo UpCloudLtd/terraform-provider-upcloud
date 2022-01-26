@@ -391,6 +391,14 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	d.SetId(serverDetails.UUID)
 	log.Printf("[INFO] Server %s with UUID %s created", serverDetails.Title, serverDetails.UUID)
 
+	// set template id from the payload (if passed)
+	if _, ok := d.GetOk("template.0"); ok {
+		_ = d.Set("template", []map[string]interface{}{{
+			"id":      serverDetails.StorageDevices[0].UUID,
+			"storage": d.Get("template.0.storage"),
+		}})
+	}
+
 	// add server tags
 	if tagsExists {
 		tags := utils.ExpandStrings(tags)
@@ -406,19 +414,11 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	serverDetails, err = client.WaitForServerState(&request.WaitForServerStateRequest{
+	_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
 		UUID:         serverDetails.UUID,
 		DesiredState: upcloud.ServerStateStarted,
 		Timeout:      time.Minute * 25,
 	})
-
-	// set template id from the payload (if passed)
-	if _, ok := d.GetOk("template.0"); ok {
-		_ = d.Set("template", []map[string]interface{}{{
-			"id":      serverDetails.StorageDevices[0].UUID,
-			"storage": d.Get("template.0.storage"),
-		}})
-	}
 
 	if err != nil {
 		return diag.FromErr(err)
