@@ -47,7 +47,7 @@ resource "upcloud_object_storage" "my_object_storage" {
 
 ### Optional
 
-- **bucket** (Block List) (see [below for nested schema](#nestedblock--bucket))
+- **bucket** (Block Set) (see [below for nested schema](#nestedblock--bucket))
 - **description** (String) The description of the object storage instance to be created
 - **id** (String) The ID of this resource.
 
