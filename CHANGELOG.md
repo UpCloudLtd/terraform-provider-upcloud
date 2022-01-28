@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - storage: upcloud_storage data source to retrieve specific storage details
 
+### Fixed
+
+- docs: set provider username and password as required arguments
+
 
 ## [2.1.5] - 2022-01-27
 
