@@ -20,3 +20,23 @@ resource "upcloud_server" "example" {
     storage = data.upcloud_storage.app_image.id
   }
 }
+
+# Build only new servers with your latest custom image 
+#
+# Use the lifecycle meta-argument to ignore changes in server's template triggered by new image version
+resource "upcloud_server" "example2" {
+  hostname = "debian.example2.tld"
+  zone     = "fi-hel1"
+
+  network_interface {
+    type = "public"
+  }
+
+  template {
+    storage = data.upcloud_storage.app_image.id
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].storage]
+  }
+}
