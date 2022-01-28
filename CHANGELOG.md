@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- storage: upcloud_storage data source to retrieve specific storage details
 
 
 ## [2.1.5] - 2022-01-27
