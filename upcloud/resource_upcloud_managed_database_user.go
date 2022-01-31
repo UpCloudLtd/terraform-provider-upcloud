@@ -54,12 +54,12 @@ func schemaUpCloudManagedDatabaseUser() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"password": {
-			Description:  "Password for the database user. Defaults to a random value",
-			Type:         schema.TypeString,
-			Sensitive:    true,
-			Computed:     true,
-			Optional:     true,
-			ValidateFunc: validation.StringLenBetween(8, 256),
+			Description:      "Password for the database user. Defaults to a random value",
+			Type:             schema.TypeString,
+			Sensitive:        true,
+			Computed:         true,
+			Optional:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(8, 256)),
 		},
 		"type": {
 			Description: "Type of the user. Only normal type users can be created",

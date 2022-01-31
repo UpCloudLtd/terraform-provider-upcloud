@@ -146,11 +146,11 @@ func schemaUpCloudManagedDatabaseCommon() map[string]*schema.Schema {
 			},
 		},
 		"maintenance_window_dow": {
-			Description:  "Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)",
-			Type:         schema.TypeString,
-			Computed:     true,
-			Optional:     true,
-			ValidateFunc: validation.StringInSlice([]string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}, false),
+			Description:      "Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)",
+			Type:             schema.TypeString,
+			Computed:         true,
+			Optional:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}, false)),
 		},
 		"maintenance_window_time": {
 			Description: "Maintenance window UTC time in hh:mm:ss format",
