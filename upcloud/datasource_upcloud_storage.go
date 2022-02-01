@@ -91,7 +91,7 @@ Storage types are: %s`, strings.Join(storageTypes, ", ")),
 				Computed:    true,
 			},
 			"most_recent": {
-				Description: "If more than one result is returned, use the most recent storage",
+				Description: "If more than one result is returned, use the most recent storage. This is only useful with private storages. Public storages might give unpredictable results.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -109,8 +109,9 @@ func dataSourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, m
 		re = regexp.MustCompile(nameRegex.(string))
 	}
 
+	storageType := d.Get("type").(string)
 	storages, err := svc.GetStorages(
-		&request.GetStoragesRequest{Type: d.Get("type").(string)})
+		&request.GetStoragesRequest{Type: storageType})
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -137,12 +138,36 @@ func dataSourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, m
 		if !d.Get("most_recent").(bool) {
 			return diag.Errorf("query returned more than one result")
 		}
-		// sort storages by created timestamp
-		sort.Slice(matches, func(i, j int) bool {
-			return matches[i].Created.Unix() > matches[j].Created.Unix()
-		})
+
+		hasUnpredictableResults := false
+		if accessTypeExists && accessType == upcloud.StorageAccessPublic {
+			// sort storages by UUID because public templates are missing 'created' timestamp
+			hasUnpredictableResults = true
+			sort.Slice(matches, func(i, j int) bool {
+				return matches[i].UUID > matches[j].UUID
+			})
+		} else {
+			// sort storages by created timestamp
+			sort.Slice(matches, func(i, j int) bool {
+				if !hasUnpredictableResults && (matches[i].Created.IsZero() || matches[j].Created.IsZero()) {
+					hasUnpredictableResults = true
+				}
+				return matches[i].Created.Unix() > matches[j].Created.Unix()
+			})
+		}
+		if hasUnpredictableResults {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  "using 'most_recent' attribute with public images might give unpredictable results",
+			})
+		}
 	}
-	return diag.FromErr(setStorageResourceData(d, &matches[0]))
+
+	if err := setStorageResourceData(d, &matches[0]); err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	return diags
 }
 
 func setStorageResourceData(d *schema.ResourceData, storage *upcloud.Storage) (err error) {

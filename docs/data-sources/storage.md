@@ -19,8 +19,9 @@ Storage types are: normal, backup, cdrom, template
 ```terraform
 # Build server with your latest custom image 
 #
-# Note that when applied new updated image will cause replacement of the old server (debian.example.tld) with the new server created based on the updated image.
-# This can cause posible data loss if it hasn't been taken into account when planning the service.
+# Note that when applied new updated image will cause replacement of the old server (debian.example.tld) 
+# with the new server created based on the updated image.This can cause posible data loss 
+# if it hasn't been taken into account when planning the service.
 data "upcloud_storage" "app_image" {
   type        = "template"
   name_regex  = "^app_image.*"
@@ -72,7 +73,7 @@ resource "upcloud_server" "example2" {
 
 - **access_type** (String) Storage access type (public, private)
 - **id** (String) The ID of this resource.
-- **most_recent** (Boolean) If more than one result is returned, use the most recent storage
+- **most_recent** (Boolean) If more than one result is returned, use the most recent storage. This is only useful with private storages. Public storages might give unpredictable results.
 - **name** (String) Exact name of the storage (same as title)
 - **name_regex** (String) Use regular expression to match storage name
 - **zone** (String) The zone in which the storage resides
