@@ -353,6 +353,11 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 	storage, err := client.GetStorageDetails(r)
 
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudStorageNotFoundErrorCode {
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("title").(string)))
+			d.SetId("")
+			return diags
+		}
 		return diag.FromErr(err)
 	}
 

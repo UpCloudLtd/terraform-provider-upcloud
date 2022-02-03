@@ -121,6 +121,12 @@ func resourceUpCloudManagedDatabaseUserRead(ctx context.Context, d *schema.Resou
 
 	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
+			var diags diag.Diagnostics
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
+			d.SetId("")
+			return diags
+		}
 		return diag.FromErr(err)
 	}
 
@@ -128,6 +134,12 @@ func resourceUpCloudManagedDatabaseUserRead(ctx context.Context, d *schema.Resou
 		ServiceUUID: serviceID,
 		Username:    username})
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseUserNotFoundErrorCode {
+			var diags diag.Diagnostics
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
+			d.SetId("")
+			return diags
+		}
 		return diag.FromErr(err)
 	}
 

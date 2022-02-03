@@ -437,6 +437,11 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudServerNotFoundErrorCode {
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("hostname").(string)))
+			d.SetId("")
+			return diags
+		}
 		return diag.FromErr(err)
 	}
 	_ = d.Set("hostname", server.Hostname)

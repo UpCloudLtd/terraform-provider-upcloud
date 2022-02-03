@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
@@ -19,7 +20,16 @@ import (
 )
 
 const (
-	upcloudAPITimeout = time.Second * 120
+	upcloudAPITimeout                       time.Duration = time.Second * 120
+	upcloudServerNotFoundErrorCode          string        = "SERVER_NOT_FOUND"
+	upcloudStorageNotFoundErrorCode         string        = "STORAGE_NOT_FOUND"
+	upcloudNetworkNotFoundErrorCode         string        = "NETWORK_NOT_FOUND"
+	upcloudRouterNotFoundErrorCode          string        = "ROUTER_NOT_FOUND"
+	upcloudObjectStorageNotFoundErrorCode   string        = "OBJECT_STORAGE_NOT_FOUND"
+	upcloudDatabaseNotFoundErrorCode        string        = "SERVICE_NOT_FOUND"
+	upcloudLogicalDatabaseNotFoundErrorCode string        = "DB_NOT_FOUND"
+	upcloudDatabaseUserNotFoundErrorCode    string        = "USER_NOT_FOUND"
+	upcloudIPAddressNotFoundErrorCode       string        = "IP_ADDRESS_NOT_FOUND"
 )
 
 func Provider() *schema.Provider {
@@ -130,4 +140,21 @@ func isProviderAccountSubaccount(s *service.Service) (bool, error) {
 		return false, err
 	}
 	return a.IsSubaccount(), nil
+}
+
+func diagWarningFromUpcloudErr(err *upcloud.Error, details string) diag.Diagnostic {
+	if details == "" {
+		details = err.ErrorMessage
+	}
+	return diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  err.ErrorMessage,
+		Detail:   details,
+	}
+}
+
+func diagBindingRemovedWarningFromUpcloudErr(err *upcloud.Error, name string) diag.Diagnostic {
+	return diagWarningFromUpcloudErr(err,
+		fmt.Sprintf("Binding to an existing remote object '%s' will be removed from the state. Next plan will include action to re-create the object if you choose to keep it in config.", name),
+	)
 }

@@ -104,6 +104,15 @@ func resourceUpCloudFloatingIPAddressRead(ctx context.Context, d *schema.Resourc
 	ipAddress, err := client.GetIPAddressDetails(getIPAddressDetailsRequest)
 
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudIPAddressNotFoundErrorCode {
+			name := "ip address" // set default name because ip_address is optional field
+			if ip, ok := d.GetOk("ip_address"); ok {
+				name = ip.(string)
+			}
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, name))
+			d.SetId("")
+			return diags
+		}
 		diag.FromErr(err)
 	}
 
