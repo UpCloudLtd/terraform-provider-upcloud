@@ -89,6 +89,7 @@ func Provider() *schema.Provider {
 			"upcloud_hosts":        dataSourceUpCloudHosts(),
 			"upcloud_ip_addresses": dataSourceUpCloudIPAddresses(),
 			"upcloud_tags":         dataSourceUpCloudTags(),
+			"upcloud_storage":      dataSourceUpCloudStorage(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
