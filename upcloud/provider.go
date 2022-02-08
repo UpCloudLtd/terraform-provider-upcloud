@@ -144,9 +144,6 @@ func isProviderAccountSubaccount(s *service.Service) (bool, error) {
 }
 
 func diagWarningFromUpcloudErr(err *upcloud.Error, details string) diag.Diagnostic {
-	if details == "" {
-		details = err.ErrorMessage
-	}
 	return diag.Diagnostic{
 		Severity: diag.Warning,
 		Summary:  err.ErrorMessage,
