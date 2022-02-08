@@ -8,9 +8,9 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceUpCloudManagedDatabaseUser() *schema.Resource {
@@ -54,20 +54,12 @@ func schemaUpCloudManagedDatabaseUser() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"password": {
-			Description: "Password for the database user. Defaults to a random value",
-			Type:        schema.TypeString,
-			Sensitive:   true,
-			Computed:    true,
-			Optional:    true,
-			ValidateDiagFunc: func(i interface{}, path cty.Path) diag.Diagnostics {
-				if i == "" {
-					return diag.FromErr(fmt.Errorf("password cannot be set to empty"))
-				}
-				if len(i.(string)) < 8 {
-					return diag.FromErr(fmt.Errorf("password needs to be at least 8 characters"))
-				}
-				return nil
-			},
+			Description:      "Password for the database user. Defaults to a random value",
+			Type:             schema.TypeString,
+			Sensitive:        true,
+			Computed:         true,
+			Optional:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(8, 256)),
 		},
 		"type": {
 			Description: "Type of the user. Only normal type users can be created",

@@ -9,9 +9,9 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceUpCloudManagedDatabaseLogicalDatabase() *schema.Resource {
@@ -59,7 +59,7 @@ func schemaUpCloudManagedDatabaseLogicalDatabase() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ForceNew:         true,
-			ValidateDiagFunc: validateManagedDatabaseLocale,
+			ValidateDiagFunc: validation.ToDiagFunc(validateManagedDatabaseLocale),
 		},
 		"collation": {
 			Description:      "Default collation for the database (LC_COLLATE)",
@@ -67,7 +67,7 @@ func schemaUpCloudManagedDatabaseLogicalDatabase() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ForceNew:         true,
-			ValidateDiagFunc: validateManagedDatabaseLocale,
+			ValidateDiagFunc: validation.ToDiagFunc(validateManagedDatabaseLocale),
 		},
 	}
 }
@@ -193,11 +193,7 @@ func copyManagedDatabaseLogicalDatabaseDetailsToResource(d *schema.ResourceData,
 	return nil
 }
 
-func validateManagedDatabaseLocale(i interface{}, path cty.Path) diag.Diagnostics {
-	s := i.(string)
-	pat := regexp.MustCompile(`^[a-z]{2}_[A-Z]{2}\.[A-z0-9-]+$`)
-	if !pat.MatchString(s) {
-		return diag.FromErr(fmt.Errorf("invalid locale. Must be in form en_US.UTF8 (language_TERRITORY.CODEPOINT)"))
-	}
-	return nil
-}
+var validateManagedDatabaseLocale = validation.StringMatch(
+	regexp.MustCompile(`^[a-z]{2}_[A-Z]{2}\.[A-z0-9-]+$`),
+	"invalid locale; must be in form en_US.UTF8 (language_TERRITORY.CODEPOINT)",
+)
