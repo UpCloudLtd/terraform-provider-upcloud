@@ -12,6 +12,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - docs: set provider username and password as required arguments
+- provider: return underlying error from initial login check instead of custom error
 
 
 ## [2.1.5] - 2022-01-27
