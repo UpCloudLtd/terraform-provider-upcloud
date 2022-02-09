@@ -14,6 +14,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - docs: set provider username and password as required arguments
 - provider: return underlying error from initial login check instead of custom error
 - provider: fix dangling resource references by removing a binding to an remote object if it no longer exists
+- provider: fix runtime error when importing managed database
+
 
 ## [2.1.5] - 2022-01-27
 
