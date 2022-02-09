@@ -485,9 +485,9 @@ func copyManagedDatabaseDetailsToResourceData(d *schema.ResourceData, details *u
 		for k, v := range details.Properties {
 			props[string(k)] = v
 		}
+
 		newProps, err := buildManagedDatabasePropertiesResourceDataFromAPIProperties(props,
-			upcloudschema.ManagedDatabaseServicePropertiesSchema(
-				upcloud.ManagedDatabaseServiceType(d.Get("type").(string))))
+			upcloudschema.ManagedDatabaseServicePropertiesSchema(details.Type))
 		if err != nil {
 			return diag.FromErr(err)
 		}
