@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -87,6 +88,11 @@ func resourceUpCloudRouterRead(ctx context.Context, d *schema.ResourceData, meta
 	router, err := client.GetRouterDetails(opts)
 
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudRouterNotFoundErrorCode {
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
+			d.SetId("")
+			return diags
+		}
 		return diag.FromErr(err)
 	}
 

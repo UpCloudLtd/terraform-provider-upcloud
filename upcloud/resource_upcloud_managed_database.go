@@ -334,6 +334,12 @@ func resourceUpCloudManagedDatabaseRead(ctx context.Context, d *schema.ResourceD
 	req := request.GetManagedDatabaseRequest{UUID: d.Id()}
 	details, err := client.GetManagedDatabase(&req)
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
+			var diags diag.Diagnostics
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
+			d.SetId("")
+			return diags
+		}
 		return diag.FromErr(err)
 	}
 	log.Printf("[DEBUG] managed database %v (%v) read", d.Id(), d.Get("name"))

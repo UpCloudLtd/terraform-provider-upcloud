@@ -117,6 +117,12 @@ func resourceUpCloudManagedDatabaseLogicalDatabaseRead(ctx context.Context, d *s
 
 	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
+			var diags diag.Diagnostics
+			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
+			d.SetId("")
+			return diags
+		}
 		return diag.FromErr(err)
 	}
 
@@ -133,7 +139,15 @@ func resourceUpCloudManagedDatabaseLogicalDatabaseRead(ctx context.Context, d *s
 		}
 	}
 	if details == nil {
-		return diag.FromErr(fmt.Errorf("logical database %q was not found", name))
+		var diags diag.Diagnostics
+		diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(
+			&upcloud.Error{
+				ErrorCode:    upcloudLogicalDatabaseNotFoundErrorCode,
+				ErrorMessage: fmt.Sprintf("logical database %q was not found", name),
+			},
+			d.Get("name").(string)))
+		d.SetId("")
+		return diags
 	}
 
 	log.Printf("[DEBUG] managed database logical database %v/%v (%v/%v) read",
