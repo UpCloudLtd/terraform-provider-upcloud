@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
@@ -21,7 +20,8 @@ import (
 
 const bucketKey = "bucket"
 const numRetries = 5
-const importKeysEnvVariable = "UPCLOUD_OBJECT_STORAGE_IMPORT_KEYS"
+const importAccessKeyEnvVariable = "UPCLOUD_OBJECT_STORAGE_IMPORT_ACCESS_KEY"
+const importSecretKeyEnvVariable = "UPCLOUD_OBJECT_STORAGE_IMPORT_SECRET_KEY"
 
 func resourceUpCloudObjectStorage() *schema.Resource {
 	return &schema.Resource{
@@ -259,19 +259,8 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	_ = d.Set("zone", objectDetails.Zone)
 	_ = d.Set("used_space", objectDetails.UsedSpace)
 
-	var accessKey, secretKey string
-	keysEnvVarValue := os.Getenv(importKeysEnvVariable)
-
-	if keysEnvVarValue == "" {
-		log.Println("[INFO] Environment variable for object storage access and secret key not set; using values from config instead")
-		accessKey = d.Get("access_key").(string)
-		secretKey = d.Get("secret_key").(string)
-	} else {
-		log.Println("[INFO] Found object storage access and secret key in environment variable")
-		keys := strings.Split(keysEnvVarValue, ":")
-		accessKey = keys[0]
-		secretKey = keys[1]
-	}
+	accessKey := getAccessKey(d, objectDetails.Name)
+	secretKey := getSecretKey(d, objectDetails.Name)
 
 	// Some extra error handling for improved user experience, since with env variables as an additional way of passing keys
 	// it's now easier to make a typo or other silly error
@@ -294,6 +283,30 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	_ = d.Set(bucketKey, buckets)
 
 	return diag.Diagnostics{}
+}
+
+func getAccessKey(d *schema.ResourceData, objectStorageName string) string {
+	val := os.Getenv(importAccessKeyEnvVariable)
+
+	if val == "" {
+		log.Println(fmt.Sprintf("[INFO] Environment variable for object storage %s access key not set; using value from config instead", objectStorageName))
+		return d.Get("access_key").(string)
+	} else {
+		log.Println(fmt.Sprintf("[INFO] Environment variable for object storage %s access key found", objectStorageName))
+		return val
+	}
+}
+
+func getSecretKey(d *schema.ResourceData, objectStorageName string) string {
+	val := os.Getenv(importSecretKeyEnvVariable)
+
+	if val == "" {
+		log.Println(fmt.Sprintf("[INFO] Environment variable for object storage %s secret key not set; using value from config instead", objectStorageName))
+		return d.Get("secret_key").(string)
+	} else {
+		log.Println(fmt.Sprintf("[INFO] Environment variable for object storage %s secret key found", objectStorageName))
+		return val
+	}
 }
 
 func getBucketConnection(URL, accessKey, secretKey string) (*minio.Client, error) {

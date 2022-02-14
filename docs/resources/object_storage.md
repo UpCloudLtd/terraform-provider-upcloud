@@ -70,5 +70,5 @@ Required:
 Import is supported using the following syntax:
 
 ```shell
-UPCLOUD_OBJECT_STORAGE_IMPORT_KEYS=accessKey:secretKey terraform import upcloud_object_storage.my_example-objsto 0668593b-f8d7-40e5-80f8-c82c982a0656
+UPCLOUD_OBJECT_STORAGE_IMPORT_ACCESS_KEY=my_access_key UPCLOUD_OBJECT_STORAGE_IMPORT_SECRET_KEY=my_super_secret terraform import upcloud_object_storage.my_example-objsto 0668593b-f8d7-40e5-80f8-c82c982a0656
 ```
