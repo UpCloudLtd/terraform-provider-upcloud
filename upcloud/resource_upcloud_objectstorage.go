@@ -2,7 +2,6 @@ package upcloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -22,6 +21,7 @@ import (
 
 const bucketKey = "bucket"
 const numRetries = 5
+const importKeysEnvVariable = "UPCLOUD_OBJECT_STORAGE_IMPORT_KEYS"
 
 func resourceUpCloudObjectStorage() *schema.Resource {
 	return &schema.Resource{
@@ -160,10 +160,6 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 		UUID: uuid,
 	})
 
-	details := fmt.Sprintf("Object storage details: %+v", objectDetails)
-
-	log.Println("\033[35m[DEBUG]" + details + "\033[0m")
-
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudObjectStorageNotFoundErrorCode {
 			var diags diag.Diagnostics
@@ -263,7 +259,34 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	_ = d.Set("zone", objectDetails.Zone)
 	_ = d.Set("used_space", objectDetails.UsedSpace)
 
-	buckets, err := getBuckets(objectDetails, d)
+	var accessKey, secretKey string
+	keysEnvVarValue := os.Getenv(importKeysEnvVariable)
+
+	if keysEnvVarValue == "" {
+		log.Println("[INFO] Environment variable for object storage access and secret key not set; using values from config instead")
+		accessKey = d.Get("access_key").(string)
+		secretKey = d.Get("secret_key").(string)
+	} else {
+		log.Println("[INFO] Found object storage access and secret key in environment variable")
+		keys := strings.Split(keysEnvVarValue, ":")
+		accessKey = keys[0]
+		secretKey = keys[1]
+	}
+
+	// Some extra error handling for improved user experience, since with env variables as an additional way of passing keys
+	// it's now easier to make a typo or other silly error
+	if accessKey == "" {
+		return diag.FromErr(fmt.Errorf("access key for object storage %s not found", objectDetails.Name))
+	}
+
+	if secretKey == "" {
+		return diag.FromErr(fmt.Errorf("secret key for object storage %s not found", objectDetails.Name))
+	}
+
+	_ = d.Set("access_key", accessKey)
+	_ = d.Set("secret_key", secretKey)
+
+	buckets, err := getBuckets(objectDetails.URL, accessKey, secretKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -327,18 +350,8 @@ func getMissing(expected, found []string) []string {
 	return missing
 }
 
-func getBuckets(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceData) ([]map[string]interface{}, error) {
-	accessKey, err := getObjectStorageAccessKey(objectDetails, d)
-	if err != nil {
-		return nil, err
-	}
-
-	secretKey, err := getObjectStorageSecretKey(objectDetails, d)
-	if err != nil {
-		return nil, err
-	}
-
-	conn, err := getBucketConnection(objectDetails.URL, accessKey, secretKey)
+func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
+	conn, err := getBucketConnection(URL, accessKey, secretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -365,64 +378,6 @@ func getBuckets(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceD
 	}
 
 	return bucketNames, nil
-}
-
-func getObjectStorageKeysFromEnvironmentVariables(objectDetails *upcloud.ObjectStorageDetails) (string, error) {
-	envVarKey := fmt.Sprintf("UPCLOUD_OBJECT_STORAGE_%s_KEYS", objectDetails.Name)
-	envVarValue := os.Getenv(envVarKey)
-
-	if envVarValue == "" {
-		msg := fmt.Sprintf("environment variable for object storage %s keys not set; should be %s=access_key:secret_key", objectDetails.Name, envVarKey)
-		return "", errors.New(msg)
-	}
-
-	return envVarValue, nil
-}
-
-func getObjectStorageAccessKey(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceData) (string, error) {
-	if val, ok := d.GetOk("access_key"); ok {
-		return val.(string), nil
-	}
-
-	keysStr, err := getObjectStorageKeysFromEnvironmentVariables(objectDetails)
-
-	if err != nil {
-		return "", errors.New("access key not found in configuration;" + err.Error())
-	}
-
-	keys := strings.Split(keysStr, ":")
-
-	if len(keys) == 0 || keys[0] == "" {
-		msg := fmt.Sprintf(
-			"could not retrieve access key from environment variables for object storage %s; should be formatted as <access_key>:<secret_key>",
-			objectDetails.Name)
-		return "", errors.New(msg)
-	}
-
-	return keys[0], nil
-}
-
-func getObjectStorageSecretKey(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceData) (string, error) {
-	if val, ok := d.GetOk("secret_key"); ok {
-		return val.(string), nil
-	}
-
-	keysStr, err := getObjectStorageKeysFromEnvironmentVariables(objectDetails)
-
-	if err != nil {
-		return "", errors.New("secret key not found in configuration;" + err.Error())
-	}
-
-	keys := strings.Split(keysStr, ":")
-
-	if len(keys) < 2 || keys[1] == "" {
-		msg := fmt.Sprintf(
-			"could not retrieve secret key from environment variables for object storage %s; should be formatted as <access_key>:<secret_key>",
-			objectDetails.Name)
-		return "", errors.New(msg)
-	}
-
-	return keys[1], nil
 }
 
 func createObjectStorage(client *service.Service, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
