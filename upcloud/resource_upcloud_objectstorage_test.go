@@ -295,44 +295,66 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
 	var providers []*schema.Provider
 
+	name := objectStorageTestExpectedName4
+	zone := "pl-waw1"
+	desc := "just some random stuff"
+	size := "250"
+	accessKey := objectStorageTestExpectedKey
+	secretKey := objectStorageTestExpectedSecret
+
+	updatedAccessKey := "someaccesskeymodified"
+	updatedSecretKey := "somesupersecretyoyo"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-			name := strings.ToUpper(strings.Replace(objectStorageTestExpectedName4, "-", "_", -1))
+			name := strings.ToUpper(strings.Replace(name, "-", "_", -1))
 			accessKeyEnvVarName := fmt.Sprintf("%s%s", AccessKeyEnvVarPrefix, name)
 			secretKeyEnvVarName := fmt.Sprintf("%s%s", SecretKeyEnvVarPrefix, name)
 
 			testAccPreCheck(t)
-			os.Setenv(accessKeyEnvVarName, objectStorageTestExpectedKey)
-			os.Setenv(secretKeyEnvVarName, objectStorageTestExpectedSecret)
+			os.Setenv(accessKeyEnvVarName, accessKey)
+			os.Setenv(secretKeyEnvVarName, secretKey)
 		},
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName4),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(accessKey, secretKey, name),
 		Steps: []resource.TestStep{
 			{
-				Config: testUpCloudObjectStorageEnvVarsConfig(objectStorageTestExpectedName4),
-				// Just check if object storage was actually created without keys in config
-				Check: resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "name", objectStorageTestExpectedName4),
+				// Pass empty strings as access and secret keys to check if those values will be taken from env vars
+				Config: testUpCloudObjectStorageInstanceConfig(size, name, desc, zone, "", ""),
+				// Just check if object storage was actually created
+				Check: resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "name", name),
 			},
 			{
+				// Check if you can update keys by just putting them into config
+				Config: testUpCloudObjectStorageInstanceConfig(size, name, desc, zone, updatedAccessKey, updatedSecretKey),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "access_key", updatedAccessKey),
+					resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "secret_key", updatedSecretKey),
+				),
+			},
+			{
+				// Check if you can modify buckets with updated keys
+				Config: testUpCloudObjectStorageInstanceConfigWithSingleBucket(size, name, desc, zone, updatedAccessKey, updatedSecretKey),
+				Check:  resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "bucket.0.name", "test"),
+			},
+			{
+				// Remove keys from config again to check if you can switch back to using env vars
+				// Also check if removing buckets will work in one go here
+				Config: testUpCloudObjectStorageInstanceConfig(size, name, desc, zone, "", ""),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "access_key", ""),
+					resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "secret_key", ""),
+					resource.TestCheckNoResourceAttr("upcloud_object_storage.my_storage", "bucket.0.name"),
+				),
+			},
+			{
+				// Verify import
 				ResourceName:      "upcloud_object_storage.my_storage",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 		},
 	})
-}
-
-func testUpCloudObjectStorageEnvVarsConfig(name string) string {
-	return fmt.Sprintf(`
-		resource "upcloud_object_storage" "my_storage" {
-			size = 250
-			name = "%s"
-			description = "some object storage"
-			zone = "pl-waw1"
-			access_key = ""
-			secret_key = ""
-		}
-	`, name)
 }
 
 func testUpCloudObjectStorageInstanceConfig(size, name, description, zone, accessKey, secretKey string) string {
@@ -344,6 +366,23 @@ func testUpCloudObjectStorageInstanceConfig(size, name, description, zone, acces
 			zone  = "%s"
 			access_key = "%s"
 			secret_key = "%s"
+		}
+`, size, name, description, zone, accessKey, secretKey)
+}
+
+func testUpCloudObjectStorageInstanceConfigWithSingleBucket(size, name, description, zone, accessKey, secretKey string) string {
+	return fmt.Sprintf(`
+		resource "upcloud_object_storage" "my_storage" {
+			size  = %s
+			name  = "%s"
+			description = "%s"
+			zone  = "%s"
+			access_key = "%s"
+			secret_key = "%s"
+
+			bucket {
+				name = "test"
+			}
 		}
 `, size, name, description, zone, accessKey, secretKey)
 }

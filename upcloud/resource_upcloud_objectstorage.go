@@ -3,7 +3,6 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -121,22 +120,12 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	accessKey, _, err := getAccessKey(d)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Access key not found",
-			Detail:   err.Error(),
-		})
-		return diags
+		return diag.FromErr(err)
 	}
 
 	secretKey, _, err := getSecretKey(d)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Secret key not found",
-			Detail:   err.Error(),
-		})
-		return diags
+		return diag.FromErr(err)
 	}
 
 	req.Size = d.Get("size").(int)
@@ -203,12 +192,22 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*service.Service)
 
+	accessKey, _, err := getAccessKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	secretKey, _, err := getSecretKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if d.HasChanges([]string{"size", "access_key", "secret_key", "description"}...) {
 		req := request.ModifyObjectStorageRequest{UUID: d.Id()}
 
 		req.Size = d.Get("size").(int)
-		req.AccessKey = d.Get("access_key").(string)
-		req.SecretKey = d.Get("secret_key").(string)
+		req.AccessKey = accessKey
+		req.SecretKey = secretKey
 		req.Description = d.Get("description").(string)
 
 		_, err := modifyObjectStorage(client, &req)
@@ -226,8 +225,8 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 	if d.HasChange(bucketKey) {
 		conn, err := getBucketConnection(
 			d.Get("url").(string),
-			d.Get("access_key").(string),
-			d.Get("secret_key").(string),
+			accessKey,
+			secretKey,
 		)
 
 		if err != nil {
@@ -310,8 +309,6 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	}
 
 	_ = d.Set(bucketKey, buckets)
-
-	log.Println(fmt.Sprintf("\033[32m[INFO] State: %+v\033[0m", d.State()))
 
 	return diag.Diagnostics{}
 }
