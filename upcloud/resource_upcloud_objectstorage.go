@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -118,7 +119,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	client := m.(*service.Service)
 
-	accessKey, err := getAccessKey(d)
+	accessKey, _, err := getAccessKey(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -128,7 +129,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 		return diags
 	}
 
-	secretKey, err := getSecretKey(d)
+	secretKey, _, err := getSecretKey(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -285,14 +286,22 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	_ = d.Set("zone", objectDetails.Zone)
 	_ = d.Set("used_space", objectDetails.UsedSpace)
 
-	accessKey, err := getAccessKey(d)
+	accessKey, accessKeyFromEnv, err := getAccessKey(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	secretKey, err := getSecretKey(d)
+	secretKey, secretKeyFromEnv, err := getSecretKey(d)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if accessKeyFromEnv {
+		_ = d.Set("access_key", "")
+	}
+
+	if secretKeyFromEnv {
+		_ = d.Set("secret_key", "")
 	}
 
 	buckets, err := getBuckets(objectDetails.URL, accessKey, secretKey)
@@ -301,6 +310,8 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	}
 
 	_ = d.Set(bucketKey, buckets)
+
+	log.Println(fmt.Sprintf("\033[32m[INFO] State: %+v\033[0m", d.State()))
 
 	return diag.Diagnostics{}
 }
@@ -421,12 +432,14 @@ func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStora
 	return objStorage, err
 }
 
-func getAccessKey(d *schema.ResourceData) (string, error) {
+// Attempts to get access key.
+// Second return value is a bool, set to true if key value was retrived from env variable
+func getAccessKey(d *schema.ResourceData) (string, bool, error) {
 	configVal := d.Get("access_key").(string)
 
 	// If config value is set to something else then empty string, just use it
 	if configVal != "" {
-		return configVal, nil
+		return configVal, false, nil
 	}
 
 	// If config value is empty string, use environment variable
@@ -435,28 +448,30 @@ func getAccessKey(d *schema.ResourceData) (string, error) {
 	envVarValue, envVarSet := os.LookupEnv(envVarKey)
 
 	if !envVarSet {
-		return "", fmt.Errorf("access_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
+		return "", false, fmt.Errorf("access_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
 	}
 
 	length := len(envVarValue)
 
 	if length < accessKeyMinLength {
-		return "", fmt.Errorf("access_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, accessKeyMinLength, length)
+		return "", false, fmt.Errorf("access_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, accessKeyMinLength, length)
 	}
 
 	if length > accessKeyMaxLength {
-		return "", fmt.Errorf("access_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, accessKeyMaxLength, length)
+		return "", false, fmt.Errorf("access_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, accessKeyMaxLength, length)
 	}
 
-	return envVarValue, nil
+	return envVarValue, true, nil
 }
 
-func getSecretKey(d *schema.ResourceData) (string, error) {
+// Attempts to get secret key.
+// Second return value is a bool, set to true if key value was revtrived from env variable
+func getSecretKey(d *schema.ResourceData) (string, bool, error) {
 	configVal := d.Get("secret_key").(string)
 
 	// If config value is set to something else then empty string, just use it
 	if configVal != "" {
-		return configVal, nil
+		return configVal, false, nil
 	}
 
 	// If config value is empty string, use environment variable
@@ -465,20 +480,20 @@ func getSecretKey(d *schema.ResourceData) (string, error) {
 	envVarValue, envVarSet := os.LookupEnv(envVarKey)
 
 	if !envVarSet {
-		return "", fmt.Errorf("secret_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
+		return "", false, fmt.Errorf("secret_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
 	}
 
 	length := len(envVarValue)
 
 	if length < secretKeyMinLength {
-		return "", fmt.Errorf("secret_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, secretKeyMinLength, length)
+		return "", false, fmt.Errorf("secret_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, secretKeyMinLength, length)
 	}
 
 	if length > secretKeyMaxLength {
-		return "", fmt.Errorf("secret_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, secretKeyMaxLength, length)
+		return "", false, fmt.Errorf("secret_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, secretKeyMaxLength, length)
 	}
 
-	return envVarValue, nil
+	return envVarValue, true, nil
 }
 
 func generateObjectStorageEnvVarKey(prefix, objectStorageName string) string {
