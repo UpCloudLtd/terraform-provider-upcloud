@@ -3,7 +3,6 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -37,6 +36,9 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 		ReadContext:   resourceObjectStorageRead,
 		UpdateContext: resourceObjectStorageUpdate,
 		DeleteContext: resourceObjectStorageDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 		Schema: map[string]*schema.Schema{
 			"size": {
 				Description:  "The size of the object storage instance in gigabytes",
@@ -115,9 +117,6 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 	)
 
 	client := m.(*service.Service)
-
-	log.Println(fmt.Sprintf("\033[32m[INFO]Conn info: %+v\033[0m", d.ConnInfo()))
-	log.Println(fmt.Sprintf("\033[32m[INFO]State info: %+v\033[0m", d.State()))
 
 	accessKey, err := getAccessKey(d)
 	if err != nil {
