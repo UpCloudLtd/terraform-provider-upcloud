@@ -2,7 +2,11 @@ package upcloud
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -21,6 +25,10 @@ const bucketKey = "bucket"
 const numRetries = 5
 const accessKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
 const secretKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
+const accessKeyMinLength = 4
+const accessKeyMaxLength = 255
+const secretKeyMinLength = 8
+const secretKeyMaxLength = 255
 
 func resourceUpCloudObjectStorage() *schema.Resource {
 	return &schema.Resource{
@@ -40,13 +48,13 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 				Description:      "The access key used to identify user",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: createKeyValidationFunc("access_key", 4, 255),
+				ValidateDiagFunc: createKeyValidationFunc("access_key", accessKeyMinLength, accessKeyMaxLength),
 			},
 			"secret_key": {
 				Description:      "The secret key used to authenticate user",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: createKeyValidationFunc("secret_skey", 8, 255),
+				ValidateDiagFunc: createKeyValidationFunc("secret_key", secretKeyMinLength, secretKeyMaxLength),
 			},
 			"zone": {
 				Description: "The zone in which the object storage instance will be created",
@@ -108,11 +116,34 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	client := m.(*service.Service)
 
+	log.Println(fmt.Sprintf("\033[32m[INFO]Conn info: %+v\033[0m", d.ConnInfo()))
+	log.Println(fmt.Sprintf("\033[32m[INFO]State info: %+v\033[0m", d.State()))
+
+	accessKey, err := getAccessKey(d)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Access key not found",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	secretKey, err := getSecretKey(d)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Secret key not found",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
 	req.Size = d.Get("size").(int)
 	req.Zone = d.Get("zone").(string)
 	req.Name = d.Get("name").(string)
-	req.AccessKey = d.Get("access_key").(string)
-	req.SecretKey = d.Get("secret_key").(string)
+	req.AccessKey = accessKey
+	req.SecretKey = secretKey
 	req.Description = d.Get("description").(string)
 
 	objStorage, err := createObjectStorage(client, &req)
@@ -255,7 +286,17 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	_ = d.Set("zone", objectDetails.Zone)
 	_ = d.Set("used_space", objectDetails.UsedSpace)
 
-	buckets, err := getBuckets(objectDetails, d)
+	accessKey, err := getAccessKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	secretKey, err := getSecretKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	buckets, err := getBuckets(objectDetails.URL, accessKey, secretKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -319,12 +360,8 @@ func getMissing(expected, found []string) []string {
 	return missing
 }
 
-func getBuckets(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceData) ([]map[string]interface{}, error) {
-	conn, err := getBucketConnection(
-		objectDetails.URL,
-		d.Get("access_key").(string),
-		d.Get("secret_key").(string),
-	)
+func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
+	conn, err := getBucketConnection(URL, accessKey, secretKey)
 
 	if err != nil {
 		return nil, err
@@ -383,6 +420,71 @@ func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStora
 		time.Sleep(time.Second)
 	}
 	return objStorage, err
+}
+
+func getAccessKey(d *schema.ResourceData) (string, error) {
+	configVal := d.Get("access_key").(string)
+
+	// If config value is set to something else then empty string, just use it
+	if configVal != "" {
+		return configVal, nil
+	}
+
+	// If config value is empty string, use environment variable
+	objectStorageName := d.Get("name").(string)
+	envVarKey := generateObjectStorageEnvVarKey(accessKeyEnvVarPrefix, objectStorageName)
+	envVarValue, envVarSet := os.LookupEnv(envVarKey)
+
+	if !envVarSet {
+		return "", fmt.Errorf("access_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
+	}
+
+	length := len(envVarValue)
+
+	if length < accessKeyMinLength {
+		return "", fmt.Errorf("access_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, accessKeyMinLength, length)
+	}
+
+	if length > accessKeyMaxLength {
+		return "", fmt.Errorf("access_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, accessKeyMaxLength, length)
+	}
+
+	return envVarValue, nil
+}
+
+func getSecretKey(d *schema.ResourceData) (string, error) {
+	configVal := d.Get("secret_key").(string)
+
+	// If config value is set to something else then empty string, just use it
+	if configVal != "" {
+		return configVal, nil
+	}
+
+	// If config value is empty string, use environment variable
+	objectStorageName := d.Get("name").(string)
+	envVarKey := generateObjectStorageEnvVarKey(secretKeyEnvVarPrefix, objectStorageName)
+	envVarValue, envVarSet := os.LookupEnv(envVarKey)
+
+	if !envVarSet {
+		return "", fmt.Errorf("secret_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
+	}
+
+	length := len(envVarValue)
+
+	if length < secretKeyMinLength {
+		return "", fmt.Errorf("secret_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, secretKeyMinLength, length)
+	}
+
+	if length > secretKeyMaxLength {
+		return "", fmt.Errorf("secret_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, secretKeyMaxLength, length)
+	}
+
+	return envVarValue, nil
+}
+
+func generateObjectStorageEnvVarKey(prefix, objectStorageName string) string {
+	name := strings.ToUpper(strings.Replace(objectStorageName, "-", "_", -1))
+	return fmt.Sprintf("%s%s", prefix, name)
 }
 
 type objectStorageKeyType string
