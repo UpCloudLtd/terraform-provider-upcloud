@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	"strings"
 	"time"
 
@@ -90,4 +91,13 @@ func StorageAddressFormat(address string) string {
 	}
 
 	return ""
+}
+
+func EnvKeyExists(keyPrefix string) bool {
+	for _, env := range os.Environ() {
+		if strings.HasPrefix(env, keyPrefix) {
+			return true
+		}
+	}
+	return false
 }

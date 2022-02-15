@@ -5,9 +5,11 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -17,6 +19,8 @@ import (
 
 const bucketKey = "bucket"
 const numRetries = 5
+const accessKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
+const secretKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
 
 func resourceUpCloudObjectStorage() *schema.Resource {
 	return &schema.Resource{
@@ -33,16 +37,16 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 				ValidateFunc: validation.IntInSlice([]int{250, 500, 1000}),
 			},
 			"access_key": {
-				Description:  "The access key used to identify user",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringLenBetween(4, 255),
+				Description:      "The access key used to identify user",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: createKeyValidationFunc("access_key", 4, 255),
 			},
 			"secret_key": {
-				Description:  "The secret key used to authenticate user",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringLenBetween(8, 255),
+				Description:      "The secret key used to authenticate user",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: createKeyValidationFunc("secret_skey", 8, 255),
 			},
 			"zone": {
 				Description: "The zone in which the object storage instance will be created",
@@ -379,4 +383,49 @@ func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStora
 		time.Sleep(time.Second)
 	}
 	return objStorage, err
+}
+
+type objectStorageKeyType string
+
+const (
+	objectStorageKeyTypeAccess objectStorageKeyType = "access_key"
+	objectStorageKeyTypeSecret objectStorageKeyType = "secret_key"
+)
+
+func createKeyValidationFunc(attrName objectStorageKeyType, minLength, maxLength int) schema.SchemaValidateDiagFunc {
+	return func(val interface{}, path cty.Path) diag.Diagnostics {
+		key := val.(string)
+
+		// For access and secret keys empty string means that they should be taken from env vars
+		if key == "" {
+			var envVarPrefix string
+
+			switch attrName {
+			case objectStorageKeyTypeAccess:
+				envVarPrefix = accessKeyEnvVarPrefix
+			case objectStorageKeyTypeSecret:
+				envVarPrefix = secretKeyEnvVarPrefix
+			default:
+				return diag.Errorf("unknown attribute name for creating object storage keys validation function: %s; this is a provider error", attrName)
+			}
+
+			if !utils.EnvKeyExists(envVarPrefix) {
+				return diag.Errorf("%s set to empty string, but no environment variables for it found", attrName)
+			}
+
+			return diag.Diagnostics{}
+		}
+
+		length := len(key)
+
+		if length < minLength {
+			return diag.Errorf("%s too short; minimum length is %d, got %d", attrName, minLength, length)
+		}
+
+		if length > maxLength {
+			return diag.Errorf("%s too long; max length is %d, got %d", attrName, maxLength, length)
+		}
+
+		return diag.Diagnostics{}
+	}
 }
