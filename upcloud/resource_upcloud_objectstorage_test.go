@@ -28,6 +28,7 @@ var objectStorageTestRunID = time.Now().Unix()
 var objectStorageTestExpectedName1 = fmt.Sprintf("%s%d-1", objectStorageTestRunPrefix, objectStorageTestRunID)
 var objectStorageTestExpectedName2 = fmt.Sprintf("%s%d-2", objectStorageTestRunPrefix, objectStorageTestRunID)
 var objectStorageTestExpectedName3 = fmt.Sprintf("%s%d-3", objectStorageTestRunPrefix, objectStorageTestRunID)
+var objectStorageTestExpectedName4 = fmt.Sprintf("%s%d-4", objectStorageTestRunPrefix, objectStorageTestRunID)
 
 func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
@@ -288,6 +289,50 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 			},
 		},
 	})
+}
+
+// We bundle creating object storage using env vars and import because import relies on passing access and secret key as env vars
+func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			name := strings.ToUpper(strings.Replace(objectStorageTestExpectedName4, "-", "_", -1))
+			accessKeyEnvVarName := fmt.Sprintf("%s%s", AccessKeyEnvVarPrefix, name)
+			secretKeyEnvVarName := fmt.Sprintf("%s%s", SecretKeyEnvVarPrefix, name)
+
+			testAccPreCheck(t)
+			os.Setenv(accessKeyEnvVarName, objectStorageTestExpectedKey)
+			os.Setenv(secretKeyEnvVarName, objectStorageTestExpectedSecret)
+		},
+		ProviderFactories: testAccProviderFactories(&providers),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName4),
+		Steps: []resource.TestStep{
+			{
+				Config: testUpCloudObjectStorageEnvVarsConfig(objectStorageTestExpectedName4),
+				// Just check if object storage was actually created without keys in config
+				Check: resource.TestCheckResourceAttr("upcloud_object_storage.my_storage", "name", objectStorageTestExpectedName4),
+			},
+			{
+				ResourceName:      "upcloud_object_storage.my_storage",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func testUpCloudObjectStorageEnvVarsConfig(name string) string {
+	return fmt.Sprintf(`
+		resource "upcloud_object_storage" "my_storage" {
+			size = 250
+			name = "%s"
+			description = "some object storage"
+			zone = "pl-waw1"
+			access_key = ""
+			secret_key = ""
+		}
+	`, name)
 }
 
 func testUpCloudObjectStorageInstanceConfig(size, name, description, zone, accessKey, secretKey string) string {

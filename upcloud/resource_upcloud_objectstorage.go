@@ -22,8 +22,8 @@ import (
 
 const bucketKey = "bucket"
 const numRetries = 5
-const accessKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
-const secretKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
+const AccessKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
+const SecretKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
 const accessKeyMinLength = 4
 const accessKeyMaxLength = 255
 const secretKeyMinLength = 8
@@ -431,7 +431,7 @@ func getAccessKey(d *schema.ResourceData) (string, error) {
 
 	// If config value is empty string, use environment variable
 	objectStorageName := d.Get("name").(string)
-	envVarKey := generateObjectStorageEnvVarKey(accessKeyEnvVarPrefix, objectStorageName)
+	envVarKey := generateObjectStorageEnvVarKey(AccessKeyEnvVarPrefix, objectStorageName)
 	envVarValue, envVarSet := os.LookupEnv(envVarKey)
 
 	if !envVarSet {
@@ -461,7 +461,7 @@ func getSecretKey(d *schema.ResourceData) (string, error) {
 
 	// If config value is empty string, use environment variable
 	objectStorageName := d.Get("name").(string)
-	envVarKey := generateObjectStorageEnvVarKey(secretKeyEnvVarPrefix, objectStorageName)
+	envVarKey := generateObjectStorageEnvVarKey(SecretKeyEnvVarPrefix, objectStorageName)
 	envVarValue, envVarSet := os.LookupEnv(envVarKey)
 
 	if !envVarSet {
@@ -503,9 +503,9 @@ func createKeyValidationFunc(attrName objectStorageKeyType, minLength, maxLength
 
 			switch attrName {
 			case objectStorageKeyTypeAccess:
-				envVarPrefix = accessKeyEnvVarPrefix
+				envVarPrefix = AccessKeyEnvVarPrefix
 			case objectStorageKeyTypeSecret:
-				envVarPrefix = secretKeyEnvVarPrefix
+				envVarPrefix = SecretKeyEnvVarPrefix
 			default:
 				return diag.Errorf("unknown attribute name for creating object storage keys validation function: %s; this is a provider error", attrName)
 			}
