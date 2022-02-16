@@ -2,7 +2,7 @@
 terraform {
   required_providers {
     upcloud = {
-      source = "UpCloudLtd/upcloud"
+      source  = "UpCloudLtd/upcloud"
       version = "~> 2.0"
     }
   }
@@ -95,8 +95,8 @@ resource "upcloud_storage" "datastorage" {
   title = "/data"
   size  = 10
   # zone needs to match server's zone:
-  zone  = "de-fra1"
-  tier  = "maxiops"
+  zone = "de-fra1"
+  tier = "maxiops"
 
   # backup_rule {
   #   interval  = "daily"
