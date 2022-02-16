@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- object storage: allow passing access and secret key as environment variables
+- object storage: enable import feature
+
 ## [2.2.0] - 2022-02-14
 
 ### Added
