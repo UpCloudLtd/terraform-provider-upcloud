@@ -308,8 +308,8 @@ func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			name := strings.ToUpper(strings.Replace(name, "-", "_", -1))
-			accessKeyEnvVarName := fmt.Sprintf("%s%s", AccessKeyEnvVarPrefix, name)
-			secretKeyEnvVarName := fmt.Sprintf("%s%s", SecretKeyEnvVarPrefix, name)
+			accessKeyEnvVarName := fmt.Sprintf("%s%s", accessKeyEnvVarPrefix, name)
+			secretKeyEnvVarName := fmt.Sprintf("%s%s", secretKeyEnvVarPrefix, name)
 
 			testAccPreCheck(t)
 			os.Setenv(accessKeyEnvVarName, accessKey)
