@@ -440,7 +440,7 @@ func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStora
 }
 
 // Attempts to get access key.
-// Second return value is a bool, set to true if key value was retrived from env variable
+// Second return value is a bool, set to true if key value was retrieved from env variable
 func getAccessKey(d *schema.ResourceData) (string, bool, error) {
 	configVal := d.Get("access_key").(string)
 
