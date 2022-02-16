@@ -2,7 +2,7 @@
 terraform {
   required_providers {
     upcloud = {
-      source = "UpCloudLtd/upcloud"
+      source  = "UpCloudLtd/upcloud"
       version = "~> 2.0"
     }
   }
@@ -33,12 +33,12 @@ resource "upcloud_server" "example" {
   }
 
   network_interface {
-    type = "private"
+    type    = "private"
     network = upcloud_network.example_network.id
   }
 
   template {
     storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
-    size = 10
+    size    = 10
   }
 }

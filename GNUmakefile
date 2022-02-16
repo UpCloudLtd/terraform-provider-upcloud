@@ -63,5 +63,6 @@ update-deps:
 	go mod vendor
 
 docs:
+	terraform fmt -recursive examples/
 	tfplugindocs
 .PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_13 docs
