@@ -47,13 +47,23 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 				ValidateFunc: validation.IntInSlice([]int{250, 500, 1000}),
 			},
 			"access_key": {
-				Description:      "The access key used to identify user",
+				Description: `The access key used to identify user.
+				Can be set to an empty string, which will tell the provider to get the access key from environment variable.
+				The environment variable should be "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_{name}".
+				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
+				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
+				use environment variable named "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_MY_FILES".`,
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: createKeyValidationFunc("access_key", accessKeyMinLength, accessKeyMaxLength),
 			},
 			"secret_key": {
-				Description:      "The secret key used to authenticate user",
+				Description: `The secret key used to authenticate user.
+				Can be set to an empty string, which will tell the provider to get the secret key from environment variable.
+				The environment variable should be "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_{name}".
+				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
+				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
+				use environment variable named "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_MY_FILES".`,
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: createKeyValidationFunc("secret_key", secretKeyMinLength, secretKeyMaxLength),
