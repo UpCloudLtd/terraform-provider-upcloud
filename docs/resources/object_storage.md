@@ -39,9 +39,19 @@ resource "upcloud_object_storage" "my_object_storage" {
 
 ### Required
 
-- **access_key** (String) The access key used to identify user
+- **access_key** (String) The access key used to identify user.
+				Can be set to an empty string, which will tell the provider to get the access key from environment variable.
+				The environment variable should be "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_{name}".
+				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
+				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
+				use environment variable named "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_MY_FILES".
 - **name** (String) The name of the object storage instance to be created
-- **secret_key** (String) The secret key used to authenticate user
+- **secret_key** (String) The secret key used to authenticate user.
+				Can be set to an empty string, which will tell the provider to get the secret key from environment variable.
+				The environment variable should be "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_{name}".
+				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
+				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
+				use environment variable named "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_MY_FILES".
 - **size** (Number) The size of the object storage instance in gigabytes
 - **zone** (String) The zone in which the object storage instance will be created
 
@@ -65,4 +75,17 @@ Required:
 
 - **name** (String) The name of the bucket
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+# For object storage import to work properly, you need to set environment variables for access and secret key.
+# The environment variables names are UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_{name} and UPCLOUD_OBJECT_STORAGE_SECRET_KEY_{name}
+# where {name} is the name of your object storage instance (not the resource label!), all uppercased, and with all dashes (-)
+# replaced with underscores (_). So importing an object storage that is named "my-storage" will look like this:
+
+UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_MY_STORAGE=accesskey \
+UPCLOUD_OBJECT_STORAGE_SECRET_KEY_MY_STORAGE=supersecret \
+terraform import upcloud_object_storage.example_storage 06c1f4b6-faf2-47d0-8896-1d941092b009
+```

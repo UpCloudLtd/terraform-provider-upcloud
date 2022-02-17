@@ -2,12 +2,17 @@ package upcloud
 
 import (
 	"context"
+	"fmt"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -17,6 +22,12 @@ import (
 
 const bucketKey = "bucket"
 const numRetries = 5
+const accessKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
+const secretKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
+const accessKeyMinLength = 4
+const accessKeyMaxLength = 255
+const secretKeyMinLength = 8
+const secretKeyMaxLength = 255
 
 func resourceUpCloudObjectStorage() *schema.Resource {
 	return &schema.Resource{
@@ -25,6 +36,9 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 		ReadContext:   resourceObjectStorageRead,
 		UpdateContext: resourceObjectStorageUpdate,
 		DeleteContext: resourceObjectStorageDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 		Schema: map[string]*schema.Schema{
 			"size": {
 				Description:  "The size of the object storage instance in gigabytes",
@@ -33,16 +47,26 @@ func resourceUpCloudObjectStorage() *schema.Resource {
 				ValidateFunc: validation.IntInSlice([]int{250, 500, 1000}),
 			},
 			"access_key": {
-				Description:  "The access key used to identify user",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringLenBetween(4, 255),
+				Description: `The access key used to identify user.
+				Can be set to an empty string, which will tell the provider to get the access key from environment variable.
+				The environment variable should be "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_{name}".
+				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
+				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
+				use environment variable named "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_MY_FILES".`,
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: createKeyValidationFunc("access_key", accessKeyMinLength, accessKeyMaxLength),
 			},
 			"secret_key": {
-				Description:  "The secret key used to authenticate user",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringLenBetween(8, 255),
+				Description: `The secret key used to authenticate user.
+				Can be set to an empty string, which will tell the provider to get the secret key from environment variable.
+				The environment variable should be "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_{name}".
+				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
+				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
+				use environment variable named "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_MY_FILES".`,
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: createKeyValidationFunc("secret_key", secretKeyMinLength, secretKeyMaxLength),
 			},
 			"zone": {
 				Description: "The zone in which the object storage instance will be created",
@@ -104,11 +128,21 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	client := m.(*service.Service)
 
+	accessKey, _, err := getAccessKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	secretKey, _, err := getSecretKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	req.Size = d.Get("size").(int)
 	req.Zone = d.Get("zone").(string)
 	req.Name = d.Get("name").(string)
-	req.AccessKey = d.Get("access_key").(string)
-	req.SecretKey = d.Get("secret_key").(string)
+	req.AccessKey = accessKey
+	req.SecretKey = secretKey
 	req.Description = d.Get("description").(string)
 
 	objStorage, err := createObjectStorage(client, &req)
@@ -168,12 +202,22 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*service.Service)
 
+	accessKey, _, err := getAccessKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	secretKey, _, err := getSecretKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if d.HasChanges([]string{"size", "access_key", "secret_key", "description"}...) {
 		req := request.ModifyObjectStorageRequest{UUID: d.Id()}
 
 		req.Size = d.Get("size").(int)
-		req.AccessKey = d.Get("access_key").(string)
-		req.SecretKey = d.Get("secret_key").(string)
+		req.AccessKey = accessKey
+		req.SecretKey = secretKey
 		req.Description = d.Get("description").(string)
 
 		_, err := modifyObjectStorage(client, &req)
@@ -191,8 +235,8 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 	if d.HasChange(bucketKey) {
 		conn, err := getBucketConnection(
 			d.Get("url").(string),
-			d.Get("access_key").(string),
-			d.Get("secret_key").(string),
+			accessKey,
+			secretKey,
 		)
 
 		if err != nil {
@@ -251,7 +295,25 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	_ = d.Set("zone", objectDetails.Zone)
 	_ = d.Set("used_space", objectDetails.UsedSpace)
 
-	buckets, err := getBuckets(objectDetails, d)
+	accessKey, accessKeyFromEnv, err := getAccessKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	secretKey, secretKeyFromEnv, err := getSecretKey(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if accessKeyFromEnv {
+		_ = d.Set("access_key", "")
+	}
+
+	if secretKeyFromEnv {
+		_ = d.Set("secret_key", "")
+	}
+
+	buckets, err := getBuckets(objectDetails.URL, accessKey, secretKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -315,12 +377,8 @@ func getMissing(expected, found []string) []string {
 	return missing
 }
 
-func getBuckets(objectDetails *upcloud.ObjectStorageDetails, d *schema.ResourceData) ([]map[string]interface{}, error) {
-	conn, err := getBucketConnection(
-		objectDetails.URL,
-		d.Get("access_key").(string),
-		d.Get("secret_key").(string),
-	)
+func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
+	conn, err := getBucketConnection(URL, accessKey, secretKey)
 
 	if err != nil {
 		return nil, err
@@ -379,4 +437,122 @@ func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStora
 		time.Sleep(time.Second)
 	}
 	return objStorage, err
+}
+
+// Attempts to get access key.
+// Second return value is a bool, set to true if key value was retrieved from env variable
+func getAccessKey(d *schema.ResourceData) (string, bool, error) {
+	configVal := d.Get("access_key").(string)
+
+	// If config value is set to something else then empty string, just use it
+	if configVal != "" {
+		return configVal, false, nil
+	}
+
+	// If config value is empty string, use environment variable
+	objectStorageName := d.Get("name").(string)
+	envVarKey := generateObjectStorageEnvVarKey(accessKeyEnvVarPrefix, objectStorageName)
+	envVarValue, envVarSet := os.LookupEnv(envVarKey)
+
+	if !envVarSet {
+		return "", false, fmt.Errorf("access_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
+	}
+
+	length := len(envVarValue)
+
+	if length < accessKeyMinLength {
+		return "", false, fmt.Errorf("access_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, accessKeyMinLength, length)
+	}
+
+	if length > accessKeyMaxLength {
+		return "", false, fmt.Errorf("access_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, accessKeyMaxLength, length)
+	}
+
+	return envVarValue, true, nil
+}
+
+// Attempts to get secret key.
+// Second return value is a bool, set to true if key value was revtrived from env variable
+func getSecretKey(d *schema.ResourceData) (string, bool, error) {
+	configVal := d.Get("secret_key").(string)
+
+	// If config value is set to something else then empty string, just use it
+	if configVal != "" {
+		return configVal, false, nil
+	}
+
+	// If config value is empty string, use environment variable
+	objectStorageName := d.Get("name").(string)
+	envVarKey := generateObjectStorageEnvVarKey(secretKeyEnvVarPrefix, objectStorageName)
+	envVarValue, envVarSet := os.LookupEnv(envVarKey)
+
+	if !envVarSet {
+		return "", false, fmt.Errorf("secret_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
+	}
+
+	length := len(envVarValue)
+
+	if length < secretKeyMinLength {
+		return "", false, fmt.Errorf("secret_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, secretKeyMinLength, length)
+	}
+
+	if length > secretKeyMaxLength {
+		return "", false, fmt.Errorf("secret_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, secretKeyMaxLength, length)
+	}
+
+	return envVarValue, true, nil
+}
+
+func generateObjectStorageEnvVarKey(prefix, objectStorageName string) string {
+	name := strings.ToUpper(strings.Replace(objectStorageName, "-", "_", -1))
+	return fmt.Sprintf("%s%s", prefix, name)
+}
+
+type objectStorageKeyType string
+
+func createKeyValidationFunc(attrName objectStorageKeyType, minLength, maxLength int) schema.SchemaValidateDiagFunc {
+	const (
+		objectStorageKeyTypeAccess objectStorageKeyType = "access_key"
+		objectStorageKeyTypeSecret objectStorageKeyType = "secret_key"
+	)
+
+	return func(val interface{}, path cty.Path) diag.Diagnostics {
+		key, ok := val.(string)
+
+		if !ok {
+			return diag.Errorf("expected type of %v to be string", val)
+		}
+
+		// For access and secret keys empty string means that they should be taken from env vars
+		if key == "" {
+			var envVarPrefix string
+
+			switch attrName {
+			case objectStorageKeyTypeAccess:
+				envVarPrefix = accessKeyEnvVarPrefix
+			case objectStorageKeyTypeSecret:
+				envVarPrefix = secretKeyEnvVarPrefix
+			default:
+				return diag.Errorf("unknown attribute name for creating object storage keys validation function: %s; this is a provider error", attrName)
+			}
+
+			if !utils.EnvKeyExists(envVarPrefix) {
+				return diag.Errorf("%s set to empty string, but no environment variables for it found (%s{NAME})", attrName, envVarPrefix)
+			}
+
+			return diag.Diagnostics{}
+		}
+
+		length := len(key)
+
+		if length < minLength {
+			return diag.Errorf("%s too short; minimum length is %d, got %d", attrName, minLength, length)
+		}
+
+		if length > maxLength {
+			return diag.Errorf("%s too long; max length is %d, got %d", attrName, maxLength, length)
+		}
+
+		return diag.Diagnostics{}
+	}
 }
