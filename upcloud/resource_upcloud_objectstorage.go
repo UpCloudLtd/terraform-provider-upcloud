@@ -24,6 +24,7 @@ const bucketKey = "bucket"
 const numRetries = 5
 const accessKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
 const secretKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
+const tokenEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_TOKEN_"
 const accessKeyMinLength = 4
 const accessKeyMaxLength = 255
 const secretKeyMinLength = 8
@@ -156,7 +157,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	if v, ok := d.GetOk(bucketKey); ok {
-		conn, err := getBucketConnection(objStorage.URL, req.AccessKey, req.SecretKey)
+		conn, err := getBucketConnection(objStorage.URL, req.AccessKey, req.SecretKey, "")
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -237,6 +238,7 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 			d.Get("url").(string),
 			accessKey,
 			secretKey,
+			"",
 		)
 
 		if err != nil {
@@ -313,7 +315,14 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 		_ = d.Set("secret_key", "")
 	}
 
-	buckets, err := getBuckets(objectDetails.URL, accessKey, secretKey)
+	token := getToken(d)
+
+	conn, err := getBucketConnection(objectDetails.URL, accessKey, secretKey, token)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	buckets, err := getBuckets(conn)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -323,14 +332,14 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	return diag.Diagnostics{}
 }
 
-func getBucketConnection(URL, accessKey, secretKey string) (*minio.Client, error) {
+func getBucketConnection(URL, accessKey, secretKey, token string) (*minio.Client, error) {
 	urlObj, err := url.Parse(URL)
 	if err != nil {
 		return nil, err
 	}
 
 	return minio.New(urlObj.Host, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, token),
 		Secure: true,
 	})
 }
@@ -377,15 +386,11 @@ func getMissing(expected, found []string) []string {
 	return missing
 }
 
-func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
-	conn, err := getBucketConnection(URL, accessKey, secretKey)
-
-	if err != nil {
-		return nil, err
-	}
+func getBuckets(conn *minio.Client) ([]map[string]interface{}, error) {
+	var bucketInfo []minio.BucketInfo
+	var err error
 
 	// sometimes fails here because the buckets aren't redy yet
-	var bucketInfo []minio.BucketInfo
 	for trys := 0; trys < numRetries; trys++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 		bucketInfo, err = conn.ListBuckets(ctx)
@@ -437,6 +442,12 @@ func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStora
 		time.Sleep(time.Second)
 	}
 	return objStorage, err
+}
+
+func getToken(d *schema.ResourceData) string {
+	objectStorageName := d.Get("name").(string)
+	envVarKey := generateObjectStorageEnvVarKey(tokenEnvVarPrefix, objectStorageName)
+	return os.Getenv(envVarKey)
 }
 
 // Attempts to get access key.
