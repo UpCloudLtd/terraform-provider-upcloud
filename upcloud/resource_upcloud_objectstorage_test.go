@@ -486,7 +486,7 @@ func getMinioConnection(state *terraform.State, accessKey, secretKey string) (*m
 		return nil, fmt.Errorf("could not find resources")
 	}
 
-	return getBucketConnection(resources.Primary.Attributes["url"], accessKey, secretKey)
+	return getBucketConnection(resources.Primary.Attributes["url"], accessKey, secretKey, "")
 }
 
 func verifyBucketExists(accessKey, secretKey, name, bucketName string) resource.TestCheckFunc {
