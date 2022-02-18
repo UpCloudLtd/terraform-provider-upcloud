@@ -315,6 +315,10 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 		_ = d.Set("secret_key", "")
 	}
 
+	// This is an undocumented feature, can be changed or removed at any time without any announcements
+	// It allows you to also specify session token in env variables, which will be then passed to minio client
+	// along with access and secret key. This allows you to use temp credentials to read buckets list and such.
+	// This is only intended for import.
 	token := getToken(d)
 
 	conn, err := getBucketConnection(objectDetails.URL, accessKey, secretKey, token)
