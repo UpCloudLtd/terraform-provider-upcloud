@@ -445,11 +445,8 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return readServer(ctx, d, meta, diag.Diagnostics{})
-}
-
-func readServer(ctx context.Context, d *schema.ResourceData, meta interface{}, diags diag.Diagnostics) diag.Diagnostics {
 	client := meta.(*service.Service)
+	diags := diag.Diagnostics{}
 
 	r := &request.GetServerDetailsRequest{
 		UUID: d.Id(),
@@ -830,7 +827,9 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	return readServer(ctx, d, meta, diags)
+	diags = append(diags, resourceUpCloudServerRead(ctx, d, meta)...)
+
+	return diags
 }
 
 func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
