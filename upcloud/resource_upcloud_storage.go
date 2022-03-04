@@ -512,7 +512,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		if d.Get("autoresize_partition_fs").(bool) {
-			diags = append(diags, resizeStorage(
+			diags = append(diags, storage.ResizeStorage(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -530,7 +530,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		if d.HasChange("size") && d.Get("autoresize_partition_fs").(bool) {
-			diags = append(diags, resizeStorage(
+			diags = append(diags, storage.ResizeStorage(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -630,47 +630,4 @@ func isStorageSimpleBackupEnabled(service *service.Service, storageID string) (b
 		}
 	}
 	return false, nil
-}
-
-func resizeStorage(client *service.Service, UUID, title string, deleteBackup bool) diag.Diagnostics {
-	diags := diag.Diagnostics{}
-
-	backup, err := client.ResizeStorageFilesystem(&request.ResizeStorageFilesystemRequest{
-		UUID: UUID,
-	})
-	if err != nil {
-		summary := fmt.Sprintf(
-			"Failed to resize partition and filesystem for storage %s(%s)",
-			UUID,
-			title,
-		)
-
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  summary,
-			Detail:   err.Error(),
-		})
-	}
-
-	if err == nil && deleteBackup {
-		err = client.DeleteStorage(&request.DeleteStorageRequest{
-			UUID: backup.UUID,
-		})
-
-		if err != nil {
-			summary := fmt.Sprintf(
-				"Failed to delete the backup of storage %s(%s) after the partition and filesystem resize; you will need to delete the backup manually",
-				UUID,
-				title,
-			)
-
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Warning,
-				Summary:  summary,
-				Detail:   err.Error(),
-			})
-		}
-	}
-
-	return diags
 }
