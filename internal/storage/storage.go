@@ -60,7 +60,7 @@ func BackupRule(backupRule map[string]interface{}) *upcloud.BackupRule {
 	return &upcloud.BackupRule{}
 }
 
-func ResizeStorage(client *service.Service, UUID, title string, deleteBackup bool) diag.Diagnostics {
+func ResizeStoragePartitionAndFs(client *service.Service, UUID, title string, deleteBackup bool) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
 	backup, err := client.ResizeStorageFilesystem(&request.ResizeStorageFilesystemRequest{

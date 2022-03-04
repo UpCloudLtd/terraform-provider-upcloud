@@ -728,7 +728,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		if d.HasChange("template.0.size") && d.Get("template.0.autoresize_partition_fs").(bool) {
-			diags = append(diags, storage.ResizeStorage(
+			diags = append(diags, storage.ResizeStoragePartitionAndFs(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,

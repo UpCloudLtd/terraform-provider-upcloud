@@ -512,7 +512,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		if d.Get("autoresize_partition_fs").(bool) {
-			diags = append(diags, storage.ResizeStorage(
+			diags = append(diags, storage.ResizeStoragePartitionAndFs(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -530,7 +530,7 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		if d.HasChange("size") && d.Get("autoresize_partition_fs").(bool) {
-			diags = append(diags, storage.ResizeStorage(
+			diags = append(diags, storage.ResizeStoragePartitionAndFs(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
