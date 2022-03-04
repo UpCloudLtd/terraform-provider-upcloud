@@ -132,16 +132,16 @@ func resourceUpCloudStorage() *schema.Resource {
 				},
 			},
 			"backup_rule": storage.BackupRuleSchema(),
-			"autoresize_partition_fs": {
+			"filesystem_autoresize": {
 				Description: `If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes.
 				Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
-				to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless autoresize_partition_fs_backup_delete option is set to true).
+				to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
 				Taking and keeping backups incure costs.`,
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
-			"autoresize_partition_fs_backup_delete": {
+			"delete_autoresize_backup": {
 				Description: "If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.",
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -184,11 +184,11 @@ func resourceUpCloudStorageCreate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	if err := d.Set("autoresize_partition_fs", d.Get("autoresize_partition_fs")); err != nil {
+	if err := d.Set("filesystem_autoresize", d.Get("filesystem_autoresize")); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("autoresize_partition_fs_backup_delete", d.Get("autoresize_partition_fs_backup_delete")); err != nil {
+	if err := d.Set("delete_autoresize_backup", d.Get("delete_autoresize_backup")); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -385,11 +385,11 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("autoresize_partition_fs", d.Get("autoresize_partition_fs")); err != nil {
+	if err := d.Set("filesystem_autoresize", d.Get("filesystem_autoresize")); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("autoresize_partition_fs_backup_delete", d.Get("autoresize_partition_fs_backup_delete")); err != nil {
+	if err := d.Set("delete_autoresize_backup", d.Get("delete_autoresize_backup")); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -511,12 +511,12 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 			return diag.FromErr(err)
 		}
 
-		if d.Get("autoresize_partition_fs").(bool) {
+		if d.Get("filesystem_autoresize").(bool) {
 			diags = append(diags, storage.ResizeStoragePartitionAndFs(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
-				d.Get("autoresize_partition_fs_backup_delete").(bool),
+				d.Get("delete_autoresize_backup").(bool),
 			)...)
 		}
 
@@ -529,12 +529,12 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 			return diag.FromErr(err)
 		}
 
-		if d.HasChange("size") && d.Get("autoresize_partition_fs").(bool) {
+		if d.HasChange("size") && d.Get("filesystem_autoresize").(bool) {
 			diags = append(diags, storage.ResizeStoragePartitionAndFs(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
-				d.Get("autoresize_partition_fs_backup_delete").(bool),
+				d.Get("delete_autoresize_backup").(bool),
 			)...)
 		}
 	}

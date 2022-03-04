@@ -65,10 +65,10 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "zone", expectedZone),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "autoresize_partition_fs", "true",
+						"upcloud_storage.my_storage", "filesystem_autoresize", "true",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "autoresize_partition_fs_backup_delete", "true",
+						"upcloud_storage.my_storage", "delete_autoresize_backup", "true",
 					),
 				),
 			},
@@ -116,10 +116,10 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "zone", expectedZone),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "autoresize_partition_fs", "false",
+						"upcloud_storage.my_storage", "filesystem_autoresize", "false",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "autoresize_partition_fs_backup_delete", "false",
+						"upcloud_storage.my_storage", "delete_autoresize_backup", "false",
 					),
 				),
 			},
@@ -142,10 +142,10 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "zone", expectedUpdatedZone),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "autoresize_partition_fs", "true",
+						"upcloud_storage.my_storage", "filesystem_autoresize", "true",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "autoresize_partition_fs_backup_delete", "true",
+						"upcloud_storage.my_storage", "delete_autoresize_backup", "true",
 					),
 				),
 			},
@@ -451,8 +451,8 @@ func testUpcloudStorageInstanceConfig(size, tier, title, zone string, autoresize
 			tier  = "%s"
 			title = "%s"
 			zone  = "%s"
-			autoresize_partition_fs = %t
-			autoresize_partition_fs_backup_delete = %t
+			filesystem_autoresize = %t
+			delete_autoresize_backup = %t
 		}
 `, size, tier, title, zone, autoresize, deleteAutoresizeBackup)
 }

@@ -83,8 +83,8 @@ func TestUpcloudServer_minimal(t *testing.T) {
 						template {
 								storage = "01000000-0000-4000-8000-000020050100"
 								size = 10
-								autoresize_partition_fs = true
-								autoresize_partition_fs_backup_delete = true
+								filesystem_autoresize = true
+								delete_autoresize_backup = true
 						}
 
 						network_interface {
@@ -106,8 +106,8 @@ func TestUpcloudServer_minimal(t *testing.T) {
 						template {
 								storage = "01000000-0000-4000-8000-000020050100"
 								size = 10
-								autoresize_partition_fs = true
-								autoresize_partition_fs_backup_delete = true
+								filesystem_autoresize = true
+								delete_autoresize_backup = true
 						}
 
 						network_interface {
