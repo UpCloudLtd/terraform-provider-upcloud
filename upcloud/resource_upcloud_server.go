@@ -278,6 +278,21 @@ func resourceUpCloudServer() *schema.Resource {
 							Required:    true,
 						},
 						"backup_rule": storage.BackupRuleSchema(),
+						"filesystem_autoresize": {
+							Description: `If set to true, provider will attempt to resize partition and filesystem when the size of template storage changes.
+							Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
+							to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
+							Taking and keeping backups incure costs.`,
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"delete_autoresize_backup": {
+							Description: "If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+						},
 					},
 				},
 			},
@@ -394,8 +409,10 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	// set template id from the payload (if passed)
 	if _, ok := d.GetOk("template.0"); ok {
 		_ = d.Set("template", []map[string]interface{}{{
-			"id":      serverDetails.StorageDevices[0].UUID,
-			"storage": d.Get("template.0.storage"),
+			"id":                       serverDetails.StorageDevices[0].UUID,
+			"storage":                  d.Get("template.0.storage"),
+			"filesystem_autoresize":    d.Get("template.0.filesystem_autoresize"),
+			"delete_autoresize_backup": d.Get("template.0.delete_autoresize_backup"),
 		}})
 	}
 
@@ -429,8 +446,7 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
-
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	r := &request.GetServerDetailsRequest{
 		UUID: d.Id(),
@@ -521,6 +537,9 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 				"tier":    serverStorage.Tier,
 				// NOTE: backupRule cannot be derived from server.storageDevices payload, will not sync if changed elsewhere
 				"backup_rule": d.Get("template.0.backup_rule"),
+				// Those fields are not set anywhere in the API, they are just for internal TF use
+				"filesystem_autoresize":    d.Get("template.0.filesystem_autoresize"),
+				"delete_autoresize_backup": d.Get("template.0.delete_autoresize_backup"),
 			}})
 		} else {
 			storageDevices = append(storageDevices, map[string]interface{}{
@@ -569,6 +588,7 @@ func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d *schema.ResourceData) 
 
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+	diags := diag.Diagnostics{}
 
 	planHasChange := d.HasChange("plan")
 	if planHasChange {
@@ -702,8 +722,18 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 		}
 
-		if _, err := client.ModifyStorage(r); err != nil {
+		storageDetails, err := client.ModifyStorage(r)
+		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		if d.HasChange("template.0.size") && d.Get("template.0.filesystem_autoresize").(bool) {
+			diags = append(diags, storage.ResizeStoragePartitionAndFs(
+				client,
+				storageDetails.UUID,
+				storageDetails.Title,
+				d.Get("template.0.delete_autoresize_backup").(bool),
+			)...)
 		}
 	}
 
@@ -772,7 +802,9 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	return resourceUpCloudServerRead(ctx, d, meta)
+	diags = append(diags, resourceUpCloudServerRead(ctx, d, meta)...)
+
+	return diags
 }
 
 func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

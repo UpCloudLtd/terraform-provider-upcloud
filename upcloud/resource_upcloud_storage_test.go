@@ -35,13 +35,22 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 	expectedTier := StorageTier
 	expectedTitle := storageDescription
 	expectedZone := "pl-waw1"
+	expectedAutoresize := true
+	expectedDeleteAutoresizeBackup := true
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone),
+				Config: testUpcloudStorageInstanceConfig(
+					expectedSize,
+					expectedTier,
+					expectedTitle,
+					expectedZone,
+					expectedAutoresize,
+					expectedDeleteAutoresizeBackup,
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "size"),
 					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "tier"),
@@ -55,6 +64,12 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 						"upcloud_storage.my_storage", "title", expectedTitle),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "zone", expectedZone),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "filesystem_autoresize", "true",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "delete_autoresize_backup", "true",
+					),
 				),
 			},
 		},
@@ -68,18 +83,29 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 	expectedTier := StorageTier
 	expectedTitle := storageDescription
 	expectedZone := "fi-hel1"
+	expectedAutoresize := false
+	expectedDeleteAutoresizeBackup := false
 
 	expectedUpdatedSize := "20"
 	expectedUpdatedTier := "hdd"
 	expectedUpdatedTitle := "My Updated data collection"
 	expectedUpdatedZone := "fi-hel2"
+	expectedUpdatedAutoresize := true
+	expectedUpdatedDeleteAutoresizeBackup := true
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone),
+				Config: testUpcloudStorageInstanceConfig(
+					expectedSize,
+					expectedTier,
+					expectedTitle,
+					expectedZone,
+					expectedAutoresize,
+					expectedDeleteAutoresizeBackup,
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "size", expectedSize),
@@ -89,10 +115,23 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 						"upcloud_storage.my_storage", "title", expectedTitle),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "zone", expectedZone),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "filesystem_autoresize", "false",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "delete_autoresize_backup", "false",
+					),
 				),
 			},
 			{
-				Config: testUpcloudStorageInstanceConfig(expectedUpdatedSize, expectedUpdatedTier, expectedUpdatedTitle, expectedUpdatedZone),
+				Config: testUpcloudStorageInstanceConfig(
+					expectedUpdatedSize,
+					expectedUpdatedTier,
+					expectedUpdatedTitle,
+					expectedUpdatedZone,
+					expectedUpdatedAutoresize,
+					expectedUpdatedDeleteAutoresizeBackup,
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "size", expectedUpdatedSize),
@@ -102,6 +141,12 @@ func TestAccUpcloudStorage_basic_update(t *testing.T) {
 						"upcloud_storage.my_storage", "title", expectedUpdatedTitle),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "zone", expectedUpdatedZone),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "filesystem_autoresize", "true",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "delete_autoresize_backup", "true",
+					),
 				),
 			},
 		},
@@ -199,7 +244,7 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone),
+				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone, false, false),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckStorageExists("upcloud_storage.my_storage", &storageDetails),
 				),
@@ -399,15 +444,17 @@ func testAccCheckStorageDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testUpcloudStorageInstanceConfig(size, tier, title, zone string) string {
+func testUpcloudStorageInstanceConfig(size, tier, title, zone string, autoresize, deleteAutoresizeBackup bool) string {
 	return fmt.Sprintf(`
 		resource "upcloud_storage" "my_storage" {
 			size  = %s
 			tier  = "%s"
 			title = "%s"
 			zone  = "%s"
+			filesystem_autoresize = %t
+			delete_autoresize_backup = %t
 		}
-`, size, tier, title, zone)
+`, size, tier, title, zone, autoresize, deleteAutoresizeBackup)
 }
 
 func testUpcloudStorageInstanceConfigWithBackupRule(interval, time, retention string) string {

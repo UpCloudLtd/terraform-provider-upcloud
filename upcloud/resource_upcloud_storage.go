@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -131,6 +132,21 @@ func resourceUpCloudStorage() *schema.Resource {
 				},
 			},
 			"backup_rule": storage.BackupRuleSchema(),
+			"filesystem_autoresize": {
+				Description: `If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes.
+				Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
+				to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
+				Taking and keeping backups incure costs.`,
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"delete_autoresize_backup": {
+				Description: "If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -166,6 +182,14 @@ func resourceUpCloudStorageCreate(ctx context.Context, d *schema.ResourceData, m
 	}
 	if diags.HasError() {
 		return diags
+	}
+
+	if err := d.Set("filesystem_autoresize", d.Get("filesystem_autoresize")); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("delete_autoresize_backup", d.Get("delete_autoresize_backup")); err != nil {
+		return diag.FromErr(err)
 	}
 
 	diags = append(diags, resourceUpCloudStorageRead(ctx, d, meta)...)
@@ -361,6 +385,14 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("filesystem_autoresize", d.Get("filesystem_autoresize")); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("delete_autoresize_backup", d.Get("delete_autoresize_backup")); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set("size", storage.Size); err != nil {
 		return diag.FromErr(err)
 	}
@@ -394,6 +426,7 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 			}
 
 			if err := d.Set("backup_rule", backupRule); err != nil {
+				log.Println("\033[31m [DEBUG] Err on set simple backup\033[0m")
 				return diag.FromErr(err)
 			}
 		}
@@ -434,6 +467,7 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 
 func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+	diags := diag.Diagnostics{}
 
 	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
@@ -477,6 +511,15 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 			return diag.FromErr(err)
 		}
 
+		if d.Get("filesystem_autoresize").(bool) {
+			diags = append(diags, storage.ResizeStoragePartitionAndFs(
+				client,
+				storageDetails.UUID,
+				storageDetails.Title,
+				d.Get("delete_autoresize_backup").(bool),
+			)...)
+		}
+
 		// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
 		if err = server.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta); err != nil {
 			return diag.FromErr(err)
@@ -485,9 +528,20 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		if _, err := client.ModifyStorage(&req); err != nil {
 			return diag.FromErr(err)
 		}
+
+		if d.HasChange("size") && d.Get("filesystem_autoresize").(bool) {
+			diags = append(diags, storage.ResizeStoragePartitionAndFs(
+				client,
+				storageDetails.UUID,
+				storageDetails.Title,
+				d.Get("delete_autoresize_backup").(bool),
+			)...)
+		}
 	}
 
-	return resourceUpCloudStorageRead(ctx, d, meta)
+	diags = append(diags, resourceUpCloudStorageRead(ctx, d, meta)...)
+
+	return diags
 }
 
 func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

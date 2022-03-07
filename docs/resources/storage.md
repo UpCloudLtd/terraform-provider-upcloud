@@ -123,6 +123,11 @@ resource "upcloud_server" "example_server" {
 		please first remove simple_backup block from a server, run 'terraform apply', 
 		then add 'backup_rule' to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--backup_rule))
 - **clone** (Block Set, Max: 1) Block defining another storage/template to clone to storage (see [below for nested schema](#nestedblock--clone))
+- **delete_autoresize_backup** (Boolean) If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.
+- **filesystem_autoresize** (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes.
+				Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
+				to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
+				Taking and keeping backups incure costs.
 - **id** (String) The ID of this resource.
 - **import** (Block Set, Max: 1) Block defining external data to import to storage (see [below for nested schema](#nestedblock--import))
 - **tier** (String) The storage tier to use
