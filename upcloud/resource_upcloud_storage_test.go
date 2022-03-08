@@ -92,7 +92,7 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 						delete_autoresize_backup = true
 
 						backup_rule {
-							interval = "monday"
+							interval = "mon"
 							time = "2230"
 							retention = 5
 						}
@@ -112,7 +112,7 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "backup_rule.#", "1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.interval", "weekly"),
+						"upcloud_storage.my_storage", "backup_rule.0.interval", "mon"),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "backup_rule.0.time", "2230"),
 					resource.TestCheckResourceAttr(
