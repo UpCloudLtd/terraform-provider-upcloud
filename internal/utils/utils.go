@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func FilterZoneIds(vs []upcloud.Zone, f func(upcloud.Zone) bool) []string {
@@ -100,4 +101,11 @@ func EnvKeyExists(keyPrefix string) bool {
 		}
 	}
 	return false
+}
+
+func JoinSchemas(src, dst map[string]*schema.Schema) map[string]*schema.Schema {
+	for key, value := range src {
+		dst[key] = value
+	}
+	return dst
 }
