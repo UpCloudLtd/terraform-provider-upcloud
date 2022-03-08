@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - object storage: allow passing access and secret key as environment variables
 - object storage: enable import feature
+- storage: add support for autoresizing partition and filesystem
 
 ### Fixed
 - dbaas: fix PostgreSQL properties: pg_stat_statements_track, pg_partman_bgw_role, pg_partman_bgw_interval
