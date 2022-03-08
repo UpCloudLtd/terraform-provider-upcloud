@@ -9,6 +9,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - object storage: allow passing access and secret key as environment variables
 - object storage: enable import feature
 
+### Fixed
+- dbaas: fix PostgreSQL properties: pg_stat_statements_track, pg_partman_bgw_role, pg_partman_bgw_interval
+
 ## [2.2.0] - 2022-02-14
 
 ### Added
