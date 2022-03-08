@@ -92,7 +92,7 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 						delete_autoresize_backup = true
 
 						backup_rule {
-							interval = "weekly"
+							interval = "monday"
 							time = "2230"
 							retention = 5
 						}
