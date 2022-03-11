@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
@@ -80,6 +81,8 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_mysql":            resourceUpCloudManagedDatabaseMySQL(),
 			"upcloud_managed_database_user":             resourceUpCloudManagedDatabaseUser(),
 			"upcloud_managed_database_logical_database": resourceUpCloudManagedDatabaseLogicalDatabase(),
+			"upcloud_loadbalancer":                      loadbalancer.ResourceLoadBalancer(),
+			"upcloud_loadbalancer_resolver":             loadbalancer.ResourceResolver(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
