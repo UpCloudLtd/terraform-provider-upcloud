@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [2.3.0] - 2022-03-14
+
 ### Added
 - object storage: allow passing access and secret key as environment variables
 - object storage: enable import feature
@@ -189,7 +191,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.5...v2.2.0
 [2.1.5]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.4...v2.1.5
 [2.1.4]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.1.3...v2.1.4
