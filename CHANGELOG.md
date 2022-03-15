@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+- dbaas: upgrading database version
+
 ## [2.3.0] - 2022-03-14
 
 ### Added

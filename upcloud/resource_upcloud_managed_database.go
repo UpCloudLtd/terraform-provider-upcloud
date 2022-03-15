@@ -127,6 +127,7 @@ func resourceUpCloudManagedDatabaseRead(ctx context.Context, d *schema.ResourceD
 
 func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+	diags := diag.Diagnostics{}
 
 	if d.HasChanges("plan", "title", "zone",
 		"maintenance_window_dow", "maintenance_window_time", "properties.0") {
@@ -140,7 +141,11 @@ func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.Resourc
 		}
 
 		if d.HasChange("properties.0") {
-			req.Properties = buildManagedDatabasePropertiesRequestFromResourceData(d)
+			props := buildManagedDatabasePropertiesRequestFromResourceData(d)
+
+			// Always delete version if it exists; versions are updated via separate endpoint
+			delete(props, "version")
+			req.Properties = props
 		}
 
 		_, err := client.ModifyManagedDatabase(&req)
@@ -158,16 +163,51 @@ func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.Resourc
 				return diag.FromErr(err)
 			}
 			log.Printf("[INFO] managed database %v (%v) is powered on", d.Id(), d.Get("name"))
+
+			// Attempt to upgrade version after the database was powered on
+			if d.HasChange("properties.0.version") {
+				// Upgrade is only allowed when database is in "Running" state, so we have to wait for that after powering it on
+				_, err := resourceUpCloudManagedDatabaseWaitState(ctx, d.Id(), client, time.Minute*5, upcloud.ManagedDatabaseStateRunning)
+
+				if err != nil {
+					diags = append(diags, diag.Diagnostic{
+						Severity: diag.Warning,
+						Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed; reached timeout when waiting for running state", d.Id(), d.Get("name")),
+						Detail:   err.Error(),
+					})
+				} else {
+					diags = append(diags, updateManagedDatabaseVersion(d, client)...)
+				}
+			}
 		} else {
+			// Attempt to upgrade version before database is powered off
+			if d.HasChange("properties.0.version") {
+				diags = append(diags, updateManagedDatabaseVersion(d, client)...)
+			}
+
 			_, err := client.ShutdownManagedDatabase(&request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
 			if err != nil {
 				return diag.FromErr(err)
 			}
 			log.Printf("[INFO] managed database %v (%v) is powered off", d.Id(), d.Get("name"))
 		}
+	} else {
+		// If powered state was not chaged, just attempt to upgrade version
+		if d.HasChange("properties.0.version") {
+			if !d.Get("powered").(bool) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("Version upgrade for Managed Database %s(%s) skipped", d.Id(), d.Get("name")),
+					Detail:   "Cannot upgrade version for Managed Database when it is powered off",
+				})
+			} else {
+				diags = append(diags, updateManagedDatabaseVersion(d, client)...)
+			}
+		}
 	}
 
-	return resourceUpCloudManagedDatabaseRead(ctx, d, meta)
+	diags = append(diags, resourceUpCloudManagedDatabaseRead(ctx, d, meta)...)
+	return diags
 }
 
 func resourceUpCloudManagedDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -684,4 +724,23 @@ var resourceUpcloudManagedDatabaseModifiableStates = []upcloud.ManagedDatabaseSt
 
 func diffSuppressCreateOnlyProperty(k, old, new string, d *schema.ResourceData) bool {
 	return d.Id() != ""
+}
+
+func updateManagedDatabaseVersion(d *schema.ResourceData, client *service.Service) diag.Diagnostics {
+	diags := diag.Diagnostics{}
+
+	_, err := client.UpgradeManagedDatabaseVersion(&request.UpgradeManagedDatabaseVersionRequest{
+		UUID:          d.Id(),
+		TargetVersion: d.Get("properties.0.version").(string),
+	})
+
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed", d.Id(), d.Get("name")),
+			Detail:   err.Error(),
+		})
+	}
+
+	return diags
 }
