@@ -194,7 +194,15 @@ func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.Resourc
 	} else {
 		// If powered state was not chaged, just attempt to upgrade version
 		if d.HasChange("properties.0.version") {
-			diags = append(diags, updateManagedDatabaseVersion(d, client)...)
+			if !d.Get("powered").(bool) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("Version upgrade for Managed Database %s(%s) skipped", d.Id(), d.Get("name")),
+					Detail:   "Cannot upgrade version for Managed Database when it is powered off",
+				})
+			} else {
+				diags = append(diags, updateManagedDatabaseVersion(d, client)...)
+			}
 		}
 	}
 
@@ -728,7 +736,7 @@ func updateManagedDatabaseVersion(d *schema.ResourceData, client *service.Servic
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed", d.Id(), d.Get("name")),
 			Detail:   err.Error(),
 		})
