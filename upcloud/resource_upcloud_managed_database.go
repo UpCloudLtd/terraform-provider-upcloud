@@ -176,13 +176,13 @@ func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.Resourc
 						Detail:   err.Error(),
 					})
 				} else {
-					diags = append(diags, checkAndUpdateManagedDatabaseVersion(d, client)...)
+					diags = append(diags, updateManagedDatabaseVersion(d, client)...)
 				}
 			}
 		} else {
 			// Attempt to upgrade version before database is powered off
 			if d.HasChange("properties.0.version") {
-				diags = append(diags, checkAndUpdateManagedDatabaseVersion(d, client)...)
+				diags = append(diags, updateManagedDatabaseVersion(d, client)...)
 			}
 
 			_, err := client.ShutdownManagedDatabase(&request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
@@ -194,7 +194,7 @@ func resourceUpCloudManagedDatabaseUpdate(ctx context.Context, d *schema.Resourc
 	} else {
 		// If powered state was not chaged, just attempt to upgrade version
 		if d.HasChange("properties.0.version") {
-			diags = append(diags, checkAndUpdateManagedDatabaseVersion(d, client)...)
+			diags = append(diags, updateManagedDatabaseVersion(d, client)...)
 		}
 	}
 
@@ -718,7 +718,7 @@ func diffSuppressCreateOnlyProperty(k, old, new string, d *schema.ResourceData) 
 	return d.Id() != ""
 }
 
-func checkAndUpdateManagedDatabaseVersion(d *schema.ResourceData, client *service.Service) diag.Diagnostics {
+func updateManagedDatabaseVersion(d *schema.ResourceData, client *service.Service) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
 	_, err := client.UpgradeManagedDatabaseVersion(&request.UpgradeManagedDatabaseVersionRequest{
