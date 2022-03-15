@@ -150,6 +150,61 @@ func TestAccUpcloudManagedDatabaseMySQL_Create(t *testing.T) {
 	})
 }
 
+func TestAccUpcloudManagedDatabasePostgreSQL_VersionUpgrade(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_managed_database_postgresql" "test_pg" {
+						name = "testpg"
+						plan = "1x1xCPU-2GB-25GB"
+						title = "testversion"
+						zone = "pl-waw1"
+						powered = false
+						properties {
+							version = 12
+						}
+					}`,
+				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "12"),
+			},
+			{
+				// Check if turning db on and upgrading works
+				Config: `
+					resource "upcloud_managed_database_postgresql" "test_pg" {
+						name = "testpg"
+						plan = "1x1xCPU-2GB-25GB"
+						title = "testversion"
+						zone = "pl-waw1"
+						powered = true
+						properties {
+							version = 13
+						}
+					}`,
+				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "13"),
+			},
+			{
+				// Check if turning db off and upgrading works
+				Config: `
+					resource "upcloud_managed_database_postgresql" "test_pg" {
+						name = "testpg"
+						plan = "1x1xCPU-2GB-25GB"
+						title = "testversion"
+						zone = "pl-waw1"
+						powered = false
+						properties {
+							version = 14
+						}
+					}`,
+				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "14"),
+			},
+		},
+	})
+}
+
 func TestIsManagedDatabaseFullyCreated(t *testing.T) {
 	db := &upcloud.ManagedDatabase{
 		Backups: make([]upcloud.ManagedDatabaseBackup, 0),
