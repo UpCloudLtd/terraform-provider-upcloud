@@ -32,6 +32,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 						properties {
 							public_access = true
 							ip_filter = ["10.0.0.1/32"]
+							version = 13
 						}
 					}`, rName),
 				Check: resource.ComposeTestCheckFunc(
@@ -43,6 +44,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_time", "10:00:00"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.0", "10.0.0.1/32"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.version", "13"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
 					resource.TestCheckResourceAttrSet(resourceIdentifier, "service_uri"),
 				),
@@ -58,6 +60,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 						maintenance_window_dow = "friday"
 						properties {
 							ip_filter = []
+							version = 14
 						}
 					}`, rName),
 				Check: resource.ComposeTestCheckFunc(
@@ -66,6 +69,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.public_access", "false"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.#", "0"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.version", "14"),
 				),
 			},
 		},
