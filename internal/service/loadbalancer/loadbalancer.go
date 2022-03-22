@@ -2,7 +2,10 @@ package loadbalancer
 
 import (
 	"context"
+	"errors"
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
@@ -48,7 +51,8 @@ func ResourceLoadBalancer() *schema.Resource {
 			"configured_status": {
 				Description: "The service configured status indicates the service's current intended status. Managed by the customer.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     string(upcloud.LoadBalancerConfiguredStatusStarted),
 				ValidateDiagFunc: validation.ToDiagFunc(
 					validation.StringInSlice([]string{
 						string(upcloud.LoadBalancerConfiguredStatusStarted),
@@ -108,66 +112,25 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 
 	d.SetId(lb.UUID)
 
+	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
+		return diags
+	}
+
 	log.Printf("[INFO] load balancer '%s' created", lb.Name)
-	return resourceLoadBalancerRead(ctx, d, meta)
+	return diags
 }
 
 func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	var err error
 	svc := meta.(*service.Service)
 	lb, err := svc.GetLoadBalancer(&request.GetLoadBalancerRequest{UUID: d.Id()})
+
 	if err != nil {
-		return diag.FromErr(err)
+		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	if err = d.Set("name", lb.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err = d.Set("plan", lb.Plan); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err = d.Set("zone", lb.Zone); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err = d.Set("network", lb.NetworkUUID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err = d.Set("configured_status", lb.ConfiguredStatus); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err = d.Set("operational_state", lb.OperationalState); err != nil {
-		return diag.FromErr(err)
-	}
-
-	var frontends, backends, resolvers []string
-
-	for _, f := range lb.Frontends {
-		frontends = append(frontends, f.Name)
-	}
-
-	if err = d.Set("frontends", frontends); err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, b := range lb.Backends {
-		backends = append(backends, b.Name)
-	}
-
-	if err = d.Set("backends", backends); err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, r := range lb.Resolvers {
-		resolvers = append(resolvers, r.Name)
-	}
-
-	if err = d.Set("resolvers", resolvers); err != nil {
-		return diag.FromErr(err)
+	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
+		return diags
 	}
 
 	return diags
@@ -187,13 +150,96 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
+	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
+		return diags
+	}
+
 	log.Printf("[INFO] load balancer '%s' updated", lb.Name)
 	return diags
 }
 
 func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	svc := meta.(*service.Service)
-	return diag.FromErr(
-		svc.DeleteLoadBalancer(&request.DeleteLoadBalancerRequest{UUID: d.Id()}),
-	)
+	if err := svc.DeleteLoadBalancer(&request.DeleteLoadBalancerRequest{UUID: d.Id()}); err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[INFO] deleted load balancer '%s' (%s)", d.Get("name").(string), d.Id())
+
+	// Wait load balancer to shutdown before continuing so that e.g. network can be deleted (if needed)
+	return diag.FromErr(waitLoadBalancerToShutdown(ctx, svc, d.Id()))
+}
+
+func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalancer) (diags diag.Diagnostics) {
+	if err := d.Set("name", lb.Name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("plan", lb.Plan); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("zone", lb.Zone); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("network", lb.NetworkUUID); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("configured_status", lb.ConfiguredStatus); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("operational_state", lb.OperationalState); err != nil {
+		return diag.FromErr(err)
+	}
+
+	var frontends, backends, resolvers []string
+
+	for _, f := range lb.Frontends {
+		frontends = append(frontends, f.Name)
+	}
+
+	if err := d.Set("frontends", frontends); err != nil {
+		return diag.FromErr(err)
+	}
+
+	for _, b := range lb.Backends {
+		backends = append(backends, b.Name)
+	}
+
+	if err := d.Set("backends", backends); err != nil {
+		return diag.FromErr(err)
+	}
+
+	for _, r := range lb.Resolvers {
+		resolvers = append(resolvers, r.Name)
+	}
+
+	if err := d.Set("resolvers", resolvers); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return diags
+}
+
+func waitLoadBalancerToShutdown(ctx context.Context, svc *service.Service, id string) error {
+	const maxRetries int = 100
+	for i := 0; i <= maxRetries; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			lb, err := svc.GetLoadBalancer(&request.GetLoadBalancerRequest{UUID: id})
+			if err != nil {
+				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
+					return nil
+				}
+				return err
+			}
+			log.Printf("[INFO] waiting load balancer %s to shutdown (%s)", lb.Name, lb.OperationalState)
+		}
+		time.Sleep(5 * time.Second)
+	}
+	return errors.New("max retries reached while waiting for load balancer instance to shutdown")
 }

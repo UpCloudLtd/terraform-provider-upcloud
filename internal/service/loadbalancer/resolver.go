@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -26,6 +27,7 @@ func ResourceResolver() *schema.Resource {
 				Description: "ID of the load balancer to which the resolver is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"name": {
 				Description: "The name of the resolver must be unique within the service.",
@@ -113,10 +115,14 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
+	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
+		return diags
+	}
+
 	d.SetId(rs.Name)
 
 	log.Printf("[INFO] resolver '%s' created", rs.Name)
-	return resourceResolverRead(ctx, d, meta)
+	return diags
 }
 
 func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
@@ -127,35 +133,11 @@ func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta inte
 	})
 
 	if err != nil {
-		return diag.FromErr(err)
+		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	if err := d.Set("name", rs.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("nameservers", rs.Nameservers); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("retries", rs.Retries); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("timeout", rs.Timeout); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("timeout_retry", rs.TimeoutRetry); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("cache_valid", rs.CacheValid); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("cache_invalid", rs.CacheInvalid); err != nil {
-		return diag.FromErr(err)
+	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
+		return diags
 	}
 
 	return diags
@@ -187,22 +169,55 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("name", rs.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
 	d.SetId(rs.Name)
 
+	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
+		return diags
+	}
+
 	log.Printf("[INFO] resolver '%s' updated", rs.Name)
-	return resourceResolverRead(ctx, d, meta)
+	return diags
 }
 
 func resourceResolverDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	svc := meta.(*service.Service)
+	log.Printf("[INFO] deleting resolver '%s'", d.Id())
 	return diag.FromErr(
 		svc.DeleteLoadBalancerResolver(&request.DeleteLoadBalancerResolverRequest{
 			ServiceUUID: d.Get("loadbalancer").(string),
-			Name:        d.Get("name").(string),
+			Name:        d.Id(),
 		}),
 	)
+}
+
+func setResolverResourceData(d *schema.ResourceData, rs *upcloud.LoadBalancerResolver) (diags diag.Diagnostics) {
+	if err := d.Set("name", rs.Name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("nameservers", rs.Nameservers); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("retries", rs.Retries); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("timeout", rs.Timeout); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("timeout_retry", rs.TimeoutRetry); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("cache_valid", rs.CacheValid); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("cache_invalid", rs.CacheInvalid); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return diags
 }
