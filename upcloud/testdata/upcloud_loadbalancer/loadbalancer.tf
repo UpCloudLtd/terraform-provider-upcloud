@@ -21,6 +21,14 @@ resource "upcloud_loadbalancer" "lb" {
   network           = resource.upcloud_network.lb_network.id
 }
 
+resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
+  loadbalancer         = resource.upcloud_loadbalancer.lb.id
+  name                 = "lb-fe-1-test"
+  mode                 = "http"
+  port                 = 8080
+  default_backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+}
+
 resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
   loadbalancer  = resource.upcloud_loadbalancer.lb.id
   name          = "lb-resolver-1-test"
