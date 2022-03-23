@@ -47,7 +47,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Required
 
-- **loadbalancer** (String) ID of the load balancer to which the resolver is connected.
+- **loadbalancer** (String) ID of the load balancer to which the backend is connected.
 - **name** (String) The name of the backend must be unique within the load balancer service.
 
 ### Optional

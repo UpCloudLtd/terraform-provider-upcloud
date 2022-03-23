@@ -23,7 +23,7 @@ func ResourceBackend() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"loadbalancer": {
-				Description: "ID of the load balancer to which the resolver is connected.",
+				Description: "ID of the load balancer to which the backend is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

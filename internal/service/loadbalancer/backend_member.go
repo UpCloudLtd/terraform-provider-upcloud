@@ -24,19 +24,19 @@ func ResourceStaticBackendMember() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"loadbalancer": {
-				Description: "ID of the load balancer to which the resolver is connected.",
+				Description: "ID of the load balancer to which the backend is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"backend_name": {
-				Description: "Name of the load balancer to which the resolver is connected.",
+				Description: "Name of the load balancer backend to which the member is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the backend must be unique within the load balancer service.",
+				Description: "The name of the member must be unique within the load balancer backend service.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -88,19 +88,19 @@ func ResourceDynamicBackendMember() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"loadbalancer": {
-				Description: "ID of the load balancer to which the resolver is connected.",
+				Description: "ID of the load balancer to which the backend is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"backend_name": {
-				Description: "Name of the load balancer to which the resolver is connected.",
+				Description: "Name of the load balancer backend to which the member is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the backend must be unique within the load balancer service.",
+				Description: "The name of the member must be unique within the load balancer backend service.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},

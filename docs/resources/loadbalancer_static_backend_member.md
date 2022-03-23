@@ -58,11 +58,11 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {
 
 ### Required
 
-- **backend_name** (String) Name of the load balancer to which the resolver is connected.
+- **backend_name** (String) Name of the load balancer backend to which the member is connected.
 - **ip** (String) Server IP address in the customer private network.
-- **loadbalancer** (String) ID of the load balancer to which the resolver is connected.
+- **loadbalancer** (String) ID of the load balancer to which the backend is connected.
 - **max_sessions** (Number) Maximum number of sessions before queueing.
-- **name** (String) The name of the backend must be unique within the load balancer service.
+- **name** (String) The name of the member must be unique within the load balancer backend service.
 - **port** (Number) Server port.
 - **weight** (Number) Used to adjust the server's weight relative to other servers. 
 				All servers will receive a load proportional to their weight relative to the sum of all weights, so the higher the weight, the higher the load. 
