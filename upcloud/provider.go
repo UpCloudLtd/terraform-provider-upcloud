@@ -87,6 +87,7 @@ func Provider() *schema.Provider {
 			"upcloud_loadbalancer_static_backend_member":  loadbalancer.ResourceStaticBackendMember(),
 			"upcloud_loadbalancer_dynamic_backend_member": loadbalancer.ResourceDynamicBackendMember(),
 			"upcloud_loadbalancer_frontend":               loadbalancer.ResourceFrontend(),
+			"upcloud_loadbalancer_frontend_rule":          loadbalancer.ResourceFrontendRule(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

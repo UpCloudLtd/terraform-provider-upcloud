@@ -81,3 +81,80 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_be_2_sm_1" {
   max_sessions = 0
   enabled      = true
 }
+
+resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
+  loadbalancer  = resource.upcloud_loadbalancer.lb.id
+  frontend_name = resource.upcloud_loadbalancer_frontend.lb_fe_1.name
+  name          = "lb-fe-1-r1-test"
+  priority      = 10
+
+  matchers {
+    src_port {
+      method = "equal"
+      value  = 80
+    }
+    src_ip {
+      value = "192.168.0.0/24"
+    }
+    body_size {
+      method = "equal"
+      value  = 8000
+    }
+    path {
+      method      = "starts"
+      value       = "/application"
+      ignore_case = true
+    }
+    url {
+      method      = "starts"
+      value       = "/application"
+      ignore_case = true
+    }
+    url_query {
+      method = "starts"
+      value  = "type=app"
+    }
+    host {
+      value = "example.com"
+    }
+    http_method {
+      value = "PATCH"
+    }
+    cookie {
+      method = "exact"
+      name   = "x-session-id"
+      value  = "123456"
+    }
+    header {
+      method      = "exact"
+      name        = "status"
+      value       = "active"
+      ignore_case = true
+    }
+    url_param {
+      method      = "exact"
+      name        = "status"
+      value       = "active"
+      ignore_case = true
+    }
+    num_members_up {
+      method       = "less"
+      value        = 1
+      backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+    }
+  }
+  actions {
+    use_backend {
+      backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+    }
+    http_redirect {
+      location = "/app"
+    }
+    http_return {
+      content_type = "text/plain"
+      payload      = base64encode("Resource not found!")
+      status       = "404"
+    }
+    tcp_reject {}
+  }
+}
