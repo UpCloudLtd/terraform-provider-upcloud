@@ -3,6 +3,7 @@ package loadbalancer
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
@@ -45,6 +46,16 @@ func ResourceManualCertificateBundle() *schema.Resource {
 			},
 			"operational_state": {
 				Description: "The service operational state indicates the service's current operational, effective state. Managed by the system.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"not_after": {
+				Description: "The time after which a certificate is no longer valid.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"not_before": {
+				Description: "The time on which a certificate becomes valid.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -136,6 +147,14 @@ func setManualCertificateBundleResourceData(d *schema.ResourceData, b *upcloud.L
 	}
 
 	if err := d.Set("operational_state", b.OperationalState); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("not_after", b.NotAfter.Format(time.RFC3339)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("not_before", b.NotAfter.Format(time.RFC3339)); err != nil {
 		return diag.FromErr(err)
 	}
 

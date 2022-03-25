@@ -38,6 +38,8 @@ resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb-cb-d1" {
 
 ### Read-Only
 
+- **not_after** (String) The time after which a certificate is no longer valid.
+- **not_before** (String) The time on which a certificate becomes valid.
 - **operational_state** (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 
 
