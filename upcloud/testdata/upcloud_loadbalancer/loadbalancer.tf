@@ -158,3 +158,11 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     tcp_reject {}
   }
 }
+
+resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb-cb-d1" {
+  name = "lb-cb-d1-test"
+  hostnames = [
+    "example.com",
+  ]
+  key_type = "rsa"
+}

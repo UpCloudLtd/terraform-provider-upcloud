@@ -23,6 +23,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	be2sm1Name := "upcloud_loadbalancer_static_backend_member.lb_be_2_sm_1"
 	fe1Name := "upcloud_loadbalancer_frontend.lb_fe_1"
 	fe1Rule1Name := "upcloud_loadbalancer_frontend_rule.lb_fe_1_r1"
+	cb1Name := "upcloud_loadbalancer_dynamic_certificate_bundle.lb-cb-d1"
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
@@ -93,6 +95,9 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.content_type", "text/plain"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.payload", "UmVzb3VyY2Ugbm90IGZvdW5kIQ=="),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.tcp_reject.0.active", "true"),
+					resource.TestCheckResourceAttr(cb1Name, "name", "lb-cb-d1-test"),
+					resource.TestCheckResourceAttr(cb1Name, "key_type", "rsa"),
+					resource.TestCheckResourceAttr(cb1Name, "hostnames.0", "example.com"),
 				),
 			},
 		},
