@@ -89,6 +89,7 @@ func Provider() *schema.Provider {
 			"upcloud_loadbalancer_frontend":                   loadbalancer.ResourceFrontend(),
 			"upcloud_loadbalancer_frontend_rule":              loadbalancer.ResourceFrontendRule(),
 			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
+			"upcloud_loadbalancer_manual_certificate_bundle":  loadbalancer.ResourceManualCertificateBundle(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

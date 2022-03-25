@@ -36,4 +36,8 @@ resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb-cb-d1" {
 
 - **id** (String) The ID of this resource.
 
+### Read-Only
+
+- **operational_state** (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
+
 

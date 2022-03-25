@@ -18,7 +18,7 @@ func ResourceDynamicCertificateBundle() *schema.Resource {
 		CreateContext: resourceDynamicCertificateBundleCreate,
 		ReadContext:   resourceDynamicCertificateBundleRead,
 		UpdateContext: resourceDynamicCertificateBundleUpdate,
-		DeleteContext: resourceDynamicCertificateBundleDelete,
+		DeleteContext: resourceCertificateBundleDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -45,6 +45,11 @@ func ResourceDynamicCertificateBundle() *schema.Resource {
 				ForceNew:    true,
 				ValidateDiagFunc: validation.ToDiagFunc(
 					validation.StringInSlice([]string{"rsa", "ecdsa"}, false)),
+			},
+			"operational_state": {
+				Description: "The service operational state indicates the service's current operational, effective state. Managed by the system.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}
@@ -118,12 +123,6 @@ func resourceDynamicCertificateBundleUpdate(ctx context.Context, d *schema.Resou
 	return diags
 }
 
-func resourceDynamicCertificateBundleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	log.Printf("[INFO] deleting certificate bundle '%s' (%s)", d.Get("name").(string), d.Id())
-	return diag.FromErr(svc.DeleteLoadBalancerCertificateBundle(&request.DeleteLoadBalancerCertificateBundleRequest{UUID: d.Id()}))
-}
-
 func setDynamicCertificateBundleResourceData(d *schema.ResourceData, b *upcloud.LoadBalancerCertificateBundle) (diags diag.Diagnostics) {
 	if err := d.Set("name", b.Name); err != nil {
 		return diag.FromErr(err)
@@ -134,6 +133,10 @@ func setDynamicCertificateBundleResourceData(d *schema.ResourceData, b *upcloud.
 	}
 
 	if err := d.Set("hostnames", b.Hostnames); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("operational_state", b.OperationalState); err != nil {
 		return diag.FromErr(err)
 	}
 
