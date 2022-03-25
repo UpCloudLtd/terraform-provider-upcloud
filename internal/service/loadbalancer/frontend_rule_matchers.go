@@ -495,12 +495,6 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 
 func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.LoadBalancerFrontendRule) error {
 	matchers := make(map[string][]interface{})
-	nillableInt := func(i int) *int {
-		if i == 0 {
-			return nil
-		}
-		return &i
-	}
 	for _, m := range rule.Matchers {
 		t := string(m.Type)
 		var v map[string]interface{}
@@ -513,15 +507,15 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 			v = map[string]interface{}{
 				"method":      m.SrcPort.Method,
 				"value":       m.SrcPort.Value,
-				"range_start": nillableInt(m.SrcPort.RangeStart),
-				"range_end":   nillableInt(m.SrcPort.RangeEnd),
+				"range_start": m.SrcPort.RangeStart,
+				"range_end":   m.SrcPort.RangeEnd,
 			}
 		case upcloud.LoadBalancerMatcherTypeBodySize:
 			v = map[string]interface{}{
 				"method":      m.BodySize.Method,
 				"value":       m.BodySize.Value,
-				"range_start": nillableInt(m.BodySize.RangeStart),
-				"range_end":   nillableInt(m.BodySize.RangeEnd),
+				"range_start": m.BodySize.RangeStart,
+				"range_end":   m.BodySize.RangeEnd,
 			}
 		case upcloud.LoadBalancerMatcherTypePath:
 			v = map[string]interface{}{
