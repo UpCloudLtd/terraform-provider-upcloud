@@ -24,8 +24,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	fe1Name := "upcloud_loadbalancer_frontend.lb_fe_1"
 	fe1Rule1Name := "upcloud_loadbalancer_frontend_rule.lb_fe_1_r1"
 	fe1TLS1Name := "upcloud_loadbalancer_frontend_tls_config.lb_fe_1_tls1"
-	cbd1Name := "upcloud_loadbalancer_dynamic_certificate_bundle.lb-cb-d1"
-	cbm1Name := "upcloud_loadbalancer_manual_certificate_bundle.lb-cb-m1"
+	cbd1Name := "upcloud_loadbalancer_dynamic_certificate_bundle.lb_cb_d1"
+	cbm1Name := "upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
