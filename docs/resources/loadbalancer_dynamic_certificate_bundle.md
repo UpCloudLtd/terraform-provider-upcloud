@@ -13,7 +13,7 @@ This resource represents dynamic certificate bundle
 ## Example Usage
 
 ```terraform
-resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb-cb-d1" {
+resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
   name = "lb-cb-d1-test"
   hostnames = [
     "example.com",
