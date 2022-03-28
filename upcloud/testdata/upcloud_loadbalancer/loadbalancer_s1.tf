@@ -47,8 +47,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
-  backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  backend      = resource.upcloud_loadbalancer_backend.lb_be_1.id
   name         = "lb-be-1-sm-1-test"
   ip           = "10.0.0.10"
   port         = 8000
@@ -58,8 +57,7 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {
 }
 
 resource "upcloud_loadbalancer_dynamic_backend_member" "lb_be_1_dm_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
-  backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  backend      = resource.upcloud_loadbalancer_backend.lb_be_1.id
   name         = "lb-be-1-dm-1-test"
   weight       = 10
   max_sessions = 10
@@ -72,8 +70,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_2" {
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_2_sm_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
-  backend_name = resource.upcloud_loadbalancer_backend.lb_be_2.name
+  backend      = resource.upcloud_loadbalancer_backend.lb_be_2.id
   name         = "lb-be-2-sm-1-test"
   ip           = "10.0.0.10"
   port         = 8000
@@ -83,10 +80,9 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_be_2_sm_1" {
 }
 
 resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
-  loadbalancer  = resource.upcloud_loadbalancer.lb.id
-  frontend_name = resource.upcloud_loadbalancer_frontend.lb_fe_1.name
-  name          = "lb-fe-1-r1-test"
-  priority      = 10
+  frontend = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
+  name     = "lb-fe-1-r1-test"
+  priority = 10
 
   matchers {
     src_port {
@@ -174,8 +170,7 @@ resource "upcloud_loadbalancer_manual_certificate_bundle" "lb_cb_m1" {
 }
 
 resource "upcloud_loadbalancer_frontend_tls_config" "lb_fe_1_tls1" {
-  loadbalancer       = resource.upcloud_loadbalancer.lb.id
-  frontend_name      = resource.upcloud_loadbalancer_frontend.lb_fe_1.name
+  frontend           = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
   name               = "lb-fe-1-tls1-test"
   certificate_bundle = resource.upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1.id
 }

@@ -115,11 +115,11 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
+	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
+
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
 	}
-
-	d.SetId(rs.Name)
 
 	log.Printf("[INFO] resolver '%s' created", rs.Name)
 	return diags
@@ -127,14 +127,20 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, name string
+	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	rs, err := svc.GetLoadBalancerResolver(&request.GetLoadBalancerResolverRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		Name:        d.Get("name").(string),
+		ServiceUUID: serviceID,
+		Name:        name,
 	})
 
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
+
+	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
@@ -152,9 +158,13 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		}
 	}
 
+	var serviceID, name string
+	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	rs, err := svc.ModifyLoadBalancerResolver(&request.ModifyLoadBalancerRevolverRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		Name:        d.Id(),
+		ServiceUUID: serviceID,
+		Name:        name,
 		Resolver: request.LoadBalancerResolver{
 			Name:         d.Get("name").(string),
 			Nameservers:  nameservers,
@@ -165,11 +175,12 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			CacheInvalid: d.Get("cache_invalid").(int),
 		},
 	})
+
+	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	d.SetId(rs.Name)
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
@@ -181,11 +192,15 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 func resourceResolverDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	svc := meta.(*service.Service)
+	var serviceID, name string
+	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[INFO] deleting resolver '%s'", d.Id())
 	return diag.FromErr(
 		svc.DeleteLoadBalancerResolver(&request.DeleteLoadBalancerResolverRequest{
-			ServiceUUID: d.Get("loadbalancer").(string),
-			Name:        d.Id(),
+			ServiceUUID: serviceID,
+			Name:        name,
 		}),
 	)
 }

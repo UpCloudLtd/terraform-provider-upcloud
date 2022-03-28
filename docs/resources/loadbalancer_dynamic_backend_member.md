@@ -36,7 +36,6 @@ resource "upcloud_loadbalancer" "lb" {
   network           = resource.upcloud_network.lb_network.id
 }
 
-
 resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
   loadbalancer  = resource.upcloud_loadbalancer.lb.id
   name          = "lb-resolver-1-test"
@@ -55,8 +54,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 }
 
 resource "upcloud_loadbalancer_dynamic_backend_member" "lb_be_1_dm_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
-  backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  backend      = resource.upcloud_loadbalancer_backend.lb_be_1.id
   name         = "lb-be-1-dm-1-test"
   weight       = 10
   max_sessions = 10
@@ -69,8 +67,7 @@ resource "upcloud_loadbalancer_dynamic_backend_member" "lb_be_1_dm_1" {
 
 ### Required
 
-- **backend_name** (String) Name of the load balancer backend to which the member is connected.
-- **loadbalancer** (String) ID of the load balancer to which the backend is connected.
+- **backend** (String) ID of the load balancer backend to which the member is connected.
 - **max_sessions** (Number) Maximum number of sessions before queueing.
 - **name** (String) The name of the member must be unique within the load balancer backend service.
 - **weight** (Number) Used to adjust the server's weight relative to other servers. 

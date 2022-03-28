@@ -23,14 +23,8 @@ func ResourceFrontendRule() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
-			"loadbalancer": {
-				Description: "ID of the load balancer to which the frontend is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"frontend_name": {
-				Description: "Name of the load balancer frontend to which the rule is connected.",
+			"frontend": {
+				Description: "ID of the load balancer frontend to which the rule is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -82,9 +76,13 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
+	var serviceID, feName string
+	if err := unmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
+		return diag.FromErr(err)
+	}
 	rule, err := svc.CreateLoadBalancerFrontendRule(&request.CreateLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
 		Rule: request.LoadBalancerFrontendRule{
 			Name:     d.Get("name").(string),
 			Priority: d.Get("priority").(int),
@@ -97,11 +95,11 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
+	d.SetId(marshalID(serviceID, feName, rule.Name))
+
 	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
 	}
-
-	d.SetId(rule.Name)
 
 	log.Printf("[INFO] frontend rule '%s' created", rule.Name)
 	return diags
@@ -109,33 +107,40 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 
 func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, feName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	rule, err := svc.GetLoadBalancerFrontendRule(&request.GetLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
-		Name:         d.Id(),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
+		Name:         name,
 	})
 
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
+	d.SetId(marshalID(serviceID, feName, rule.Name))
+
 	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
 	}
-
-	d.SetId(rule.Name)
 
 	return diags
 }
 
 func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
-
+	var serviceID, feName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	// name and priority fields doesn't force replacement and can be updated in-place
 	rule, err := svc.ModifyLoadBalancerFrontendRule(&request.ModifyLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
-		Name:         d.Id(),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
+		Name:         name,
 		Rule: request.ModifyLoadBalancerFrontendRule{
 			Name:     d.Get("name").(string),
 			Priority: d.Get("priority").(int),
@@ -146,7 +151,7 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	d.SetId(rule.Name)
+	d.SetId(marshalID(serviceID, feName, rule.Name))
 
 	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
@@ -158,11 +163,15 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 
 func resourceFrontendRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, feName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[INFO] deleting frontend rule '%s'", d.Id())
 	return diag.FromErr(svc.DeleteLoadBalancerFrontendRule(&request.DeleteLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
-		Name:         d.Id(),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
+		Name:         name,
 	}))
 }
 

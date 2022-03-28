@@ -42,8 +42,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
-  backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  backend      = resource.upcloud_loadbalancer_backend.lb_be_1.id
   name         = "lb-be-1-sm-1-test"
   ip           = "10.0.0.10"
   port         = 8000
@@ -58,9 +57,8 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {
 
 ### Required
 
-- **backend_name** (String) Name of the load balancer backend to which the member is connected.
+- **backend** (String) ID of the load balancer backend to which the member is connected.
 - **ip** (String) Server IP address in the customer private network.
-- **loadbalancer** (String) ID of the load balancer to which the backend is connected.
 - **max_sessions** (Number) Maximum number of sessions before queueing.
 - **name** (String) The name of the member must be unique within the load balancer backend service.
 - **port** (Number) Server port.

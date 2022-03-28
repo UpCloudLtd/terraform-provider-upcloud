@@ -23,14 +23,8 @@ func ResourceStaticBackendMember() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
-			"loadbalancer": {
-				Description: "ID of the load balancer to which the backend is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"backend_name": {
-				Description: "Name of the load balancer backend to which the member is connected.",
+			"backend": {
+				Description: "ID of the load balancer backend to which the member is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -87,14 +81,8 @@ func ResourceDynamicBackendMember() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
-			"loadbalancer": {
-				Description: "ID of the load balancer to which the backend is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"backend_name": {
-				Description: "Name of the load balancer backend to which the member is connected.",
+			"backend": {
+				Description: "ID of the load balancer backend to which the member is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -114,6 +102,7 @@ func ResourceDynamicBackendMember() *schema.Resource {
 				Description:      "Server port. Port is optional and can be specified in DNS SRV record.",
 				Type:             schema.TypeInt,
 				Optional:         true,
+				Default:          0,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsPortNumber),
 			},
 			"weight": {
@@ -143,9 +132,13 @@ func ResourceDynamicBackendMember() *schema.Resource {
 func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMemberType) schema.CreateContextFunc {
 	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 		svc := meta.(*service.Service)
+		var serviceID, beName string
+		if err := unmarshalID(d.Get("backend").(string), &serviceID, &beName); err != nil {
+			return diag.FromErr(err)
+		}
 		member, err := svc.CreateLoadBalancerBackendMember(&request.CreateLoadBalancerBackendMemberRequest{
-			ServiceUUID: d.Get("loadbalancer").(string),
-			BackendName: d.Get("backend_name").(string),
+			ServiceUUID: serviceID,
+			BackendName: beName,
 			Member: request.LoadBalancerBackendMember{
 				Type:        memberType,
 				Name:        d.Get("name").(string),
@@ -164,7 +157,7 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 			return diags
 		}
 
-		d.SetId(member.Name)
+		d.SetId(marshalID(serviceID, beName, member.Name))
 
 		log.Printf("[INFO] backend member '%s' created", member.Name)
 		return diags
@@ -173,31 +166,39 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 
 func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, beName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	member, err := svc.GetLoadBalancerBackendMember(&request.GetLoadBalancerBackendMemberRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		BackendName: d.Get("backend_name").(string),
-		Name:        d.Id(),
+		ServiceUUID: serviceID,
+		BackendName: beName,
+		Name:        name,
 	})
 
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
+	d.SetId(marshalID(serviceID, beName, member.Name))
+
 	if diags = setBackendMemberResourceData(d, member); len(diags) > 0 {
 		return diags
 	}
-
-	d.SetId(member.Name)
 
 	return diags
 }
 
 func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, beName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	member, err := svc.ModifyLoadBalancerBackendMember(&request.ModifyLoadBalancerBackendMemberRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		BackendName: d.Get("backend_name").(string),
-		Name:        d.Id(),
+		ServiceUUID: serviceID,
+		BackendName: beName,
+		Name:        name,
 		Member: request.LoadBalancerBackendMember{
 			Name:        d.Get("name").(string),
 			Weight:      d.Get("weight").(int),
@@ -212,7 +213,7 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	d.SetId(member.Name)
+	d.SetId(marshalID(serviceID, beName, member.Name))
 
 	if diags = setBackendMemberResourceData(d, member); len(diags) > 0 {
 		return diags
@@ -224,11 +225,15 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceBackendMemberDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, beName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[INFO] deleting backend member '%s'", d.Id())
 	return diag.FromErr(svc.DeleteLoadBalancerBackendMember(&request.DeleteLoadBalancerBackendMemberRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		BackendName: d.Get("backend_name").(string),
-		Name:        d.Id(),
+		ServiceUUID: serviceID,
+		BackendName: beName,
+		Name:        name,
 	}))
 }
 

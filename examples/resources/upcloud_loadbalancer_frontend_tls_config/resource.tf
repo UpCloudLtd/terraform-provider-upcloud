@@ -1,6 +1,5 @@
 resource "upcloud_loadbalancer_frontend_tls_config" "lb_fe_1_tls1" {
-  loadbalancer       = resource.upcloud_loadbalancer.lb.id
-  frontend_name      = resource.upcloud_loadbalancer_frontend.lb_fe_1.name
+  frontend           = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
   name               = "lb-fe-1-tls1-test"
   certificate_bundle = resource.upcloud_loadbalancer_manual_certificate_bundle.lb-cb-m1.id
 }

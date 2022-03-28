@@ -29,10 +29,9 @@ resource "upcloud_network" "lb_network" {
 }
 
 resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
-  loadbalancer  = resource.upcloud_loadbalancer.lb.id
-  frontend_name = resource.upcloud_loadbalancer_frontend.lb_fe_1.name
-  name          = "lb-fe-1-r1-test"
-  priority      = 10
+  frontend = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
+  name     = "lb-fe-1-r1-test"
+  priority = 10
 
   matchers {
     src_ip {
@@ -74,8 +73,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Required
 
-- **frontend_name** (String) Name of the load balancer frontend to which the rule is connected.
-- **loadbalancer** (String) ID of the load balancer to which the frontend is connected.
+- **frontend** (String) ID of the load balancer frontend to which the rule is connected.
 - **name** (String) The name of the frontend must be unique within the load balancer service.
 - **priority** (Number) Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.
 

@@ -3,6 +3,7 @@ package loadbalancer
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -31,4 +32,19 @@ func handleResourceError(resourceName string, d *schema.ResourceData, err error)
 		return diags
 	}
 	return diag.FromErr(err)
+}
+
+func marshalID(components ...string) string {
+	return strings.Join(components, "/")
+}
+
+func unmarshalID(id string, components ...*string) error {
+	parts := strings.Split(id, "/")
+	if len(parts) > len(components) {
+		return fmt.Errorf("not enough components (%d) to unmarshal id '%s'", len(components), id)
+	}
+	for i, c := range parts {
+		*components[i] = c
+	}
+	return nil
 }

@@ -64,9 +64,6 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Optional
 
 - **id** (String) The ID of this resource.
-
-### Read-Only
-
 - **rules** (List of String) Set of frontend rule names
 - **tls_configs** (List of String) Set of TLS config names
 

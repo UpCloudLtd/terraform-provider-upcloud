@@ -33,6 +33,7 @@ func ResourceFrontend() *schema.Resource {
 				Description: "The name of the frontend must be unique within the load balancer service.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"mode": {
 				Description: "When load balancer operating in `tcp` mode it acts as a layer 4 proxy. In `http` mode it acts as a layer 7 proxy.",
@@ -55,11 +56,13 @@ func ResourceFrontend() *schema.Resource {
 				Description: "The name of the default backend where traffic will be routed. Note, default backend can be overwritten in frontend rules.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"rules": {
 				Description: "Set of frontend rule names",
 				Type:        schema.TypeList,
 				Computed:    true,
+				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -68,6 +71,7 @@ func ResourceFrontend() *schema.Resource {
 				Description: "Set of TLS config names",
 				Type:        schema.TypeList,
 				Computed:    true,
+				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -94,11 +98,11 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
+	d.SetId(marshalID(d.Get("loadbalancer").(string), fe.Name))
+
 	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags
 	}
-
-	d.SetId(fe.Name)
 
 	log.Printf("[INFO] frontend '%s' created", fe.Name)
 	return diags
@@ -106,29 +110,37 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, name string
+	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	fe, err := svc.GetLoadBalancerFrontend(&request.GetLoadBalancerFrontendRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		Name:        d.Id(),
+		ServiceUUID: serviceID,
+		Name:        name,
 	})
 
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
+	d.SetId(marshalID(d.Get("loadbalancer").(string), fe.Name))
+
 	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags
 	}
-
-	d.SetId(fe.Name)
 
 	return diags
 }
 
 func resourceFrontendUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, name string
+	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	fe, err := svc.ModifyLoadBalancerFrontend(&request.ModifyLoadBalancerFrontendRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		Name:        d.Id(),
+		ServiceUUID: serviceID,
+		Name:        name,
 		Frontend: request.ModifyLoadBalancerFrontend{
 			Name:           d.Get("name").(string),
 			Mode:           upcloud.LoadBalancerMode(d.Get("mode").(string)),
@@ -140,7 +152,7 @@ func resourceFrontendUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fe.Name)
+	d.SetId(marshalID(d.Get("loadbalancer").(string), fe.Name))
 
 	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags
@@ -152,10 +164,14 @@ func resourceFrontendUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 func resourceFrontendDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, name string
+	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[INFO] deleting frontend '%s'", d.Id())
 	return diag.FromErr(svc.DeleteLoadBalancerFrontend(&request.DeleteLoadBalancerFrontendRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
-		Name:        d.Id(),
+		ServiceUUID: serviceID,
+		Name:        name,
 	}))
 }
 

@@ -64,6 +64,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "Frontends receive the traffic before dispatching it to the backends.",
 				Type:        schema.TypeList,
 				Computed:    true,
+				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -72,6 +73,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "Backends are groups of customer servers whose traffic should be balanced.",
 				Type:        schema.TypeList,
 				Computed:    true,
+				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -80,6 +82,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "Domain Name Resolvers must be configured in case of customer uses dynamic type members",
 				Type:        schema.TypeList,
 				Computed:    true,
+				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

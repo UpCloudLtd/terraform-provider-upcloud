@@ -21,7 +21,6 @@ resource "upcloud_loadbalancer" "lb" {
   network           = resource.upcloud_network.lb_network.id
 }
 
-
 resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
   loadbalancer  = resource.upcloud_loadbalancer.lb.id
   name          = "lb-resolver-1-test"
@@ -40,8 +39,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 }
 
 resource "upcloud_loadbalancer_dynamic_backend_member" "lb_be_1_dm_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
-  backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  backend      = resource.upcloud_loadbalancer_backend.lb_be_1.id
   name         = "lb-be-1-dm-1-test"
   weight       = 10
   max_sessions = 10

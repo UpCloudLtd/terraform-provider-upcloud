@@ -22,14 +22,8 @@ func ResourceFrontendTLSConfig() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
-			"loadbalancer": {
-				Description: "ID of the load balancer to which the frontend is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"frontend_name": {
-				Description: "Name of the load balancer frontend to which the TLS config is connected.",
+			"frontend": {
+				Description: "ID of the load balancer frontend to which the TLS config is connected.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -50,10 +44,13 @@ func ResourceFrontendTLSConfig() *schema.Resource {
 
 func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
-
+	var serviceID, feName string
+	if err := unmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
+		return diag.FromErr(err)
+	}
 	t, err := svc.CreateLoadBalancerFrontendTLSConfig(&request.CreateLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
 		Config: request.LoadBalancerFrontendTLSConfig{
 			Name:                  d.Get("name").(string),
 			CertificateBundleUUID: d.Get("certificate_bundle").(string),
@@ -64,7 +61,7 @@ func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	d.SetId(t.Name)
+	d.SetId(marshalID(serviceID, feName, t.Name))
 
 	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
@@ -76,10 +73,14 @@ func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData
 
 func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, feName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	t, err := svc.GetLoadBalancerFrontendTLSConfig(&request.GetLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
-		Name:         d.Id(),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
+		Name:         name,
 	})
 
 	if err != nil {
@@ -95,10 +96,14 @@ func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, 
 
 func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, feName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	t, err := svc.ModifyLoadBalancerFrontendTLSConfig(&request.ModifyLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
-		Name:         d.Id(),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
+		Name:         name,
 		Config: request.LoadBalancerFrontendTLSConfig{
 			Name:                  d.Get("name").(string),
 			CertificateBundleUUID: d.Get("certificate_bundle").(string),
@@ -109,7 +114,7 @@ func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	d.SetId(t.Name)
+	d.SetId(marshalID(serviceID, feName, t.Name))
 
 	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
@@ -121,11 +126,15 @@ func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData
 
 func resourceFrontendTLSConfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	var serviceID, feName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[INFO] deleting frontend TLS config '%s'", d.Id())
 	return diag.FromErr(svc.DeleteLoadBalancerFrontendTLSConfig(&request.DeleteLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  d.Get("loadbalancer").(string),
-		FrontendName: d.Get("frontend_name").(string),
-		Name:         d.Id(),
+		ServiceUUID:  serviceID,
+		FrontendName: feName,
+		Name:         name,
 	}))
 }
 

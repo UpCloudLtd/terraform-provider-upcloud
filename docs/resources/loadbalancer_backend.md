@@ -53,10 +53,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **resolver_name** (String) Domain Name Resolver used with dynamic type members.
-
-### Read-Only
-
 - **members** (List of String) Frontends receive the traffic before dispatching it to the backends.
+- **resolver_name** (String) Domain Name Resolver used with dynamic type members.
 
 

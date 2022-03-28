@@ -14,8 +14,7 @@ This resource represents frontend TLS config
 
 ```terraform
 resource "upcloud_loadbalancer_frontend_tls_config" "lb_fe_1_tls1" {
-  loadbalancer       = resource.upcloud_loadbalancer.lb.id
-  frontend_name      = resource.upcloud_loadbalancer_frontend.lb_fe_1.name
+  frontend           = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
   name               = "lb-fe-1-tls1-test"
   certificate_bundle = resource.upcloud_loadbalancer_manual_certificate_bundle.lb-cb-m1.id
 }
@@ -69,8 +68,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Required
 
 - **certificate_bundle** (String) Reference to certificate bundle ID.
-- **frontend_name** (String) Name of the load balancer frontend to which the TLS config is connected.
-- **loadbalancer** (String) ID of the load balancer to which the frontend is connected.
+- **frontend** (String) ID of the load balancer frontend to which the TLS config is connected.
 - **name** (String) The name of the TLS config must be unique within service frontend.
 
 ### Optional
