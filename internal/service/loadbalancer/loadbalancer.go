@@ -91,6 +91,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "The service operational state indicates the service's current operational, effective state. Managed by the system.",
 				Type:        schema.TypeString,
 				Computed:    true,
+				Optional:    true,
 			},
 			"dns_name": {
 				Description: "DNS name of the load balancer",
