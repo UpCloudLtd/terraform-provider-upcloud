@@ -53,10 +53,7 @@ resource "upcloud_loadbalancer" "lb" {
 - **frontends** (List of String) Frontends receive the traffic before dispatching it to the backends.
 - **id** (String) The ID of this resource.
 - **network** (String) Private network UUID where traffic will be routed. Must reside in loadbalancer zone.
-- **resolvers** (List of String) Domain Name Resolvers must be configured in case of customer uses dynamic type members
-
-### Read-Only
-
 - **operational_state** (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
+- **resolvers** (List of String) Domain Name Resolvers must be configured in case of customer uses dynamic type members
 
 
