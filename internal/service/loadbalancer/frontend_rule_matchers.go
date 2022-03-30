@@ -494,6 +494,10 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 }
 
 func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.LoadBalancerFrontendRule) error {
+	if len(rule.Matchers) == 0 {
+		return d.Set("matchers", nil)
+	}
+
 	matchers := make(map[string][]interface{})
 	for _, m := range rule.Matchers {
 		t := string(m.Type)

@@ -144,6 +144,10 @@ func loadBalancerActionsFromResourceData(d *schema.ResourceData) ([]upcloud.Load
 }
 
 func setFrontendRuleActionsResourceData(d *schema.ResourceData, rule *upcloud.LoadBalancerFrontendRule) error {
+	if len(rule.Actions) == 0 {
+		return d.Set("actions", nil)
+	}
+
 	actions := make(map[string][]interface{})
 	for _, a := range rule.Actions {
 		t := string(a.Type)
