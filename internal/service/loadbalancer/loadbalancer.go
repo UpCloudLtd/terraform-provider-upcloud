@@ -92,6 +92,11 @@ func ResourceLoadBalancer() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"dns_name": {
+				Description: "DNS name of the load balancer",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -194,6 +199,10 @@ func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalance
 	}
 
 	if err := d.Set("operational_state", lb.OperationalState); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("dns_name", lb.DNSName); err != nil {
 		return diag.FromErr(err)
 	}
 
