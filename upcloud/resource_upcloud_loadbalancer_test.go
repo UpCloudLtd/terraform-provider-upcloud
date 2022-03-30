@@ -40,6 +40,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
+					resource.TestCheckResourceAttrSet(lbName, "dns_name"),
 					resource.TestCheckResourceAttr(dnsName, "name", "lb-resolver-1-test"),
 					resource.TestCheckResourceAttr(dnsName, "nameservers.#", "2"),
 					resource.TestCheckResourceAttr(be1Name, "name", "lb-be-1-test"),
