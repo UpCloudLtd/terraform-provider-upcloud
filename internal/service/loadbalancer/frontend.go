@@ -62,7 +62,6 @@ func ResourceFrontend() *schema.Resource {
 				Description: "Set of frontend rule names",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -71,7 +70,6 @@ func ResourceFrontend() *schema.Resource {
 				Description: "Set of TLS config names",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

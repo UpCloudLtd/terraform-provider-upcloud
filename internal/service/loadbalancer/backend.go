@@ -43,7 +43,6 @@ func ResourceBackend() *schema.Resource {
 				Description: "Frontends receive the traffic before dispatching it to the backends.",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
