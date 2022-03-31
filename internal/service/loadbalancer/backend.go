@@ -40,7 +40,7 @@ func ResourceBackend() *schema.Resource {
 				Optional:    true,
 			},
 			"members": {
-				Description: "Frontends receive the traffic before dispatching it to the backends.",
+				Description: "Backend members receive traffic dispatched from the frontends",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Schema{
