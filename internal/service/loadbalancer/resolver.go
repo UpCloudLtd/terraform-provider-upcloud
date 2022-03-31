@@ -38,9 +38,9 @@ func ResourceResolver() *schema.Resource {
 				Description: `List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. 
 				Port is optional, if missing then default 53 will be used.`,
 				Type:     schema.TypeList,
-				MinItems: 0,
+				MinItems: 1,
 				MaxItems: 10,
-				Optional: true,
+				Required: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
