@@ -45,8 +45,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "Private network UUID where traffic will be routed. Must reside in loadbalancer zone.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 			},
 			"configured_status": {
 				Description: "The service configured status indicates the service's current intended status. Managed by the customer.",
@@ -64,7 +63,6 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "Frontends receive the traffic before dispatching it to the backends.",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -73,7 +71,6 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "Backends are groups of customer servers whose traffic should be balanced.",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -82,7 +79,6 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "Domain Name Resolvers must be configured in case of customer uses dynamic type members",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -91,7 +87,6 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "The service operational state indicates the service's current operational, effective state. Managed by the system.",
 				Type:        schema.TypeString,
 				Computed:    true,
-				Optional:    true,
 			},
 			"dns_name": {
 				Description: "DNS name of the load balancer",
