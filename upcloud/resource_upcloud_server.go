@@ -874,7 +874,7 @@ func serverValidateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc 
 			return diags
 		}
 
-		if err := serverValidateHostname(val); err != nil {
+		if err := utils.ValidateDomainName(val); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity:      diag.Error,
 				Summary:       "Hostname validation failed",
@@ -885,77 +885,6 @@ func serverValidateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc 
 
 		return diags
 	}
-}
-
-// Validate server hostname
-//
-// hostname(7): Each element of the hostname must be from 1 to 63 characters long
-// and the entire hostname, including the dots, can be at most 253 characters long.
-// Valid characters for hostnames are ASCII(7) letters from a to z, the digits from 0 to 9, and the hyphen (-).
-// A hostname may not start with a hyphen.
-//
-// Modified version of isDomainName function from Go's net package (https://pkg.go.dev/net)
-func serverValidateHostname(hostname string) error {
-	const (
-		minLen      int = 1
-		maxLen      int = 253
-		labelMaxLen int = 63
-	)
-	l := len(hostname)
-
-	if l > maxLen || l < minLen {
-		return fmt.Errorf("%s length %d is not in the range %d - %d", hostname, l, minLen, maxLen)
-	}
-
-	if hostname[0] == '.' || hostname[0] == '-' {
-		return fmt.Errorf("%s starts with dot or hyphen", hostname)
-	}
-
-	if hostname[l-1] == '.' || hostname[l-1] == '-' {
-		return fmt.Errorf("%s ends with dot or hyphen", hostname)
-	}
-
-	last := byte('.')
-	nonNumeric := false // true once we've seen a letter or hyphen (either one is required)
-	labelLen := 0
-
-	for i := 0; i < l; i++ {
-		c := hostname[i]
-		switch {
-		case 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '_':
-			nonNumeric = true
-			labelLen++
-		case '0' <= c && c <= '9':
-			labelLen++
-		case c == '-':
-			if last == '.' {
-				return fmt.Errorf("'%s' character before hyphen cannot be dot", hostname[0:i+1])
-			}
-			labelLen++
-			nonNumeric = true
-		case c == '.':
-			if last == '.' || last == '-' {
-				return fmt.Errorf("'%s' character before dot cannot be dot or hyphen", hostname[0:i+1])
-			}
-			if labelLen > labelMaxLen || labelLen == 0 {
-				return fmt.Errorf("'%s' label is not in the range %d - %d", hostname[0:i+1], minLen, labelMaxLen)
-			}
-			labelLen = 0
-		default:
-			return fmt.Errorf("%s contains illegal characters", hostname)
-		}
-		last = c
-	}
-
-	if labelLen > labelMaxLen {
-		return fmt.Errorf("%s label is not in the range %d - %d", hostname, minLen, labelMaxLen)
-	}
-
-	if !nonNumeric {
-		return fmt.Errorf("%s contains only numeric labels", hostname)
-	}
-
-	return nil
 }
 
 func serverValidatePlan(service *service.Service, plan string) error {
