@@ -30,9 +30,10 @@ func ResourceResolver() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the resolver must be unique within the service.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the resolver must be unique within the service.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"nameservers": {
 				Description: `List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. 

@@ -3,11 +3,13 @@ package loadbalancer
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func diagWarningFromUpcloudProblem(err *upcloud.Problem, details string) diag.Diagnostic {
@@ -48,3 +50,8 @@ func unmarshalID(id string, components ...*string) error {
 	}
 	return nil
 }
+
+var validateNameDiagFunc = validation.ToDiagFunc(validation.StringMatch(
+	regexp.MustCompile("^[a-zA-Z0-9_-]+$"),
+	"should contain only alphanumeric characters, underscores and dashes",
+))

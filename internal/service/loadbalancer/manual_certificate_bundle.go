@@ -24,9 +24,10 @@ func ResourceManualCertificateBundle() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "The name of the bundle must be unique within customer account.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the bundle must be unique within customer account.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"certificate": {
 				Description: "Certificate within base64 string must be in PEM format.",

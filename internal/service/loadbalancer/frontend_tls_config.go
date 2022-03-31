@@ -29,9 +29,10 @@ func ResourceFrontendTLSConfig() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the TLS config must be unique within service frontend.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the TLS config must be unique within service frontend.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"certificate_bundle": {
 				Description: "Reference to certificate bundle ID.",

@@ -27,9 +27,10 @@ func ResourceLoadBalancer() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "The name of the service must be unique within customer account.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the service must be unique within customer account.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"plan": {
 				Description: "Plan which the service will have",

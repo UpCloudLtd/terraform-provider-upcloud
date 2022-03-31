@@ -30,10 +30,11 @@ func ResourceFrontend() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the frontend must be unique within the load balancer service.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:      "The name of the frontend must be unique within the load balancer service.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"mode": {
 				Description: "When load balancer operating in `tcp` mode it acts as a layer 4 proxy. In `http` mode it acts as a layer 7 proxy.",
