@@ -20,6 +20,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 )
 
 const serverTitleLength int = 255
@@ -874,7 +875,7 @@ func serverValidateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc 
 			return diags
 		}
 
-		if err := utils.ValidateDomainName(val); err != nil {
+		if err := validator.ValidateDomainName(val); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity:      diag.Error,
 				Summary:       "Hostname validation failed",

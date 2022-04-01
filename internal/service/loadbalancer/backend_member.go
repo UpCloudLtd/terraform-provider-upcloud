@@ -4,11 +4,10 @@ import (
 	"context"
 	"log"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -35,7 +34,7 @@ func ResourceStaticBackendMember() *schema.Resource {
 				Description:      "The name of the member must be unique within the load balancer backend service.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateBackendMemberName,
+				ValidateDiagFunc: validator.ValidateDomainNameDiag,
 			},
 			"ip": {
 				Description:      "Server IP address in the customer private network.",
@@ -94,7 +93,7 @@ func ResourceDynamicBackendMember() *schema.Resource {
 				Description:      "The name of the member must be unique within the load balancer backend service.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateBackendMemberName,
+				ValidateDiagFunc: validator.ValidateDomainNameDiag,
 			},
 			"ip": {
 				Description:      "Optional fallback IP address in case of failure on DNS resolving.",
@@ -264,34 +263,6 @@ func setBackendMemberResourceData(d *schema.ResourceData, member *upcloud.LoadBa
 
 	if err := d.Set("port", member.Port); err != nil {
 		return diag.FromErr(err)
-	}
-
-	return diags
-}
-
-func validateBackendMemberName(val interface{}, path cty.Path) diag.Diagnostics {
-	var diags diag.Diagnostics
-	name, ok := val.(string)
-
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity:      diag.Error,
-			Summary:       "Name validation failed",
-			Detail:        "expected type to be a string",
-			AttributePath: path,
-		})
-		return diags
-	}
-
-	err := utils.ValidateDomainName(name)
-
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity:      diag.Error,
-			Summary:       "Name validation failed",
-			Detail:        err.Error(),
-			AttributePath: path,
-		})
 	}
 
 	return diags
