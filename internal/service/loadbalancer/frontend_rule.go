@@ -30,9 +30,10 @@ func ResourceFrontendRule() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the frontend must be unique within the load balancer service.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the frontend must be unique within the load balancer service.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"priority": {
 				Description:      "Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.",

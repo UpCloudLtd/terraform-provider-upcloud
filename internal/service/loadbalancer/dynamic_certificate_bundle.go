@@ -25,9 +25,10 @@ func ResourceDynamicCertificateBundle() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "The name of the bundle must be unique within customer account.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the bundle must be unique within customer account.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"hostnames": {
 				Description: "Certificate hostnames.",

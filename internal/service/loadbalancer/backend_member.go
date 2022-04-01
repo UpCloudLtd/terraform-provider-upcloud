@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
@@ -30,9 +31,10 @@ func ResourceStaticBackendMember() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the member must be unique within the load balancer backend service.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the member must be unique within the load balancer backend service.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validator.ValidateDomainNameDiag,
 			},
 			"ip": {
 				Description:      "Server IP address in the customer private network.",
@@ -88,9 +90,10 @@ func ResourceDynamicBackendMember() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the member must be unique within the load balancer backend service.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the member must be unique within the load balancer backend service.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validator.ValidateDomainNameDiag,
 			},
 			"ip": {
 				Description:      "Optional fallback IP address in case of failure on DNS resolving.",

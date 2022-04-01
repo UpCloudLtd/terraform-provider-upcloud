@@ -30,17 +30,18 @@ func ResourceResolver() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the resolver must be unique within the service.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "The name of the resolver must be unique within the service.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"nameservers": {
 				Description: `List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. 
 				Port is optional, if missing then default 53 will be used.`,
 				Type:     schema.TypeList,
-				MinItems: 0,
+				MinItems: 1,
 				MaxItems: 10,
-				Optional: true,
+				Required: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -176,11 +177,11 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		},
 	})
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags

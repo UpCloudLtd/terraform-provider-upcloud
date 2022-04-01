@@ -29,10 +29,11 @@ func ResourceBackend() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description: "The name of the backend must be unique within the load balancer service.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:      "The name of the backend must be unique within the load balancer service.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"resolver_name": {
 				Description: "Domain Name Resolver used with dynamic type members.",
