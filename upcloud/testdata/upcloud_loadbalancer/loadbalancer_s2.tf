@@ -7,7 +7,7 @@ resource "upcloud_network" "lb_network" {
   name = "lb-test-net"
   zone = var.lb_zone
   ip_network {
-    address = "10.0.0.0/24"
+    address = "10.0.1.0/24"
     dhcp    = true
     family  = "IPv4"
   }
