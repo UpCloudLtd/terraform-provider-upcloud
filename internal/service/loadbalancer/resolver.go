@@ -177,11 +177,11 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		},
 	})
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
