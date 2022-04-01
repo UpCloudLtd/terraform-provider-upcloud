@@ -113,7 +113,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 					  router = upcloud_router.terraform_test_router.id
 					
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.2.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
@@ -141,7 +141,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 					  # router = upcloud_router.terraform_test_router.id 
 					
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.2.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
@@ -182,7 +182,7 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 					  router = upcloud_router.terraform_test_router.id
 					
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.3.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
@@ -210,7 +210,7 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 					  # router = upcloud_router.terraform_test_router.id
 					
 					  ip_network {
-						address            = "10.0.0.0/24"
+						address            = "10.0.3.0/24"
 						dhcp               = true
 						family  = "IPv4"
 					  }
