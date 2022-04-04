@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -292,6 +293,7 @@ func frontendRuleMatcherIntegerSchema() map[string]*schema.Schema {
 		string(upcloud.LoadBalancerIntegerMatcherMethodGreaterOrEqual),
 		string(upcloud.LoadBalancerIntegerMatcherMethodLess),
 		string(upcloud.LoadBalancerIntegerMatcherMethodLessOrEqual),
+		string(upcloud.LoadBalancerIntegerMatcherMethodRange),
 	}
 
 	return map[string]*schema.Schema{
@@ -356,12 +358,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 
 	for _, v := range d.Get("matchers.0.src_ip").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeSrcIP,
-			SrcIP: &upcloud.LoadBalancerMatcherSourceIP{
-				Value: v["value"].(string),
-			},
-		})
+		m = append(m, request.NewLoadBalancerSrcIPMatcher(v["value"].(string)))
 	}
 
 	for _, v := range d.Get("matchers.0.body_size").([]interface{}) {
@@ -379,115 +376,80 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 
 	for _, v := range d.Get("matchers.0.path").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypePath,
-			Path: &upcloud.LoadBalancerMatcherString{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerPathMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.url").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeURL,
-			URL: &upcloud.LoadBalancerMatcherString{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerURLMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.url_query").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeURLQuery,
-			URLQuery: &upcloud.LoadBalancerMatcherString{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerURLQueryMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.host").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeHost,
-			Host: &upcloud.LoadBalancerMatcherHost{
-				Value: v["value"].(string),
-			},
-		})
+		m = append(m, request.NewLoadBalancerHostMatcher(v["value"].(string)))
 	}
 
 	for _, v := range d.Get("matchers.0.http_method").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeHTTPMethod,
-			HTTPMethod: &upcloud.LoadBalancerMatcherHTTPMethod{
-				Value: upcloud.LoadBalancerHTTPMatcherMethod(v["value"].(string)),
-			},
-		})
+		m = append(m, request.NewLoadBalancerHTTPMethodMatcher(
+			upcloud.LoadBalancerHTTPMatcherMethod(v["value"].(string)),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.cookie").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeCookie,
-			Cookie: &upcloud.LoadBalancerMatcherStringWithArgument{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				Name:       v["name"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerCookieMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["name"].(string),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.header").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeHeader,
-			Header: &upcloud.LoadBalancerMatcherStringWithArgument{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				Name:       v["name"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerHeaderMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["name"].(string),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.url_param").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeURLParam,
-			URLParam: &upcloud.LoadBalancerMatcherStringWithArgument{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				Name:       v["name"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerURLParamMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["name"].(string),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.num_members_up").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeNumMembersUP,
-			NumMembersUP: &upcloud.LoadBalancerMatcherNumMembersUP{
-				Method:  upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
-				Value:   v["value"].(int),
-				Backend: v["backend_name"].(string),
-			},
-		})
+		m = append(m, request.NewLoadBalancerNumMembersUPMatcher(
+			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
+			v["value"].(int),
+			v["backend_name"].(string),
+		))
 	}
 
 	return m, nil

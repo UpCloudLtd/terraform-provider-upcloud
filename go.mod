@@ -3,7 +3,7 @@ module github.com/UpCloudLtd/terraform-provider-upcloud
 go 1.16
 
 require (
-	github.com/UpCloudLtd/upcloud-go-api/v4 v4.1.4-0.20220325092439-954c9116ea70
+	github.com/UpCloudLtd/upcloud-go-api/v4 v4.1.4-0.20220331050316-4c165b577495
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
