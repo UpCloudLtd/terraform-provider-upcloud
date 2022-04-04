@@ -496,89 +496,88 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 	matchers := make(map[string][]interface{})
 	for _, m := range rule.Matchers {
 		t := string(m.Type)
-
-		if m.Type == upcloud.LoadBalancerMatcherTypeSrcPort && m.SrcPort.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
-			t = customSrcPortRangeMatcherType
-		}
-
-		if m.Type == upcloud.LoadBalancerMatcherTypeBodySize && m.BodySize.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
-			t = customBodySizeRangeMatcherType
-		}
-
 		var v map[string]interface{}
-		switch t {
-		case string(upcloud.LoadBalancerMatcherTypeSrcIP):
+		switch m.Type {
+		case upcloud.LoadBalancerMatcherTypeSrcIP:
 			v = map[string]interface{}{
 				"value": m.SrcIP.Value,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeSrcPort):
-			v = map[string]interface{}{
-				"method": m.SrcPort.Method,
-				"value":  m.SrcPort.Value,
+		case upcloud.LoadBalancerMatcherTypeSrcPort:
+			if m.SrcPort.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
+				t = customSrcPortRangeMatcherType
+
+				v = map[string]interface{}{
+					"range_start": m.SrcPort.RangeStart,
+					"range_end":   m.SrcPort.RangeEnd,
+				}
+			} else {
+				v = map[string]interface{}{
+					"method": m.SrcPort.Method,
+					"value":  m.SrcPort.Value,
+				}
 			}
-		case customSrcPortRangeMatcherType:
-			v = map[string]interface{}{
-				"range_start": m.SrcPort.RangeStart,
-				"range_end":   m.SrcPort.RangeEnd,
+		case upcloud.LoadBalancerMatcherTypeBodySize:
+			if m.BodySize.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
+				t = customBodySizeRangeMatcherType
+
+				v = map[string]interface{}{
+					"range_start": m.BodySize.RangeStart,
+					"range_end":   m.BodySize.RangeEnd,
+				}
+			} else {
+				v = map[string]interface{}{
+					"method": m.BodySize.Method,
+					"value":  m.BodySize.Value,
+				}
 			}
-		case string(upcloud.LoadBalancerMatcherTypeBodySize):
-			v = map[string]interface{}{
-				"method": m.BodySize.Method,
-				"value":  m.BodySize.Value,
-			}
-		case customBodySizeRangeMatcherType:
-			v = map[string]interface{}{
-				"range_start": m.BodySize.RangeStart,
-				"range_end":   m.BodySize.RangeEnd,
-			}
-		case string(upcloud.LoadBalancerMatcherTypePath):
+		case upcloud.LoadBalancerMatcherTypePath:
 			v = map[string]interface{}{
 				"value":       m.Path.Value,
 				"ignore_case": m.Path.IgnoreCase,
 				"method":      m.Path.Method,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeURL):
+		case upcloud.LoadBalancerMatcherTypeURL:
 			v = map[string]interface{}{
 				"value":       m.URL.Value,
 				"ignore_case": m.URL.IgnoreCase,
 				"method":      m.URL.Method,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeURLParam):
+		case upcloud.LoadBalancerMatcherTypeURLParam:
 			v = map[string]interface{}{
 				"value":       m.URLParam.Value,
 				"ignore_case": m.URLParam.IgnoreCase,
 				"name":        m.URLParam.Name,
 				"method":      m.URLParam.Method,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeURLQuery):
+		case upcloud.LoadBalancerMatcherTypeURLQuery:
 			v = map[string]interface{}{
 				"value":       m.URLQuery.Value,
 				"ignore_case": m.URLQuery.IgnoreCase,
 				"method":      m.URLQuery.Method,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeHost):
+		case upcloud.LoadBalancerMatcherTypeHost:
 			v = map[string]interface{}{
 				"value": m.Host.Value,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeHTTPMethod):
+		case upcloud.LoadBalancerMatcherTypeHTTPMethod:
 			v = map[string]interface{}{
 				"value": m.HTTPMethod.Value,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeCookie):
+		case upcloud.LoadBalancerMatcherTypeCookie:
 			v = map[string]interface{}{
 				"value":       m.Cookie.Value,
 				"name":        m.Cookie.Name,
 				"method":      m.Cookie.Method,
 				"ignore_case": m.Cookie.IgnoreCase,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeHeader):
+		case upcloud.LoadBalancerMatcherTypeHeader:
 			v = map[string]interface{}{
 				"value":       m.Header.Value,
 				"name":        m.Header.Name,
 				"method":      m.Header.Method,
 				"ignore_case": m.Header.IgnoreCase,
 			}
-		case string(upcloud.LoadBalancerMatcherTypeNumMembersUP):
+		case upcloud.LoadBalancerMatcherTypeNumMembersUP:
 			v = map[string]interface{}{
 				"value":        m.NumMembersUP.Value,
 				"method":       m.NumMembersUP.Method,
