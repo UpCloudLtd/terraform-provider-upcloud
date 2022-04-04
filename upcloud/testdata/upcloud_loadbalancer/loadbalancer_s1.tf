@@ -7,7 +7,7 @@ resource "upcloud_network" "lb_network" {
   name = "lb-test-net"
   zone = var.lb_zone
   ip_network {
-    address = "10.0.1.0/24"
+    address = "10.0.7.0/24"
     dhcp    = true
     family  = "IPv4"
   }
@@ -89,12 +89,20 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
       method = "equal"
       value  = 80
     }
+    src_port_range {
+      range_start = 100
+      range_end = 1000
+    }
     src_ip {
       value = "192.168.0.0/24"
     }
     body_size {
       method = "equal"
       value  = 8000
+    }
+    body_size_range {
+      range_start = 1000
+      range_end = 1001
     }
     path {
       method      = "starts"
