@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -103,41 +104,25 @@ func loadBalancerActionsFromResourceData(d *schema.ResourceData) ([]upcloud.Load
 
 	for _, v := range d.Get("actions.0.use_backend").([]interface{}) {
 		v := v.(map[string]interface{})
-		a = append(a, upcloud.LoadBalancerAction{
-			Type: upcloud.LoadBalancerActionTypeUseBackend,
-			UseBackend: &upcloud.LoadBalancerActionUseBackend{
-				Backend: v["backend_name"].(string),
-			},
-		})
+		a = append(a, request.NewLoadBalancerUseBackendAction(v["backend_name"].(string)))
 	}
 
 	for _, v := range d.Get("actions.0.http_return").([]interface{}) {
 		v := v.(map[string]interface{})
-		a = append(a, upcloud.LoadBalancerAction{
-			Type: upcloud.LoadBalancerActionTypeHTTPReturn,
-			HTTPReturn: &upcloud.LoadBalancerActionHTTPReturn{
-				Status:      v["status"].(int),
-				ContentType: v["content_type"].(string),
-				Payload:     v["payload"].(string),
-			},
-		})
+		a = append(a, request.NewLoadBalancerHTTPReturnAction(
+			v["status"].(int),
+			v["content_type"].(string),
+			v["payload"].(string),
+		))
 	}
 
 	for _, v := range d.Get("actions.0.http_redirect").([]interface{}) {
 		v := v.(map[string]interface{})
-		a = append(a, upcloud.LoadBalancerAction{
-			Type: upcloud.LoadBalancerActionTypeHTTPRedirect,
-			HTTPRedirect: &upcloud.LoadBalancerActionHTTPRedirect{
-				Location: v["location"].(string),
-			},
-		})
+		a = append(a, request.NewLoadBalancerHTTPRedirectAction(v["location"].(string)))
 	}
 
 	for range d.Get("actions.0.tcp_reject").([]interface{}) {
-		a = append(a, upcloud.LoadBalancerAction{
-			Type:      upcloud.LoadBalancerActionTypeTCPReject,
-			TCPReject: &upcloud.LoadBalancerActionTCPReject{},
-		})
+		a = append(a, request.NewLoadBalancerTCPRejectAction())
 	}
 
 	return a, nil

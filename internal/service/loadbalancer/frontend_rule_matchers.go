@@ -5,8 +5,14 @@ import (
 	"strings"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	customSrcPortRangeMatcherType  = "src_port_range"
+	customBodySizeRangeMatcherType = "body_size_range"
 )
 
 func frontendRuleMatchersSchema() map[string]*schema.Schema {
@@ -19,6 +25,16 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Elem: &schema.Resource{
 				Schema: frontendRuleMatcherIntegerSchema(),
+			},
+		},
+		"src_port_range": {
+			Description: "Matches by range of source port numbers",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    100,
+			ForceNew:    true,
+			Elem: &schema.Resource{
+				Schema: frontendRuleMatcherRangeSchema(),
 			},
 		},
 		"src_ip": {
@@ -39,6 +55,16 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Elem: &schema.Resource{
 				Schema: frontendRuleMatcherIntegerSchema(),
+			},
+		},
+		"body_size_range": {
+			Description: "Matches by range of HTTP request body sizes",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    100,
+			ForceNew:    true,
+			Elem: &schema.Resource{
+				Schema: frontendRuleMatcherRangeSchema(),
 			},
 		},
 		"path": {
@@ -308,18 +334,21 @@ func frontendRuleMatcherIntegerSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+	}
+}
+
+func frontendRuleMatcherRangeSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
 		"range_start": {
 			Description: "Integer value.",
 			Type:        schema.TypeInt,
-			Default:     0,
-			Optional:    true,
+			Required:    true,
 			ForceNew:    true,
 		},
 		"range_end": {
 			Description: "Integer value.",
 			Type:        schema.TypeInt,
-			Optional:    true,
-			Default:     0,
+			Required:    true,
 			ForceNew:    true,
 		},
 	}
@@ -343,151 +372,117 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 	}
 	for _, v := range d.Get("matchers.0.src_port").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeSrcPort,
-			SrcPort: &upcloud.LoadBalancerMatcherInteger{
-				Method:     upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(int),
-				RangeStart: v["range_start"].(int),
-				RangeEnd:   v["range_start"].(int),
-			},
-		})
+		m = append(m, request.NewLoadBalancerSrcPortMatcher(
+			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
+			v["value"].(int),
+		))
+	}
+
+	for _, v := range d.Get("matchers.0.src_port_range").([]interface{}) {
+		v := v.(map[string]interface{})
+		m = append(m, request.NewLoadBalancerSrcPortRangeMatcher(
+			v["range_start"].(int),
+			v["range_end"].(int),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.src_ip").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeSrcIP,
-			SrcIP: &upcloud.LoadBalancerMatcherSourceIP{
-				Value: v["value"].(string),
-			},
-		})
+		m = append(m, request.NewLoadBalancerSrcIPMatcher(v["value"].(string)))
 	}
 
 	for _, v := range d.Get("matchers.0.body_size").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeBodySize,
-			BodySize: &upcloud.LoadBalancerMatcherInteger{
-				Method:     upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(int),
-				RangeStart: v["range_start"].(int),
-				RangeEnd:   v["range_start"].(int),
-			},
-		})
+		m = append(m, request.NewLoadBalancerBodySizeMatcher(
+			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
+			v["value"].(int),
+		))
+	}
+
+	for _, v := range d.Get("matchers.0.body_size_range").([]interface{}) {
+		v := v.(map[string]interface{})
+		m = append(m, request.NewLoadBalancerBodySizeRangeMatcher(
+			v["range_start"].(int),
+			v["range_end"].(int),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.path").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypePath,
-			Path: &upcloud.LoadBalancerMatcherString{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerPathMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.url").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeURL,
-			URL: &upcloud.LoadBalancerMatcherString{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerURLMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.url_query").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeURLQuery,
-			URLQuery: &upcloud.LoadBalancerMatcherString{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerURLQueryMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.host").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeHost,
-			Host: &upcloud.LoadBalancerMatcherHost{
-				Value: v["value"].(string),
-			},
-		})
+		m = append(m, request.NewLoadBalancerHostMatcher(v["value"].(string)))
 	}
 
 	for _, v := range d.Get("matchers.0.http_method").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeHTTPMethod,
-			HTTPMethod: &upcloud.LoadBalancerMatcherHTTPMethod{
-				Value: upcloud.LoadBalancerHTTPMatcherMethod(v["value"].(string)),
-			},
-		})
+		m = append(m, request.NewLoadBalancerHTTPMethodMatcher(
+			upcloud.LoadBalancerHTTPMatcherMethod(v["value"].(string)),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.cookie").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeCookie,
-			Cookie: &upcloud.LoadBalancerMatcherStringWithArgument{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				Name:       v["name"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerCookieMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["name"].(string),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.header").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeHeader,
-			Header: &upcloud.LoadBalancerMatcherStringWithArgument{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				Name:       v["name"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerHeaderMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["name"].(string),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.url_param").([]interface{}) {
 		v := v.(map[string]interface{})
-		ic := v["ignore_case"].(bool)
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeURLParam,
-			URLParam: &upcloud.LoadBalancerMatcherStringWithArgument{
-				Method:     upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
-				Value:      v["value"].(string),
-				Name:       v["name"].(string),
-				IgnoreCase: &ic,
-			},
-		})
+		m = append(m, request.NewLoadBalancerURLParamMatcher(
+			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
+			v["name"].(string),
+			v["value"].(string),
+			v["ignore_case"].(bool),
+		))
 	}
 
 	for _, v := range d.Get("matchers.0.num_members_up").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, upcloud.LoadBalancerMatcher{
-			Type: upcloud.LoadBalancerMatcherTypeNumMembersUP,
-			NumMembersUP: &upcloud.LoadBalancerMatcherNumMembersUP{
-				Method:  upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
-				Value:   v["value"].(int),
-				Backend: v["backend_name"].(string),
-			},
-		})
+		m = append(m, request.NewLoadBalancerNumMembersUPMatcher(
+			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
+			v["value"].(int),
+			v["backend_name"].(string),
+		))
 	}
 
 	return m, nil
@@ -508,18 +503,32 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				"value": m.SrcIP.Value,
 			}
 		case upcloud.LoadBalancerMatcherTypeSrcPort:
-			v = map[string]interface{}{
-				"method":      m.SrcPort.Method,
-				"value":       m.SrcPort.Value,
-				"range_start": m.SrcPort.RangeStart,
-				"range_end":   m.SrcPort.RangeEnd,
+			if m.SrcPort.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
+				t = customSrcPortRangeMatcherType
+
+				v = map[string]interface{}{
+					"range_start": m.SrcPort.RangeStart,
+					"range_end":   m.SrcPort.RangeEnd,
+				}
+			} else {
+				v = map[string]interface{}{
+					"method": m.SrcPort.Method,
+					"value":  m.SrcPort.Value,
+				}
 			}
 		case upcloud.LoadBalancerMatcherTypeBodySize:
-			v = map[string]interface{}{
-				"method":      m.BodySize.Method,
-				"value":       m.BodySize.Value,
-				"range_start": m.BodySize.RangeStart,
-				"range_end":   m.BodySize.RangeEnd,
+			if m.BodySize.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
+				t = customBodySizeRangeMatcherType
+
+				v = map[string]interface{}{
+					"range_start": m.BodySize.RangeStart,
+					"range_end":   m.BodySize.RangeEnd,
+				}
+			} else {
+				v = map[string]interface{}{
+					"method": m.BodySize.Method,
+					"value":  m.BodySize.Value,
+				}
 			}
 		case upcloud.LoadBalancerMatcherTypePath:
 			v = map[string]interface{}{
@@ -581,5 +590,6 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 			matchers[t] = append(matchers[t], v)
 		}
 	}
+
 	return d.Set("matchers", []interface{}{matchers})
 }
