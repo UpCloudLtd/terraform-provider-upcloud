@@ -122,7 +122,7 @@ func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), fe.Name))
+	d.SetId(marshalID(serviceID, fe.Name))
 
 	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags

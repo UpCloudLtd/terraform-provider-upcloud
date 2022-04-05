@@ -91,7 +91,7 @@ func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta inter
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), be.Name))
+	d.SetId(marshalID(serviceID, be.Name))
 
 	if diags = setBackendResourceData(d, be); len(diags) > 0 {
 		return diags

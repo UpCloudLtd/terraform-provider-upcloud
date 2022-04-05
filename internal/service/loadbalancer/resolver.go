@@ -141,7 +141,7 @@ func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
+	d.SetId(marshalID(serviceID, rs.Name))
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
