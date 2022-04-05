@@ -99,8 +99,10 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		}
 	}
 
+	serviceID := d.Get("loadbalancer").(string)
+
 	rs, err := svc.CreateLoadBalancerResolver(&request.CreateLoadBalancerResolverRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
+		ServiceUUID: serviceID,
 		Resolver: request.LoadBalancerResolver{
 			Name:         d.Get("name").(string),
 			Nameservers:  nameservers,
@@ -116,9 +118,9 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
+	d.SetId(marshalID(serviceID, rs.Name))
 
-	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
+	if diags = setResolverResourceData(d, rs, serviceID); len(diags) > 0 {
 		return diags
 	}
 
@@ -143,7 +145,7 @@ func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(marshalID(serviceID, rs.Name))
 
-	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
+	if diags = setResolverResourceData(d, rs, serviceID); len(diags) > 0 {
 		return diags
 	}
 
@@ -183,7 +185,7 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
 
-	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
+	if diags = setResolverResourceData(d, rs, serviceID); len(diags) > 0 {
 		return diags
 	}
 
@@ -206,7 +208,7 @@ func resourceResolverDelete(ctx context.Context, d *schema.ResourceData, meta in
 	)
 }
 
-func setResolverResourceData(d *schema.ResourceData, rs *upcloud.LoadBalancerResolver) (diags diag.Diagnostics) {
+func setResolverResourceData(d *schema.ResourceData, rs *upcloud.LoadBalancerResolver, lb string) (diags diag.Diagnostics) {
 	if err := d.Set("name", rs.Name); err != nil {
 		return diag.FromErr(err)
 	}
@@ -232,6 +234,10 @@ func setResolverResourceData(d *schema.ResourceData, rs *upcloud.LoadBalancerRes
 	}
 
 	if err := d.Set("cache_invalid", rs.CacheInvalid); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("loadbalancer", lb); err != nil {
 		return diag.FromErr(err)
 	}
 

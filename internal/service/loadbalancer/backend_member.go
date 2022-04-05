@@ -156,7 +156,8 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 			return diag.FromErr(err)
 		}
 
-		if diags = setBackendMemberResourceData(d, member); len(diags) > 0 {
+		backend := marshalID(serviceID, beName)
+		if diags = setBackendMemberResourceData(d, member, backend); len(diags) > 0 {
 			return diags
 		}
 
@@ -185,7 +186,8 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 
 	d.SetId(marshalID(serviceID, beName, member.Name))
 
-	if diags = setBackendMemberResourceData(d, member); len(diags) > 0 {
+	backend := marshalID(serviceID, beName)
+	if diags = setBackendMemberResourceData(d, member, backend); len(diags) > 0 {
 		return diags
 	}
 
@@ -218,7 +220,8 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(marshalID(serviceID, beName, member.Name))
 
-	if diags = setBackendMemberResourceData(d, member); len(diags) > 0 {
+	backend := marshalID(serviceID, beName)
+	if diags = setBackendMemberResourceData(d, member, backend); len(diags) > 0 {
 		return diags
 	}
 
@@ -240,7 +243,7 @@ func resourceBackendMemberDelete(ctx context.Context, d *schema.ResourceData, me
 	}))
 }
 
-func setBackendMemberResourceData(d *schema.ResourceData, member *upcloud.LoadBalancerBackendMember) (diags diag.Diagnostics) {
+func setBackendMemberResourceData(d *schema.ResourceData, member *upcloud.LoadBalancerBackendMember, backend string) (diags diag.Diagnostics) {
 	if err := d.Set("name", member.Name); err != nil {
 		return diag.FromErr(err)
 	}
@@ -262,6 +265,10 @@ func setBackendMemberResourceData(d *schema.ResourceData, member *upcloud.LoadBa
 	}
 
 	if err := d.Set("port", member.Port); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("backend", backend); err != nil {
 		return diag.FromErr(err)
 	}
 
