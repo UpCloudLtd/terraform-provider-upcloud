@@ -115,7 +115,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				),
 			},
 			{
-				Config: string(testDataS2),
+				Config:            string(testDataS2),
+				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.src_port.0.method", "equal"),
