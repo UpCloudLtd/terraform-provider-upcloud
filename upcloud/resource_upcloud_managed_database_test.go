@@ -32,6 +32,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 						properties {
 							public_access = true
 							ip_filter = ["10.0.0.1/32"]
+							version = 13
 						}
 					}`, rName),
 				Check: resource.ComposeTestCheckFunc(
@@ -43,6 +44,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_time", "10:00:00"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.0", "10.0.0.1/32"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.version", "13"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
 					resource.TestCheckResourceAttrSet(resourceIdentifier, "service_uri"),
 				),
@@ -58,6 +60,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 						maintenance_window_dow = "friday"
 						properties {
 							ip_filter = []
+							version = 14
 						}
 					}`, rName),
 				Check: resource.ComposeTestCheckFunc(
@@ -66,6 +69,7 @@ func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.public_access", "false"),
 					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.#", "0"),
+					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.version", "14"),
 				),
 			},
 		},
@@ -141,6 +145,61 @@ func TestAccUpcloudManagedDatabaseMySQL_Create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceIdentifier, "type", string(upcloud.ManagedDatabaseServiceTypeMySQL)),
 					resource.TestCheckResourceAttrSet(resourceIdentifier, "service_uri"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedDatabasePostgreSQL_VersionUpgrade(t *testing.T) {
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "upcloud_managed_database_postgresql" "test_pg" {
+						name = "testpg"
+						plan = "1x1xCPU-2GB-25GB"
+						title = "testversion"
+						zone = "pl-waw1"
+						powered = false
+						properties {
+							version = 12
+						}
+					}`,
+				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "12"),
+			},
+			{
+				// Check if turning db on and upgrading works
+				Config: `
+					resource "upcloud_managed_database_postgresql" "test_pg" {
+						name = "testpg"
+						plan = "1x1xCPU-2GB-25GB"
+						title = "testversion"
+						zone = "pl-waw1"
+						powered = true
+						properties {
+							version = 13
+						}
+					}`,
+				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "13"),
+			},
+			{
+				// Check if turning db off and upgrading works
+				Config: `
+					resource "upcloud_managed_database_postgresql" "test_pg" {
+						name = "testpg"
+						plan = "1x1xCPU-2GB-25GB"
+						title = "testversion"
+						zone = "pl-waw1"
+						powered = false
+						properties {
+							version = 14
+						}
+					}`,
+				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "14"),
 			},
 		},
 	})
