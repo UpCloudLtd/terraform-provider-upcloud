@@ -64,8 +64,7 @@ func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(marshalID(serviceID, feName, t.Name))
 
-	frontend := marshalID(serviceID, feName)
-	if diags = setFrontendTLSConfigResourceData(d, t, frontend); len(diags) > 0 {
+	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
 	}
 
@@ -89,8 +88,11 @@ func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, 
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	frontend := marshalID(serviceID, feName)
-	if diags = setFrontendTLSConfigResourceData(d, t, frontend); len(diags) > 0 {
+	if err = d.Set("frontend", marshalID(serviceID, feName)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
 	}
 
@@ -119,8 +121,7 @@ func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(marshalID(serviceID, feName, t.Name))
 
-	frontend := marshalID(serviceID, feName)
-	if diags = setFrontendTLSConfigResourceData(d, t, frontend); len(diags) > 0 {
+	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
 	}
 
@@ -142,16 +143,12 @@ func resourceFrontendTLSConfigDelete(ctx context.Context, d *schema.ResourceData
 	}))
 }
 
-func setFrontendTLSConfigResourceData(d *schema.ResourceData, t *upcloud.LoadBalancerFrontendTLSConfig, frontend string) (diags diag.Diagnostics) {
+func setFrontendTLSConfigResourceData(d *schema.ResourceData, t *upcloud.LoadBalancerFrontendTLSConfig) (diags diag.Diagnostics) {
 	if err := d.Set("name", t.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
 	if err := d.Set("certificate_bundle", t.CertificateBundleUUID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("frontend", frontend); err != nil {
 		return diag.FromErr(err)
 	}
 

@@ -98,8 +98,7 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 
 	d.SetId(marshalID(serviceID, feName, rule.Name))
 
-	frontend := marshalID(serviceID, feName)
-	if diags = setFrontendRuleResourceData(d, rule, frontend); len(diags) > 0 {
+	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
 	}
 
@@ -125,8 +124,11 @@ func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(marshalID(serviceID, feName, rule.Name))
 
-	frontend := marshalID(serviceID, feName)
-	if diags = setFrontendRuleResourceData(d, rule, frontend); len(diags) > 0 {
+	if err = d.Set("frontend", marshalID(serviceID, feName)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
 	}
 
@@ -156,8 +158,7 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 
 	d.SetId(marshalID(serviceID, feName, rule.Name))
 
-	frontend := marshalID(serviceID, feName)
-	if diags = setFrontendRuleResourceData(d, rule, frontend); len(diags) > 0 {
+	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
 	}
 
@@ -179,16 +180,12 @@ func resourceFrontendRuleDelete(ctx context.Context, d *schema.ResourceData, met
 	}))
 }
 
-func setFrontendRuleResourceData(d *schema.ResourceData, rule *upcloud.LoadBalancerFrontendRule, frontend string) (diags diag.Diagnostics) {
+func setFrontendRuleResourceData(d *schema.ResourceData, rule *upcloud.LoadBalancerFrontendRule) (diags diag.Diagnostics) {
 	if err := d.Set("name", rule.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
 	if err := d.Set("priority", rule.Priority); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("frontend", frontend); err != nil {
 		return diag.FromErr(err)
 	}
 

@@ -100,7 +100,7 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	d.SetId(marshalID(serviceID, fe.Name))
 
-	if diags = setFrontendResourceData(d, fe, serviceID); len(diags) > 0 {
+	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags
 	}
 
@@ -125,7 +125,11 @@ func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(marshalID(serviceID, fe.Name))
 
-	if diags = setFrontendResourceData(d, fe, serviceID); len(diags) > 0 {
+	if err = d.Set("loadbalancer", serviceID); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags
 	}
 
@@ -154,7 +158,7 @@ func resourceFrontendUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	d.SetId(marshalID(d.Get("loadbalancer").(string), fe.Name))
 
-	if diags = setFrontendResourceData(d, fe, serviceID); len(diags) > 0 {
+	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags
 	}
 
@@ -175,7 +179,7 @@ func resourceFrontendDelete(ctx context.Context, d *schema.ResourceData, meta in
 	}))
 }
 
-func setFrontendResourceData(d *schema.ResourceData, fe *upcloud.LoadBalancerFrontend, lb string) (diags diag.Diagnostics) {
+func setFrontendResourceData(d *schema.ResourceData, fe *upcloud.LoadBalancerFrontend) (diags diag.Diagnostics) {
 	if err := d.Set("name", fe.Name); err != nil {
 		return diag.FromErr(err)
 	}
@@ -189,10 +193,6 @@ func setFrontendResourceData(d *schema.ResourceData, fe *upcloud.LoadBalancerFro
 	}
 
 	if err := d.Set("default_backend_name", fe.DefaultBackend); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("loadbalancer", lb); err != nil {
 		return diag.FromErr(err)
 	}
 
