@@ -81,8 +81,9 @@ func ResourceFrontend() *schema.Resource {
 
 func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
+	serviceID := d.Get("loadbalancer").(string)
 	fe, err := svc.CreateLoadBalancerFrontend(&request.CreateLoadBalancerFrontendRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
+		ServiceUUID: serviceID,
 		Frontend: request.LoadBalancerFrontend{
 			Name:           d.Get("name").(string),
 			Mode:           upcloud.LoadBalancerMode(d.Get("mode").(string)),
@@ -97,7 +98,7 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), fe.Name))
+	d.SetId(marshalID(serviceID, fe.Name))
 
 	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags
@@ -122,7 +123,11 @@ func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), fe.Name))
+	d.SetId(marshalID(serviceID, fe.Name))
+
+	if err = d.Set("loadbalancer", serviceID); err != nil {
+		return diag.FromErr(err)
+	}
 
 	if diags = setFrontendResourceData(d, fe); len(diags) > 0 {
 		return diags

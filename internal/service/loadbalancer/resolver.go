@@ -99,8 +99,10 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		}
 	}
 
+	serviceID := d.Get("loadbalancer").(string)
+
 	rs, err := svc.CreateLoadBalancerResolver(&request.CreateLoadBalancerResolverRequest{
-		ServiceUUID: d.Get("loadbalancer").(string),
+		ServiceUUID: serviceID,
 		Resolver: request.LoadBalancerResolver{
 			Name:         d.Get("name").(string),
 			Nameservers:  nameservers,
@@ -116,7 +118,7 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
+	d.SetId(marshalID(serviceID, rs.Name))
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
@@ -141,7 +143,11 @@ func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
+	d.SetId(marshalID(serviceID, rs.Name))
+
+	if err = d.Set("loadbalancer", serviceID); err != nil {
+		return diag.FromErr(err)
+	}
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags

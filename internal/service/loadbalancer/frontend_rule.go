@@ -124,6 +124,10 @@ func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(marshalID(serviceID, feName, rule.Name))
 
+	if err = d.Set("frontend", marshalID(serviceID, feName)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
 	}

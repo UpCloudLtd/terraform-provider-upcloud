@@ -88,6 +88,10 @@ func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, 
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
+	if err = d.Set("frontend", marshalID(serviceID, feName)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
 	}

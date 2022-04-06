@@ -185,6 +185,10 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 
 	d.SetId(marshalID(serviceID, beName, member.Name))
 
+	if err = d.Set("backend", marshalID(serviceID, beName)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if diags = setBackendMemberResourceData(d, member); len(diags) > 0 {
 		return diags
 	}
