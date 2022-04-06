@@ -74,7 +74,7 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_be_2_sm_1" {
   name         = "lb-be-2-sm-1-test"
   ip           = "10.0.0.10"
   port         = 8000
-  weight       = 0
+  weight       = 1
   max_sessions = 0
   enabled      = true
 }
@@ -91,7 +91,7 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     }
     src_port_range {
       range_start = 100
-      range_end = 1000
+      range_end   = 1000
     }
     src_ip {
       value = "192.168.0.0/24"
@@ -102,7 +102,7 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     }
     body_size_range {
       range_start = 1000
-      range_end = 1001
+      range_end   = 1001
     }
     path {
       method      = "starts"

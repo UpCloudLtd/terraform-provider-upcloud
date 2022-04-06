@@ -112,12 +112,13 @@ func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
+
 	be, err := svc.ModifyLoadBalancerBackend(&request.ModifyLoadBalancerBackendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 		Backend: request.ModifyLoadBalancerBackend{
 			Name:     d.Get("name").(string),
-			Resolver: d.Get("resolver_name").(string),
+			Resolver: upcloud.StringPtr(d.Get("resolver_name").(string)),
 		},
 	})
 	if err != nil {
