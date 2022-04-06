@@ -148,7 +148,7 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 		Name:         name,
 		Rule: request.ModifyLoadBalancerFrontendRule{
 			Name:     d.Get("name").(string),
-			Priority: d.Get("priority").(int),
+			Priority: upcloud.IntPtr(d.Get("priority").(int)),
 		},
 	},
 	)

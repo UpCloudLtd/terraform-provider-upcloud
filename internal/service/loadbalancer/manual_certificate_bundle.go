@@ -112,7 +112,7 @@ func resourceManualCertificateBundleUpdate(ctx context.Context, d *schema.Resour
 		UUID:          d.Id(),
 		Name:          d.Get("name").(string),
 		Certificate:   d.Get("certificate").(string),
-		Intermediates: d.Get("intermediates").(string),
+		Intermediates: upcloud.StringPtr(d.Get("intermediates").(string)),
 		PrivateKey:    d.Get("private_key").(string),
 	})
 

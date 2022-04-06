@@ -412,7 +412,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 		m = append(m, request.NewLoadBalancerPathMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["value"].(string),
-			v["ignore_case"].(bool),
+			upcloud.BoolPtr(v["ignore_case"].(bool)),
 		))
 	}
 
@@ -421,7 +421,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 		m = append(m, request.NewLoadBalancerURLMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["value"].(string),
-			v["ignore_case"].(bool),
+			upcloud.BoolPtr(v["ignore_case"].(bool)),
 		))
 	}
 
@@ -430,7 +430,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 		m = append(m, request.NewLoadBalancerURLQueryMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["value"].(string),
-			v["ignore_case"].(bool),
+			upcloud.BoolPtr(v["ignore_case"].(bool)),
 		))
 	}
 
@@ -452,7 +452,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["name"].(string),
 			v["value"].(string),
-			v["ignore_case"].(bool),
+			upcloud.BoolPtr(v["ignore_case"].(bool)),
 		))
 	}
 
@@ -462,7 +462,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["name"].(string),
 			v["value"].(string),
-			v["ignore_case"].(bool),
+			upcloud.BoolPtr(v["ignore_case"].(bool)),
 		))
 	}
 
@@ -472,7 +472,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["name"].(string),
 			v["value"].(string),
-			v["ignore_case"].(bool),
+			upcloud.BoolPtr(v["ignore_case"].(bool)),
 		))
 	}
 

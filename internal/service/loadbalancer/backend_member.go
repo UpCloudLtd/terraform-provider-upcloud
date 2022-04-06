@@ -206,12 +206,12 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 		ServiceUUID: serviceID,
 		BackendName: beName,
 		Name:        name,
-		Member: request.LoadBalancerBackendMember{
+		Member: request.ModifyLoadBalancerBackendMember{
 			Name:        d.Get("name").(string),
-			Weight:      d.Get("weight").(int),
-			MaxSessions: d.Get("max_sessions").(int),
-			Enabled:     d.Get("enabled").(bool),
-			IP:          d.Get("ip").(string),
+			Weight:      upcloud.IntPtr(d.Get("weight").(int)),
+			MaxSessions: upcloud.IntPtr(d.Get("max_sessions").(int)),
+			Enabled:     upcloud.BoolPtr(d.Get("enabled").(bool)),
+			IP:          upcloud.StringPtr(d.Get("ip").(string)),
 			Port:        d.Get("port").(int),
 		},
 	})

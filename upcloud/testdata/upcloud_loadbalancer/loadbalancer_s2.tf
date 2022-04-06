@@ -74,10 +74,11 @@ resource "upcloud_loadbalancer_backend" "lb_be_2" {
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_2_sm_1" {
-  backend      = resource.upcloud_loadbalancer_backend.lb_be_2.id
-  name         = "lb-be-2-sm-1-test"
-  ip           = "10.0.0.10"
-  port         = 8000
+  backend = resource.upcloud_loadbalancer_backend.lb_be_2.id
+  name    = "lb-be-2-sm-1-test"
+  ip      = "10.0.0.10"
+  port    = 8000
+  # set weight to zero
   weight       = 0
   max_sessions = 0
   enabled      = true
