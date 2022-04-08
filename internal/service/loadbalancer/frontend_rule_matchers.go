@@ -478,7 +478,7 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 
 	for _, v := range d.Get("matchers.0.num_members_up").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerNumMembersUPMatcher(
+		m = append(m, request.NewLoadBalancerNumMembersUpMatcher(
 			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
 			v["value"].(int),
 			v["backend_name"].(string),
@@ -577,11 +577,11 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				"method":      m.Header.Method,
 				"ignore_case": m.Header.IgnoreCase,
 			}
-		case upcloud.LoadBalancerMatcherTypeNumMembersUP:
+		case upcloud.LoadBalancerMatcherTypeNumMembersUp:
 			v = map[string]interface{}{
-				"value":        m.NumMembersUP.Value,
-				"method":       m.NumMembersUP.Method,
-				"backend_name": m.NumMembersUP.Backend,
+				"value":        m.NumMembersUp.Value,
+				"method":       m.NumMembersUp.Method,
+				"backend_name": m.NumMembersUp.Backend,
 			}
 		default:
 			return fmt.Errorf("received unsupported matcher type '%s' %+v", m.Type, m)
