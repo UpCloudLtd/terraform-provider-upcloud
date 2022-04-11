@@ -43,7 +43,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Required:    true,
 			},
 			"network": {
-				Description: "Private network UUID where traffic will be routed. Must reside in loadbalancer zone.",
+				Description: "Private network UUID where traffic will be routed. Must reside in load balancer zone.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Required:    true,

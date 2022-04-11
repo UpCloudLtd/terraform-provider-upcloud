@@ -43,7 +43,7 @@ resource "upcloud_loadbalancer" "lb" {
 ### Required
 
 - **name** (String) The name of the service must be unique within customer account.
-- **network** (String) Private network UUID where traffic will be routed. Must reside in loadbalancer zone.
+- **network** (String) Private network UUID where traffic will be routed. Must reside in load balancer zone.
 - **plan** (String) Plan which the service will have
 - **zone** (String) Zone in which the service will be hosted, e.g. `fi-hel1`.
 

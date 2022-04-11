@@ -74,7 +74,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Required
 
 - **frontend** (String) ID of the load balancer frontend to which the rule is connected.
-- **name** (String) The name of the frontend must be unique within the load balancer service.
+- **name** (String) The name of the frontend rule must be unique within the load balancer service.
 - **priority** (Number) Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.
 
 ### Optional
