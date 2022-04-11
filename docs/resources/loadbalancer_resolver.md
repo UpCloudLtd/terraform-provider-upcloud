@@ -57,6 +57,8 @@ resource "upcloud_loadbalancer_resolver" "lb_resolver_1" {
 - **cache_valid** (Number) Time in seconds to cache valid results.
 - **loadbalancer** (String) ID of the load balancer to which the resolver is connected.
 - **name** (String) The name of the resolver must be unique within the service.
+- **nameservers** (List of String) List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. 
+				Port is optional, if missing then default 53 will be used.
 - **retries** (Number) Number of retries on failure.
 - **timeout** (Number) Timeout for the query in seconds.
 - **timeout_retry** (Number) Timeout for the query retries in seconds.
@@ -64,7 +66,5 @@ resource "upcloud_loadbalancer_resolver" "lb_resolver_1" {
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **nameservers** (List of String) List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. 
-				Port is optional, if missing then default 53 will be used.
 
 

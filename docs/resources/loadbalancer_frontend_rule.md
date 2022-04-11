@@ -134,6 +134,7 @@ Required:
 Optional:
 
 - **body_size** (Block List, Max: 100) Matches by HTTP request body size. (see [below for nested schema](#nestedblock--matchers--body_size))
+- **body_size_range** (Block List, Max: 100) Matches by range of HTTP request body sizes (see [below for nested schema](#nestedblock--matchers--body_size_range))
 - **cookie** (Block List, Max: 100) Matches by HTTP cookie value. Cookie name must be provided. (see [below for nested schema](#nestedblock--matchers--cookie))
 - **header** (Block List, Max: 100) Matches by HTTP header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--header))
 - **host** (Block List, Max: 100) Matches by hostname. Header extracted from HTTP Headers or from TLS certificate in case of secured connection. (see [below for nested schema](#nestedblock--matchers--host))
@@ -142,6 +143,7 @@ Optional:
 - **path** (Block List, Max: 100) Matches by URL path. (see [below for nested schema](#nestedblock--matchers--path))
 - **src_ip** (Block List, Max: 100) Matches by source IP address. (see [below for nested schema](#nestedblock--matchers--src_ip))
 - **src_port** (Block List, Max: 100) Matches by source port number. (see [below for nested schema](#nestedblock--matchers--src_port))
+- **src_port_range** (Block List, Max: 100) Matches by range of source port numbers (see [below for nested schema](#nestedblock--matchers--src_port_range))
 - **url** (Block List, Max: 100) Matches by URL without schema, e.g. `example.com/dashboard`. (see [below for nested schema](#nestedblock--matchers--url))
 - **url_param** (Block List, Max: 100) Matches by URL query parameter value. Query parameter name must be provided (see [below for nested schema](#nestedblock--matchers--url_param))
 - **url_query** (Block List, Max: 100) Matches by URL query string. (see [below for nested schema](#nestedblock--matchers--url_query))
@@ -154,7 +156,11 @@ Required:
 - **method** (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
 - **value** (Number) Integer value.
 
-Optional:
+
+<a id="nestedblock--matchers--body_size_range"></a>
+### Nested Schema for `matchers.body_size_range`
+
+Required:
 
 - **range_end** (Number) Integer value.
 - **range_start** (Number) Integer value.
@@ -243,7 +249,11 @@ Required:
 - **method** (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
 - **value** (Number) Integer value.
 
-Optional:
+
+<a id="nestedblock--matchers--src_port_range"></a>
+### Nested Schema for `matchers.src_port_range`
+
+Required:
 
 - **range_end** (Number) Integer value.
 - **range_start** (Number) Integer value.
