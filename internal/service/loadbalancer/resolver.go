@@ -169,7 +169,7 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	rs, err := svc.ModifyLoadBalancerResolver(&request.ModifyLoadBalancerRevolverRequest{
+	rs, err := svc.ModifyLoadBalancerResolver(&request.ModifyLoadBalancerResolverRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 		Resolver: request.LoadBalancerResolver{
