@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
@@ -68,18 +69,28 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server":                            resourceUpCloudServer(),
-			"upcloud_router":                            resourceUpCloudRouter(),
-			"upcloud_storage":                           resourceUpCloudStorage(),
-			"upcloud_firewall_rules":                    resourceUpCloudFirewallRules(),
-			"upcloud_tag":                               resourceUpCloudTag(),
-			"upcloud_network":                           resourceUpCloudNetwork(),
-			"upcloud_floating_ip_address":               resourceUpCloudFloatingIPAddress(),
-			"upcloud_object_storage":                    resourceUpCloudObjectStorage(),
-			"upcloud_managed_database_postgresql":       resourceUpCloudManagedDatabasePostgreSQL(),
-			"upcloud_managed_database_mysql":            resourceUpCloudManagedDatabaseMySQL(),
-			"upcloud_managed_database_user":             resourceUpCloudManagedDatabaseUser(),
-			"upcloud_managed_database_logical_database": resourceUpCloudManagedDatabaseLogicalDatabase(),
+			"upcloud_server":                                  resourceUpCloudServer(),
+			"upcloud_router":                                  resourceUpCloudRouter(),
+			"upcloud_storage":                                 resourceUpCloudStorage(),
+			"upcloud_firewall_rules":                          resourceUpCloudFirewallRules(),
+			"upcloud_tag":                                     resourceUpCloudTag(),
+			"upcloud_network":                                 resourceUpCloudNetwork(),
+			"upcloud_floating_ip_address":                     resourceUpCloudFloatingIPAddress(),
+			"upcloud_object_storage":                          resourceUpCloudObjectStorage(),
+			"upcloud_managed_database_postgresql":             resourceUpCloudManagedDatabasePostgreSQL(),
+			"upcloud_managed_database_mysql":                  resourceUpCloudManagedDatabaseMySQL(),
+			"upcloud_managed_database_user":                   resourceUpCloudManagedDatabaseUser(),
+			"upcloud_managed_database_logical_database":       resourceUpCloudManagedDatabaseLogicalDatabase(),
+			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),
+			"upcloud_loadbalancer_resolver":                   loadbalancer.ResourceResolver(),
+			"upcloud_loadbalancer_backend":                    loadbalancer.ResourceBackend(),
+			"upcloud_loadbalancer_static_backend_member":      loadbalancer.ResourceStaticBackendMember(),
+			"upcloud_loadbalancer_dynamic_backend_member":     loadbalancer.ResourceDynamicBackendMember(),
+			"upcloud_loadbalancer_frontend":                   loadbalancer.ResourceFrontend(),
+			"upcloud_loadbalancer_frontend_rule":              loadbalancer.ResourceFrontendRule(),
+			"upcloud_loadbalancer_frontend_tls_config":        loadbalancer.ResourceFrontendTLSConfig(),
+			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
+			"upcloud_loadbalancer_manual_certificate_bundle":  loadbalancer.ResourceManualCertificateBundle(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
