@@ -25,7 +25,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
 	msql1Name := "upcloud_managed_database_mysql.msql1"
-	lgDbName := "upcloud_managed_database_logical_database.logical_db_1"
+	lgDBName := "upcloud_managed_database_logical_database.logical_db_1"
 	userName := "upcloud_managed_database_user.db_user_1"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -60,8 +60,8 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(msql1Name, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(msql1Name, "powered", "true"),
 
-					resource.TestCheckResourceAttr(lgDbName, "name", "tf-test-logical-db-1"),
-					resource.TestCheckResourceAttrSet(lgDbName, "service"),
+					resource.TestCheckResourceAttr(lgDBName, "name", "tf-test-logical-db-1"),
+					resource.TestCheckResourceAttrSet(lgDBName, "service"),
 
 					resource.TestCheckResourceAttr(userName, "username", "somename"),
 					resource.TestCheckResourceAttr(userName, "password", "Superpass123"),
@@ -85,7 +85,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 
 					resource.TestCheckResourceAttr(msql1Name, "title", "tf-test-updated-msql-1"),
 
-					resource.TestCheckResourceAttr(lgDbName, "name", "tf-test-updated-logical-db-1"),
+					resource.TestCheckResourceAttr(lgDBName, "name", "tf-test-updated-logical-db-1"),
 
 					resource.TestCheckResourceAttr(userName, "password", "Superpass890"),
 				),
