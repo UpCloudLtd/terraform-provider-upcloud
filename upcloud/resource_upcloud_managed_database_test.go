@@ -35,7 +35,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			{
 				Config: string(testDataS1),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(pg1Name, "name", "pg1"),
+					resource.TestCheckResourceAttr(pg1Name, "name", "tf-pg-test-1"),
 					resource.TestCheckResourceAttr(pg1Name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(pg1Name, "title", "tf-test-pg-1"),
 					resource.TestCheckResourceAttr(pg1Name, "zone", "pl-waw1"),
@@ -47,14 +47,14 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg1Name, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
 					resource.TestCheckResourceAttrSet(pg1Name, "service_uri"),
 
-					resource.TestCheckResourceAttr(pg2Name, "name", "pg2"),
+					resource.TestCheckResourceAttr(pg2Name, "name", "tf-pg-test-2"),
 					resource.TestCheckResourceAttr(pg2Name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(pg2Name, "title", "tf-test-pg-2"),
 					resource.TestCheckResourceAttr(pg2Name, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(pg2Name, "powered", "false"),
 					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "13"),
 
-					resource.TestCheckResourceAttr(msql1Name, "name", "msql1"),
+					resource.TestCheckResourceAttr(msql1Name, "name", "tf-mysql-test-2"),
 					resource.TestCheckResourceAttr(msql1Name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(msql1Name, "title", "tf-test-msql-1"),
 					resource.TestCheckResourceAttr(msql1Name, "zone", "pl-waw1"),

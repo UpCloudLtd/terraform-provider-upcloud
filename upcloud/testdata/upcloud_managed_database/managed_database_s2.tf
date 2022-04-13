@@ -1,5 +1,5 @@
 resource "upcloud_managed_database_postgresql" "pg1" {
-  name                    = "pg1"
+  name                    = "tf-pg-test-1"
   plan                    = "1x1xCPU-2GB-25GB"
   title                   = "tf-test-updated-pg-1"
   zone                    = "pl-waw1"
@@ -13,7 +13,7 @@ resource "upcloud_managed_database_postgresql" "pg1" {
 }
 
 resource "upcloud_managed_database_postgresql" "pg2" {
-  name    = "pg2"
+  name    = "tf-pg-test-2"
   plan    = "1x1xCPU-2GB-25GB"
   title   = "tf-test-updated-pg-2"
   zone    = "pl-waw1"
@@ -24,7 +24,7 @@ resource "upcloud_managed_database_postgresql" "pg2" {
 }
 
 resource "upcloud_managed_database_mysql" "msql1" {
-  name    = "msql1"
+  name    = "tf-mysql-test-1"
   plan    = "1x1xCPU-2GB-25GB"
   title   = "tf-test-updated-msql-1"
   zone    = "pl-waw1"
