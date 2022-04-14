@@ -2,210 +2,99 @@ package upcloud
 
 import (
 	"context"
-	"fmt"
+	"io/ioutil"
 	"testing"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func TestAccUpcloudManagedDatabasePostgreSQL_CreateUpdate(t *testing.T) {
+func TestAccUpcloudManagedDatabase(t *testing.T) {
+	testDataS1, err := ioutil.ReadFile("testdata/upcloud_managed_database/managed_database_s1.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testDataS2, err := ioutil.ReadFile("testdata/upcloud_managed_database/managed_database_s2.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	var providers []*schema.Provider
-	rName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	resourceIdentifier := fmt.Sprintf("upcloud_managed_database_postgresql.%s", rName)
+	pg1Name := "upcloud_managed_database_postgresql.pg1"
+	pg2Name := "upcloud_managed_database_postgresql.pg2"
+	msql1Name := "upcloud_managed_database_mysql.msql1"
+	lgDBName := "upcloud_managed_database_logical_database.logical_db_1"
+	userName := "upcloud_managed_database_user.db_user_1"
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`
-					resource "upcloud_managed_database_postgresql" "%[1]s" {
-						name = "%[1]s"
-						plan = "1x1xCPU-2GB-25GB"
-						title = "testtitle"
-						zone = "fi-hel1"
-						maintenance_window_time = "10:00:00"
-  						maintenance_window_dow = "friday"
-						properties {
-							public_access = true
-							ip_filter = ["10.0.0.1/32"]
-							version = 13
-						}
-					}`, rName),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceIdentifier, "name", rName),
-					resource.TestCheckResourceAttr(resourceIdentifier, "plan", "1x1xCPU-2GB-25GB"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "title", "testtitle"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "zone", "fi-hel1"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "powered", "true"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_time", "10:00:00"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.0", "10.0.0.1/32"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.version", "13"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
-					resource.TestCheckResourceAttrSet(resourceIdentifier, "service_uri"),
+				Config: string(testDataS1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(pg1Name, "name", "tf-pg-test-1"),
+					resource.TestCheckResourceAttr(pg1Name, "plan", "1x1xCPU-2GB-25GB"),
+					resource.TestCheckResourceAttr(pg1Name, "title", "tf-test-pg-1"),
+					resource.TestCheckResourceAttr(pg1Name, "zone", "pl-waw1"),
+					resource.TestCheckResourceAttr(pg1Name, "powered", "true"),
+					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_time", "10:00:00"),
+					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_dow", "friday"),
+					resource.TestCheckResourceAttr(pg1Name, "properties.0.ip_filter.0", "10.0.0.1/32"),
+					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "13"),
+					resource.TestCheckResourceAttr(pg1Name, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
+					resource.TestCheckResourceAttrSet(pg1Name, "service_uri"),
+
+					resource.TestCheckResourceAttr(pg2Name, "name", "tf-pg-test-2"),
+					resource.TestCheckResourceAttr(pg2Name, "plan", "1x1xCPU-2GB-25GB"),
+					resource.TestCheckResourceAttr(pg2Name, "title", "tf-test-pg-2"),
+					resource.TestCheckResourceAttr(pg2Name, "zone", "pl-waw1"),
+					resource.TestCheckResourceAttr(pg2Name, "powered", "false"),
+					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "13"),
+
+					resource.TestCheckResourceAttr(msql1Name, "name", "tf-mysql-test-2"),
+					resource.TestCheckResourceAttr(msql1Name, "plan", "1x1xCPU-2GB-25GB"),
+					resource.TestCheckResourceAttr(msql1Name, "title", "tf-test-msql-1"),
+					resource.TestCheckResourceAttr(msql1Name, "zone", "pl-waw1"),
+					resource.TestCheckResourceAttr(msql1Name, "powered", "true"),
+
+					resource.TestCheckResourceAttr(lgDBName, "name", "tf-test-logical-db-1"),
+					resource.TestCheckResourceAttrSet(lgDBName, "service"),
+
+					resource.TestCheckResourceAttr(userName, "username", "somename"),
+					resource.TestCheckResourceAttr(userName, "password", "Superpass123"),
+					resource.TestCheckResourceAttrSet(userName, "service"),
 				),
 			},
 			{
-				Config: fmt.Sprintf(`
-					resource "upcloud_managed_database_postgresql" "%[1]s" {
-						name = "%[1]s"
-						plan = "1x1xCPU-2GB-25GB"
-						title = "testtitle modified"
-						zone = "fi-hel1"
-						maintenance_window_time = "11:00:00"
-						maintenance_window_dow = "friday"
-						properties {
-							ip_filter = []
-							version = 14
-						}
-					}`, rName),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceIdentifier, "title", "testtitle modified"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_time", "11:00:00"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "maintenance_window_dow", "friday"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.public_access", "false"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.ip_filter.#", "0"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "properties.0.version", "14"),
+				Config: string(testDataS2),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(pg1Name, "title", "tf-test-updated-pg-1"),
+					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_time", "11:00:00"),
+					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_dow", "thursday"),
+					resource.TestCheckResourceAttr(pg1Name, "properties.0.public_access", "false"),
+					resource.TestCheckResourceAttr(pg1Name, "properties.0.ip_filter.#", "0"),
+					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "14"),
+					resource.TestCheckResourceAttr(pg1Name, "powered", "false"),
+
+					resource.TestCheckResourceAttr(pg2Name, "title", "tf-test-updated-pg-2"),
+					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
+					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
+
+					resource.TestCheckResourceAttr(msql1Name, "title", "tf-test-updated-msql-1"),
+
+					resource.TestCheckResourceAttr(lgDBName, "name", "tf-test-updated-logical-db-1"),
+
+					resource.TestCheckResourceAttr(userName, "password", "Superpass890"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccUpcloudManagedDatabasePostgreSQL_CreateAsPoweredOff(t *testing.T) {
-	var providers []*schema.Provider
-	rName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	resourceIdentifier := fmt.Sprintf("upcloud_managed_database_postgresql.%s", rName)
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		Steps: []resource.TestStep{
-			{
-				Config: fmt.Sprintf(`
-					resource "upcloud_managed_database_postgresql" "%[1]s" {
-						name = "%[1]s"
-						plan = "1x1xCPU-2GB-25GB"
-						title = "testtitle"
-						zone = "fi-hel1"
-						powered = false
-					}`, rName),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceIdentifier, "name", rName),
-					resource.TestCheckResourceAttr(resourceIdentifier, "plan", "1x1xCPU-2GB-25GB"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "title", "testtitle"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "zone", "fi-hel1"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "powered", "false"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
-					resource.TestCheckResourceAttrSet(resourceIdentifier, "service_uri"),
-				),
-			},
-			{
-				Config: fmt.Sprintf(`
-					resource "upcloud_managed_database_postgresql" "%[1]s" {
-						name = "%[1]s"
-						plan = "1x1xCPU-2GB-25GB"
-						title = "testtitle"
-						zone = "fi-hel1"
-						powered = true
-					}`, rName),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceIdentifier, "powered", "true"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccUpcloudManagedDatabaseMySQL_Create(t *testing.T) {
-	var providers []*schema.Provider
-	rName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	resourceIdentifier := fmt.Sprintf("upcloud_managed_database_mysql.%s", rName)
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		Steps: []resource.TestStep{
-			{
-				Config: fmt.Sprintf(`
-					resource "upcloud_managed_database_mysql" "%[1]s" {
-						name = "%[1]s"
-						plan = "1x1xCPU-2GB-25GB"
-						title = "testtitle"
-						zone = "fi-hel1"
-					}`, rName),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceIdentifier, "name", rName),
-					resource.TestCheckResourceAttr(resourceIdentifier, "plan", "1x1xCPU-2GB-25GB"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "title", "testtitle"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "zone", "fi-hel1"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "powered", "true"),
-					resource.TestCheckResourceAttr(resourceIdentifier, "type", string(upcloud.ManagedDatabaseServiceTypeMySQL)),
-					resource.TestCheckResourceAttrSet(resourceIdentifier, "service_uri"),
-				),
-			},
-		},
-	})
-}
-
-// Disable this test for now, as it started causing issues in CI. Need to investigate why and fix it
-// func TestAccUpcloudManagedDatabasePostgreSQL_VersionUpgrade(t *testing.T) {
-// 	var providers []*schema.Provider
-
-// 	resource.ParallelTest(t, resource.TestCase{
-// 		PreCheck:          func() { testAccPreCheck(t) },
-// 		ProviderFactories: testAccProviderFactories(&providers),
-// 		Steps: []resource.TestStep{
-// 			{
-// 				Config: `
-// 					resource "upcloud_managed_database_postgresql" "test_pg" {
-// 						name = "testpg"
-// 						plan = "1x1xCPU-2GB-25GB"
-// 						title = "testversion"
-// 						zone = "pl-waw1"
-// 						powered = false
-// 						properties {
-// 							version = 12
-// 						}
-// 					}`,
-// 				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "12"),
-// 			},
-// 			{
-// 				// Check if turning db on and upgrading works
-// 				Config: `
-// 					resource "upcloud_managed_database_postgresql" "test_pg" {
-// 						name = "testpg"
-// 						plan = "1x1xCPU-2GB-25GB"
-// 						title = "testversion"
-// 						zone = "pl-waw1"
-// 						powered = true
-// 						properties {
-// 							version = 13
-// 						}
-// 					}`,
-// 				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "13"),
-// 			},
-// 			{
-// 				// Check if turning db off and upgrading works
-// 				Config: `
-// 					resource "upcloud_managed_database_postgresql" "test_pg" {
-// 						name = "testpg"
-// 						plan = "1x1xCPU-2GB-25GB"
-// 						title = "testversion"
-// 						zone = "pl-waw1"
-// 						powered = false
-// 						properties {
-// 							version = 14
-// 						}
-// 					}`,
-// 				Check: resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.test_pg", "properties.0.version", "14"),
-// 			},
-// 		},
-// 	})
-// }
-
+// TODO move the tests below to db utils test file, once the managed database resources are moved under their own package
 func TestIsManagedDatabaseFullyCreated(t *testing.T) {
 	db := &upcloud.ManagedDatabase{
 		Backups: make([]upcloud.ManagedDatabaseBackup, 0),
