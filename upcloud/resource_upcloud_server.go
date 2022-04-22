@@ -817,13 +817,18 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	if err := server.VerifyServerStopped(request.StopServerRequest{UUID: d.Id()}, meta); err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Delete tags that are not used by any other servers
+	if err := server.RemoveServerTags(client, d.Id(), utils.ExpandStrings(d.Get("tags"))); err != nil {
+		return diag.FromErr(err)
+	}
+
 	// Delete server
 	deleteServerRequest := &request.DeleteServerRequest{
 		UUID: d.Id(),
 	}
 	log.Printf("[INFO] Deleting server (server UUID: %s)", d.Id())
-	err := client.DeleteServer(deleteServerRequest)
-	if err != nil {
+	if err := client.DeleteServer(deleteServerRequest); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -834,8 +839,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 			UUID: template["id"].(string),
 		}
 		log.Printf("[INFO] Deleting server storage (storage UUID: %s)", deleteStorageRequest.UUID)
-		err = client.DeleteStorage(deleteStorageRequest)
-		if err != nil {
+		if err := client.DeleteStorage(deleteStorageRequest); err != nil {
 			return diag.FromErr(err)
 		}
 	}
