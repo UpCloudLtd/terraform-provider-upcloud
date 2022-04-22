@@ -14,6 +14,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -87,6 +88,19 @@ func resourceUpCloudServer() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
+				// Suppress diff if only order of tags changes, because we cannot really control the order of tags of a server.
+				// This removes some unnecessary change-of-order diffs until Type is changed from TypeList to TypeSet.
+				DiffSuppressFunc: func(key, oldName, newName string, d *schema.ResourceData) bool {
+					// Check how tags would change
+					old, new := d.GetChange("tags")
+					toAdd, toDelete := server.GetTagChange(utils.ExpandStrings(old), utils.ExpandStrings(new))
+
+					// If no tags would be added or deleted, suppress diff
+					if len(toAdd) == 0 && len(toDelete) == 0 {
+						return true
+					}
+					return false
+				},
 			},
 			"host": {
 				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",
@@ -364,6 +378,21 @@ func resourceUpCloudServer() *schema.Resource {
 				},
 			},
 		},
+		CustomizeDiff: customdiff.Sequence(
+			// Validate tags here, because in-schema validation is only available for primitive types
+			customdiff.ValidateChange("tags", func(ctx context.Context, old, new, meta interface{}) error {
+				tagsMap := make(map[string]string)
+
+				for _, tag := range utils.ExpandStrings(new) {
+					if duplicate, ok := tagsMap[strings.ToLower(tag)]; ok {
+						return fmt.Errorf("tags can not contain case-insensitive duplicates (%s, %s)", duplicate, tag)
+					}
+					tagsMap[strings.ToLower(tag)] = tag
+				}
+
+				return nil
+			}),
+		),
 	}
 }
 
