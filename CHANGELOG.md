@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- server: Remove all tags when tags change into an empty value
+- server: Delete unused tags created with server resource on server delete
+- server: Improve tags validation: check for case-insensitive duplicates, supress diff when only order of tags changes, print warning when trying to create existing tag with different letter casing
+
 ## [2.4.0] - 2022-04-12
 
 ### Added
