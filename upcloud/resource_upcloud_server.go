@@ -369,6 +369,7 @@ func resourceUpCloudServer() *schema.Resource {
 
 func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
+	diags := diag.Diagnostics{}
 
 	tags, tagsExists := d.GetOk("tags")
 	if tagsExists {
@@ -420,15 +421,15 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	// add server tags
 	if tagsExists {
 		tags := utils.ExpandStrings(tags)
-		if err := server.AddNewServerTags(client, serverDetails.UUID, tags); err != nil {
-			return diag.FromErr(err)
-		}
-
-		if _, err := client.TagServer(&request.TagServerRequest{
-			UUID: serverDetails.UUID,
-			Tags: tags,
-		}); err != nil {
-			return diag.FromErr(err)
+		if err := server.AddServerTags(client, serverDetails.UUID, tags); err != nil {
+			if errors.As(err, &server.TagsExistsWarning{}) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  err.Error(),
+				})
+			} else {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -442,7 +443,7 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	return resourceUpCloudServerRead(ctx, d, meta)
+	return append(diags, resourceUpCloudServerRead(ctx, d, meta)...)
 }
 
 func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -702,8 +703,16 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		oldTags, newTags := d.GetChange("tags")
 		if err := server.UpdateServerTags(
 			client, d.Id(),
-			utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags)); err != nil {
-			return diag.FromErr(err)
+			utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags),
+		); err != nil {
+			if errors.As(err, &server.TagsExistsWarning{}) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  err.Error(),
+				})
+			} else {
+				return diag.FromErr(err)
+			}
 		}
 	}
 

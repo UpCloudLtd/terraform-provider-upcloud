@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
@@ -235,9 +236,25 @@ func VerifyServerStarted(startRequest request.StartServerRequest, meta interface
 	return nil
 }
 
-// RemoveOldServerTags removes tags from server.
-// deletes the tag if no server left with the tag name
-func RemoveOldServerTags(service *service.Service, serverUUID string, tags []string) error {
+func getTagsAsMap(service *service.Service) (map[string]upcloud.Tag, error) {
+	currTags := make(map[string]upcloud.Tag)
+
+	resp, err := service.GetTags()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tag := range resp.Tags {
+		// Convert key to lowercase as tag names are case-insensitive
+		currTags[strings.ToLower(tag.Name)] = tag
+	}
+
+	return currTags, nil
+}
+
+// RemoveServerTags removes tags from server and
+// deletes the tag if it is not used by any other server.
+func RemoveServerTags(service *service.Service, serverUUID string, tags []string) error {
 	if len(tags) == 0 {
 		return nil
 	}
@@ -249,22 +266,20 @@ func RemoveOldServerTags(service *service.Service, serverUUID string, tags []str
 		return err
 	}
 
-	currTags, err := service.GetTags()
+	currTags, err := getTagsAsMap(service)
 	if err != nil {
 		return err
 	}
 
-	// Remove unused tags
-	for _, currTag := range currTags.Tags {
-		for _, tag := range tags {
-			if tag == currTag.Name {
-				// remove tag from server if it's empty
-				if len(currTag.Servers) == 0 {
-					if err := service.DeleteTag(&request.DeleteTagRequest{
-						Name: currTag.Name,
-					}); err != nil {
-						return err
-					}
+	for _, tagName := range tags {
+		// Find tag to be removed
+		if tag, ok := currTags[strings.ToLower(tagName)]; ok {
+			// Delete tag if it is not used by any servers
+			if len(tag.Servers) == 0 {
+				if err := service.DeleteTag(&request.DeleteTagRequest{
+					Name: tag.Name,
+				}); err != nil {
+					return err
 				}
 			}
 		}
@@ -273,31 +288,45 @@ func RemoveOldServerTags(service *service.Service, serverUUID string, tags []str
 	return nil
 }
 
-// AddNewServerTags adds tags to server, updates existing tags if any
-func AddNewServerTags(service *service.Service, serverUUID string, tags []string) error {
+type TagsExistsWarning struct {
+	tags map[string]string
+}
+
+func (w TagsExistsWarning) Error() string {
+	var duplicates []string
+	for k, v := range w.tags {
+		duplicates = append(duplicates, fmt.Sprintf("%s = %s", k, v))
+	}
+	return fmt.Sprintf("some tags already exist with different letter casing, existing names will be used (%s)", strings.Join(duplicates, ", "))
+}
+
+// AddServerTags creates tags that do not yet exist and tags server with given tags.
+func AddServerTags(service *service.Service, serverUUID string, tags []string) error {
 	if len(tags) == 0 {
 		return nil
 	}
 
-	currTags, err := service.GetTags()
+	// Store current tags in map to easily check if a tag exists
+	currTags, err := getTagsAsMap(service)
 	if err != nil {
 		return err
 	}
 
-OUTER:
+	duplicates := make(map[string]string)
+
+	// Create tags that do not yet exist
 	for _, tag := range tags {
-		for _, currTag := range currTags.Tags {
-			if tag == currTag.Name {
-				continue OUTER
+		existingTag, ok := currTags[strings.ToLower(tag)]
+		if !ok {
+			if _, err := service.CreateTag(&request.CreateTagRequest{
+				Tag: upcloud.Tag{
+					Name: tag,
+				},
+			}); err != nil {
+				return err
 			}
-		}
-		// tag don't exist let's create it
-		if _, err := service.CreateTag(&request.CreateTagRequest{
-			Tag: upcloud.Tag{
-				Name: tag,
-			},
-		}); err != nil {
-			return err
+		} else if tag != existingTag.Name {
+			duplicates[tag] = existingTag.Name
 		}
 	}
 
@@ -305,16 +334,51 @@ OUTER:
 		UUID: serverUUID,
 		Tags: tags,
 	}); err != nil {
-		return nil
+		return err
+	}
+
+	if len(duplicates) != 0 {
+		return TagsExistsWarning{duplicates}
 	}
 
 	return nil
 }
 
+func sliceToMap(input []string) map[string]bool {
+	output := make(map[string]bool)
+	for _, i := range input {
+		output[i] = true
+	}
+	return output
+}
+
+// GetTagChange determines tags to add and delete based on given old and new tags.
+// Order of the tags is ignored.
+func GetTagChange(oldTags, newTags []string) (tagsToAdd, tagsToDelete []string) {
+	olgTagsMap := sliceToMap(oldTags)
+	newTagsMap := sliceToMap(newTags)
+
+	for tag := range newTagsMap {
+		if _, ok := olgTagsMap[tag]; !ok {
+			tagsToAdd = append(tagsToAdd, tag)
+		}
+	}
+
+	for tag := range olgTagsMap {
+		if _, ok := newTagsMap[tag]; !ok {
+			tagsToDelete = append(tagsToDelete, tag)
+		}
+	}
+
+	return
+}
+
 func UpdateServerTags(service *service.Service, serverUUID string, oldTags, newTags []string) error {
-	if err := RemoveOldServerTags(service, serverUUID, oldTags); err != nil {
+	tagsToAdd, tagsToDelete := GetTagChange(oldTags, newTags)
+
+	if err := RemoveServerTags(service, serverUUID, tagsToDelete); err != nil {
 		return err
 	}
 
-	return AddNewServerTags(service, serverUUID, newTags)
+	return AddServerTags(service, serverUUID, tagsToAdd)
 }
