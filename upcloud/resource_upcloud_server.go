@@ -698,7 +698,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if _, ok := d.GetOk("tags"); ok && tagsHasChange {
+	if tagsHasChange {
 		oldTags, newTags := d.GetChange("tags")
 		if err := server.UpdateServerTags(
 			client, d.Id(),
