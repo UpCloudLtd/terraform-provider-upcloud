@@ -89,15 +89,8 @@ func resourceUpCloudServer() *schema.Resource {
 				// Suppress diff if only order of tags changes, because we cannot really control the order of tags of a server.
 				// This removes some unnecessary change-of-order diffs until Type is changed from TypeList to TypeSet.
 				DiffSuppressFunc: func(key, oldName, newName string, d *schema.ResourceData) bool {
-					// Check how tags would change
 					old, new := d.GetChange("tags")
-					toAdd, toDelete := server.GetTagChange(utils.ExpandStrings(old), utils.ExpandStrings(new))
-
-					// If no tags would be added or deleted, suppress diff
-					if len(toAdd) == 0 && len(toDelete) == 0 {
-						return true
-					}
-					return false
+					return !serverTagsHasChange(old, new)
 				},
 			},
 			"host": {
@@ -934,16 +927,27 @@ func serverValidateZone(service *service.Service, zone string) error {
 	return fmt.Errorf("expected zone to be one of [%s], got %s", strings.Join(availableZones, ", "), zone)
 }
 
+func serverTagsHasChange(old, new interface{}) bool {
+	// Check how tags would change
+	toAdd, toDelete := server.GetTagChange(utils.ExpandStrings(old), utils.ExpandStrings(new))
+
+	// If no tags would be added or deleted, no change will be made
+	if len(toAdd) == 0 && len(toDelete) == 0 {
+		return false
+	}
+	return true
+}
+
 func serverValidateTagsChange(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	{
-		if d.HasChange("tags") {
+		old, new := d.GetChange("tags")
+		if serverTagsHasChange(old, new) {
 			client := meta.(*service.Service)
 
 			if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
 				if err != nil {
 					return err
 				}
-				old, new := d.GetChange("tags")
 				return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", old, new)
 			}
 		}
