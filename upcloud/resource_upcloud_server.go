@@ -858,7 +858,11 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 
 	// Delete tags that are not used by any other servers
 	if err := server.RemoveServerTags(client, d.Id(), utils.ExpandStrings(d.Get("tags"))); err != nil {
-		return diag.FromErr(err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "failed to delete tags that will be unused after server deletion",
+			Detail:   err.Error(),
+		})
 	}
 
 	// Delete server
