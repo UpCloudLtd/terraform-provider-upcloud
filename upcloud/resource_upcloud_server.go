@@ -26,8 +26,6 @@ import (
 
 const serverTitleLength int = 255
 
-var errSubaccountCouldNotModifyTags = errors.New("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to")
-
 func resourceUpCloudServer() *schema.Resource {
 	return &schema.Resource{
 		Description:   "The UpCloud server resource allows the creation, update and deletion of a server.",
@@ -380,18 +378,7 @@ func resourceUpCloudServer() *schema.Resource {
 		},
 		CustomizeDiff: customdiff.Sequence(
 			// Validate tags here, because in-schema validation is only available for primitive types
-			customdiff.ValidateChange("tags", func(ctx context.Context, old, new, meta interface{}) error {
-				tagsMap := make(map[string]string)
-
-				for _, tag := range utils.ExpandStrings(new) {
-					if duplicate, ok := tagsMap[strings.ToLower(tag)]; ok {
-						return fmt.Errorf("tags can not contain case-insensitive duplicates (%s, %s)", duplicate, tag)
-					}
-					tagsMap[strings.ToLower(tag)] = tag
-				}
-
-				return nil
-			}),
+			serverValidateTagsChange,
 		),
 	}
 }
@@ -399,16 +386,6 @@ func resourceUpCloudServer() *schema.Resource {
 func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
-
-	tags, tagsExists := d.GetOk("tags")
-	if tagsExists {
-		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			return diag.FromErr(errSubaccountCouldNotModifyTags)
-		}
-	}
 
 	if err := serverValidatePlan(client, d.Get("plan").(string)); err != nil {
 		return diag.FromErr(err)
@@ -447,8 +424,8 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		}})
 	}
 
-	// add server tags
-	if tagsExists {
+	// Add server tags
+	if tags, tagsExists := d.GetOk("tags"); tagsExists {
 		tags := utils.ExpandStrings(tags)
 		if err := server.AddServerTags(client, serverDetails.UUID, tags); err != nil {
 			if errors.As(err, &server.TagsExistsWarning{}) {
@@ -628,16 +605,6 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	tagsHasChange := d.HasChange("tags")
-	if tagsHasChange {
-		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			return diag.FromErr(errSubaccountCouldNotModifyTags)
-		}
-	}
-
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
@@ -728,7 +695,7 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if tagsHasChange {
+	if d.HasChange("tags") {
 		oldTags, newTags := d.GetChange("tags")
 		if err := server.UpdateServerTags(
 			client, d.Id(),
@@ -965,4 +932,36 @@ func serverValidateZone(service *service.Service, zone string) error {
 		availableZones = append(availableZones, z.ID)
 	}
 	return fmt.Errorf("expected zone to be one of [%s], got %s", strings.Join(availableZones, ", "), zone)
+}
+
+func serverValidateTagsChange(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	{
+		if d.HasChange("tags") {
+			client := meta.(*service.Service)
+
+			if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
+				if err != nil {
+					return err
+				}
+				old, new := d.GetChange("tags")
+				return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", old, new)
+			}
+		}
+
+		tagsMap := make(map[string]string)
+		var duplicates []string
+
+		for _, tag := range utils.ExpandStrings(d.Get("tags")) {
+			if duplicate, ok := tagsMap[strings.ToLower(tag)]; ok {
+				duplicates = append(duplicates, fmt.Sprintf("%s = %s", duplicate, tag))
+			}
+			tagsMap[strings.ToLower(tag)] = tag
+		}
+
+		if len(duplicates) != 0 {
+			return fmt.Errorf("tags can not contain case-insensitive duplicates (%s)", strings.Join(duplicates, ", "))
+		}
+
+		return nil
+	}
 }
