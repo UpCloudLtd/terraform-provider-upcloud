@@ -154,11 +154,11 @@ func TestUpcloudServer_basic(t *testing.T) {
 						"upcloud_server.my-server", "zone", "fi-hel1"),
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "hostname", "debian.example.com"),
-					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.0", "foo",
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.my-server", "tags.*", "foo",
 					),
-					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.1", "bar",
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.my-server", "tags.*", "bar",
 					),
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "title", "Debian",
@@ -552,7 +552,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 	})
 }
 
-func TestUpcloudServerUpdateTags(t *testing.T) {
+func TestUpcloudServer_updateTags(t *testing.T) {
 	var providers []*schema.Provider
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -560,14 +560,15 @@ func TestUpcloudServerUpdateTags(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				// setup server with tags
+				// Setup server with tags
 				Config: `
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "tags-test" {
 						zone     = "fi-hel1"
-						hostname = "debian.example.com"
+						hostname = "provider-atest-tags-server"
 						tags = [
-						"foo",
-						"bar"
+							"acceptance-test",
+							"foo",
+							"bar"
 						]
 
 						template {
@@ -580,28 +581,32 @@ func TestUpcloudServerUpdateTags(t *testing.T) {
 						}
 					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.0", "foo",
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.tags-test", "tags.*", "acceptance-test",
 					),
-					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.1", "bar",
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.tags-test", "tags.*", "foo",
+					),
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.tags-test", "tags.*", "bar",
 					),
 				),
 			},
 			{
-				// tags update
+				// Update some of the tags
 				Config: `
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "tags-test" {
 						zone     = "fi-hel1"
-						hostname = "debian.example.com"
+						hostname = "provider-atest-tags-server"
 						tags = [
-						"newfoo",
-						"newbar"
+							"acceptance-test",
+							"newfoo",
+							"newbar"
 						]
 
 						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
+							storage = "01000000-0000-4000-8000-000020050100"
+							size = 10
 						}
 
 						network_interface {
@@ -609,27 +614,56 @@ func TestUpcloudServerUpdateTags(t *testing.T) {
 						}
 					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.0", "newfoo",
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.tags-test", "tags.*", "acceptance-test",
 					),
-					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.1", "newbar",
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.tags-test", "tags.*", "newfoo",
+					),
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.tags-test", "tags.*", "newbar",
 					),
 				),
 			},
 			{
-				// tag removal
+				// Remove some of the tags
 				Config: `
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "tags-test" {
 						zone     = "fi-hel1"
-						hostname = "debian.example.com"
+						hostname = "provider-atest-tags-server"
 						tags = [
-						"newfoo",
+							"acceptance-test",
 						]
 
 						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
+							storage = "01000000-0000-4000-8000-000020050100"
+							size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckTypeSetElemAttr(
+						"upcloud_server.tags-test", "tags.*", "acceptance-test",
+					),
+					resource.TestCheckResourceAttr(
+						"upcloud_server.tags-test", "tags.#", "1",
+					),
+				),
+			},
+			{
+				// Remove all of the tags
+				Config: `
+					resource "upcloud_server" "tags-test" {
+						zone     = "fi-hel1"
+						hostname = "provider-atest-tags-server"
+						tags = []
+
+						template {
+							storage = "01000000-0000-4000-8000-000020050100"
+							size = 10
 						}
 
 						network_interface {
@@ -638,11 +672,28 @@ func TestUpcloudServerUpdateTags(t *testing.T) {
 					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.0", "newfoo",
+						"upcloud_server.tags-test", "tags.#", "0",
 					),
-					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "tags.#", "1",
-					),
+				),
+			},
+			{
+				// Remove tags attribute
+				Config: `
+					resource "upcloud_server" "tags-test" {
+						zone     = "fi-hel1"
+						hostname = "provider-atest-tags-server"
+
+						template {
+							storage = "01000000-0000-4000-8000-000020050100"
+							size = 10
+						}
+
+						network_interface {
+							type = "utility"
+						}
+					}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("upcloud_server.tags-test", "tags"),
 				),
 			},
 		},

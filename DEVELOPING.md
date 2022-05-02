@@ -56,6 +56,12 @@ terraform {
 
 **Testing**
 
+To lint the providers source-code, run `golangci-lint run`. See [golangci-lint docs](https://golangci-lint.run/usage/install/) for installation instructions.
+
+```sh
+golangci-lint run
+```
+
 In order to test the provider, you can simply run `make test`.
 
 ```sh

@@ -14,6 +14,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -24,8 +25,6 @@ import (
 )
 
 const serverTitleLength int = 255
-
-var errSubaccountCouldNotModifyTags = errors.New("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to")
 
 func resourceUpCloudServer() *schema.Resource {
 	return &schema.Resource{
@@ -87,6 +86,12 @@ func resourceUpCloudServer() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
+				// Suppress diff if only order of tags changes, because we cannot really control the order of tags of a server.
+				// This removes some unnecessary change-of-order diffs until Type is changed from TypeList to TypeSet.
+				DiffSuppressFunc: func(key, oldName, newName string, d *schema.ResourceData) bool {
+					old, new := d.GetChange("tags")
+					return !serverTagsHasChange(old, new)
+				},
 			},
 			"host": {
 				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",
@@ -364,21 +369,16 @@ func resourceUpCloudServer() *schema.Resource {
 				},
 			},
 		},
+		CustomizeDiff: customdiff.Sequence(
+			// Validate tags here, because in-schema validation is only available for primitive types
+			serverValidateTagsChange,
+		),
 	}
 }
 
 func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
-
-	tags, tagsExists := d.GetOk("tags")
-	if tagsExists {
-		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			return diag.FromErr(errSubaccountCouldNotModifyTags)
-		}
-	}
+	diags := diag.Diagnostics{}
 
 	if err := serverValidatePlan(client, d.Get("plan").(string)); err != nil {
 		return diag.FromErr(err)
@@ -417,18 +417,18 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		}})
 	}
 
-	// add server tags
-	if tagsExists {
+	// Add server tags
+	if tags, tagsExists := d.GetOk("tags"); tagsExists {
 		tags := utils.ExpandStrings(tags)
-		if err := server.AddNewServerTags(client, serverDetails.UUID, tags); err != nil {
-			return diag.FromErr(err)
-		}
-
-		if _, err := client.TagServer(&request.TagServerRequest{
-			UUID: serverDetails.UUID,
-			Tags: tags,
-		}); err != nil {
-			return diag.FromErr(err)
+		if err := server.AddServerTags(client, serverDetails.UUID, tags); err != nil {
+			if errors.As(err, &server.TagsExistsWarning{}) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  err.Error(),
+				})
+			} else {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -442,7 +442,7 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	return resourceUpCloudServerRead(ctx, d, meta)
+	return append(diags, resourceUpCloudServerRead(ctx, d, meta)...)
 }
 
 func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -598,16 +598,6 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	tagsHasChange := d.HasChange("tags")
-	if tagsHasChange {
-		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			return diag.FromErr(errSubaccountCouldNotModifyTags)
-		}
-	}
-
 	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
@@ -698,12 +688,20 @@ func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if _, ok := d.GetOk("tags"); ok && tagsHasChange {
+	if d.HasChange("tags") {
 		oldTags, newTags := d.GetChange("tags")
 		if err := server.UpdateServerTags(
 			client, d.Id(),
-			utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags)); err != nil {
-			return diag.FromErr(err)
+			utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags),
+		); err != nil {
+			if errors.As(err, &server.TagsExistsWarning{}) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  err.Error(),
+				})
+			} else {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -817,13 +815,22 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	if err := server.VerifyServerStopped(request.StopServerRequest{UUID: d.Id()}, meta); err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Delete tags that are not used by any other servers
+	if err := server.RemoveServerTags(client, d.Id(), utils.ExpandStrings(d.Get("tags"))); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "failed to delete tags that will be unused after server deletion",
+			Detail:   err.Error(),
+		})
+	}
+
 	// Delete server
 	deleteServerRequest := &request.DeleteServerRequest{
 		UUID: d.Id(),
 	}
 	log.Printf("[INFO] Deleting server (server UUID: %s)", d.Id())
-	err := client.DeleteServer(deleteServerRequest)
-	if err != nil {
+	if err := client.DeleteServer(deleteServerRequest); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -834,8 +841,7 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 			UUID: template["id"].(string),
 		}
 		log.Printf("[INFO] Deleting server storage (storage UUID: %s)", deleteStorageRequest.UUID)
-		err = client.DeleteStorage(deleteStorageRequest)
-		if err != nil {
+		if err := client.DeleteStorage(deleteStorageRequest); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -919,4 +925,47 @@ func serverValidateZone(service *service.Service, zone string) error {
 		availableZones = append(availableZones, z.ID)
 	}
 	return fmt.Errorf("expected zone to be one of [%s], got %s", strings.Join(availableZones, ", "), zone)
+}
+
+func serverTagsHasChange(old, new interface{}) bool {
+	// Check how tags would change
+	toAdd, toDelete := server.GetTagChange(utils.ExpandStrings(old), utils.ExpandStrings(new))
+
+	// If no tags would be added or deleted, no change will be made
+	if len(toAdd) == 0 && len(toDelete) == 0 {
+		return false
+	}
+	return true
+}
+
+func serverValidateTagsChange(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	{
+		old, new := d.GetChange("tags")
+		if serverTagsHasChange(old, new) {
+			client := meta.(*service.Service)
+
+			if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
+				if err != nil {
+					return err
+				}
+				return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", old, new)
+			}
+		}
+
+		tagsMap := make(map[string]string)
+		var duplicates []string
+
+		for _, tag := range utils.ExpandStrings(d.Get("tags")) {
+			if duplicate, ok := tagsMap[strings.ToLower(tag)]; ok {
+				duplicates = append(duplicates, fmt.Sprintf("%s = %s", duplicate, tag))
+			}
+			tagsMap[strings.ToLower(tag)] = tag
+		}
+
+		if len(duplicates) != 0 {
+			return fmt.Errorf("tags can not contain case-insensitive duplicates (%s)", strings.Join(duplicates, ", "))
+		}
+
+		return nil
+	}
 }
