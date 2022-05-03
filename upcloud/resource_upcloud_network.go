@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
@@ -171,7 +172,7 @@ func resourceUpCloudNetworkRead(ctx context.Context, d *schema.ResourceData, met
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudNetworkNotFoundErrorCode {
 			var diags diag.Diagnostics
-			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
+			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
 			d.SetId("")
 			return diags
 		}

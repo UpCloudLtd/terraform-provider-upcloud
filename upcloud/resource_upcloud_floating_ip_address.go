@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
@@ -109,7 +110,7 @@ func resourceUpCloudFloatingIPAddressRead(ctx context.Context, d *schema.Resourc
 			if ip, ok := d.GetOk("ip_address"); ok {
 				name = ip.(string)
 			}
-			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, name))
+			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, name))
 			d.SetId("")
 			return diags
 		}

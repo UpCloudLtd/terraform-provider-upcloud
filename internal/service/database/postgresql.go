@@ -1,28 +1,28 @@
-package upcloud
+package database
 
 import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceUpCloudManagedDatabasePostgreSQL() *schema.Resource {
+func ResourcePostgreSQL() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents PostgreSQL managed database",
-		CreateContext: resourceUpCloudManagedDatabaseCreate(managedDatabaseTypePostgreSQL),
-		ReadContext:   resourceUpCloudManagedDatabaseRead,
-		UpdateContext: resourceUpCloudManagedDatabaseUpdate,
-		DeleteContext: resourceUpCloudManagedDatabaseDelete,
+		CreateContext: resourceDatabaseCreate(managedDatabaseTypePostgreSQL),
+		ReadContext:   resourceDatabaseRead,
+		UpdateContext: resourceDatabaseUpdate,
+		DeleteContext: resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: utils.JoinSchemas(
-			schemaUpCloudManagedDatabaseCommon(),
-			schemaUpCloudManagedDatabasePostgreSQLEngine(),
+			schemaDatabaseCommon(),
+			schemaPostgreSQLEngine(),
 		),
 	}
 }
 
-func schemaUpCloudManagedDatabasePostgreSQLEngine() map[string]*schema.Schema {
+func schemaPostgreSQLEngine() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"sslmode": {
 			Description: "SSL Connection Mode for PostgreSQL",
@@ -37,15 +37,15 @@ func schemaUpCloudManagedDatabasePostgreSQLEngine() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: utils.JoinSchemas(
-					schemaUpCloudManagedDatabaseCommonProperties(),
-					schemaUpCloudManagedDatabasePostgreSQLProperties(),
+					schemaDatabaseCommonProperties(),
+					schemaPostgreSQLProperties(),
 				),
 			},
 		},
 	}
 }
 
-func schemaUpCloudManagedDatabasePostgreSQLProperties() map[string]*schema.Schema {
+func schemaPostgreSQLProperties() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"autovacuum_analyze_scale_factor": {
 			Type:        schema.TypeInt,
@@ -360,7 +360,7 @@ func schemaUpCloudManagedDatabasePostgreSQLProperties() map[string]*schema.Schem
 			Optional:    true,
 			Computed:    true,
 			MaxItems:    1,
-			Elem:        &schema.Resource{Schema: schemaUpCloudManagedDatabasePostgreSQLPGBouncer()},
+			Elem:        &schema.Resource{Schema: schemaPostgreSQLPGBouncer()},
 		},
 		"pglookout": {
 			Description: "PGLookout settings",
@@ -399,7 +399,7 @@ func schemaUpCloudManagedDatabasePostgreSQLProperties() map[string]*schema.Schem
 	}
 }
 
-func schemaUpCloudManagedDatabasePostgreSQLPGBouncer() map[string]*schema.Schema {
+func schemaPostgreSQLPGBouncer() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"autodb_idle_timeout": {
 			Type:        schema.TypeInt,

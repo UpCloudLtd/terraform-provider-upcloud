@@ -1,28 +1,28 @@
-package upcloud
+package database
 
 import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceUpCloudManagedDatabaseMySQL() *schema.Resource {
+func ResourceMySQL() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents MySQL managed database",
-		CreateContext: resourceUpCloudManagedDatabaseCreate(managedDatabaseTypeMySQL),
-		ReadContext:   resourceUpCloudManagedDatabaseRead,
-		UpdateContext: resourceUpCloudManagedDatabaseUpdate,
-		DeleteContext: resourceUpCloudManagedDatabaseDelete,
+		CreateContext: resourceDatabaseCreate(managedDatabaseTypeMySQL),
+		ReadContext:   resourceDatabaseRead,
+		UpdateContext: resourceDatabaseUpdate,
+		DeleteContext: resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: utils.JoinSchemas(
-			schemaUpCloudManagedDatabaseCommon(),
-			schemaUpCloudManagedDatabaseMySQLEngine(),
+			schemaDatabaseCommon(),
+			schemaMySQLEngine(),
 		),
 	}
 }
 
-func schemaUpCloudManagedDatabaseMySQLEngine() map[string]*schema.Schema {
+func schemaMySQLEngine() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"properties": {
 			Description: "Database Engine properties for MySQL",
@@ -32,15 +32,15 @@ func schemaUpCloudManagedDatabaseMySQLEngine() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: utils.JoinSchemas(
-					schemaUpCloudManagedDatabaseCommonProperties(),
-					schemaUpCloudManagedDatabaseMySQLProperties(),
+					schemaDatabaseCommonProperties(),
+					schemaMySQLProperties(),
 				),
 			},
 		},
 	}
 }
 
-func schemaUpCloudManagedDatabaseMySQLProperties() map[string]*schema.Schema {
+func schemaMySQLProperties() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"binlog_retention_period": {
 			Type:        schema.TypeInt,

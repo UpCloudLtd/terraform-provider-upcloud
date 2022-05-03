@@ -1,4 +1,4 @@
-package upcloud
+package database
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
@@ -14,12 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceUpCloudManagedDatabaseLogicalDatabase() *schema.Resource {
+func ResourceLogicalDatabase() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents a logical database in managed database",
-		CreateContext: resourceUpCloudManagedDatabaseLogicalDatabaseCreate,
-		ReadContext:   resourceUpCloudManagedDatabaseLogicalDatabaseRead,
-		DeleteContext: resourceUpCloudManagedDatabaseLogicalDatabaseDelete,
+		CreateContext: resourceLogicalDatabaseCreate,
+		ReadContext:   resourceLogicalDatabaseRead,
+		DeleteContext: resourceLogicalDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
 				serviceID, name := splitManagedDatabaseSubResourceID(data.Id())
@@ -35,11 +36,11 @@ func resourceUpCloudManagedDatabaseLogicalDatabase() *schema.Resource {
 				return []*schema.ResourceData{data}, nil
 			},
 		},
-		Schema: schemaUpCloudManagedDatabaseLogicalDatabase(),
+		Schema: schemaLogicalDatabase(),
 	}
 }
 
-func schemaUpCloudManagedDatabaseLogicalDatabase() map[string]*schema.Schema {
+func schemaLogicalDatabase() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"service": {
 			Description: "Service's UUID for which this user belongs to",
@@ -72,7 +73,7 @@ func schemaUpCloudManagedDatabaseLogicalDatabase() map[string]*schema.Schema {
 	}
 }
 
-func resourceUpCloudManagedDatabaseLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	serviceID := d.Get("service").(string)
@@ -107,10 +108,10 @@ func resourceUpCloudManagedDatabaseLogicalDatabaseCreate(ctx context.Context, d 
 		serviceDetails.Name, d.Get("name").(string),
 		serviceID, d.Get("name").(string))
 
-	return resourceUpCloudManagedDatabaseLogicalDatabaseRead(ctx, d, meta)
+	return resourceLogicalDatabaseRead(ctx, d, meta)
 }
 
-func resourceUpCloudManagedDatabaseLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	serviceID, name := splitManagedDatabaseSubResourceID(d.Id())
@@ -119,7 +120,7 @@ func resourceUpCloudManagedDatabaseLogicalDatabaseRead(ctx context.Context, d *s
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
 			var diags diag.Diagnostics
-			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
+			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
 			d.SetId("")
 			return diags
 		}
@@ -140,7 +141,7 @@ func resourceUpCloudManagedDatabaseLogicalDatabaseRead(ctx context.Context, d *s
 	}
 	if details == nil {
 		var diags diag.Diagnostics
-		diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(
+		diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(
 			&upcloud.Error{
 				ErrorCode:    upcloudLogicalDatabaseNotFoundErrorCode,
 				ErrorMessage: fmt.Sprintf("logical database %q was not found", name),
@@ -153,10 +154,10 @@ func resourceUpCloudManagedDatabaseLogicalDatabaseRead(ctx context.Context, d *s
 	log.Printf("[DEBUG] managed database logical database %v/%v (%v/%v) read",
 		serviceDetails.Name, name,
 		serviceID, name)
-	return copyManagedDatabaseLogicalDatabaseDetailsToResource(d, details)
+	return copyLogicalDatabaseDetailsToResource(d, details)
 }
 
-func resourceUpCloudManagedDatabaseLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	serviceID := d.Get("service").(string)
@@ -188,7 +189,7 @@ func resourceUpCloudManagedDatabaseLogicalDatabaseDelete(ctx context.Context, d 
 	return nil
 }
 
-func copyManagedDatabaseLogicalDatabaseDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedDatabaseLogicalDatabase) diag.Diagnostics {
+func copyLogicalDatabaseDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedDatabaseLogicalDatabase) diag.Diagnostics {
 	setFields := []struct {
 		name string
 		val  interface{}

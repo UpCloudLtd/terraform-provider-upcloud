@@ -8,29 +8,26 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
 const (
-	upcloudAPITimeout                       time.Duration = time.Second * 120
-	upcloudServerNotFoundErrorCode          string        = "SERVER_NOT_FOUND"
-	upcloudStorageNotFoundErrorCode         string        = "STORAGE_NOT_FOUND"
-	upcloudNetworkNotFoundErrorCode         string        = "NETWORK_NOT_FOUND"
-	upcloudRouterNotFoundErrorCode          string        = "ROUTER_NOT_FOUND"
-	upcloudObjectStorageNotFoundErrorCode   string        = "OBJECT_STORAGE_NOT_FOUND"
-	upcloudDatabaseNotFoundErrorCode        string        = "SERVICE_NOT_FOUND"
-	upcloudLogicalDatabaseNotFoundErrorCode string        = "DB_NOT_FOUND"
-	upcloudDatabaseUserNotFoundErrorCode    string        = "USER_NOT_FOUND"
-	upcloudIPAddressNotFoundErrorCode       string        = "IP_ADDRESS_NOT_FOUND"
+	upcloudAPITimeout                     time.Duration = time.Second * 120
+	upcloudServerNotFoundErrorCode        string        = "SERVER_NOT_FOUND"
+	upcloudStorageNotFoundErrorCode       string        = "STORAGE_NOT_FOUND"
+	upcloudNetworkNotFoundErrorCode       string        = "NETWORK_NOT_FOUND"
+	upcloudRouterNotFoundErrorCode        string        = "ROUTER_NOT_FOUND"
+	upcloudObjectStorageNotFoundErrorCode string        = "OBJECT_STORAGE_NOT_FOUND"
+	upcloudIPAddressNotFoundErrorCode     string        = "IP_ADDRESS_NOT_FOUND"
 )
 
 func Provider() *schema.Provider {
@@ -77,10 +74,10 @@ func Provider() *schema.Provider {
 			"upcloud_network":                                 resourceUpCloudNetwork(),
 			"upcloud_floating_ip_address":                     resourceUpCloudFloatingIPAddress(),
 			"upcloud_object_storage":                          resourceUpCloudObjectStorage(),
-			"upcloud_managed_database_postgresql":             resourceUpCloudManagedDatabasePostgreSQL(),
-			"upcloud_managed_database_mysql":                  resourceUpCloudManagedDatabaseMySQL(),
-			"upcloud_managed_database_user":                   resourceUpCloudManagedDatabaseUser(),
-			"upcloud_managed_database_logical_database":       resourceUpCloudManagedDatabaseLogicalDatabase(),
+			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
+			"upcloud_managed_database_mysql":                  database.ResourceMySQL(),
+			"upcloud_managed_database_user":                   database.ResourceUser(),
+			"upcloud_managed_database_logical_database":       database.ResourceLogicalDatabase(),
 			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),
 			"upcloud_loadbalancer_resolver":                   loadbalancer.ResourceResolver(),
 			"upcloud_loadbalancer_backend":                    loadbalancer.ResourceBackend(),
@@ -152,18 +149,4 @@ func isProviderAccountSubaccount(s *service.Service) (bool, error) {
 		return false, err
 	}
 	return a.IsSubaccount(), nil
-}
-
-func diagWarningFromUpcloudErr(err *upcloud.Error, details string) diag.Diagnostic {
-	return diag.Diagnostic{
-		Severity: diag.Warning,
-		Summary:  err.ErrorMessage,
-		Detail:   details,
-	}
-}
-
-func diagBindingRemovedWarningFromUpcloudErr(err *upcloud.Error, name string) diag.Diagnostic {
-	return diagWarningFromUpcloudErr(err,
-		fmt.Sprintf("Binding to an existing remote object '%s' will be removed from the state. Next plan will include action to re-create the object if you choose to keep it in config.", name),
-	)
 }
