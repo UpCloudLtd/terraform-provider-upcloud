@@ -141,7 +141,9 @@ docker start -ai <container ID here>
 ## Debugging
 
 UpCloud provider can be run in debug mode using a debugger such as Delve.  
-For more information, see [Terraform docs](https://www.terraform.io/docs/extend/debugging.html#starting-a-provider-in-debug-mode)
+For more information, see [Terraform docs](https://www.terraform.io/docs/extend/debugging.html#starting-a-provider-in-debug-mode)  
+
+Environment variables `UPCLOUD_DEBUG_API_BASE_URL` and `UPCLOUD_DEBUG_SKIP_CERTIFICATE_VERIFY` can be used for HTTP client debugging purposes. More information can be found in the client's [README](https://github.com/UpCloudLtd/upcloud-go-api/blob/986ca6da9ca85ff51ecacc588215641e2e384cfa/README.md#debugging) file.
 
 ## Consuming local provider with Terraform 0.12.0
 

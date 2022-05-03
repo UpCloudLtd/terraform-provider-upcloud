@@ -11,6 +11,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - server: Delete unused tags created with server resource on server delete
 - server: Improve tags validation: check for case-insensitive duplicates, supress diff when only order of tags changes, print warning when trying to create existing tag with different letter casing
 
+### Changed
+- New upcloud-go-api version v4.5.0
+
 ## [2.4.0] - 2022-04-12
 
 ### Added
