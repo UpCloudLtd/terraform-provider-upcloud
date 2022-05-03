@@ -1,10 +1,11 @@
-package upcloud
+package database
 
 import (
 	"context"
 	"fmt"
 	"log"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
@@ -13,13 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceUpCloudManagedDatabaseUser() *schema.Resource {
+func ResourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents a user in managed database",
-		CreateContext: resourceUpCloudManagedDatabaseUserCreate,
-		ReadContext:   resourceUpCloudManagedDatabaseUserRead,
-		UpdateContext: resourceUpCloudManagedDatabaseUserUpdate,
-		DeleteContext: resourceUpCloudManagedDatabaseUserDelete,
+		CreateContext: resourceUserCreate,
+		ReadContext:   resourceUserRead,
+		UpdateContext: resourceUserUpdate,
+		DeleteContext: resourceUserDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
 				serviceID, user := splitManagedDatabaseSubResourceID(data.Id())
@@ -35,11 +36,11 @@ func resourceUpCloudManagedDatabaseUser() *schema.Resource {
 				return []*schema.ResourceData{data}, nil
 			},
 		},
-		Schema: schemaUpCloudManagedDatabaseUser(),
+		Schema: schemaUser(),
 	}
 }
 
-func schemaUpCloudManagedDatabaseUser() map[string]*schema.Schema {
+func schemaUser() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"service": {
 			Description: "Service's UUID for which this user belongs to",
@@ -69,7 +70,7 @@ func schemaUpCloudManagedDatabaseUser() map[string]*schema.Schema {
 	}
 }
 
-func resourceUpCloudManagedDatabaseUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	if d.HasChange("type") && d.Get("type").(string) != string(upcloud.ManagedDatabaseUserTypeNormal) {
@@ -103,10 +104,10 @@ func resourceUpCloudManagedDatabaseUserCreate(ctx context.Context, d *schema.Res
 		serviceDetails.Name, d.Get("username").(string),
 		serviceID, d.Get("username").(string))
 
-	return resourceUpCloudManagedDatabaseUserRead(ctx, d, meta)
+	return resourceUserRead(ctx, d, meta)
 }
 
-func resourceUpCloudManagedDatabaseUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	serviceID, username := splitManagedDatabaseSubResourceID(d.Id())
@@ -115,7 +116,7 @@ func resourceUpCloudManagedDatabaseUserRead(ctx context.Context, d *schema.Resou
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
 			var diags diag.Diagnostics
-			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
+			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
 			d.SetId("")
 			return diags
 		}
@@ -128,7 +129,7 @@ func resourceUpCloudManagedDatabaseUserRead(ctx context.Context, d *schema.Resou
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseUserNotFoundErrorCode {
 			var diags diag.Diagnostics
-			diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
+			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
 			d.SetId("")
 			return diags
 		}
@@ -138,10 +139,10 @@ func resourceUpCloudManagedDatabaseUserRead(ctx context.Context, d *schema.Resou
 	log.Printf("[DEBUG] managed database user %v/%v (%v/%v) read",
 		serviceDetails.Name, username,
 		serviceID, username)
-	return copyManagedDatabaseUserDetailsToResource(d, userDetails)
+	return copyUserDetailsToResource(d, userDetails)
 }
 
-func resourceUpCloudManagedDatabaseUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	serviceID := d.Get("service").(string)
@@ -171,10 +172,10 @@ func resourceUpCloudManagedDatabaseUserUpdate(ctx context.Context, d *schema.Res
 	log.Printf("[INFO] managed database user %v/%v (%v/%v) deleted",
 		serviceDetails.Name, username,
 		serviceID, username)
-	return resourceUpCloudManagedDatabaseUserRead(ctx, d, meta)
+	return resourceUserRead(ctx, d, meta)
 }
 
-func resourceUpCloudManagedDatabaseUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	if d.Get("type").(string) == string(upcloud.ManagedDatabaseUserTypePrimary) {
@@ -214,7 +215,7 @@ func resourceUpCloudManagedDatabaseUserDelete(ctx context.Context, d *schema.Res
 	return nil
 }
 
-func copyManagedDatabaseUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedDatabaseUser) diag.Diagnostics {
+func copyUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedDatabaseUser) diag.Diagnostics {
 	setFields := []struct {
 		name string
 		val  interface{}
