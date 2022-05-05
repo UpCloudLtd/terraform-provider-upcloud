@@ -10,9 +10,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - server: Remove all tags when tags change into an empty value
 - server: Delete unused tags created with server resource on server delete
 - server: Improve tags validation: check for case-insensitive duplicates, supress diff when only order of tags changes, print warning when trying to create existing tag with different letter casing
+- dbaas: require that both `maintenance_window_time` and `maintenance_window_dow` are set when defining maintenance window
+- dbaas: `maintenance_window_time` format
 
 ### Changed
-- New upcloud-go-api version v4.5.0
+- New upcloud-go-api version v4.5.1
 
 ## [2.4.0] - 2022-04-12
 
