@@ -22,7 +22,8 @@ func main() {
 		ProviderFunc: func() *schema.Provider {
 			return upcloud.Provider()
 		},
-		Debug: debugMode,
+		Debug:        debugMode,
+		ProviderAddr: debugProviderAddr,
 	}
 
 	plugin.Serve(opts)
