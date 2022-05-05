@@ -26,16 +26,18 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Computed:         true,
 			Optional:         true,
+			RequiredWith:     []string{"maintenance_window_time"},
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}, false)),
 		},
 		"maintenance_window_time": {
-			Description: "Maintenance window UTC time in hh:mm:ss format",
-			Type:        schema.TypeString,
-			Computed:    true,
-			Optional:    true,
+			Description:  "Maintenance window UTC time in hh:mm:ss format",
+			Type:         schema.TypeString,
+			Computed:     true,
+			Optional:     true,
+			RequiredWith: []string{"maintenance_window_dow"},
 			ValidateDiagFunc: func(i interface{}, path cty.Path) diag.Diagnostics {
-				if _, err := time.Parse("03:04:05", i.(string)); err != nil {
-					return diag.FromErr(fmt.Errorf("invalid time"))
+				if _, err := time.Parse("15:04:05", i.(string)); err != nil {
+					return diag.FromErr(fmt.Errorf("maintenance_window_time format must be HH:MM:SS"))
 				}
 				return nil
 			},
