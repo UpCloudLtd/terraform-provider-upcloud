@@ -7,6 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - Update terraform-plugin-sdk to v2.15.0
+- Update Go version to 17
 
 ### Fixed
 
