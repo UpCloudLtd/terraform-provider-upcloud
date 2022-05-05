@@ -101,6 +101,8 @@ Upgrading Go version for the project requires the following changes:
 - Change `go-version` argument for `Setup Go` step in [acceptance test GitHub action file](https://github.com/UpCloudLtd/terraform-provider-upcloud/blob/v2.4.1/.github/workflows/terraform.yml)
 - Change `GO_VERSION` argument in [Dockerfile](https://github.com/UpCloudLtd/terraform-provider-upcloud/blob/v2.4.1/release/Dockerfile)
 
+After updating those files, make sure that you can still build the project (`make build`) and that docker image builds without any errors (`docker image build ./release`).
+
 Once that is done it should be safe to release a new version of the provider.
 
 ## Developing in Docker
