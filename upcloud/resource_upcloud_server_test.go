@@ -222,10 +222,10 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 							plan = "dailies"
 						}
 					}`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "0300"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "dailies"),
-				),
+				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+					"time": "0300",
+					"plan": "dailies",
+				}),
 			},
 			{
 				// change simple backup config
@@ -248,10 +248,10 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 							plan = "weeklies"
 						}
 					}`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2200"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "weeklies"),
-				),
+				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+					"time": "2200",
+					"plan": "weeklies",
+				}),
 			},
 			{
 				// replace simple backup with backup rule on the template
@@ -275,10 +275,12 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 						}
 					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.time", "0010"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.interval", "mon"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.retention", "2"),
-					resource.TestCheckNoResourceAttr("upcloud_server.my-server", "simple_backup"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.#", "0"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "template.0.backup_rule.*", map[string]string{
+						"time":      "0010",
+						"interval":  "mon",
+						"retention": "2",
+					}),
 				),
 			},
 			{
@@ -302,11 +304,11 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 							type = "utility"
 						}
 					}`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.time", "0010"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.interval", "tue"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.retention", "3"),
-				),
+				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "template.0.backup_rule.*", map[string]string{
+					"time":      "0010",
+					"interval":  "tue",
+					"retention": "3",
+				}),
 			},
 			{
 				// replace template backup rule back with simple backup
@@ -330,9 +332,11 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 						}
 					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2300"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "dailies"),
-					resource.TestCheckNoResourceAttr("upcloud_server.my-server", "template.0.backup_rule"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.#", "0"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+						"time": "2300",
+						"plan": "dailies",
+					}),
 				),
 			},
 		},
@@ -380,11 +384,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.time", "0100"),
-					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.interval", "mon"),
-					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.retention", "2"),
-				),
+				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_storage.addon", "backup_rule.*", map[string]string{
+					"time":      "0100",
+					"interval":  "mon",
+					"retention": "2",
+				}),
 			},
 			{
 				// replace additional storages backup rule with simple backup
@@ -420,9 +424,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2200"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "dailies"),
-					resource.TestCheckNoResourceAttr("upcloud_storage.addon", "backup_rule"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+						"time": "2200",
+						"plan": "dailies",
+					}),
 				),
 			},
 			{
@@ -459,9 +465,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.time", "2300"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.0.plan", "weeklies"),
-					resource.TestCheckNoResourceAttr("upcloud_storage.addon", "backup_rule"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+						"time": "2300",
+						"plan": "weeklies",
+					}),
 				),
 			},
 
@@ -494,8 +502,8 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckNoResourceAttr("upcloud_server.my-server", "simple_backup"),
-					resource.TestCheckNoResourceAttr("upcloud_storage.addon", "backup_rule"),
+					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.#", "0"),
 				),
 			},
 
@@ -692,9 +700,7 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 							type = "utility"
 						}
 					}`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckNoResourceAttr("upcloud_server.tags-test", "tags"),
-				),
+				Check: resource.TestCheckResourceAttr("upcloud_server.tags-test", "tags.#", "0"),
 			},
 		},
 	})
