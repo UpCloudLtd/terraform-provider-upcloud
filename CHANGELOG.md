@@ -5,10 +5,6 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-### Changed
-- Update terraform-plugin-sdk to v2.15.0
-- Update Go version to 17
-
 ### Fixed
 
 - server: Remove all tags when tags change into an empty value
@@ -19,6 +15,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - New upcloud-go-api version v4.5.1
+- Update terraform-plugin-sdk to v2.15.0
+- Update Go version to 17
 
 ## [2.4.0] - 2022-04-12
 
