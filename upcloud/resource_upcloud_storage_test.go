@@ -177,7 +177,7 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
-	if os.Getenv(resource.TestEnvVar) != "" {
+	if os.Getenv(resource.EnvTfAcc) != "" {
 		var providers []*schema.Provider
 		var storageDetails upcloud.StorageDetails
 

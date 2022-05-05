@@ -1,9 +1,7 @@
 package main // import "github.com/UpCloudLtd/terraform-provider-upcloud"
 
 import (
-	"context"
 	"flag"
-	"log"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -24,14 +22,7 @@ func main() {
 		ProviderFunc: func() *schema.Provider {
 			return upcloud.Provider()
 		},
-	}
-
-	if debugMode {
-		err := plugin.Debug(context.Background(), debugProviderAddr, opts)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		return
+		Debug: debugMode,
 	}
 
 	plugin.Serve(opts)
