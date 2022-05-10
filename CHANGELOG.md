@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+- Update GoReleaser to v1.8.3
+
 ## [2.4.1] - 2022-05-05
 
 ### Fixed
