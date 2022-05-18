@@ -1,4 +1,4 @@
-package upcloud
+package storage
 
 import (
 	"context"
@@ -21,13 +21,15 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
-func resourceUpCloudStorage() *schema.Resource {
+const storageNotFoundErrorCode string = "STORAGE_NOT_FOUND"
+
+func ResourceStorage() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Manages UpCloud storage block devices.",
-		CreateContext: resourceUpCloudStorageCreate,
-		ReadContext:   resourceUpCloudStorageRead,
-		UpdateContext: resourceUpCloudStorageUpdate,
-		DeleteContext: resourceUpCloudStorageDelete,
+		CreateContext: resourceStorageCreate,
+		ReadContext:   resourceStorageRead,
+		UpdateContext: resourceStorageUpdate,
+		DeleteContext: resourceStorageDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -151,7 +153,7 @@ func resourceUpCloudStorage() *schema.Resource {
 	}
 }
 
-func resourceUpCloudStorageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -192,7 +194,7 @@ func resourceUpCloudStorageCreate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	diags = append(diags, resourceUpCloudStorageRead(ctx, d, meta)...)
+	diags = append(diags, resourceStorageRead(ctx, d, meta)...)
 
 	return diags
 }
@@ -366,7 +368,7 @@ func diagAndTidy(client *service.Service, storageUUID string, err error) diag.Di
 	return diag.Errorf("storage import error: %s", err.Error())
 }
 
-func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -377,7 +379,7 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 	storage, err := client.GetStorageDetails(r)
 
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudStorageNotFoundErrorCode {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == storageNotFoundErrorCode {
 			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("title").(string)))
 			d.SetId("")
 			return diags
@@ -465,7 +467,7 @@ func resourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, met
 	return diags
 }
 
-func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
@@ -539,12 +541,12 @@ func resourceUpCloudStorageUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	diags = append(diags, resourceUpCloudStorageRead(ctx, d, meta)...)
+	diags = append(diags, resourceStorageRead(ctx, d, meta)...)
 
 	return diags
 }
 
-func resourceUpCloudStorageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics

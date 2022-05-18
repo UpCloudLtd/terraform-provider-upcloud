@@ -1,4 +1,4 @@
-package upcloud
+package server
 
 import (
 	"context"
@@ -21,12 +21,14 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 )
 
-const serverTitleLength int = 255
+const (
+	serverTitleLength       int    = 255
+	serverNotFoundErrorCode string = "SERVER_NOT_FOUND"
+)
 
-func resourceUpCloudServer() *schema.Resource {
+func ResourceServer() *schema.Resource {
 	return &schema.Resource{
 		Description:   "The UpCloud server resource allows the creation, update and deletion of a server.",
 		CreateContext: resourceUpCloudServerCreate,
@@ -41,7 +43,7 @@ func resourceUpCloudServer() *schema.Resource {
 				Description:      "A valid domain name",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: serverValidateHostnameDiagFunc(1, 128),
+				ValidateDiagFunc: validateHostnameDiagFunc(1, 128),
 			},
 			"title": {
 				Description:  "A short, informational description",
@@ -371,7 +373,7 @@ func resourceUpCloudServer() *schema.Resource {
 		},
 		CustomizeDiff: customdiff.Sequence(
 			// Validate tags here, because in-schema validation is only available for primitive types
-			serverValidateTagsChange,
+			validateTagsChange,
 		),
 	}
 }
@@ -380,11 +382,11 @@ func resourceUpCloudServerCreate(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
-	if err := serverValidatePlan(client, d.Get("plan").(string)); err != nil {
+	if err := validatePlan(client, d.Get("plan").(string)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := serverValidateZone(client, d.Get("zone").(string)); err != nil {
+	if err := validateZone(client, d.Get("zone").(string)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -454,7 +456,7 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 	server, err := client.GetServerDetails(r)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudServerNotFoundErrorCode {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == serverNotFoundErrorCode {
 			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("hostname").(string)))
 			d.SetId("")
 			return diags
@@ -563,37 +565,13 @@ func resourceUpCloudServerRead(ctx context.Context, d *schema.ResourceData, meta
 	return diags
 }
 
-func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d *schema.ResourceData) bool {
-	if !d.HasChange("simple_backup") || !d.HasChange("template.0.backup_rule") {
-		return false
-	}
-
-	sb, sbOk := d.GetOk("simple_backup")
-	if !sbOk {
-		return false
-	}
-
-	simpleBackup := sb.(*schema.Set).List()[0].(map[string]interface{})
-	if simpleBackup["interval"] == "" {
-		return false
-	}
-
-	tbr, tbrOk := d.GetOk("template.0.backup_rule.0")
-	templateBackupRule := tbr.(map[string]interface{})
-	if tbrOk && templateBackupRule["interval"] != "" {
-		return false
-	}
-
-	return true
-}
-
 func resourceUpCloudServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
 	planHasChange := d.HasChange("plan")
 	if planHasChange {
-		if err := serverValidatePlan(client, d.Get("plan").(string)); err != nil {
+		if err := validatePlan(client, d.Get("plan").(string)); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -849,84 +827,6 @@ func resourceUpCloudServerDelete(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-func serverDefaultTitleFromHostname(hostname string) string {
-	const suffix string = " (managed by terraform)"
-	if len(hostname)+len(suffix) > serverTitleLength {
-		hostname = fmt.Sprintf("%s…", hostname[:serverTitleLength-len(suffix)-1])
-	}
-	return fmt.Sprintf("%s%s", hostname, suffix)
-}
-
-func serverValidateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
-	return func(v interface{}, path cty.Path) diag.Diagnostics {
-		var diags diag.Diagnostics
-		val, ok := v.(string)
-		if !ok {
-			diags = append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       "Bad type",
-				Detail:        "expected type to be string",
-				AttributePath: path,
-			})
-			return diags
-		}
-
-		if len(val) < min || len(val) > max {
-			diags = append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       "Hostname length validation failed",
-				Detail:        fmt.Sprintf("expected hostname length to be in the range (%d - %d), got %d", min, max, len(val)),
-				AttributePath: path,
-			})
-			return diags
-		}
-
-		if err := validator.ValidateDomainName(val); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       "Hostname validation failed",
-				Detail:        err.Error(),
-				AttributePath: path,
-			})
-		}
-
-		return diags
-	}
-}
-
-func serverValidatePlan(service *service.Service, plan string) error {
-	if plan == "" {
-		return nil
-	}
-	plans, err := service.GetPlans()
-	if err != nil {
-		return err
-	}
-	availablePlans := make([]string, 0)
-	for _, p := range plans.Plans {
-		if p.Name == plan {
-			return nil
-		}
-		availablePlans = append(availablePlans, p.Name)
-	}
-	return fmt.Errorf("expected plan to be one of [%s], got %s", strings.Join(availablePlans, ", "), plan)
-}
-
-func serverValidateZone(service *service.Service, zone string) error {
-	zones, err := service.GetZones()
-	if err != nil {
-		return err
-	}
-	availableZones := make([]string, 0)
-	for _, z := range zones.Zones {
-		if z.ID == zone {
-			return nil
-		}
-		availableZones = append(availableZones, z.ID)
-	}
-	return fmt.Errorf("expected zone to be one of [%s], got %s", strings.Join(availableZones, ", "), zone)
-}
-
 func serverTagsHasChange(old, new interface{}) bool {
 	// Check how tags would change
 	toAdd, toDelete := server.GetTagChange(utils.ExpandStrings(old), utils.ExpandStrings(new))
@@ -938,34 +838,26 @@ func serverTagsHasChange(old, new interface{}) bool {
 	return true
 }
 
-func serverValidateTagsChange(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
-	{
-		old, new := d.GetChange("tags")
-		if serverTagsHasChange(old, new) {
-			client := meta.(*service.Service)
-
-			if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
-				if err != nil {
-					return err
-				}
-				return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", old, new)
-			}
-		}
-
-		tagsMap := make(map[string]string)
-		var duplicates []string
-
-		for _, tag := range utils.ExpandStrings(d.Get("tags")) {
-			if duplicate, ok := tagsMap[strings.ToLower(tag)]; ok {
-				duplicates = append(duplicates, fmt.Sprintf("%s = %s", duplicate, tag))
-			}
-			tagsMap[strings.ToLower(tag)] = tag
-		}
-
-		if len(duplicates) != 0 {
-			return fmt.Errorf("tags can not contain case-insensitive duplicates (%s)", strings.Join(duplicates, ", "))
-		}
-
-		return nil
+func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d *schema.ResourceData) bool {
+	if !d.HasChange("simple_backup") || !d.HasChange("template.0.backup_rule") {
+		return false
 	}
+
+	sb, sbOk := d.GetOk("simple_backup")
+	if !sbOk {
+		return false
+	}
+
+	simpleBackup := sb.(*schema.Set).List()[0].(map[string]interface{})
+	if simpleBackup["interval"] == "" {
+		return false
+	}
+
+	tbr, tbrOk := d.GetOk("template.0.backup_rule.0")
+	templateBackupRule := tbr.(map[string]interface{})
+	if tbrOk && templateBackupRule["interval"] != "" {
+		return false
+	}
+
+	return true
 }
