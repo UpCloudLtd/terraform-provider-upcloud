@@ -1,4 +1,4 @@
-package upcloud
+package ip
 
 import (
 	"context"
@@ -12,13 +12,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceUpCloudFloatingIPAddress() *schema.Resource {
+const ipAddressNotFoundErrorCode string = "IP_ADDRESS_NOT_FOUND"
+
+func ResourceFloatingIPAddress() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents a UpCloud floating IP address resource.",
-		CreateContext: resourceUpCloudFloatingIPAddressCreate,
-		ReadContext:   resourceUpCloudFloatingIPAddressRead,
-		UpdateContext: resourceUpCloudFloatingIPAddressUpdate,
-		DeleteContext: resourceUpCloudFloatingIPAddressDelete,
+		CreateContext: resourceFloatingIPAddressCreate,
+		ReadContext:   resourceFloatingIPAddressRead,
+		UpdateContext: resourceFloatingIPAddressUpdate,
+		DeleteContext: resourceFloatingIPAddressDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -58,7 +60,7 @@ func resourceUpCloudFloatingIPAddress() *schema.Resource {
 	}
 }
 
-func resourceUpCloudFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	assignIPAddressRequest := &request.AssignIPAddressRequest{
@@ -90,10 +92,10 @@ func resourceUpCloudFloatingIPAddressCreate(ctx context.Context, d *schema.Resou
 
 	d.SetId(ipAddress.Address)
 
-	return resourceUpCloudFloatingIPAddressRead(ctx, d, meta)
+	return resourceFloatingIPAddressRead(ctx, d, meta)
 }
 
-func resourceUpCloudFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -105,7 +107,7 @@ func resourceUpCloudFloatingIPAddressRead(ctx context.Context, d *schema.Resourc
 	ipAddress, err := client.GetIPAddressDetails(getIPAddressDetailsRequest)
 
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudIPAddressNotFoundErrorCode {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == ipAddressNotFoundErrorCode {
 			name := "ip address" // set default name because ip_address is optional field
 			if ip, ok := d.GetOk("ip_address"); ok {
 				name = ip.(string)
@@ -140,7 +142,7 @@ func resourceUpCloudFloatingIPAddressRead(ctx context.Context, d *schema.Resourc
 	return diags
 }
 
-func resourceUpCloudFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	modifyIPAddressRequest := &request.ModifyIPAddressRequest{
@@ -157,10 +159,10 @@ func resourceUpCloudFloatingIPAddressUpdate(ctx context.Context, d *schema.Resou
 		diag.FromErr(err)
 	}
 
-	return resourceUpCloudFloatingIPAddressRead(ctx, d, meta)
+	return resourceFloatingIPAddressRead(ctx, d, meta)
 }
 
-func resourceUpCloudFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics

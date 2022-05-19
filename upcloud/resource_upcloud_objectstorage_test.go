@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
@@ -18,17 +19,23 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-const objectStorageTestExpectedDescription = "My object storage"
-const objectStorageTestExpectedZone = "pl-waw1"
-const objectStorageTestExpectedKey = "an access key"
-const objectStorageTestExpectedSecret = "a secret key"
-const objectStorageTestRunPrefix = "testacc-"
+const (
+	objectStorageTestExpectedDescription = "My object storage"
+	objectStorageTestExpectedZone        = "pl-waw1"
+	objectStorageTestExpectedKey         = "an access key"
+	objectStorageTestExpectedSecret      = "a secret key"
+	objectStorageTestRunPrefix           = "testacc-"
+	accessKeyEnvVarPrefix                = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
+	secretKeyEnvVarPrefix                = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
+)
 
-var objectStorageTestRunID = time.Now().Unix()
-var objectStorageTestExpectedName1 = fmt.Sprintf("%s%d-1", objectStorageTestRunPrefix, objectStorageTestRunID)
-var objectStorageTestExpectedName2 = fmt.Sprintf("%s%d-2", objectStorageTestRunPrefix, objectStorageTestRunID)
-var objectStorageTestExpectedName3 = fmt.Sprintf("%s%d-3", objectStorageTestRunPrefix, objectStorageTestRunID)
-var objectStorageTestExpectedName4 = fmt.Sprintf("%s%d-4", objectStorageTestRunPrefix, objectStorageTestRunID)
+var (
+	objectStorageTestRunID         = time.Now().Unix()
+	objectStorageTestExpectedName1 = fmt.Sprintf("%s%d-1", objectStorageTestRunPrefix, objectStorageTestRunID)
+	objectStorageTestExpectedName2 = fmt.Sprintf("%s%d-2", objectStorageTestRunPrefix, objectStorageTestRunID)
+	objectStorageTestExpectedName3 = fmt.Sprintf("%s%d-3", objectStorageTestRunPrefix, objectStorageTestRunID)
+	objectStorageTestExpectedName4 = fmt.Sprintf("%s%d-4", objectStorageTestRunPrefix, objectStorageTestRunID)
+)
 
 func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
@@ -486,7 +493,7 @@ func getMinioConnection(state *terraform.State, accessKey, secretKey string) (*m
 		return nil, fmt.Errorf("could not find resources")
 	}
 
-	return getBucketConnection(resources.Primary.Attributes["url"], accessKey, secretKey)
+	return objectstorage.GetBucketConnection(resources.Primary.Attributes["url"], accessKey, secretKey)
 }
 
 func verifyBucketExists(accessKey, secretKey, name, bucketName string) resource.TestCheckFunc {

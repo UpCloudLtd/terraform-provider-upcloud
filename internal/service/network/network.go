@@ -1,4 +1,4 @@
-package upcloud
+package network
 
 import (
 	"context"
@@ -16,13 +16,15 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 )
 
-func resourceUpCloudNetwork() *schema.Resource {
+const networkNotFoundErrorCode string = "NETWORK_NOT_FOUND"
+
+func ResourceNetwork() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents an SDN private network that cloud servers from the same zone can be attached to.",
-		ReadContext:   resourceUpCloudNetworkRead,
-		CreateContext: resourceUpCloudNetworkCreate,
-		UpdateContext: resourceUpCloudNetworkUpdate,
-		DeleteContext: resourceUpCloudNetworkDelete,
+		ReadContext:   resourceNetworkRead,
+		CreateContext: resourceNetworkCreate,
+		UpdateContext: resourceNetworkUpdate,
+		DeleteContext: resourceNetworkDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -116,7 +118,7 @@ func resourceUpCloudNetwork() *schema.Resource {
 	}
 }
 
-func resourceUpCloudNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	req := request.CreateNetworkRequest{}
@@ -158,10 +160,10 @@ func resourceUpCloudNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 
 	d.SetId(network.UUID)
 
-	return resourceUpCloudNetworkRead(ctx, d, meta)
+	return resourceNetworkRead(ctx, d, meta)
 }
 
-func resourceUpCloudNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	req := request.GetNetworkDetailsRequest{
@@ -170,7 +172,7 @@ func resourceUpCloudNetworkRead(ctx context.Context, d *schema.ResourceData, met
 
 	network, err := client.GetNetworkDetails(&req)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudNetworkNotFoundErrorCode {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == networkNotFoundErrorCode {
 			var diags diag.Diagnostics
 			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
 			d.SetId("")
@@ -211,7 +213,7 @@ func resourceUpCloudNetworkRead(ctx context.Context, d *schema.ResourceData, met
 	return nil
 }
 
-func resourceUpCloudNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	req := request.ModifyNetworkRequest{
@@ -266,7 +268,7 @@ func resourceUpCloudNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func resourceUpCloudNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	req := request.DeleteNetworkRequest{

@@ -1,4 +1,4 @@
-package upcloud
+package tag
 
 import (
 	"context"
@@ -10,10 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceUpCloudTags() *schema.Resource {
+func DataSourceTags() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data-source is deprecated.",
-		ReadContext: dataSourceUpCloudTagsRead,
+		ReadContext: dataSourceTagsRead,
 		Schema: map[string]*schema.Schema{
 			"tags": {
 				Type:     schema.TypeSet,
@@ -45,7 +45,7 @@ func dataSourceUpCloudTags() *schema.Resource {
 	}
 }
 
-func dataSourceUpCloudTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics

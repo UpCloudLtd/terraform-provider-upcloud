@@ -1,4 +1,4 @@
-package upcloud
+package ip
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceUpCloudIPAddresses() *schema.Resource {
+func DataSourceIPAddresses() *schema.Resource {
 	return &schema.Resource{
 		Description: "Returns a set of IP Addresses that are associated with the UpCloud account.",
-		ReadContext: dataSourceUpCloudIPAddressesRead,
+		ReadContext: dataSourceIPAddressesRead,
 		Schema: map[string]*schema.Schema{
 			"addresses": {
 				Type:     schema.TypeSet,
@@ -71,7 +71,7 @@ func dataSourceUpCloudIPAddresses() *schema.Resource {
 	}
 }
 
-func dataSourceUpCloudIPAddressesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceIPAddressesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
