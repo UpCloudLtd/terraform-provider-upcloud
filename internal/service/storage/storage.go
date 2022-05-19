@@ -16,8 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/server"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
@@ -133,7 +131,7 @@ func ResourceStorage() *schema.Resource {
 					},
 				},
 			},
-			"backup_rule": storage.BackupRuleSchema(),
+			"backup_rule": BackupRuleSchema(),
 			"filesystem_autoresize": {
 				Description: `If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes.
 				Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
@@ -197,175 +195,6 @@ func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta int
 	diags = append(diags, resourceStorageRead(ctx, d, meta)...)
 
 	return diags
-}
-
-func cloneStorage(
-	client *service.Service,
-	size int,
-	tier string,
-	title string,
-	zone string,
-	d *schema.ResourceData) diag.Diagnostics {
-	cloneStorageRequest := request.CloneStorageRequest{
-		Zone:  zone,
-		Tier:  tier,
-		Title: title,
-	}
-
-	if v, ok := d.GetOk("clone"); ok {
-		block := v.(*schema.Set).List()[0].(map[string]interface{})
-		cloneStorageRequest.UUID = block["id"].(string)
-	}
-
-	originalStorageDevice, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
-		UUID:         cloneStorageRequest.UUID,
-		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if originalStorageDevice.Size > size {
-		return diag.Errorf("cloned storage device should be at least the same size as the original one")
-	}
-
-	storage, err := client.CloneStorage(&cloneStorageRequest)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	storage, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
-		UUID:         storage.UUID,
-		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// If the storage specified does not match the cloned storage, modify it so that it does.
-	if storage.Size != size {
-		storage, err := client.ModifyStorage(&request.ModifyStorageRequest{
-			UUID: storage.UUID,
-			Size: size,
-		})
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
-			UUID:         storage.UUID,
-			DesiredState: upcloud.StorageStateOnline,
-			Timeout:      15 * time.Minute,
-		})
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	d.SetId(storage.UUID)
-
-	return nil
-}
-
-func createStorage(
-	client *service.Service,
-	size int,
-	tier string,
-	title string,
-	zone string,
-	d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	createStorageRequest := request.CreateStorageRequest{
-		Size:  size,
-		Tier:  tier,
-		Title: title,
-		Zone:  zone,
-	}
-
-	var importReq *request.CreateStorageImportRequest
-	if v, ok := d.GetOk("import"); ok {
-		importReq = &request.CreateStorageImportRequest{}
-		importBlock := v.(*schema.Set).List()[0].(map[string]interface{})
-		if impV, ok := importBlock["source"]; ok {
-			importReq.Source = impV.(string)
-		}
-		if impV, ok := importBlock["source_location"]; ok {
-			importReq.SourceLocation = impV.(string)
-		}
-	}
-
-	if v, ok := d.GetOk("backup_rule.0"); ok {
-		createStorageRequest.BackupRule = storage.BackupRule(v.(map[string]interface{}))
-	}
-
-	storage, err := client.CreateStorage(&createStorageRequest)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Wait for storage to enter the 'online' state. For a fresh storage device
-	// this is pretty quick.
-	_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
-		UUID:         storage.UUID,
-		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if importReq != nil {
-		importReq.StorageUUID = storage.UUID
-		_, err := client.CreateStorageImport(importReq)
-		if err != nil {
-			return diagAndTidy(client, storage.UUID, err)
-		}
-
-		_, err = client.WaitForStorageImportCompletion(&request.WaitForStorageImportCompletionRequest{
-			StorageUUID: storage.UUID,
-			Timeout:     15 * time.Minute,
-		})
-		if err != nil {
-			return diagAndTidy(client, storage.UUID, err)
-		}
-
-		// Imported storage will enter a 'syncing' state for a while. Storage in this
-		// state can be used by a server so we will wait for that to allow progress.
-		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
-			UUID:         storage.UUID,
-			DesiredState: upcloud.StorageStateSyncing,
-			Timeout:      15 * time.Minute,
-		})
-		if err != nil {
-			return diagAndTidy(client, storage.UUID, err)
-		}
-	}
-
-	d.SetId(storage.UUID)
-
-	return diags
-}
-
-func diagAndTidy(client *service.Service, storageUUID string, err error) diag.Diagnostics {
-	_, waitErr := client.WaitForStorageState(&request.WaitForStorageStateRequest{
-		UUID:         storageUUID,
-		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
-	})
-	if waitErr != nil {
-		return diag.Errorf("wait for storage after import error: %s", waitErr.Error())
-	}
-
-	delErr := client.DeleteStorage(&request.DeleteStorageRequest{
-		UUID: storageUUID,
-	})
-	if delErr != nil {
-		return diag.Errorf("delete storage after import error: %s", delErr.Error())
-	}
-	return diag.Errorf("storage import error: %s", err.Error())
 }
 
 func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -488,7 +317,7 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 
 	if d.HasChange("backup_rule") {
 		if br, ok := d.GetOk("backup_rule.0"); ok {
-			backupRule := storage.BackupRule(br.(map[string]interface{}))
+			backupRule := BackupRule(br.(map[string]interface{}))
 			if backupRule.Interval == "" {
 				req.BackupRule = &upcloud.BackupRule{}
 			} else {
@@ -505,7 +334,7 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	// need to shut down server if resizing
 	if len(storageDetails.ServerUUIDs) > 0 && d.HasChange("size") {
-		err := server.VerifyServerStopped(request.StopServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
+		err := utils.VerifyServerStopped(request.StopServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -514,7 +343,7 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if d.Get("filesystem_autoresize").(bool) {
-			diags = append(diags, storage.ResizeStoragePartitionAndFs(
+			diags = append(diags, ResizeStoragePartitionAndFs(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -523,7 +352,7 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
-		if err = server.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta); err != nil {
+		if err = utils.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta); err != nil {
 			return diag.FromErr(err)
 		}
 	} else {
@@ -532,7 +361,7 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if d.HasChange("size") && d.Get("filesystem_autoresize").(bool) {
-			diags = append(diags, storage.ResizeStoragePartitionAndFs(
+			diags = append(diags, ResizeStoragePartitionAndFs(
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -583,7 +412,7 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
 			// ide devices can only be detached from stopped servers
 			if strings.HasPrefix(storageDevice.Address, "ide") {
-				err = server.VerifyServerStopped(request.StopServerRequest{UUID: serverUUID}, meta)
+				err = utils.VerifyServerStopped(request.StopServerRequest{UUID: serverUUID}, meta)
 				if err != nil {
 					return diag.FromErr(err)
 				}
@@ -598,7 +427,7 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
 				// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
-				if err = server.VerifyServerStarted(request.StartServerRequest{UUID: serverUUID}, meta); err != nil {
+				if err = utils.VerifyServerStarted(request.StartServerRequest{UUID: serverUUID}, meta); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -615,21 +444,4 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	return diags
-}
-
-func isStorageSimpleBackupEnabled(service *service.Service, storageID string) (bool, error) {
-	details, err := service.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: storageID})
-	if err != nil {
-		return false, err
-	}
-	for _, srvID := range details.ServerUUIDs {
-		srv, err := service.GetServerDetails(&request.GetServerDetailsRequest{UUID: srvID})
-		if err != nil {
-			return false, err
-		}
-		if srv.SimpleBackup != "no" {
-			return true, nil
-		}
-	}
-	return false, nil
 }

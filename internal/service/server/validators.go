@@ -84,33 +84,31 @@ func validateZone(service *service.Service, zone string) error {
 }
 
 func validateTagsChange(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
-	{
-		old, new := d.GetChange("tags")
-		if serverTagsHasChange(old, new) {
-			client := meta.(*service.Service)
+	old, new := d.GetChange("tags")
+	if tagsHasChange(old, new) {
+		client := meta.(*service.Service)
 
-			if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
-				if err != nil {
-					return err
-				}
-				return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", old, new)
+		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
+			if err != nil {
+				return err
 			}
+			return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", old, new)
 		}
-
-		tagsMap := make(map[string]string)
-		var duplicates []string
-
-		for _, tag := range utils.ExpandStrings(d.Get("tags")) {
-			if duplicate, ok := tagsMap[strings.ToLower(tag)]; ok {
-				duplicates = append(duplicates, fmt.Sprintf("%s = %s", duplicate, tag))
-			}
-			tagsMap[strings.ToLower(tag)] = tag
-		}
-
-		if len(duplicates) != 0 {
-			return fmt.Errorf("tags can not contain case-insensitive duplicates (%s)", strings.Join(duplicates, ", "))
-		}
-
-		return nil
 	}
+
+	tagsMap := make(map[string]string)
+	var duplicates []string
+
+	for _, tag := range utils.ExpandStrings(d.Get("tags")) {
+		if duplicate, ok := tagsMap[strings.ToLower(tag)]; ok {
+			duplicates = append(duplicates, fmt.Sprintf("%s = %s", duplicate, tag))
+		}
+		tagsMap[strings.ToLower(tag)] = tag
+	}
+
+	if len(duplicates) != 0 {
+		return fmt.Errorf("tags can not contain case-insensitive duplicates (%s)", strings.Join(duplicates, ", "))
+	}
+
+	return nil
 }
