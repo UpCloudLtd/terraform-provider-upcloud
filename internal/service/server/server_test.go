@@ -1,6 +1,26 @@
 package server
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
+
+func TestServerDefaultTitle(t *testing.T) {
+	longHostname := strings.Repeat("x", 255)
+	suffixLength := 24
+	want := fmt.Sprintf("%s… (managed by terraform)", longHostname[0:255-suffixLength])
+	got := defaultTitleFromHostname(longHostname)
+	if want != got {
+		t.Errorf("defaultTitleFromHostname failed want '%s' got '%s'", want, got)
+	}
+
+	want = "terraform (managed by terraform)"
+	got = defaultTitleFromHostname("terraform")
+	if want != got {
+		t.Errorf("defaultTitleFromHostname failed want '%s' got '%s'", want, got)
+	}
+}
 
 func TestBuildSimpleBackupOpts_basic(t *testing.T) {
 	attrs := map[string]interface{}{
@@ -8,7 +28,7 @@ func TestBuildSimpleBackupOpts_basic(t *testing.T) {
 		"plan": "weeklies",
 	}
 
-	sb := BuildSimpleBackupOpts(attrs)
+	sb := buildSimpleBackupOpts(attrs)
 	expected := "2200,weeklies"
 
 	if sb != expected {
@@ -24,7 +44,7 @@ func TestBuildSimpleBackupOpts_withInvalidInput(t *testing.T) {
 		"retetion": 7,
 	}
 
-	sb := BuildSimpleBackupOpts(attrs)
+	sb := buildSimpleBackupOpts(attrs)
 	expected := "no"
 
 	if sb != expected {

@@ -1,4 +1,4 @@
-package upcloud
+package storage
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func dataSourceUpCloudStorage() *schema.Resource {
+func DataSourceStorage() *schema.Resource {
 	storageAccessTypes := []string{
 		upcloud.StorageAccessPublic,
 		upcloud.StorageAccessPrivate,
@@ -34,7 +34,7 @@ Returns storage resource information based on defined arguments.
 Data object can be used to map storage to other resource based on the ID or just to read some other storage property like zone information.  
 Storage types are: %s`, strings.Join(storageTypes, ", ")),
 
-		ReadContext: dataSourceUpCloudStorageRead,
+		ReadContext: dataSourceStorageRead,
 		Schema: map[string]*schema.Schema{
 			"type": {
 				Description: fmt.Sprintf("Storage type (%s). Use 'favorite' as type to filter storages on the list of favorites.", strings.Join(storageTypes, ", ")),
@@ -100,7 +100,7 @@ Storage types are: %s`, strings.Join(storageTypes, ", ")),
 	}
 }
 
-func dataSourceUpCloudStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+func dataSourceStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var re *regexp.Regexp
 

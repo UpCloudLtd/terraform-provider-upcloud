@@ -9,21 +9,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/server"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
 const (
 	upcloudAPITimeout                     time.Duration = time.Second * 120
-	upcloudServerNotFoundErrorCode        string        = "SERVER_NOT_FOUND"
-	upcloudStorageNotFoundErrorCode       string        = "STORAGE_NOT_FOUND"
 	upcloudNetworkNotFoundErrorCode       string        = "NETWORK_NOT_FOUND"
 	upcloudRouterNotFoundErrorCode        string        = "ROUTER_NOT_FOUND"
 	upcloudObjectStorageNotFoundErrorCode string        = "OBJECT_STORAGE_NOT_FOUND"
@@ -66,9 +65,9 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server":                                  resourceUpCloudServer(),
+			"upcloud_server":                                  server.ResourceServer(),
 			"upcloud_router":                                  resourceUpCloudRouter(),
-			"upcloud_storage":                                 resourceUpCloudStorage(),
+			"upcloud_storage":                                 storage.ResourceStorage(),
 			"upcloud_firewall_rules":                          resourceUpCloudFirewallRules(),
 			"upcloud_tag":                                     resourceUpCloudTag(),
 			"upcloud_network":                                 resourceUpCloudNetwork(),
@@ -97,7 +96,7 @@ func Provider() *schema.Provider {
 			"upcloud_hosts":        dataSourceUpCloudHosts(),
 			"upcloud_ip_addresses": dataSourceUpCloudIPAddresses(),
 			"upcloud_tags":         dataSourceUpCloudTags(),
-			"upcloud_storage":      dataSourceUpCloudStorage(),
+			"upcloud_storage":      storage.DataSourceStorage(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
@@ -137,16 +136,4 @@ func newUpCloudServiceConnection(username, password string, httpClient *http.Cli
 	client.SetTimeout(upcloudAPITimeout)
 
 	return service.New(client)
-}
-
-func isProviderAccountSubaccount(s *service.Service) (bool, error) {
-	account, err := s.GetAccount()
-	if err != nil {
-		return false, err
-	}
-	a, err := s.GetAccountDetails(&request.GetAccountDetailsRequest{Username: account.UserName})
-	if err != nil {
-		return false, err
-	}
-	return a.IsSubaccount(), nil
 }
