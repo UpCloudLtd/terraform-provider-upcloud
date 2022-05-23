@@ -1,4 +1,4 @@
-package upcloud
+package router
 
 import (
 	"context"
@@ -12,15 +12,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceUpCloudRouter() *schema.Resource {
+const routerNotFoundErrorCode string = "ROUTER_NOT_FOUND"
+
+func ResourceRouter() *schema.Resource {
 	return &schema.Resource{
 		Description: `This resource represents a generated UpCloud router resource. 
 		Routers can be used to connect multiple Private Networks. 
 		UpCloud Servers on any attached network can communicate directly with each other.`,
-		CreateContext: resourceUpCloudRouterCreate,
-		ReadContext:   resourceUpCloudRouterRead,
-		UpdateContext: resourceUpCloudRouterUpdate,
-		DeleteContext: resourceUpCloudRouterDelete,
+		CreateContext: resourceRouterCreate,
+		ReadContext:   resourceRouterRead,
+		UpdateContext: resourceRouterUpdate,
+		DeleteContext: resourceRouterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -47,7 +49,7 @@ func resourceUpCloudRouter() *schema.Resource {
 	}
 }
 
-func resourceUpCloudRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -77,7 +79,7 @@ func resourceUpCloudRouterCreate(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-func resourceUpCloudRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -89,7 +91,7 @@ func resourceUpCloudRouterRead(ctx context.Context, d *schema.ResourceData, meta
 	router, err := client.GetRouterDetails(opts)
 
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudRouterNotFoundErrorCode {
+		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == routerNotFoundErrorCode {
 			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
 			d.SetId("")
 			return diags
@@ -116,7 +118,7 @@ func resourceUpCloudRouterRead(ctx context.Context, d *schema.ResourceData, meta
 	return diags
 }
 
-func resourceUpCloudRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	opts := &request.ModifyRouterRequest{
@@ -133,10 +135,10 @@ func resourceUpCloudRouterUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	return resourceUpCloudRouterRead(ctx, d, meta)
+	return resourceRouterRead(ctx, d, meta)
 }
 
-func resourceUpCloudRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 	var diags diag.Diagnostics
 

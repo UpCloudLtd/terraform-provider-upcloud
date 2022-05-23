@@ -1,18 +1,14 @@
-package upcloud
+package objectstorage
 
 import (
 	"context"
-	"fmt"
 	"net/url"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -20,16 +16,21 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-const bucketKey = "bucket"
-const numRetries = 5
-const accessKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
-const secretKeyEnvVarPrefix = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
-const accessKeyMinLength = 4
-const accessKeyMaxLength = 255
-const secretKeyMinLength = 8
-const secretKeyMaxLength = 255
+const (
+	upcloudObjectStorageNotFoundErrorCode string = "OBJECT_STORAGE_NOT_FOUND"
+	bucketKey                             string = "bucket"
+	accessKeyEnvVarPrefix                 string = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
+	secretKeyEnvVarPrefix                 string = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
+	numRetries                            int    = 5
+	accessKeyMinLength                    int    = 4
+	accessKeyMaxLength                    int    = 255
+	secretKeyMinLength                    int    = 8
+	secretKeyMaxLength                    int    = 255
+)
 
-func resourceUpCloudObjectStorage() *schema.Resource {
+type objectStorageKeyType string
+
+func ResourceObjectStorage() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.",
 		CreateContext: resourceObjectStorageCreate,
@@ -156,7 +157,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	if v, ok := d.GetOk(bucketKey); ok {
-		conn, err := getBucketConnection(objStorage.URL, req.AccessKey, req.SecretKey)
+		conn, err := GetBucketConnection(objStorage.URL, req.AccessKey, req.SecretKey)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -233,7 +234,7 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	if d.HasChange(bucketKey) {
-		conn, err := getBucketConnection(
+		conn, err := GetBucketConnection(
 			d.Get("url").(string),
 			accessKey,
 			secretKey,
@@ -323,91 +324,6 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	return diag.Diagnostics{}
 }
 
-func getBucketConnection(URL, accessKey, secretKey string) (*minio.Client, error) {
-	urlObj, err := url.Parse(URL)
-	if err != nil {
-		return nil, err
-	}
-
-	return minio.New(urlObj.Host, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-		Secure: true,
-	})
-}
-
-func getNewAndDeletedBucketNames(d *schema.ResourceData) ([]string, []string) {
-	beforeNames := make([]string, 0)
-	afterNames := make([]string, 0)
-
-	before, after := d.GetChange(bucketKey)
-
-	for _, item := range before.(*schema.Set).List() {
-		valueMap := item.(map[string]interface{})
-		beforeNames = append(beforeNames, valueMap["name"].(string))
-	}
-
-	for _, item := range after.(*schema.Set).List() {
-		valueMap := item.(map[string]interface{})
-		afterNames = append(afterNames, valueMap["name"].(string))
-	}
-
-	return getMissing(beforeNames, afterNames), getMissing(afterNames, beforeNames)
-}
-
-func getMissing(expected, found []string) []string {
-	var missing []string
-	for _, expectedName := range expected {
-		nameFound := false
-		for _, foundName := range found {
-			if foundName == expectedName {
-				nameFound = true
-				break
-			}
-		}
-
-		if !nameFound {
-			if missing == nil {
-				missing = make([]string, 0, 1)
-			}
-
-			missing = append(missing, expectedName)
-		}
-	}
-
-	return missing
-}
-
-func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
-	conn, err := getBucketConnection(URL, accessKey, secretKey)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// sometimes fails here because the buckets aren't redy yet
-	var bucketInfo []minio.BucketInfo
-	for trys := 0; trys < numRetries; trys++ {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-		bucketInfo, err = conn.ListBuckets(ctx)
-		cancel()
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	bucketNames := make([]map[string]interface{}, 0, len(bucketInfo))
-	for _, bucket := range bucketInfo {
-		bucketNames = append(bucketNames, map[string]interface{}{"name": bucket.Name})
-	}
-
-	return bucketNames, nil
-}
-
 func createObjectStorage(client *service.Service, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
 		err        error
@@ -439,120 +355,45 @@ func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStora
 	return objStorage, err
 }
 
-// Attempts to get access key.
-// Second return value is a bool, set to true if key value was retrieved from env variable
-func getAccessKey(d *schema.ResourceData) (string, bool, error) {
-	configVal := d.Get("access_key").(string)
+func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
+	conn, err := GetBucketConnection(URL, accessKey, secretKey)
 
-	// If config value is set to something else then empty string, just use it
-	if configVal != "" {
-		return configVal, false, nil
+	if err != nil {
+		return nil, err
 	}
 
-	// If config value is empty string, use environment variable
-	objectStorageName := d.Get("name").(string)
-	envVarKey := generateObjectStorageEnvVarKey(accessKeyEnvVarPrefix, objectStorageName)
-	envVarValue, envVarSet := os.LookupEnv(envVarKey)
-
-	if !envVarSet {
-		return "", false, fmt.Errorf("access_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
+	// sometimes fails here because the buckets aren't redy yet
+	var bucketInfo []minio.BucketInfo
+	for trys := 0; trys < numRetries; trys++ {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+		bucketInfo, err = conn.ListBuckets(ctx)
+		cancel()
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
 	}
 
-	length := len(envVarValue)
-
-	if length < accessKeyMinLength {
-		return "", false, fmt.Errorf("access_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, accessKeyMinLength, length)
+	if err != nil {
+		return nil, err
 	}
 
-	if length > accessKeyMaxLength {
-		return "", false, fmt.Errorf("access_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, accessKeyMaxLength, length)
+	bucketNames := make([]map[string]interface{}, 0, len(bucketInfo))
+	for _, bucket := range bucketInfo {
+		bucketNames = append(bucketNames, map[string]interface{}{"name": bucket.Name})
 	}
 
-	return envVarValue, true, nil
+	return bucketNames, nil
 }
 
-// Attempts to get secret key.
-// Second return value is a bool, set to true if key value was revtrived from env variable
-func getSecretKey(d *schema.ResourceData) (string, bool, error) {
-	configVal := d.Get("secret_key").(string)
-
-	// If config value is set to something else then empty string, just use it
-	if configVal != "" {
-		return configVal, false, nil
+func GetBucketConnection(URL, accessKey, secretKey string) (*minio.Client, error) {
+	urlObj, err := url.Parse(URL)
+	if err != nil {
+		return nil, err
 	}
 
-	// If config value is empty string, use environment variable
-	objectStorageName := d.Get("name").(string)
-	envVarKey := generateObjectStorageEnvVarKey(secretKeyEnvVarPrefix, objectStorageName)
-	envVarValue, envVarSet := os.LookupEnv(envVarKey)
-
-	if !envVarSet {
-		return "", false, fmt.Errorf("secret_key config field for object storage %s is set to empty string and environment variable %s is not set", objectStorageName, envVarKey)
-	}
-
-	length := len(envVarValue)
-
-	if length < secretKeyMinLength {
-		return "", false, fmt.Errorf("secret_key set in environment variable %s is too short; minimum length is %d, got %d", envVarKey, secretKeyMinLength, length)
-	}
-
-	if length > secretKeyMaxLength {
-		return "", false, fmt.Errorf("secret_key set in environment variable %s is too long; maximum length is %d, got %d", envVarKey, secretKeyMaxLength, length)
-	}
-
-	return envVarValue, true, nil
-}
-
-func generateObjectStorageEnvVarKey(prefix, objectStorageName string) string {
-	name := strings.ToUpper(strings.Replace(objectStorageName, "-", "_", -1))
-	return fmt.Sprintf("%s%s", prefix, name)
-}
-
-type objectStorageKeyType string
-
-func createKeyValidationFunc(attrName objectStorageKeyType, minLength, maxLength int) schema.SchemaValidateDiagFunc {
-	const (
-		objectStorageKeyTypeAccess objectStorageKeyType = "access_key"
-		objectStorageKeyTypeSecret objectStorageKeyType = "secret_key"
-	)
-
-	return func(val interface{}, path cty.Path) diag.Diagnostics {
-		key, ok := val.(string)
-
-		if !ok {
-			return diag.Errorf("expected type of %v to be string", val)
-		}
-
-		// For access and secret keys empty string means that they should be taken from env vars
-		if key == "" {
-			var envVarPrefix string
-
-			switch attrName {
-			case objectStorageKeyTypeAccess:
-				envVarPrefix = accessKeyEnvVarPrefix
-			case objectStorageKeyTypeSecret:
-				envVarPrefix = secretKeyEnvVarPrefix
-			default:
-				return diag.Errorf("unknown attribute name for creating object storage keys validation function: %s; this is a provider error", attrName)
-			}
-
-			if !utils.EnvKeyExists(envVarPrefix) {
-				return diag.Errorf("%s set to empty string, but no environment variables for it found (%s{NAME})", attrName, envVarPrefix)
-			}
-
-			return diag.Diagnostics{}
-		}
-
-		length := len(key)
-
-		if length < minLength {
-			return diag.Errorf("%s too short; minimum length is %d, got %d", attrName, minLength, length)
-		}
-
-		if length > maxLength {
-			return diag.Errorf("%s too long; max length is %d, got %d", attrName, maxLength, length)
-		}
-
-		return diag.Diagnostics{}
-	}
+	return minio.New(urlObj.Host, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: true,
+	})
 }

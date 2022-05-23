@@ -1,4 +1,4 @@
-package upcloud
+package tag
 
 import (
 	"context"
@@ -12,13 +12,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceUpCloudTag() *schema.Resource {
+func ResourceTag() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource is deprecated, use tags schema in server resource",
-		CreateContext: resourceUpCloudTagCreate,
-		ReadContext:   resourceUpCloudTagRead,
-		UpdateContext: resourceUpCloudTagUpdate,
-		DeleteContext: resourceUpCloudTagDelete,
+		CreateContext: resourceTagCreate,
+		ReadContext:   resourceTagRead,
+		UpdateContext: resourceTagUpdate,
+		DeleteContext: resourceTagDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -49,7 +49,7 @@ func resourceUpCloudTag() *schema.Resource {
 	}
 }
 
-func resourceUpCloudTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	createTagRequest := &request.CreateTagRequest{
@@ -78,10 +78,10 @@ func resourceUpCloudTagCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(tag.Name)
 
-	return resourceUpCloudTagRead(ctx, d, meta)
+	return resourceTagRead(ctx, d, meta)
 }
 
-func resourceUpCloudTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -126,7 +126,7 @@ func resourceUpCloudTagRead(ctx context.Context, d *schema.ResourceData, meta in
 	return diags
 }
 
-func resourceUpCloudTagUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	r := &request.ModifyTagRequest{
@@ -155,10 +155,10 @@ func resourceUpCloudTagUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	return resourceUpCloudTagRead(ctx, d, meta)
+	return resourceTagRead(ctx, d, meta)
 }
 
-func resourceUpCloudTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics

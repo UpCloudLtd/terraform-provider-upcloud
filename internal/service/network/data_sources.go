@@ -1,4 +1,4 @@
-package upcloud
+package network
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
-func dataSourceNetworks() *schema.Resource {
+func DataSourceNetworks() *schema.Resource {
 	return &schema.Resource{
 		Description: "Use this data source to get the available UpCloud networks.",
 		ReadContext: dataSourceNetworksRead,

@@ -13,21 +13,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/cloud"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/router"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
-const (
-	upcloudAPITimeout                     time.Duration = time.Second * 120
-	upcloudNetworkNotFoundErrorCode       string        = "NETWORK_NOT_FOUND"
-	upcloudRouterNotFoundErrorCode        string        = "ROUTER_NOT_FOUND"
-	upcloudObjectStorageNotFoundErrorCode string        = "OBJECT_STORAGE_NOT_FOUND"
-	upcloudIPAddressNotFoundErrorCode     string        = "IP_ADDRESS_NOT_FOUND"
-)
+const upcloudAPITimeout time.Duration = time.Second * 120
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
@@ -66,13 +67,13 @@ func Provider() *schema.Provider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"upcloud_server":                                  server.ResourceServer(),
-			"upcloud_router":                                  resourceUpCloudRouter(),
+			"upcloud_router":                                  router.ResourceRouter(),
 			"upcloud_storage":                                 storage.ResourceStorage(),
-			"upcloud_firewall_rules":                          resourceUpCloudFirewallRules(),
-			"upcloud_tag":                                     resourceUpCloudTag(),
-			"upcloud_network":                                 resourceUpCloudNetwork(),
-			"upcloud_floating_ip_address":                     resourceUpCloudFloatingIPAddress(),
-			"upcloud_object_storage":                          resourceUpCloudObjectStorage(),
+			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
+			"upcloud_tag":                                     tag.ResourceTag(),
+			"upcloud_network":                                 network.ResourceNetwork(),
+			"upcloud_floating_ip_address":                     ip.ResourceFloatingIPAddress(),
+			"upcloud_object_storage":                          objectstorage.ResourceObjectStorage(),
 			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
 			"upcloud_managed_database_mysql":                  database.ResourceMySQL(),
 			"upcloud_managed_database_user":                   database.ResourceUser(),
@@ -90,12 +91,12 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"upcloud_zone":         dataSourceUpCloudZone(),
-			"upcloud_zones":        dataSourceUpCloudZones(),
-			"upcloud_networks":     dataSourceNetworks(),
-			"upcloud_hosts":        dataSourceUpCloudHosts(),
-			"upcloud_ip_addresses": dataSourceUpCloudIPAddresses(),
-			"upcloud_tags":         dataSourceUpCloudTags(),
+			"upcloud_zone":         cloud.DataSourceZone(),
+			"upcloud_zones":        cloud.DataSourceZones(),
+			"upcloud_networks":     network.DataSourceNetworks(),
+			"upcloud_hosts":        cloud.DataSourceHosts(),
+			"upcloud_ip_addresses": ip.DataSourceIPAddresses(),
+			"upcloud_tags":         tag.DataSourceTags(),
 			"upcloud_storage":      storage.DataSourceStorage(),
 		},
 

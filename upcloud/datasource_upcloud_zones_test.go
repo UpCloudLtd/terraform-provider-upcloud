@@ -10,7 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-const AvailablePublicZones = 12
+const (
+	availablePublicZones = 12
+	allFilter            = "all"
+	publicFilter         = "public"
+	privateFilter        = "private"
+)
 
 func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 	var providers []*schema.Provider
@@ -24,7 +29,7 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 			{
 				Config: testAccDataSourceUpCloudZonesConfigEmpty(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
+					testAccDataSourceUpCloudZonesCheck(resourceName, availablePublicZones),
 				),
 			},
 		},
@@ -45,7 +50,7 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
 				Check: resource.ComposeTestCheckFunc(
 
-					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
+					testAccDataSourceUpCloudZonesCheck(resourceName, availablePublicZones),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
 				),
 			},
@@ -88,7 +93,7 @@ func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
 				Check: resource.ComposeTestCheckFunc(
 
-					testAccDataSourceUpCloudZonesCheck(resourceName, AvailablePublicZones),
+					testAccDataSourceUpCloudZonesCheck(resourceName, availablePublicZones),
 					resource.TestCheckResourceAttr(resourceName, "filter_type", filterType),
 				),
 			},

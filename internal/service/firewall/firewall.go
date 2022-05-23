@@ -1,4 +1,4 @@
-package upcloud
+package firewall
 
 import (
 	"context"
@@ -15,17 +15,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceUpCloudFirewallRules() *schema.Resource {
+func ResourceFirewallRules() *schema.Resource {
 	return &schema.Resource{
 		Description: `This resource represents a generated list of UpCloud firewall rules. 
 		Firewall rules are used in conjunction with UpCloud servers. 
 		Each server has its own firewall rules. 
 		The firewall is enabled on all network interfaces except ones attached to private virtual networks. 
 		The maximum number of firewall rules per server is 1000.`,
-		CreateContext: resourceUpCloudFirewallRulesCreate,
-		ReadContext:   resourceUpCloudFirewallRulesRead,
-		UpdateContext: resourceUpCloudFirewallRulesUpdate,
-		DeleteContext: resourceUpCloudFirewallRulesDelete,
+		CreateContext: resourceFirewallRulesCreate,
+		ReadContext:   resourceFirewallRulesRead,
+		UpdateContext: resourceFirewallRulesUpdate,
+		DeleteContext: resourceFirewallRulesDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -147,7 +147,7 @@ func resourceUpCloudFirewallRules() *schema.Resource {
 	}
 }
 
-func resourceUpCloudFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	opts := &request.CreateFirewallRulesRequest{
@@ -196,10 +196,10 @@ func resourceUpCloudFirewallRulesCreate(ctx context.Context, d *schema.ResourceD
 
 	d.SetId(d.Get("server_id").(string))
 
-	return resourceUpCloudFirewallRulesRead(ctx, d, meta)
+	return resourceFirewallRulesRead(ctx, d, meta)
 }
 
-func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
@@ -248,7 +248,7 @@ func resourceUpCloudFirewallRulesRead(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	opts := &request.CreateFirewallRulesRequest{
@@ -297,10 +297,10 @@ func resourceUpCloudFirewallRulesUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	return resourceUpCloudFirewallRulesRead(ctx, d, meta)
+	return resourceFirewallRulesRead(ctx, d, meta)
 }
 
-func resourceUpCloudFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
