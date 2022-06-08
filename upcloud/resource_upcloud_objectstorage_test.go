@@ -55,7 +55,7 @@ func init() {
 
 			service := newUpCloudServiceConnection(username, password, client.HTTPClient)
 
-			objectStorages, err := service.GetObjectStorages()
+			objectStorages, err := service.GetObjectStorages(context.Background())
 			if err != nil {
 				return err
 			}
@@ -65,9 +65,11 @@ func init() {
 					continue
 				}
 
-				err = service.DeleteObjectStorage(&request.DeleteObjectStorageRequest{
-					UUID: objectStorage.UUID,
-				})
+				err = service.DeleteObjectStorage(
+					context.Background(),
+					&request.DeleteObjectStorageRequest{
+						UUID: objectStorage.UUID,
+					})
 
 				if err != nil {
 					return err
@@ -456,8 +458,8 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 				continue
 			}
 
-			client := testAccProvider.Meta().(*service.Service)
-			_, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
+			client := testAccProvider.Meta().(*service.ServiceContext)
+			_, err := client.GetObjectStorageDetails(context.Background(), &request.GetObjectStorageDetailsRequest{
 				UUID: rs.Primary.ID,
 			})
 

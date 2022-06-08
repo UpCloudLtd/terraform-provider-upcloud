@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -15,9 +16,9 @@ type Config struct {
 	Password string
 }
 
-func (c *Config) Client() (*service.Service, error) {
-	client := client.New(c.Username, c.Password)
-	svc := service.New(client)
+func (c *Config) Client() (*service.ServiceContext, error) {
+	client := client.NewWithContext(c.Username, c.Password)
+	svc := service.NewWithContext(client)
 	res, err := c.checkLogin(svc)
 	if err != nil {
 		return nil, err
@@ -26,7 +27,7 @@ func (c *Config) Client() (*service.Service, error) {
 	return svc, nil
 }
 
-func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
+func (c *Config) checkLogin(svc *service.ServiceContext) (*upcloud.Account, error) {
 	const numRetries = 10
 	var (
 		err error
@@ -34,7 +35,7 @@ func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
 	)
 
 	for trys := 0; trys < numRetries; trys++ {
-		res, err = svc.GetAccount()
+		res, err = svc.GetAccount(context.Background())
 		if err == nil {
 			break
 		}

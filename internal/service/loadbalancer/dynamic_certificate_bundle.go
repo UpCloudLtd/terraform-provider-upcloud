@@ -68,12 +68,12 @@ func ResourceDynamicCertificateBundle() *schema.Resource {
 }
 
 func resourceDynamicCertificateBundleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	hostnames := make([]string, 0)
 	for _, h := range d.Get("hostnames").([]interface{}) {
 		hostnames = append(hostnames, h.(string))
 	}
-	b, err := svc.CreateLoadBalancerCertificateBundle(&request.CreateLoadBalancerCertificateBundleRequest{
+	b, err := svc.CreateLoadBalancerCertificateBundle(ctx, &request.CreateLoadBalancerCertificateBundleRequest{
 		Type:      upcloud.LoadBalancerCertificateBundleTypeDynamic,
 		Name:      d.Get("name").(string),
 		KeyType:   d.Get("key_type").(string),
@@ -95,8 +95,8 @@ func resourceDynamicCertificateBundleCreate(ctx context.Context, d *schema.Resou
 }
 
 func resourceDynamicCertificateBundleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	b, err := svc.GetLoadBalancerCertificateBundle(&request.GetLoadBalancerCertificateBundleRequest{
+	svc := meta.(*service.ServiceContext)
+	b, err := svc.GetLoadBalancerCertificateBundle(ctx, &request.GetLoadBalancerCertificateBundleRequest{
 		UUID: d.Id(),
 	})
 
@@ -112,12 +112,12 @@ func resourceDynamicCertificateBundleRead(ctx context.Context, d *schema.Resourc
 }
 
 func resourceDynamicCertificateBundleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	hostnames := make([]string, 0)
 	for _, h := range d.Get("hostnames").([]interface{}) {
 		hostnames = append(hostnames, h.(string))
 	}
-	b, err := svc.ModifyLoadBalancerCertificateBundle(&request.ModifyLoadBalancerCertificateBundleRequest{
+	b, err := svc.ModifyLoadBalancerCertificateBundle(ctx, &request.ModifyLoadBalancerCertificateBundleRequest{
 		UUID:      d.Id(),
 		Name:      d.Get("name").(string),
 		Hostnames: hostnames,

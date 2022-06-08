@@ -53,10 +53,10 @@ func ResourceBackend() *schema.Resource {
 }
 
 func resourceBackendCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	serviceID := d.Get("loadbalancer").(string)
 
-	be, err := svc.CreateLoadBalancerBackend(&request.CreateLoadBalancerBackendRequest{
+	be, err := svc.CreateLoadBalancerBackend(ctx, &request.CreateLoadBalancerBackendRequest{
 		ServiceUUID: serviceID,
 		Backend: request.LoadBalancerBackend{
 			Name:     d.Get("name").(string),
@@ -79,12 +79,12 @@ func resourceBackendCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	be, err := svc.GetLoadBalancerBackend(&request.GetLoadBalancerBackendRequest{
+	be, err := svc.GetLoadBalancerBackend(ctx, &request.GetLoadBalancerBackendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 	})
@@ -107,13 +107,13 @@ func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	be, err := svc.ModifyLoadBalancerBackend(&request.ModifyLoadBalancerBackendRequest{
+	be, err := svc.ModifyLoadBalancerBackend(ctx, &request.ModifyLoadBalancerBackendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 		Backend: request.ModifyLoadBalancerBackend{
@@ -136,13 +136,13 @@ func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceBackendDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] deleting backend '%s'", d.Id())
-	return diag.FromErr(svc.DeleteLoadBalancerBackend(&request.DeleteLoadBalancerBackendRequest{
+	return diag.FromErr(svc.DeleteLoadBalancerBackend(ctx, &request.DeleteLoadBalancerBackendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 	}))

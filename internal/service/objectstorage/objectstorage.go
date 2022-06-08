@@ -127,7 +127,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 		req   request.CreateObjectStorageRequest
 	)
 
-	client := m.(*service.Service)
+	client := m.(*service.ServiceContext)
 
 	accessKey, _, err := getAccessKey(d)
 	if err != nil {
@@ -146,7 +146,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 	req.SecretKey = secretKey
 	req.Description = d.Get("description").(string)
 
-	objStorage, err := createObjectStorage(client, &req)
+	objStorage, err := createObjectStorage(ctx, client, &req)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -179,11 +179,11 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*service.Service)
+	client := m.(*service.ServiceContext)
 
 	uuid := d.Id()
 
-	objectDetails, err := client.GetObjectStorageDetails(&request.GetObjectStorageDetailsRequest{
+	objectDetails, err := client.GetObjectStorageDetails(ctx, &request.GetObjectStorageDetailsRequest{
 		UUID: uuid,
 	})
 
@@ -201,7 +201,7 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*service.Service)
+	client := m.(*service.ServiceContext)
 
 	accessKey, _, err := getAccessKey(d)
 	if err != nil {
@@ -221,7 +221,7 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 		req.SecretKey = secretKey
 		req.Description = d.Get("description").(string)
 
-		_, err := modifyObjectStorage(client, &req)
+		_, err := modifyObjectStorage(ctx, client, &req)
 		if err != nil {
 			var diags diag.Diagnostics
 			diags = append(diags, diag.Diagnostic{
@@ -265,11 +265,11 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func resourceObjectStorageDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*service.Service)
+	client := m.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
-	err := client.DeleteObjectStorage(&request.DeleteObjectStorageRequest{
+	err := client.DeleteObjectStorage(ctx, &request.DeleteObjectStorageRequest{
 		UUID: d.Id(),
 	})
 
@@ -324,14 +324,14 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	return diag.Diagnostics{}
 }
 
-func createObjectStorage(client *service.Service, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
+func createObjectStorage(ctx context.Context, client *service.ServiceContext, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
 		err        error
 		objStorage *upcloud.ObjectStorageDetails
 	)
 	for try := 0; try < numRetries; try++ {
 		// calls to the function seem to fail occasionally, so call it in a retry loop
-		objStorage, err = client.CreateObjectStorage(req)
+		objStorage, err = client.CreateObjectStorage(ctx, req)
 		if err == nil {
 			break
 		}
@@ -340,13 +340,13 @@ func createObjectStorage(client *service.Service, req *request.CreateObjectStora
 	return objStorage, err
 }
 
-func modifyObjectStorage(client *service.Service, req *request.ModifyObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
+func modifyObjectStorage(ctx context.Context, client *service.ServiceContext, req *request.ModifyObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
 		err        error
 		objStorage *upcloud.ObjectStorageDetails
 	)
 	for try := 0; try < numRetries; try++ {
-		objStorage, err = client.ModifyObjectStorage(req)
+		objStorage, err = client.ModifyObjectStorage(ctx, req)
 		if err == nil {
 			break
 		}

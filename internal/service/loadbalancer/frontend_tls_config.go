@@ -44,12 +44,12 @@ func ResourceFrontendTLSConfig() *schema.Resource {
 }
 
 func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, feName string
 	if err := unmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
 		return diag.FromErr(err)
 	}
-	t, err := svc.CreateLoadBalancerFrontendTLSConfig(&request.CreateLoadBalancerFrontendTLSConfigRequest{
+	t, err := svc.CreateLoadBalancerFrontendTLSConfig(ctx, &request.CreateLoadBalancerFrontendTLSConfigRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Config: request.LoadBalancerFrontendTLSConfig{
@@ -73,12 +73,12 @@ func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	t, err := svc.GetLoadBalancerFrontendTLSConfig(&request.GetLoadBalancerFrontendTLSConfigRequest{
+	t, err := svc.GetLoadBalancerFrontendTLSConfig(ctx, &request.GetLoadBalancerFrontendTLSConfigRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Name:         name,
@@ -100,12 +100,12 @@ func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	t, err := svc.ModifyLoadBalancerFrontendTLSConfig(&request.ModifyLoadBalancerFrontendTLSConfigRequest{
+	t, err := svc.ModifyLoadBalancerFrontendTLSConfig(ctx, &request.ModifyLoadBalancerFrontendTLSConfigRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Name:         name,
@@ -130,13 +130,13 @@ func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFrontendTLSConfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] deleting frontend TLS config '%s'", d.Id())
-	return diag.FromErr(svc.DeleteLoadBalancerFrontendTLSConfig(&request.DeleteLoadBalancerFrontendTLSConfigRequest{
+	return diag.FromErr(svc.DeleteLoadBalancerFrontendTLSConfig(ctx, &request.DeleteLoadBalancerFrontendTLSConfigRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Name:         name,

@@ -91,7 +91,7 @@ func ResourceResolver() *schema.Resource {
 }
 
 func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	nameservers := make([]string, 0)
 	if ns, ok := d.GetOk("nameservers"); ok {
 		for _, s := range ns.([]interface{}) {
@@ -101,7 +101,7 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	serviceID := d.Get("loadbalancer").(string)
 
-	rs, err := svc.CreateLoadBalancerResolver(&request.CreateLoadBalancerResolverRequest{
+	rs, err := svc.CreateLoadBalancerResolver(ctx, &request.CreateLoadBalancerResolverRequest{
 		ServiceUUID: serviceID,
 		Resolver: request.LoadBalancerResolver{
 			Name:         d.Get("name").(string),
@@ -129,12 +129,12 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	rs, err := svc.GetLoadBalancerResolver(&request.GetLoadBalancerResolverRequest{
+	rs, err := svc.GetLoadBalancerResolver(ctx, &request.GetLoadBalancerResolverRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 	})
@@ -157,7 +157,7 @@ func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	nameservers := make([]string, 0)
 	if ns, ok := d.GetOk("nameservers"); ok {
 		for _, s := range ns.([]interface{}) {
@@ -169,7 +169,7 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	rs, err := svc.ModifyLoadBalancerResolver(&request.ModifyLoadBalancerResolverRequest{
+	rs, err := svc.ModifyLoadBalancerResolver(ctx, &request.ModifyLoadBalancerResolverRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 		Resolver: request.LoadBalancerResolver{
@@ -198,14 +198,14 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceResolverDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] deleting resolver '%s'", d.Id())
 	return diag.FromErr(
-		svc.DeleteLoadBalancerResolver(&request.DeleteLoadBalancerResolverRequest{
+		svc.DeleteLoadBalancerResolver(ctx, &request.DeleteLoadBalancerResolverRequest{
 			ServiceUUID: serviceID,
 			Name:        name,
 		}),

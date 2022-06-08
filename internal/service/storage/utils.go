@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -11,10 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func ResizeStoragePartitionAndFs(client *service.Service, UUID, title string, deleteBackup bool) diag.Diagnostics {
+func ResizeStoragePartitionAndFs(ctx context.Context, client *service.ServiceContext, UUID, title string, deleteBackup bool) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	backup, err := client.ResizeStorageFilesystem(&request.ResizeStorageFilesystemRequest{
+	backup, err := client.ResizeStorageFilesystem(ctx, &request.ResizeStorageFilesystemRequest{
 		UUID: UUID,
 	})
 	if err != nil {
@@ -32,7 +33,7 @@ func ResizeStoragePartitionAndFs(client *service.Service, UUID, title string, de
 	}
 
 	if err == nil && deleteBackup {
-		err = client.DeleteStorage(&request.DeleteStorageRequest{
+		err = client.DeleteStorage(ctx, &request.DeleteStorageRequest{
 			UUID: backup.UUID,
 		})
 
@@ -55,7 +56,8 @@ func ResizeStoragePartitionAndFs(client *service.Service, UUID, title string, de
 }
 
 func cloneStorage(
-	client *service.Service,
+	ctx context.Context,
+	client *service.ServiceContext,
 	size int,
 	tier string,
 	title string,
@@ -72,7 +74,7 @@ func cloneStorage(
 		cloneStorageRequest.UUID = block["id"].(string)
 	}
 
-	originalStorageDevice, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
+	originalStorageDevice, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         cloneStorageRequest.UUID,
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
@@ -85,12 +87,12 @@ func cloneStorage(
 		return diag.Errorf("cloned storage device should be at least the same size as the original one")
 	}
 
-	storage, err := client.CloneStorage(&cloneStorageRequest)
+	storage, err := client.CloneStorage(ctx, &cloneStorageRequest)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	storage, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+	storage, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         storage.UUID,
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
@@ -101,7 +103,7 @@ func cloneStorage(
 
 	// If the storage specified does not match the cloned storage, modify it so that it does.
 	if storage.Size != size {
-		storage, err := client.ModifyStorage(&request.ModifyStorageRequest{
+		storage, err := client.ModifyStorage(ctx, &request.ModifyStorageRequest{
 			UUID: storage.UUID,
 			Size: size,
 		})
@@ -109,7 +111,7 @@ func cloneStorage(
 			return diag.FromErr(err)
 		}
 
-		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+		_, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 			UUID:         storage.UUID,
 			DesiredState: upcloud.StorageStateOnline,
 			Timeout:      15 * time.Minute,
@@ -125,7 +127,8 @@ func cloneStorage(
 }
 
 func createStorage(
-	client *service.Service,
+	ctx context.Context,
+	client *service.ServiceContext,
 	size int,
 	tier string,
 	title string,
@@ -156,14 +159,14 @@ func createStorage(
 		createStorageRequest.BackupRule = BackupRule(v.(map[string]interface{}))
 	}
 
-	storage, err := client.CreateStorage(&createStorageRequest)
+	storage, err := client.CreateStorage(ctx, &createStorageRequest)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Wait for storage to enter the 'online' state. For a fresh storage device
 	// this is pretty quick.
-	_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+	_, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         storage.UUID,
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
@@ -174,28 +177,28 @@ func createStorage(
 
 	if importReq != nil {
 		importReq.StorageUUID = storage.UUID
-		_, err := client.CreateStorageImport(importReq)
+		_, err := client.CreateStorageImport(ctx, importReq)
 		if err != nil {
-			return diagAndTidy(client, storage.UUID, err)
+			return diagAndTidy(ctx, client, storage.UUID, err)
 		}
 
-		_, err = client.WaitForStorageImportCompletion(&request.WaitForStorageImportCompletionRequest{
+		_, err = client.WaitForStorageImportCompletion(ctx, &request.WaitForStorageImportCompletionRequest{
 			StorageUUID: storage.UUID,
 			Timeout:     15 * time.Minute,
 		})
 		if err != nil {
-			return diagAndTidy(client, storage.UUID, err)
+			return diagAndTidy(ctx, client, storage.UUID, err)
 		}
 
 		// Imported storage will enter a 'syncing' state for a while. Storage in this
 		// state can be used by a server so we will wait for that to allow progress.
-		_, err = client.WaitForStorageState(&request.WaitForStorageStateRequest{
+		_, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 			UUID:         storage.UUID,
 			DesiredState: upcloud.StorageStateSyncing,
 			Timeout:      15 * time.Minute,
 		})
 		if err != nil {
-			return diagAndTidy(client, storage.UUID, err)
+			return diagAndTidy(ctx, client, storage.UUID, err)
 		}
 	}
 
@@ -204,13 +207,13 @@ func createStorage(
 	return diags
 }
 
-func isStorageSimpleBackupEnabled(service *service.Service, storageID string) (bool, error) {
-	details, err := service.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: storageID})
+func isStorageSimpleBackupEnabled(ctx context.Context, service *service.ServiceContext, storageID string) (bool, error) {
+	details, err := service.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{UUID: storageID})
 	if err != nil {
 		return false, err
 	}
 	for _, srvID := range details.ServerUUIDs {
-		srv, err := service.GetServerDetails(&request.GetServerDetailsRequest{UUID: srvID})
+		srv, err := service.GetServerDetails(ctx, &request.GetServerDetailsRequest{UUID: srvID})
 		if err != nil {
 			return false, err
 		}
@@ -221,8 +224,8 @@ func isStorageSimpleBackupEnabled(service *service.Service, storageID string) (b
 	return false, nil
 }
 
-func diagAndTidy(client *service.Service, storageUUID string, err error) diag.Diagnostics {
-	_, waitErr := client.WaitForStorageState(&request.WaitForStorageStateRequest{
+func diagAndTidy(ctx context.Context, client *service.ServiceContext, storageUUID string, err error) diag.Diagnostics {
+	_, waitErr := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         storageUUID,
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
@@ -231,7 +234,7 @@ func diagAndTidy(client *service.Service, storageUUID string, err error) diag.Di
 		return diag.Errorf("wait for storage after import error: %s", waitErr.Error())
 	}
 
-	delErr := client.DeleteStorage(&request.DeleteStorageRequest{
+	delErr := client.DeleteStorage(ctx, &request.DeleteStorageRequest{
 		UUID: storageUUID,
 	})
 	if delErr != nil {

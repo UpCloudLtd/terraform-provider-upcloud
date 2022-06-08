@@ -131,10 +131,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	return service, diags
 }
 
-func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.Service {
-	client := client.NewWithHTTPClient(username, password, httpClient)
+func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.ServiceContext {
+	client := client.NewWithHTTPClientContext(username, password, httpClient)
 	client.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
 	client.SetTimeout(upcloudAPITimeout)
 
-	return service.New(client)
+	return service.NewWithContext(client)
 }

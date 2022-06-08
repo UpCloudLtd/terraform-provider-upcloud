@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -155,8 +156,8 @@ func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
-		addresses, err := client.GetIPAddresses()
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		addresses, err := client.GetIPAddresses(context.Background())
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing Floating IP Addresses when deleting upcloud floating IP Address (%s): %s", rs.Primary.ID, err)
 		}

@@ -20,9 +20,9 @@ func resourceUpCloudManagedDatabaseWaitState(
 	timeout time.Duration,
 	targetStates ...upcloud.ManagedDatabaseState,
 ) (*upcloud.ManagedDatabase, error) {
-	client := m.(*service.Service)
+	client := m.(*service.ServiceContext)
 	refresher := func() (result interface{}, state string, err error) {
-		resp, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: id})
+		resp, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id})
 		if err != nil {
 			return nil, "", err
 		}

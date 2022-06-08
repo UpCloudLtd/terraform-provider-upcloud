@@ -99,7 +99,7 @@ func ResourceLoadBalancer() *schema.Resource {
 }
 
 func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	req := &request.CreateLoadBalancerRequest{
 		Name:             d.Get("name").(string),
 		Plan:             d.Get("plan").(string),
@@ -110,7 +110,7 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 		Backends:         []request.LoadBalancerBackend{},
 		Resolvers:        []request.LoadBalancerResolver{},
 	}
-	lb, err := svc.CreateLoadBalancer(req)
+	lb, err := svc.CreateLoadBalancer(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -127,8 +127,8 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 
 func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	var err error
-	svc := meta.(*service.Service)
-	lb, err := svc.GetLoadBalancer(&request.GetLoadBalancerRequest{UUID: d.Id()})
+	svc := meta.(*service.ServiceContext)
+	lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{UUID: d.Id()})
 
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
@@ -142,9 +142,9 @@ func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 
-	lb, err := svc.ModifyLoadBalancer(&request.ModifyLoadBalancerRequest{
+	lb, err := svc.ModifyLoadBalancer(ctx, &request.ModifyLoadBalancerRequest{
 		UUID:             d.Id(),
 		Name:             d.Get("name").(string),
 		Plan:             d.Get("plan").(string),
@@ -164,8 +164,8 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	svc := meta.(*service.Service)
-	if err := svc.DeleteLoadBalancer(&request.DeleteLoadBalancerRequest{UUID: d.Id()}); err != nil {
+	svc := meta.(*service.ServiceContext)
+	if err := svc.DeleteLoadBalancer(ctx, &request.DeleteLoadBalancerRequest{UUID: d.Id()}); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] deleted load balancer '%s' (%s)", d.Get("name").(string), d.Id())
@@ -232,14 +232,14 @@ func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalance
 	return diags
 }
 
-func waitLoadBalancerToShutdown(ctx context.Context, svc *service.Service, id string) error {
+func waitLoadBalancerToShutdown(ctx context.Context, svc *service.ServiceContext, id string) error {
 	const maxRetries int = 100
 	for i := 0; i <= maxRetries; i++ {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			lb, err := svc.GetLoadBalancer(&request.GetLoadBalancerRequest{UUID: id})
+			lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{UUID: id})
 			if err != nil {
 				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
 					return nil

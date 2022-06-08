@@ -50,7 +50,7 @@ func ResourceTag() *schema.Resource {
 }
 
 func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	createTagRequest := &request.CreateTagRequest{
 		Tag: upcloud.Tag{
@@ -70,7 +70,7 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 		createTagRequest.Servers = serversList
 	}
 
-	tag, err := client.CreateTag(createTagRequest)
+	tag, err := client.CreateTag(ctx, createTagRequest)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -82,11 +82,11 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
-	tags, err := client.GetTags()
+	tags, err := client.GetTags(ctx)
 
 	if err != nil {
 		diag.FromErr(err)
@@ -127,7 +127,7 @@ func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	r := &request.ModifyTagRequest{
 		Name: d.Id(),
@@ -149,7 +149,7 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 		r.Tag.Servers = serversList
 	}
 
-	_, err := client.ModifyTag(r)
+	_, err := client.ModifyTag(ctx, r)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -159,14 +159,14 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func resourceTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
 	deleteTagRequest := &request.DeleteTagRequest{
 		Name: d.Id(),
 	}
-	err := client.DeleteTag(deleteTagRequest)
+	err := client.DeleteTag(ctx, deleteTagRequest)
 
 	if err != nil {
 		return diag.FromErr(err)

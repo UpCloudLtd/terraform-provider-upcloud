@@ -72,11 +72,11 @@ func DataSourceIPAddresses() *schema.Resource {
 }
 
 func dataSourceIPAddressesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
-	ipAddresses, err := client.GetIPAddresses()
+	ipAddresses, err := client.GetIPAddresses(ctx)
 
 	if err != nil {
 		diag.FromErr(err)

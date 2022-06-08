@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -270,8 +271,8 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 func testAccCheckClonedStorageSize(resourceName string, expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
-		latest, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: storage.UUID,
 		})
 
@@ -301,8 +302,8 @@ func testAccCheckStorageExists(resourceName string, storage *upcloud.StorageDeta
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
-		latest, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
 
@@ -323,8 +324,8 @@ func testAccCheckStorageDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
-		storages, err := client.GetStorages(&request.GetStoragesRequest{})
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		storages, err := client.GetStorages(context.Background(), &request.GetStoragesRequest{})
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing storage when deleting upcloud storage (%s): %s", rs.Primary.ID, err)
 		}
