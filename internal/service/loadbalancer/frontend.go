@@ -80,9 +80,9 @@ func ResourceFrontend() *schema.Resource {
 }
 
 func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	serviceID := d.Get("loadbalancer").(string)
-	fe, err := svc.CreateLoadBalancerFrontend(&request.CreateLoadBalancerFrontendRequest{
+	fe, err := svc.CreateLoadBalancerFrontend(ctx, &request.CreateLoadBalancerFrontendRequest{
 		ServiceUUID: serviceID,
 		Frontend: request.LoadBalancerFrontend{
 			Name:           d.Get("name").(string),
@@ -109,12 +109,12 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	fe, err := svc.GetLoadBalancerFrontend(&request.GetLoadBalancerFrontendRequest{
+	fe, err := svc.GetLoadBalancerFrontend(ctx, &request.GetLoadBalancerFrontendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 	})
@@ -137,12 +137,12 @@ func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceFrontendUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	fe, err := svc.ModifyLoadBalancerFrontend(&request.ModifyLoadBalancerFrontendRequest{
+	fe, err := svc.ModifyLoadBalancerFrontend(ctx, &request.ModifyLoadBalancerFrontendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 		Frontend: request.ModifyLoadBalancerFrontend{
@@ -167,13 +167,13 @@ func resourceFrontendUpdate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceFrontendDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, name string
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] deleting frontend '%s'", d.Id())
-	return diag.FromErr(svc.DeleteLoadBalancerFrontend(&request.DeleteLoadBalancerFrontendRequest{
+	return diag.FromErr(svc.DeleteLoadBalancerFrontend(ctx, &request.DeleteLoadBalancerFrontendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 	}))

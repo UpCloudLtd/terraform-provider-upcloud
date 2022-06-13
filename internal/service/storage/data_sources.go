@@ -101,7 +101,7 @@ Storage types are: %s`, strings.Join(storageTypes, ", ")),
 }
 
 func dataSourceStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var re *regexp.Regexp
 
 	nameRegex, nameRegexExists := d.GetOk("name_regex")
@@ -110,8 +110,7 @@ func dataSourceStorageRead(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	storageType := d.Get("type").(string)
-	storages, err := svc.GetStorages(
-		&request.GetStoragesRequest{Type: storageType})
+	storages, err := svc.GetStorages(ctx, &request.GetStoragesRequest{Type: storageType})
 
 	if err != nil {
 		return diag.FromErr(err)

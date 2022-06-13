@@ -50,7 +50,7 @@ func ResourceRouter() *schema.Resource {
 }
 
 func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
@@ -58,7 +58,7 @@ func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		Name: d.Get("name").(string),
 	}
 
-	router, err := client.CreateRouter(opts)
+	router, err := client.CreateRouter(ctx, opts)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -80,7 +80,7 @@ func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
@@ -88,7 +88,7 @@ func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interf
 		UUID: d.Id(),
 	}
 
-	router, err := client.GetRouterDetails(opts)
+	router, err := client.GetRouterDetails(ctx, opts)
 
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == routerNotFoundErrorCode {
@@ -119,7 +119,7 @@ func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	opts := &request.ModifyRouterRequest{
 		UUID: d.Id(),
@@ -129,7 +129,7 @@ func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		opts.Name = v.(string)
 	}
 
-	_, err := client.ModifyRouter(opts)
+	_, err := client.ModifyRouter(ctx, opts)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -139,10 +139,10 @@ func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 	var diags diag.Diagnostics
 
-	router, err := client.GetRouterDetails(&request.GetRouterDetailsRequest{
+	router, err := client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{
 		UUID: d.Id(),
 	})
 
@@ -152,7 +152,7 @@ func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if len(router.AttachedNetworks) > 0 {
 		for _, network := range router.AttachedNetworks {
-			err := client.DetachNetworkRouter(&request.DetachNetworkRouterRequest{
+			err := client.DetachNetworkRouter(ctx, &request.DetachNetworkRouterRequest{
 				NetworkUUID: network.NetworkUUID,
 			})
 			if err != nil {
@@ -160,7 +160,7 @@ func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta inte
 			}
 		}
 	}
-	err = client.DeleteRouter(&request.DeleteRouterRequest{
+	err = client.DeleteRouter(ctx, &request.DeleteRouterRequest{
 		UUID: d.Id(),
 	})
 

@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -86,8 +87,8 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
-		latest, err := client.GetTags()
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		latest, err := client.GetTags(context.Background())
 		if err != nil {
 			return err
 		}
@@ -105,8 +106,8 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
-		tags, err := client.GetTags()
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		tags, err := client.GetTags(context.Background())
 		if err != nil {
 			return fmt.Errorf(
 				"[WARN] Error listing tags when deleting upcloud tag (%s): %s",

@@ -134,12 +134,12 @@ func ResourceDynamicBackendMember() *schema.Resource {
 
 func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMemberType) schema.CreateContextFunc {
 	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-		svc := meta.(*service.Service)
+		svc := meta.(*service.ServiceContext)
 		var serviceID, beName string
 		if err := unmarshalID(d.Get("backend").(string), &serviceID, &beName); err != nil {
 			return diag.FromErr(err)
 		}
-		member, err := svc.CreateLoadBalancerBackendMember(&request.CreateLoadBalancerBackendMemberRequest{
+		member, err := svc.CreateLoadBalancerBackendMember(ctx, &request.CreateLoadBalancerBackendMemberRequest{
 			ServiceUUID: serviceID,
 			BackendName: beName,
 			Member: request.LoadBalancerBackendMember{
@@ -168,12 +168,12 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 }
 
 func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, beName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	member, err := svc.GetLoadBalancerBackendMember(&request.GetLoadBalancerBackendMemberRequest{
+	member, err := svc.GetLoadBalancerBackendMember(ctx, &request.GetLoadBalancerBackendMemberRequest{
 		ServiceUUID: serviceID,
 		BackendName: beName,
 		Name:        name,
@@ -197,12 +197,12 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, beName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	member, err := svc.ModifyLoadBalancerBackendMember(&request.ModifyLoadBalancerBackendMemberRequest{
+	member, err := svc.ModifyLoadBalancerBackendMember(ctx, &request.ModifyLoadBalancerBackendMemberRequest{
 		ServiceUUID: serviceID,
 		BackendName: beName,
 		Name:        name,
@@ -231,13 +231,13 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceBackendMemberDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, beName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] deleting backend member '%s'", d.Id())
-	return diag.FromErr(svc.DeleteLoadBalancerBackendMember(&request.DeleteLoadBalancerBackendMemberRequest{
+	return diag.FromErr(svc.DeleteLoadBalancerBackendMember(ctx, &request.DeleteLoadBalancerBackendMemberRequest{
 		ServiceUUID: serviceID,
 		BackendName: beName,
 		Name:        name,

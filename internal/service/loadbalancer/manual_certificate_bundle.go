@@ -65,9 +65,9 @@ func ResourceManualCertificateBundle() *schema.Resource {
 }
 
 func resourceManualCertificateBundleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 
-	b, err := svc.CreateLoadBalancerCertificateBundle(&request.CreateLoadBalancerCertificateBundleRequest{
+	b, err := svc.CreateLoadBalancerCertificateBundle(ctx, &request.CreateLoadBalancerCertificateBundleRequest{
 		Type:          upcloud.LoadBalancerCertificateBundleTypeManual,
 		Name:          d.Get("name").(string),
 		Certificate:   d.Get("certificate").(string),
@@ -90,8 +90,8 @@ func resourceManualCertificateBundleCreate(ctx context.Context, d *schema.Resour
 }
 
 func resourceManualCertificateBundleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	b, err := svc.GetLoadBalancerCertificateBundle(&request.GetLoadBalancerCertificateBundleRequest{
+	svc := meta.(*service.ServiceContext)
+	b, err := svc.GetLoadBalancerCertificateBundle(ctx, &request.GetLoadBalancerCertificateBundleRequest{
 		UUID: d.Id(),
 	})
 
@@ -107,8 +107,8 @@ func resourceManualCertificateBundleRead(ctx context.Context, d *schema.Resource
 }
 
 func resourceManualCertificateBundleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	b, err := svc.ModifyLoadBalancerCertificateBundle(&request.ModifyLoadBalancerCertificateBundleRequest{
+	svc := meta.(*service.ServiceContext)
+	b, err := svc.ModifyLoadBalancerCertificateBundle(ctx, &request.ModifyLoadBalancerCertificateBundleRequest{
 		UUID:          d.Id(),
 		Name:          d.Get("name").(string),
 		Certificate:   d.Get("certificate").(string),
@@ -129,9 +129,9 @@ func resourceManualCertificateBundleUpdate(ctx context.Context, d *schema.Resour
 }
 
 func resourceCertificateBundleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	log.Printf("[INFO] deleting certificate bundle '%s' (%s)", d.Get("name").(string), d.Id())
-	return diag.FromErr(svc.DeleteLoadBalancerCertificateBundle(&request.DeleteLoadBalancerCertificateBundleRequest{UUID: d.Id()}))
+	return diag.FromErr(svc.DeleteLoadBalancerCertificateBundle(ctx, &request.DeleteLoadBalancerCertificateBundleRequest{UUID: d.Id()}))
 }
 
 func setManualCertificateBundleResourceData(d *schema.ResourceData, b *upcloud.LoadBalancerCertificateBundle) (diags diag.Diagnostics) {

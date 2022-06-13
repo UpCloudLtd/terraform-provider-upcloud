@@ -119,7 +119,7 @@ func ResourceNetwork() *schema.Resource {
 }
 
 func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	req := request.CreateNetworkRequest{}
 	if v := d.Get("name"); v != nil {
@@ -153,7 +153,7 @@ func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta int
 		req.IPNetworks = append(req.IPNetworks, uipn)
 	}
 
-	network, err := client.CreateNetwork(&req)
+	network, err := client.CreateNetwork(ctx, &req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -164,13 +164,13 @@ func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	req := request.GetNetworkDetailsRequest{
 		UUID: d.Id(),
 	}
 
-	network, err := client.GetNetworkDetails(&req)
+	network, err := client.GetNetworkDetails(ctx, &req)
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == networkNotFoundErrorCode {
 			var diags diag.Diagnostics
@@ -214,7 +214,7 @@ func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	req := request.ModifyNetworkRequest{
 		UUID: d.Id(),
@@ -246,7 +246,7 @@ func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		req.IPNetworks = []upcloud.IPNetwork{uipn}
 	}
 
-	network, err := client.ModifyNetwork(&req)
+	network, err := client.ModifyNetwork(ctx, &req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -254,9 +254,9 @@ func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	if d.HasChange("router") {
 		_, v := d.GetChange("router")
 		if v.(string) == "" {
-			err = client.DetachNetworkRouter(&request.DetachNetworkRouterRequest{NetworkUUID: d.Id()})
+			err = client.DetachNetworkRouter(ctx, &request.DetachNetworkRouterRequest{NetworkUUID: d.Id()})
 		} else {
-			err = client.AttachNetworkRouter(&request.AttachNetworkRouterRequest{NetworkUUID: d.Id(), RouterUUID: v.(string)})
+			err = client.AttachNetworkRouter(ctx, &request.AttachNetworkRouterRequest{NetworkUUID: d.Id(), RouterUUID: v.(string)})
 		}
 		if err != nil {
 			return diag.FromErr(err)
@@ -269,12 +269,12 @@ func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	req := request.DeleteNetworkRequest{
 		UUID: d.Id(),
 	}
-	err := client.DeleteNetwork(&req)
+	err := client.DeleteNetwork(ctx, &req)
 
 	if err != nil {
 		return diag.FromErr(err)

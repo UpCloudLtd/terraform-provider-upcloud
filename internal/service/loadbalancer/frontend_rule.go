@@ -66,7 +66,7 @@ func ResourceFrontendRule() *schema.Resource {
 }
 
 func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	matchers, err := loadBalancerMatchersFromResourceData(d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -81,7 +81,7 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 	if err := unmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
 		return diag.FromErr(err)
 	}
-	rule, err := svc.CreateLoadBalancerFrontendRule(&request.CreateLoadBalancerFrontendRuleRequest{
+	rule, err := svc.CreateLoadBalancerFrontendRule(ctx, &request.CreateLoadBalancerFrontendRuleRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Rule: request.LoadBalancerFrontendRule{
@@ -107,12 +107,12 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	rule, err := svc.GetLoadBalancerFrontendRule(&request.GetLoadBalancerFrontendRuleRequest{
+	rule, err := svc.GetLoadBalancerFrontendRule(ctx, &request.GetLoadBalancerFrontendRuleRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Name:         name,
@@ -136,13 +136,13 @@ func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	// name and priority fields doesn't force replacement and can be updated in-place
-	rule, err := svc.ModifyLoadBalancerFrontendRule(&request.ModifyLoadBalancerFrontendRuleRequest{
+	rule, err := svc.ModifyLoadBalancerFrontendRule(ctx, &request.ModifyLoadBalancerFrontendRuleRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Name:         name,
@@ -167,13 +167,13 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceFrontendRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	svc := meta.(*service.ServiceContext)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] deleting frontend rule '%s'", d.Id())
-	return diag.FromErr(svc.DeleteLoadBalancerFrontendRule(&request.DeleteLoadBalancerFrontendRuleRequest{
+	return diag.FromErr(svc.DeleteLoadBalancerFrontendRule(ctx, &request.DeleteLoadBalancerFrontendRuleRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
 		Name:         name,

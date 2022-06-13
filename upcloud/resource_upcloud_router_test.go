@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -241,8 +242,8 @@ func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resou
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
-		latest, err := client.GetRouterDetails(&request.GetRouterDetailsRequest{
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		latest, err := client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
 
@@ -265,8 +266,8 @@ func testAccCheckRouterDoesntExist(resourceName string, router *upcloud.Router) 
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
-		_, err := client.GetRouterDetails(&request.GetRouterDetailsRequest{
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		_, err := client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
 			UUID: router.UUID,
 		})
 
@@ -292,8 +293,8 @@ func testAccCheckNetworkExists(resourceName string, network *upcloud.Network) re
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
-		latest, err := client.GetNetworkDetails(&request.GetNetworkDetailsRequest{
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		latest, err := client.GetNetworkDetails(context.Background(), &request.GetNetworkDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
 
@@ -325,8 +326,8 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
-		routers, err := client.GetRouters()
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		routers, err := client.GetRouters(context.Background())
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing routers when deleting upcloud router (%s): %s", rs.Primary.ID, err)
 		}
@@ -342,11 +343,11 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 }
 
 func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*service.Service)
+	client := testAccProvider.Meta().(*service.ServiceContext)
 	for _, rs := range s.RootModule().Resources {
 		switch rs.Type {
 		case "upcloud_router":
-			routers, err := client.GetRouters()
+			routers, err := client.GetRouters(context.Background())
 			if err != nil {
 				return fmt.Errorf("[WARN] Error listing routers when deleting upcloud router (%s): %s", rs.Primary.ID, err)
 			}
@@ -358,7 +359,7 @@ func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
 				}
 			}
 		case "upcloud_network":
-			networks, err := client.GetNetworks()
+			networks, err := client.GetNetworks(context.Background())
 			if err != nil {
 				return fmt.Errorf("[WARN] Error listing networks when deleting upcloud network (%s): %s", rs.Primary.ID, err)
 			}

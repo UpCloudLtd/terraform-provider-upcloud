@@ -50,11 +50,11 @@ func validateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
 	}
 }
 
-func validatePlan(service *service.Service, plan string) error {
+func validatePlan(ctx context.Context, service *service.ServiceContext, plan string) error {
 	if plan == "" {
 		return nil
 	}
-	plans, err := service.GetPlans()
+	plans, err := service.GetPlans(ctx)
 	if err != nil {
 		return err
 	}
@@ -68,8 +68,8 @@ func validatePlan(service *service.Service, plan string) error {
 	return fmt.Errorf("expected plan to be one of [%s], got %s", strings.Join(availablePlans, ", "), plan)
 }
 
-func validateZone(service *service.Service, zone string) error {
-	zones, err := service.GetZones()
+func validateZone(ctx context.Context, service *service.ServiceContext, zone string) error {
+	zones, err := service.GetZones(ctx)
 	if err != nil {
 		return err
 	}
@@ -83,12 +83,12 @@ func validateZone(service *service.Service, zone string) error {
 	return fmt.Errorf("expected zone to be one of [%s], got %s", strings.Join(availableZones, ", "), zone)
 }
 
-func validateTagsChange(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func validateTagsChange(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	old, new := d.GetChange("tags")
 	if tagsHasChange(old, new) {
-		client := meta.(*service.Service)
+		client := meta.(*service.ServiceContext)
 
-		if isSubaccount, err := isProviderAccountSubaccount(client); err != nil || isSubaccount {
+		if isSubaccount, err := isProviderAccountSubaccount(ctx, client); err != nil || isSubaccount {
 			if err != nil {
 				return err
 			}

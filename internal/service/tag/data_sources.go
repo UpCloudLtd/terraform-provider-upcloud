@@ -46,11 +46,11 @@ func DataSourceTags() *schema.Resource {
 }
 
 func dataSourceTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
-	tags, err := client.GetTags()
+	tags, err := client.GetTags(ctx)
 
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching tags: %s", err))

@@ -148,7 +148,7 @@ func ResourceFirewallRules() *schema.Resource {
 }
 
 func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	opts := &request.CreateFirewallRulesRequest{
 		ServerUUID: d.Get("server_id").(string),
@@ -182,7 +182,7 @@ func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, me
 		opts.FirewallRules = firewallRules
 	}
 
-	if _, err := client.WaitForServerState(&request.WaitForServerStateRequest{
+	if _, err := client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 		UUID:           opts.ServerUUID,
 		UndesiredState: upcloud.ServerStateMaintenance,
 		Timeout:        time.Minute * 5,
@@ -190,7 +190,7 @@ func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if err := client.CreateFirewallRules(opts); err != nil {
+	if err := client.CreateFirewallRules(ctx, opts); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -200,7 +200,7 @@ func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
@@ -208,7 +208,7 @@ func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta
 		ServerUUID: d.Id(),
 	}
 
-	firewallRules, err := client.GetFirewallRules(opts)
+	firewallRules, err := client.GetFirewallRules(ctx, opts)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -249,13 +249,13 @@ func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	opts := &request.CreateFirewallRulesRequest{
 		ServerUUID: d.Id(),
 	}
 
-	err := client.CreateFirewallRules(opts)
+	err := client.CreateFirewallRules(ctx, opts)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -291,7 +291,7 @@ func resourceFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, me
 		opts.FirewallRules = firewallRules
 	}
 
-	err = client.CreateFirewallRules(opts)
+	err = client.CreateFirewallRules(ctx, opts)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -301,7 +301,7 @@ func resourceFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
@@ -310,7 +310,7 @@ func resourceFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, me
 		FirewallRules: nil,
 	}
 
-	if _, err := client.WaitForServerState(&request.WaitForServerStateRequest{
+	if _, err := client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 		UUID:           opts.ServerUUID,
 		UndesiredState: upcloud.ServerStateMaintenance,
 		Timeout:        time.Minute * 5,
@@ -318,7 +318,7 @@ func resourceFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if err := client.CreateFirewallRules(opts); err != nil {
+	if err := client.CreateFirewallRules(ctx, opts); err != nil {
 		return diag.FromErr(err)
 	}
 

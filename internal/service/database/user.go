@@ -71,14 +71,14 @@ func schemaUser() map[string]*schema.Schema {
 }
 
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	if d.HasChange("type") && d.Get("type").(string) != string(upcloud.ManagedDatabaseUserTypeNormal) {
 		return diag.FromErr(fmt.Errorf("only type `normal` users can be created"))
 	}
 
 	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
+	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -91,7 +91,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.CreateManagedDatabaseUser(&request.CreateManagedDatabaseUserRequest{
+	_, err = client.CreateManagedDatabaseUser(ctx, &request.CreateManagedDatabaseUserRequest{
 		ServiceUUID: serviceID,
 		Username:    d.Get("username").(string),
 		Password:    d.Get("password").(string),
@@ -108,11 +108,11 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	serviceID, username := splitManagedDatabaseSubResourceID(d.Id())
 
-	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
+	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
 			var diags diag.Diagnostics
@@ -123,7 +123,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.FromErr(err)
 	}
 
-	userDetails, err := client.GetManagedDatabaseUser(&request.GetManagedDatabaseUserRequest{
+	userDetails, err := client.GetManagedDatabaseUser(ctx, &request.GetManagedDatabaseUserRequest{
 		ServiceUUID: serviceID,
 		Username:    username})
 	if err != nil {
@@ -143,10 +143,10 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
+	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -161,7 +161,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	_, err = client.ModifyManagedDatabaseUser(&request.ModifyManagedDatabaseUserRequest{
+	_, err = client.ModifyManagedDatabaseUser(ctx, &request.ModifyManagedDatabaseUserRequest{
 		ServiceUUID: serviceID,
 		Username:    username,
 		Password:    d.Get("password").(string),
@@ -176,7 +176,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	if d.Get("type").(string) == string(upcloud.ManagedDatabaseUserTypePrimary) {
 		if d.HasChange("username") {
@@ -187,7 +187,7 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
+	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -202,7 +202,7 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	err = client.DeleteManagedDatabaseUser(&request.DeleteManagedDatabaseUserRequest{
+	err = client.DeleteManagedDatabaseUser(ctx, &request.DeleteManagedDatabaseUserRequest{
 		ServiceUUID: serviceID,
 		Username:    username,
 	})

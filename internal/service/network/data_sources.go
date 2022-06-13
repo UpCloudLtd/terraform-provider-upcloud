@@ -123,7 +123,7 @@ func DataSourceNetworks() *schema.Resource {
 }
 
 func dataSourceNetworksRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	// Get the zone from the configuration
 	var zone string
@@ -141,14 +141,14 @@ func dataSourceNetworksRead(ctx context.Context, d *schema.ResourceData, meta in
 	var err error
 	var fetchedNetworks *upcloud.Networks
 	if zone != "" {
-		fetchedNetworks, err = client.GetNetworksInZone(&request.GetNetworksInZoneRequest{
+		fetchedNetworks, err = client.GetNetworksInZone(ctx, &request.GetNetworksInZoneRequest{
 			Zone: zone,
 		})
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	} else {
-		fetchedNetworks, err = client.GetNetworks()
+		fetchedNetworks, err = client.GetNetworks(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}

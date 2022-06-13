@@ -152,7 +152,7 @@ func ResourceStorage() *schema.Resource {
 }
 
 func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
@@ -176,9 +176,9 @@ func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta int
 		// There is not 'clone' block so do the
 		// create storage logic including importing
 		// external data.
-		diags = createStorage(client, size, tier, title, zone, d)
+		diags = createStorage(ctx, client, size, tier, title, zone, d)
 	} else {
-		diags = cloneStorage(client, size, tier, title, zone, d)
+		diags = cloneStorage(ctx, client, size, tier, title, zone, d)
 	}
 	if diags.HasError() {
 		return diags
@@ -198,14 +198,14 @@ func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
 	r := &request.GetStorageDetailsRequest{
 		UUID: d.Id(),
 	}
-	storage, err := client.GetStorageDetails(r)
+	storage, err := client.GetStorageDetails(ctx, r)
 
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == storageNotFoundErrorCode {
@@ -240,7 +240,7 @@ func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.FromErr(err)
 	}
 
-	simpleBackupEnabled, err := isStorageSimpleBackupEnabled(client, d.Id())
+	simpleBackupEnabled, err := isStorageSimpleBackupEnabled(ctx, client, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -266,14 +266,14 @@ func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta inter
 	if v, ok := d.GetOk("import"); ok {
 		configImportBlock := v.(*schema.Set).List()[0].(map[string]interface{})
 
-		_, err := client.WaitForStorageImportCompletion(&request.WaitForStorageImportCompletionRequest{
+		_, err := client.WaitForStorageImportCompletion(ctx, &request.WaitForStorageImportCompletionRequest{
 			StorageUUID: d.Id(),
 		})
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		importDetails, err := client.GetStorageImportDetails(&request.GetStorageImportDetailsRequest{
+		importDetails, err := client.GetStorageImportDetails(ctx, &request.GetStorageImportDetailsRequest{
 			UUID: d.Id(),
 		})
 		if err != nil {
@@ -297,10 +297,10 @@ func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 	diags := diag.Diagnostics{}
 
-	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
+	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
@@ -326,7 +326,7 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		}
 	}
 
-	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+	storageDetails, err := client.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{
 		UUID: d.Id(),
 	})
 	if err != nil {
@@ -334,16 +334,17 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	// need to shut down server if resizing
 	if len(storageDetails.ServerUUIDs) > 0 && d.HasChange("size") {
-		err := utils.VerifyServerStopped(request.StopServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
+		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if _, err := utils.WithRetry(func() (interface{}, error) { return client.ModifyStorage(&req) }, 20, time.Second*5); err != nil {
+		if _, err := utils.WithRetry(func() (interface{}, error) { return client.ModifyStorage(ctx, &req) }, 20, time.Second*5); err != nil {
 			return diag.FromErr(err)
 		}
 
 		if d.Get("filesystem_autoresize").(bool) {
 			diags = append(diags, ResizeStoragePartitionAndFs(
+				ctx,
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -352,16 +353,17 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
-		if err = utils.VerifyServerStarted(request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta); err != nil {
+		if err = utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: storageDetails.ServerUUIDs[0]}, meta); err != nil {
 			return diag.FromErr(err)
 		}
 	} else {
-		if _, err := client.ModifyStorage(&req); err != nil {
+		if _, err := client.ModifyStorage(ctx, &req); err != nil {
 			return diag.FromErr(err)
 		}
 
 		if d.HasChange("size") && d.Get("filesystem_autoresize").(bool) {
 			diags = append(diags, ResizeStoragePartitionAndFs(
+				ctx,
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -376,13 +378,13 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
 	// Wait for storage to enter 'online' state as storage devices can only
 	// be deleted in this state.
-	_, err := client.WaitForStorageState(&request.WaitForStorageStateRequest{
+	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
 		Timeout:      15 * time.Minute,
@@ -392,7 +394,7 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	// fetch storage details for checking that the storage can be deleted
-	storageDetails, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{
+	storageDetails, err := client.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{
 		UUID: d.Id(),
 	})
 	if err != nil {
@@ -402,7 +404,7 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 	if len(storageDetails.ServerUUIDs) > 0 {
 		serverUUID := storageDetails.ServerUUIDs[0]
 		// Get server details for retrieving the address that is to be used when detaching the storage
-		serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+		serverDetails, err := client.GetServerDetails(ctx, &request.GetServerDetailsRequest{
 			UUID: serverUUID,
 		})
 		if err != nil {
@@ -412,14 +414,14 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 		if storageDevice := serverDetails.StorageDevice(d.Id()); storageDevice != nil {
 			// ide devices can only be detached from stopped servers
 			if strings.HasPrefix(storageDevice.Address, "ide") {
-				err = utils.VerifyServerStopped(request.StopServerRequest{UUID: serverUUID}, meta)
+				err = utils.VerifyServerStopped(ctx, request.StopServerRequest{UUID: serverUUID}, meta)
 				if err != nil {
 					return diag.FromErr(err)
 				}
 			}
 
 			_, err = utils.WithRetry(func() (interface{}, error) {
-				return client.DetachStorage(&request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
+				return client.DetachStorage(ctx, &request.DetachStorageRequest{ServerUUID: serverUUID, Address: storageDevice.Address})
 			}, 20, time.Second*3)
 			if err != nil {
 				return diag.FromErr(err)
@@ -427,7 +429,7 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
 				// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
-				if err = utils.VerifyServerStarted(request.StartServerRequest{UUID: serverUUID}, meta); err != nil {
+				if err = utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: serverUUID}, meta); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -437,7 +439,7 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 	deleteStorageRequest := &request.DeleteStorageRequest{
 		UUID: d.Id(),
 	}
-	err = client.DeleteStorage(deleteStorageRequest)
+	err = client.DeleteStorage(ctx, deleteStorageRequest)
 
 	if err != nil {
 		return diag.FromErr(err)

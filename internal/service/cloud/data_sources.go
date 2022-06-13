@@ -54,11 +54,11 @@ func DataSourceHosts() *schema.Resource {
 }
 
 func dataSourceHostsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
-	hosts, err := client.GetHosts()
+	hosts, err := client.GetHosts(ctx)
 
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching hosts: %s", err))
@@ -110,11 +110,11 @@ func DataSourceZone() *schema.Resource {
 }
 
 func resourceZoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
-	zones, err := client.GetZones()
+	zones, err := client.GetZones(ctx)
 
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching zones: %s", err))
@@ -169,11 +169,11 @@ func DataSourceZones() *schema.Resource {
 }
 
 func dataSourceZonesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
-	zones, err := client.GetZones()
+	zones, err := client.GetZones(ctx)
 
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching zones: %s", err))

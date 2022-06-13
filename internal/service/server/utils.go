@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
@@ -8,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func isProviderAccountSubaccount(s *service.Service) (bool, error) {
-	account, err := s.GetAccount()
+func isProviderAccountSubaccount(ctx context.Context, s *service.ServiceContext) (bool, error) {
+	account, err := s.GetAccount(ctx)
 	if err != nil {
 		return false, err
 	}
-	a, err := s.GetAccountDetails(&request.GetAccountDetailsRequest{Username: account.UserName})
+	a, err := s.GetAccountDetails(ctx, &request.GetAccountDetailsRequest{Username: account.UserName})
 	if err != nil {
 		return false, err
 	}

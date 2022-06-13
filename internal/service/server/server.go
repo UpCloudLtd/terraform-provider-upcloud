@@ -379,18 +379,18 @@ func ResourceServer() *schema.Resource {
 }
 
 func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 	diags := diag.Diagnostics{}
 
-	if err := validatePlan(client, d.Get("plan").(string)); err != nil {
+	if err := validatePlan(ctx, client, d.Get("plan").(string)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := validateZone(client, d.Get("zone").(string)); err != nil {
+	if err := validateZone(ctx, client, d.Get("zone").(string)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	r, err := buildServerOpts(d, meta)
+	r, err := buildServerOpts(ctx, d, meta)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -401,7 +401,7 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		r.Title = defaultTitleFromHostname(d.Get("hostname").(string))
 	}
 
-	serverDetails, err := client.CreateServer(r)
+	serverDetails, err := client.CreateServer(ctx, r)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -422,7 +422,7 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	// Add server tags
 	if tags, tagsExists := d.GetOk("tags"); tagsExists {
 		tags := utils.ExpandStrings(tags)
-		if err := addTags(client, serverDetails.UUID, tags); err != nil {
+		if err := addTags(ctx, client, serverDetails.UUID, tags); err != nil {
 			if errors.As(err, &tagsExistsWarning{}) {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Warning,
@@ -434,7 +434,7 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	_, err = client.WaitForServerState(&request.WaitForServerStateRequest{
+	_, err = client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 		UUID:         serverDetails.UUID,
 		DesiredState: upcloud.ServerStateStarted,
 		Timeout:      time.Minute * 25,
@@ -448,13 +448,13 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 	diags := diag.Diagnostics{}
 
 	r := &request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	}
-	server, err := client.GetServerDetails(r)
+	server, err := client.GetServerDetails(ctx, r)
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == serverNotFoundErrorCode {
 			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("hostname").(string)))
@@ -566,17 +566,17 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 	diags := diag.Diagnostics{}
 
 	planHasChange := d.HasChange("plan")
 	if planHasChange {
-		if err := validatePlan(client, d.Get("plan").(string)); err != nil {
+		if err := validatePlan(ctx, client, d.Get("plan").(string)); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	serverDetails, err := client.GetServerDetails(&request.GetServerDetailsRequest{
+	serverDetails, err := client.GetServerDetails(ctx, &request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
 	if err != nil {
@@ -585,7 +585,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// Stop the server if the requested changes require it
 	if d.HasChanges("cpu", "mem", "template.0.size", "storage_devices") || planHasChange {
-		err := utils.VerifyServerStopped(request.StopServerRequest{
+		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: d.Id(),
 		},
 			meta,
@@ -628,7 +628,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 			if hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d) {
 				templateID := d.Get("template.0.id").(string)
 
-				tmpl, err := client.GetStorageDetails(&request.GetStorageDetailsRequest{UUID: templateID})
+				tmpl, err := client.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{UUID: templateID})
 				if err != nil {
 					return diag.FromErr(err)
 				}
@@ -639,7 +639,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 						BackupRule: &upcloud.BackupRule{},
 					}
 
-					if _, err := client.ModifyStorage(r); err != nil {
+					if _, err := client.ModifyStorage(ctx, r); err != nil {
 						return diag.FromErr(err)
 					}
 				}
@@ -662,15 +662,18 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	if _, err := client.ModifyServer(r); err != nil {
+	if _, err := client.ModifyServer(ctx, r); err != nil {
 		return diag.FromErr(err)
 	}
 
 	if d.HasChange("tags") {
 		oldTags, newTags := d.GetChange("tags")
 		if err := updateTags(
-			client, d.Id(),
-			utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags),
+			ctx,
+			client,
+			d.Id(),
+			utils.ExpandStrings(oldTags),
+			utils.ExpandStrings(newTags),
 		); err != nil {
 			if errors.As(err, &tagsExistsWarning{}) {
 				diags = append(diags, diag.Diagnostic{
@@ -699,13 +702,14 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 			}
 		}
 
-		storageDetails, err := client.ModifyStorage(r)
+		storageDetails, err := client.ModifyStorage(ctx, r)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		if d.HasChange("template.0.size") && d.Get("template.0.filesystem_autoresize").(bool) {
 			diags = append(diags, storage.ResizeStoragePartitionAndFs(
+				ctx,
 				client,
 				storageDetails.UUID,
 				storageDetails.Title,
@@ -717,13 +721,13 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	// should reattach if address changed
 	if d.HasChange("template.0.address") {
 		o, n := d.GetChange("template.0.address")
-		if _, err := client.DetachStorage(&request.DetachStorageRequest{
+		if _, err := client.DetachStorage(ctx, &request.DetachStorageRequest{
 			ServerUUID: d.Id(),
 			Address:    utils.StorageAddressFormat(o.(string)),
 		}); err != nil {
 			return diag.FromErr(err)
 		}
-		if _, err := client.AttachStorage(&request.AttachStorageRequest{
+		if _, err := client.AttachStorage(ctx, &request.AttachStorageRequest{
 			Address:     utils.StorageAddressFormat(n.(string)),
 			ServerUUID:  d.Id(),
 			StorageUUID: d.Get("template.0.id").(string),
@@ -743,7 +747,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 			if serverStorageDevice == nil {
 				continue
 			}
-			if _, err := client.DetachStorage(&request.DetachStorageRequest{
+			if _, err := client.DetachStorage(ctx, &request.DetachStorageRequest{
 				ServerUUID: d.Id(),
 				Address:    serverStorageDevice.Address,
 			}); err != nil {
@@ -752,7 +756,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 
 			// Remove backup rule from the detached storage, if it was a result of simple backup setting
 			if _, ok := d.GetOk("simple_backup"); ok {
-				if _, err := client.ModifyStorage(&request.ModifyStorageRequest{
+				if _, err := client.ModifyStorage(ctx, &request.ModifyStorageRequest{
 					UUID:       serverStorageDevice.UUID,
 					BackupRule: &upcloud.BackupRule{},
 				}); err != nil {
@@ -764,7 +768,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		// attach the storages that are new or have changed
 		for _, rawStorageDevice := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
 			storageDevice := rawStorageDevice.(map[string]interface{})
-			if _, err := client.AttachStorage(&request.AttachStorageRequest{
+			if _, err := client.AttachStorage(ctx, &request.AttachStorageRequest{
 				ServerUUID:  d.Id(),
 				Address:     utils.StorageAddressFormat(storageDevice["address"].(string)),
 				StorageUUID: storageDevice["storage"].(string),
@@ -775,7 +779,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	if err := utils.VerifyServerStarted(request.StartServerRequest{UUID: d.Id(), Host: d.Get("host").(int)}, meta); err != nil {
+	if err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: d.Id(), Host: d.Get("host").(int)}, meta); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -785,17 +789,17 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceServerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
 	// Verify server is stopped before deletion
-	if err := utils.VerifyServerStopped(request.StopServerRequest{UUID: d.Id()}, meta); err != nil {
+	if err := utils.VerifyServerStopped(ctx, request.StopServerRequest{UUID: d.Id()}, meta); err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Delete tags that are not used by any other servers
-	if err := removeTags(client, d.Id(), utils.ExpandStrings(d.Get("tags"))); err != nil {
+	if err := removeTags(ctx, client, d.Id(), utils.ExpandStrings(d.Get("tags"))); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
 			Summary:  "failed to delete tags that will be unused after server deletion",
@@ -808,7 +812,7 @@ func resourceServerDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		UUID: d.Id(),
 	}
 	log.Printf("[INFO] Deleting server (server UUID: %s)", d.Id())
-	if err := client.DeleteServer(deleteServerRequest); err != nil {
+	if err := client.DeleteServer(ctx, deleteServerRequest); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -819,7 +823,7 @@ func resourceServerDelete(ctx context.Context, d *schema.ResourceData, meta inte
 			UUID: template["id"].(string),
 		}
 		log.Printf("[INFO] Deleting server storage (storage UUID: %s)", deleteStorageRequest.UUID)
-		if err := client.DeleteStorage(deleteStorageRequest); err != nil {
+		if err := client.DeleteStorage(ctx, deleteStorageRequest); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -827,7 +831,7 @@ func resourceServerDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	return diags
 }
 
-func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateServerRequest, error) {
+func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface{}) (*request.CreateServerRequest, error) {
 	r := &request.CreateServerRequest{
 		Zone:     d.Get("zone").(string),
 		Hostname: d.Get("hostname").(string),
@@ -892,10 +896,9 @@ func buildServerOpts(d *schema.ResourceData, meta interface{}) (*request.CreateS
 		if source := template["storage"].(string); source != "" {
 			// Assume template name is given and attempt map name to UUID
 			if _, err := uuid.ParseUUID(source); err != nil {
-				l, err := meta.(*service.Service).GetStorages(
-					&request.GetStoragesRequest{
-						Type: upcloud.StorageTypeTemplate,
-					})
+				l, err := meta.(*service.ServiceContext).GetStorages(ctx, &request.GetStoragesRequest{
+					Type: upcloud.StorageTypeTemplate,
+				})
 
 				if err != nil {
 					return nil, err

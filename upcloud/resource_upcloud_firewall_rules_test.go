@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -125,9 +126,9 @@ func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := testAccProvider.Meta().(*service.ServiceContext)
 
-		_, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
+		_, err := client.GetFirewallRules(context.Background(), &request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
 		})
 		if err == nil {
@@ -154,8 +155,8 @@ func testAccCheckFirewallRulesExists(resourceName string, firewallRules *upcloud
 			return fmt.Errorf("No Firewall ID is set")
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
-		latest, err := client.GetFirewallRules(&request.GetFirewallRulesRequest{
+		client := testAccProvider.Meta().(*service.ServiceContext)
+		latest, err := client.GetFirewallRules(context.Background(), &request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
 		})
 

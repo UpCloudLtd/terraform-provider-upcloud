@@ -61,7 +61,7 @@ func ResourceFloatingIPAddress() *schema.Resource {
 }
 
 func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	assignIPAddressRequest := &request.AssignIPAddressRequest{
 		Floating: upcloud.True,
@@ -80,7 +80,7 @@ func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData
 		assignIPAddressRequest.Zone = zone.(string)
 	}
 
-	ipAddress, err := client.AssignIPAddress(assignIPAddressRequest)
+	ipAddress, err := client.AssignIPAddress(ctx, assignIPAddressRequest)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -96,7 +96,7 @@ func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
@@ -104,7 +104,7 @@ func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, 
 		Address: d.Id(),
 	}
 
-	ipAddress, err := client.GetIPAddressDetails(getIPAddressDetailsRequest)
+	ipAddress, err := client.GetIPAddressDetails(ctx, getIPAddressDetailsRequest)
 
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == ipAddressNotFoundErrorCode {
@@ -143,7 +143,7 @@ func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	modifyIPAddressRequest := &request.ModifyIPAddressRequest{
 		IPAddress: d.Id(),
@@ -154,7 +154,7 @@ func resourceFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData
 		modifyIPAddressRequest.MAC = newMAC.(string)
 	}
 
-	_, err := client.ModifyIPAddress(modifyIPAddressRequest)
+	_, err := client.ModifyIPAddress(ctx, modifyIPAddressRequest)
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -163,7 +163,7 @@ func resourceFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	var diags diag.Diagnostics
 
@@ -173,7 +173,7 @@ func resourceFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData
 			MAC:       "",
 		}
 
-		_, err := client.ModifyIPAddress(modifyIPAddressRequest)
+		_, err := client.ModifyIPAddress(ctx, modifyIPAddressRequest)
 		if err != nil {
 			diag.FromErr(err)
 		}
@@ -183,7 +183,7 @@ func resourceFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData
 		IPAddress: d.Id(),
 	}
 
-	err := client.ReleaseIPAddress(releaseIPAddressRequest)
+	err := client.ReleaseIPAddress(ctx, releaseIPAddressRequest)
 
 	if err != nil {
 		diag.FromErr(err)

@@ -74,10 +74,10 @@ func schemaLogicalDatabase() map[string]*schema.Schema {
 }
 
 func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
+	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -94,7 +94,7 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.CreateManagedDatabaseLogicalDatabase(&request.CreateManagedDatabaseLogicalDatabaseRequest{
+	_, err = client.CreateManagedDatabaseLogicalDatabase(ctx, &request.CreateManagedDatabaseLogicalDatabaseRequest{
 		ServiceUUID: serviceID,
 		Name:        d.Get("name").(string),
 		LCCType:     d.Get("character_set").(string),
@@ -112,11 +112,11 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	serviceID, name := splitManagedDatabaseSubResourceID(d.Id())
 
-	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
+	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
 			var diags diag.Diagnostics
@@ -127,7 +127,7 @@ func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	ldbs, err := client.GetManagedDatabaseLogicalDatabases(&request.GetManagedDatabaseLogicalDatabasesRequest{
+	ldbs, err := client.GetManagedDatabaseLogicalDatabases(ctx, &request.GetManagedDatabaseLogicalDatabasesRequest{
 		ServiceUUID: serviceID,
 	})
 	if err != nil {
@@ -158,10 +158,10 @@ func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: serviceID})
+	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -176,7 +176,7 @@ func resourceLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	err = client.DeleteManagedDatabaseLogicalDatabase(&request.DeleteManagedDatabaseLogicalDatabaseRequest{
+	err = client.DeleteManagedDatabaseLogicalDatabase(ctx, &request.DeleteManagedDatabaseLogicalDatabaseRequest{
 		ServiceUUID: serviceID,
 		Name:        name,
 	})

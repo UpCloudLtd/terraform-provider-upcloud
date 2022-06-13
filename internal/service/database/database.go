@@ -32,7 +32,7 @@ var resourceUpcloudManagedDatabaseModifiableStates = []upcloud.ManagedDatabaseSt
 
 func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) schema.CreateContextFunc {
 	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		client := meta.(*service.Service)
+		client := meta.(*service.ServiceContext)
 
 		if err := d.Set("type", string(serviceType)); err != nil {
 			return diag.FromErr(err)
@@ -57,7 +57,7 @@ func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) sche
 			}
 		}
 
-		details, err := client.CreateManagedDatabase(&req)
+		details, err := client.CreateManagedDatabase(ctx, &req)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -75,7 +75,7 @@ func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) sche
 		}
 
 		if !d.Get("powered").(bool) {
-			_, err := client.ShutdownManagedDatabase(&request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
+			_, err := client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -98,9 +98,9 @@ func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) sche
 
 func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	var err error
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 	req := request.GetManagedDatabaseRequest{UUID: d.Id()}
-	details, err := client.GetManagedDatabase(&req)
+	details, err := client.GetManagedDatabase(ctx, &req)
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
 			var diags diag.Diagnostics
@@ -132,7 +132,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 	diags := diag.Diagnostics{}
 
 	if d.HasChanges("plan", "title", "zone",
@@ -154,7 +154,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			req.Properties = props
 		}
 
-		_, err := client.ModifyManagedDatabase(&req)
+		_, err := client.ModifyManagedDatabase(ctx, &req)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -164,7 +164,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	if d.HasChange("powered") {
 		if d.Get("powered").(bool) {
-			_, err := client.StartManagedDatabase(&request.StartManagedDatabaseRequest{UUID: d.Id()})
+			_, err := client.StartManagedDatabase(ctx, &request.StartManagedDatabaseRequest{UUID: d.Id()})
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -182,16 +182,16 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 						Detail:   err.Error(),
 					})
 				} else {
-					diags = append(diags, updateDatabaseVersion(d, client)...)
+					diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
 				}
 			}
 		} else {
 			// Attempt to upgrade version before database is powered off
 			if d.HasChange("properties.0.version") {
-				diags = append(diags, updateDatabaseVersion(d, client)...)
+				diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
 			}
 
-			_, err := client.ShutdownManagedDatabase(&request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
+			_, err := client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -207,7 +207,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 					Detail:   "Cannot upgrade version for Managed Database when it is powered off",
 				})
 			} else {
-				diags = append(diags, updateDatabaseVersion(d, client)...)
+				diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
 			}
 		}
 	}
@@ -217,10 +217,10 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+	client := meta.(*service.ServiceContext)
 
 	req := request.DeleteManagedDatabaseRequest{UUID: d.Id()}
-	if err := client.DeleteManagedDatabase(&req); err != nil {
+	if err := client.DeleteManagedDatabase(ctx, &req); err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[INFO] managed database %v (%v) deleted", req.UUID, d.Get("name"))
@@ -342,7 +342,7 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 	return d.Set("primary_database", details.ServiceURIParams.DatabaseName)
 }
 
-func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Service, db *upcloud.ManagedDatabase) error {
+func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.ServiceContext, db *upcloud.ManagedDatabase) error {
 	const maxRetries int = 100
 	var err error
 	for i := 0; i <= maxRetries; i++ {
@@ -350,7 +350,7 @@ func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Servic
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if db, err = client.GetManagedDatabase(&request.GetManagedDatabaseRequest{UUID: db.UUID}); err != nil {
+			if db, err = client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: db.UUID}); err != nil {
 				return err
 			}
 			if isManagedDatabaseFullyCreated(db) {
@@ -386,10 +386,10 @@ func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
 	return errors.New("max retries reached while waiting for service name to propagate")
 }
 
-func updateDatabaseVersion(d *schema.ResourceData, client *service.Service) diag.Diagnostics {
+func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *service.ServiceContext) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	_, err := client.UpgradeManagedDatabaseVersion(&request.UpgradeManagedDatabaseVersionRequest{
+	_, err := client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
 		UUID:          d.Id(),
 		TargetVersion: d.Get("properties.0.version").(string),
 	})
