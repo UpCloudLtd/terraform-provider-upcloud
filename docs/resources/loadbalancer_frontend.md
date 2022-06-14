@@ -64,10 +64,19 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Optional
 
 - **id** (String) The ID of this resource.
+- **properties** (Block List, Max: 1) Frontend properties (see [below for nested schema](#nestedblock--properties))
 
 ### Read-Only
 
 - **rules** (List of String) Set of frontend rule names
 - **tls_configs** (List of String) Set of TLS config names
+
+<a id="nestedblock--properties"></a>
+### Nested Schema for `properties`
+
+Optional:
+
+- **inbound_proxy_protocol** (Boolean) Enable or disable inbound proxy protocol support.
+- **timeout_client** (Number) Client request timeout in seconds.
 
 

@@ -17,6 +17,10 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	testDataS3, err := ioutil.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
 	var providers []*schema.Provider
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
@@ -45,6 +49,16 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(dnsName, "nameservers.#", "2"),
 					resource.TestCheckResourceAttr(be1Name, "name", "lb-be-1-test"),
 					resource.TestCheckResourceAttr(be1Name, "resolver_name", "lb-resolver-1-test"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.timeout_server", "10"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.timeout_tunnel", "3600"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_type", "tcp"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_interval", "10"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_fall", "3"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_rise", "3"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_url", "/"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_expected_status", "200"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),
 					resource.TestCheckResourceAttr(be2Name, "name", "lb-be-2-test"),
 					resource.TestCheckResourceAttr(be2Name, "resolver_name", ""),
 					resource.TestCheckResourceAttr(be1sm1Name, "name", "lb-be-1-sm-1-test"),
@@ -64,6 +78,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Name, "port", "8080"),
 					resource.TestCheckResourceAttr(fe1Name, "mode", "http"),
 					resource.TestCheckResourceAttr(fe1Name, "default_backend_name", "lb-be-1-test"),
+					resource.TestCheckResourceAttr(fe1Name, "properties.0.timeout_client", "10"),
+					resource.TestCheckResourceAttr(fe1Name, "properties.0.inbound_proxy_protocol", "false"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "name", "lb-fe-1-r1-test"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "priority", "10"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.src_port.0.method", "equal"),
@@ -126,6 +142,24 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "resolver_name", "lb-resolver-1-test-1"),
 					resource.TestCheckResourceAttr(fe1Name, "default_backend_name", "lb-be-1-test-1"),
 					resource.TestCheckResourceAttr(be2sm1Name, "weight", "0"),
+				),
+			},
+			{
+				Config:            string(testDataS3),
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(be1Name, "properties.0.timeout_server", "20"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.timeout_tunnel", "4000"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_type", "http"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_interval", "10"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_fall", "3"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_rise", "3"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_url", "/"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_expected_status", "200"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),
+					resource.TestCheckResourceAttr(fe1Name, "properties.0.timeout_client", "20"),
+					resource.TestCheckResourceAttr(fe1Name, "properties.0.inbound_proxy_protocol", "true"),
 				),
 			},
 		},
