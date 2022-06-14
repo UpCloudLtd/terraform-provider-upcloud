@@ -160,6 +160,7 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
       status       = "404"
     }
     tcp_reject {}
+    set_forwarded_headers {}
   }
 }
 
