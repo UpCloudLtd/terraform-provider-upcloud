@@ -200,8 +200,7 @@ func setBackendResourceData(d *schema.ResourceData, be *upcloud.LoadBalancerBack
 }
 
 func backendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBalancerBackendProperties {
-	props, ok := d.GetOk("properties.0")
-	if !ok || props == nil {
+	if props, ok := d.GetOk("properties.0"); !ok || props == nil {
 		return nil
 	}
 	return &upcloud.LoadBalancerBackendProperties{
@@ -292,7 +291,11 @@ func schemaBackendProperties() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ValidateDiagFunc: validation.ToDiagFunc(
-				validation.StringInSlice([]string{"", "tcp", "http"}, false),
+				validation.StringInSlice([]string{
+					"",
+					string(upcloud.LoadBalancerProxyProtocolVersion1),
+					string(upcloud.LoadBalancerProxyProtocolVersion2),
+				}, false),
 			),
 		},
 	}

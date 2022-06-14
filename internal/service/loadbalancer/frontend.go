@@ -240,8 +240,7 @@ func setFrontendResourceData(d *schema.ResourceData, fe *upcloud.LoadBalancerFro
 }
 
 func frontendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBalancerFrontendProperties {
-	props, ok := d.GetOk("properties.0")
-	if !ok || props == nil {
+	if props, ok := d.GetOk("properties.0"); !ok || props == nil {
 		return nil
 	}
 	return &upcloud.LoadBalancerFrontendProperties{

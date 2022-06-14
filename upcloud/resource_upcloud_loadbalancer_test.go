@@ -17,10 +17,6 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testDataS3, err := ioutil.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
 	var providers []*schema.Provider
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
@@ -141,13 +137,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.use_backend.0.backend_name", "lb-be-1-test-1"),
 					resource.TestCheckResourceAttr(be1Name, "resolver_name", "lb-resolver-1-test-1"),
 					resource.TestCheckResourceAttr(fe1Name, "default_backend_name", "lb-be-1-test-1"),
-					resource.TestCheckResourceAttr(be2sm1Name, "weight", "0"),
-				),
-			},
-			{
-				Config:            string(testDataS3),
-				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fe1Name, "properties.0.timeout_client", "20"),
+					resource.TestCheckResourceAttr(fe1Name, "properties.0.inbound_proxy_protocol", "true"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.timeout_server", "20"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.timeout_tunnel", "4000"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_type", "http"),
@@ -157,9 +148,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_url", "/"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_expected_status", "200"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
-					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),
-					resource.TestCheckResourceAttr(fe1Name, "properties.0.timeout_client", "20"),
-					resource.TestCheckResourceAttr(fe1Name, "properties.0.inbound_proxy_protocol", "true"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", "v2"),
+					resource.TestCheckResourceAttr(be2sm1Name, "weight", "0"),
 				),
 			},
 		},
