@@ -42,6 +42,7 @@ func ResourceFirewallRules() *schema.Resource {
 				If used, IP address and port ranges must have both start and end values specified. These can be the same value if only one IP address or port number is specified.
 				Source and destination port numbers can only be set if the protocol is TCP or UDP.
 				The ICMP type may only be set if the protocol is ICMP.
+				Typical firewall rule should have "action", "direction", "protocol", "family" and at least one destination/source-address/port range.
 				The default rule can be created by providing only "action" and "direction" attributes. Default rule should be defined last.`,
 				MaxItems: 1000,
 				Required: true,
