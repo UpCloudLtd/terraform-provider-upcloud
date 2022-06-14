@@ -37,7 +37,13 @@ func ResourceFirewallRules() *schema.Resource {
 				ForceNew:    true,
 			},
 			"firewall_rule": {
-				Type:     schema.TypeList,
+				Type: schema.TypeList,
+				Description: `A single firewall rule.
+				If used, IP address and port ranges must have both start and end values specified. These can be the same value if only one IP address or port number is specified.
+				Source and destination port numbers can only be set if the protocol is TCP or UDP.
+				The ICMP type may only be set if the protocol is ICMP.
+				Typical firewall rule should have "action", "direction", "protocol", "family" and at least one destination/source-address/port range.
+				The default rule can be created by providing only "action" and "direction" attributes. Default rule should be defined last.`,
 				MaxItems: 1000,
 				Required: true,
 				Elem: &schema.Resource{
@@ -59,7 +65,7 @@ func ResourceFirewallRules() *schema.Resource {
 						"family": {
 							Type:         schema.TypeString,
 							Description:  "The address family of new firewall rule",
-							Required:     true,
+							Optional:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.StringInSlice([]string{"IPv4", "IPv6"}, false),
 						},
