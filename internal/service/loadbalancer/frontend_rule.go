@@ -82,19 +82,6 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	log.Printf("\033[36m[DEBUG] Actions: %+v\033[0m\n", actions)
-
-	log.Printf("\033[34m[DEBUG] Request: %+v", &request.CreateLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
-		Rule: request.LoadBalancerFrontendRule{
-			Name:     d.Get("name").(string),
-			Priority: d.Get("priority").(int),
-			Matchers: matchers,
-			Actions:  actions,
-		},
-	})
-
 	rule, err := svc.CreateLoadBalancerFrontendRule(ctx, &request.CreateLoadBalancerFrontendRuleRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,
