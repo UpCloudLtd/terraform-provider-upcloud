@@ -93,6 +93,23 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"set_forwarded_headers": {
+			Description: "Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    100,
+			ForceNew:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"active": {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Default:  true,
+						ForceNew: true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -100,6 +117,10 @@ func loadBalancerActionsFromResourceData(d *schema.ResourceData) ([]upcloud.Load
 	a := make([]upcloud.LoadBalancerAction, 0)
 	if _, ok := d.GetOk("actions.0"); !ok {
 		return a, nil
+	}
+
+	for range d.Get("actions.0.set_forwarded_headers").([]interface{}) {
+		a = append(a, request.NewLoadBalancerSetForwardedHeadersAction())
 	}
 
 	for _, v := range d.Get("actions.0.use_backend").([]interface{}) {
@@ -153,6 +174,10 @@ func setFrontendRuleActionsResourceData(d *schema.ResourceData, rule *upcloud.Lo
 				"payload":      a.HTTPReturn.Payload,
 			}
 		case upcloud.LoadBalancerActionTypeTCPReject:
+			v = map[string]interface{}{
+				"active": true,
+			}
+		case upcloud.LoadBalancerActionTypeSetForwardedHeaders:
 			v = map[string]interface{}{
 				"active": true,
 			}
