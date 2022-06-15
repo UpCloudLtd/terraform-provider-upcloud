@@ -81,6 +81,7 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 	if err := unmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
 		return diag.FromErr(err)
 	}
+
 	rule, err := svc.CreateLoadBalancerFrontendRule(ctx, &request.CreateLoadBalancerFrontendRuleRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,

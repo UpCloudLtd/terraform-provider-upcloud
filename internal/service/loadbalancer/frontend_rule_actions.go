@@ -93,6 +93,23 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"set_forwarded_headers": {
+			Description: "Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    100,
+			ForceNew:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"active": {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Default:  true,
+						ForceNew: true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -100,6 +117,16 @@ func loadBalancerActionsFromResourceData(d *schema.ResourceData) ([]upcloud.Load
 	a := make([]upcloud.LoadBalancerAction, 0)
 	if _, ok := d.GetOk("actions.0"); !ok {
 		return a, nil
+	}
+
+	// set_forwarded_headers action has to be iterated over first to avoid issues with actions ordering. This is because Managed Load Balancer evaluates actions in the same order
+	// as they were set. But because each action has it's own, separate block in TF configuration, we cannot actually make sure they are ordered as the user intended.
+	// This is not a big issue right now because all the actions except set_forwarded_headers are "final" (i.e. they end the chain and the next action is not evaluated).
+	// So the only real use-case of having multiple actions is to have set_forwarded_headers action first, and then one of the "final" actions.
+	// Therefore we work around the ordering problem by just making sure set_forwarded_headers actions are always set first.
+	// TODO: Look for some more robust way of handling this when release a new major version
+	for range d.Get("actions.0.set_forwarded_headers").([]interface{}) {
+		a = append(a, request.NewLoadBalancerSetForwardedHeadersAction())
 	}
 
 	for _, v := range d.Get("actions.0.use_backend").([]interface{}) {
@@ -153,6 +180,10 @@ func setFrontendRuleActionsResourceData(d *schema.ResourceData, rule *upcloud.Lo
 				"payload":      a.HTTPReturn.Payload,
 			}
 		case upcloud.LoadBalancerActionTypeTCPReject:
+			v = map[string]interface{}{
+				"active": true,
+			}
+		case upcloud.LoadBalancerActionTypeSetForwardedHeaders:
 			v = map[string]interface{}{
 				"active": true,
 			}

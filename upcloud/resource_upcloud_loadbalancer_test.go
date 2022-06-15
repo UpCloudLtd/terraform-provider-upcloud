@@ -118,6 +118,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.content_type", "text/plain"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.payload", "UmVzb3VyY2Ugbm90IGZvdW5kIQ=="),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.tcp_reject.0.active", "true"),
+					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.set_forwarded_headers.0.active", "true"),
 					resource.TestCheckResourceAttr(cbd1Name, "name", "lb-cb-d1-test"),
 					resource.TestCheckResourceAttr(cbd1Name, "key_type", "rsa"),
 					resource.TestCheckResourceAttr(cbd1Name, "hostnames.0", "example.com"),
