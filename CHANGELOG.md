@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- lbaas: frontend and backend properties
+
 ## [2.4.2] - 2022-05-10
 
 ### Changed
