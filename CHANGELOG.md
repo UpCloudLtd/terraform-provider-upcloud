@@ -6,7 +6,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased]
 
 ### Added
-
+- lbaas: frontend and backend properties
 - firewall: allow specifying default rules
 
 ### Changed

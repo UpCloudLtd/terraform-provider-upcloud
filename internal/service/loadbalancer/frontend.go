@@ -75,6 +75,16 @@ func ResourceFrontend() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"properties": {
+				Description: "Frontend properties. Properties can set back to defaults by defining empty `properties {}` block.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: schemaFrontendProperties(),
+				},
+			},
 		},
 	}
 }
@@ -91,6 +101,7 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 			DefaultBackend: d.Get("default_backend_name").(string),
 			Rules:          []request.LoadBalancerFrontendRule{},
 			TLSConfigs:     []request.LoadBalancerFrontendTLSConfig{},
+			Properties:     frontendPropertiesFromResourceData(d),
 		},
 	})
 
@@ -150,6 +161,7 @@ func resourceFrontendUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			Mode:           upcloud.LoadBalancerMode(d.Get("mode").(string)),
 			Port:           d.Get("port").(int),
 			DefaultBackend: d.Get("default_backend_name").(string),
+			Properties:     frontendPropertiesFromResourceData(d),
 		},
 	})
 	if err != nil {
@@ -214,5 +226,43 @@ func setFrontendResourceData(d *schema.ResourceData, fe *upcloud.LoadBalancerFro
 		return diag.FromErr(err)
 	}
 
+	if fe.Properties != nil {
+		props := []map[string]interface{}{{
+			"timeout_client":         fe.Properties.TimeoutClient,
+			"inbound_proxy_protocol": fe.Properties.InboundProxyProtocol,
+		}}
+		if err := d.Set("properties", props); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	return diags
+}
+
+func frontendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBalancerFrontendProperties {
+	if props, ok := d.GetOk("properties.0"); !ok || props == nil {
+		return nil
+	}
+	return &upcloud.LoadBalancerFrontendProperties{
+		TimeoutClient:        d.Get("properties.0.timeout_client").(int),
+		InboundProxyProtocol: d.Get("properties.0.inbound_proxy_protocol").(bool),
+	}
+}
+
+func schemaFrontendProperties() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"timeout_client": {
+			Description:      "Client request timeout in seconds.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Default:          10,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 86400)),
+		},
+		"inbound_proxy_protocol": {
+			Description: "Enable or disable inbound proxy protocol support.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+	}
 }

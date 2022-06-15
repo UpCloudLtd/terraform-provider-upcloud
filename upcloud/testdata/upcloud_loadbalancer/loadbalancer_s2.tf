@@ -28,6 +28,10 @@ resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
   port         = 8080
   # change(indirect): backend lb_be_1 name
   default_backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  properties {
+    timeout_client         = 20
+    inbound_proxy_protocol = true
+  }
 }
 
 resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
@@ -48,6 +52,12 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
   resolver_name = resource.upcloud_loadbalancer_resolver.lb_dns_1.name
   # change: name lb-be-1-test to lb-be-1-test-1
   name = "lb-be-1-test-1"
+  properties {
+    timeout_server          = 20
+    timeout_tunnel          = 4000
+    health_check_type       = "http"
+    outbound_proxy_protocol = "v2"
+  }
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {
