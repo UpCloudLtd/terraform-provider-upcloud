@@ -50,7 +50,7 @@ func ResourceBackend() *schema.Resource {
 				},
 			},
 			"properties": {
-				Description: "Backend properties",
+				Description: "Backend properties. Properties can set back to defaults by defining empty `properties {}` block.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,

@@ -53,7 +53,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **properties** (Block List, Max: 1) Backend properties (see [below for nested schema](#nestedblock--properties))
+- **properties** (Block List, Max: 1) Backend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
 - **resolver_name** (String) Domain Name Resolver used with dynamic type members.
 
 ### Read-Only
