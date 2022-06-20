@@ -2,11 +2,11 @@ package loadbalancer
 
 import (
 	"context"
-	"log"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -124,7 +124,7 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	log.Printf("[INFO] resolver '%s' created", rs.Name)
+	tflog.Info(ctx, "resolver created", map[string]interface{}{"name": rs.Name, "service_uuid": serviceID})
 	return diags
 }
 
@@ -193,7 +193,7 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	log.Printf("[INFO] resolver '%s' updated", rs.Name)
+	tflog.Info(ctx, "resolver updated", map[string]interface{}{"name": rs.Name, "service_uuid": serviceID})
 	return diags
 }
 
@@ -203,7 +203,8 @@ func resourceResolverDelete(ctx context.Context, d *schema.ResourceData, meta in
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] deleting resolver '%s'", d.Id())
+
+	tflog.Info(ctx, "deleting resolver", map[string]interface{}{"name": name, "service_uuid": serviceID})
 	return diag.FromErr(
 		svc.DeleteLoadBalancerResolver(ctx, &request.DeleteLoadBalancerResolverRequest{
 			ServiceUUID: serviceID,

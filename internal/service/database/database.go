@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -63,7 +63,7 @@ func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) sche
 		}
 		d.SetId(details.UUID)
 
-		log.Printf("[INFO] managed database %v (%v) created", details.UUID, d.Get("name"))
+		tflog.Info(ctx, "managed database created", map[string]interface{}{"uuid": details.UUID, "name": d.Get("name")})
 
 		if err = waitManagedDatabaseFullyCreated(ctx, client, details); err != nil {
 			d := resourceDatabaseRead(ctx, d, meta)
@@ -79,7 +79,7 @@ func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) sche
 			if err != nil {
 				return diag.FromErr(err)
 			}
-			log.Printf("[INFO] managed database %v (%v) is powered off", d.Id(), d.Get("name"))
+			tflog.Info(ctx, "managed database is powered off", map[string]interface{}{"uuid": details.UUID, "name": d.Get("name")})
 		}
 
 		if err = waitServiceNameToPropagate(ctx, details.ServiceURIParams.Host); err != nil {
@@ -111,7 +111,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] managed database %v (%v) read", d.Id(), d.Get("name"))
+	tflog.Debug(ctx, "managed database read", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 
 	if d.Get("type").(string) == string(managedDatabaseTypePostgreSQL) {
 		if err := d.Set("sslmode", details.ServiceURIParams.SSLMode); err != nil {
@@ -159,7 +159,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			return diag.FromErr(err)
 		}
 
-		log.Printf("[INFO] managed database %v (%v) updated", d.Id(), d.Get("name"))
+		tflog.Info(ctx, "managed database updated", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 	}
 
 	if d.HasChange("powered") {
@@ -168,7 +168,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			if err != nil {
 				return diag.FromErr(err)
 			}
-			log.Printf("[INFO] managed database %v (%v) is powered on", d.Id(), d.Get("name"))
+			tflog.Info(ctx, "managed database is powered on", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 
 			// Attempt to upgrade version after the database was powered on
 			if d.HasChange("properties.0.version") {
@@ -195,7 +195,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			if err != nil {
 				return diag.FromErr(err)
 			}
-			log.Printf("[INFO] managed database %v (%v) is powered off", d.Id(), d.Get("name"))
+			tflog.Info(ctx, "managed database is powered off", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 		}
 	} else {
 		// If powered state was not chaged, just attempt to upgrade version
@@ -223,7 +223,7 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 	if err := client.DeleteManagedDatabase(ctx, &req); err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] managed database %v (%v) deleted", req.UUID, d.Get("name"))
+	tflog.Info(ctx, "managed database deleted", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 
 	return nil
 }

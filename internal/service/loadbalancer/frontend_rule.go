@@ -2,11 +2,11 @@ package loadbalancer
 
 import (
 	"context"
-	"log"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -103,7 +103,7 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	log.Printf("[INFO] frontend rule '%s' created", rule.Name)
+	tflog.Info(ctx, "frontend rule created", map[string]interface{}{"name": rule.Name, "service_uuid": serviceID, "fe_name": feName})
 	return diags
 }
 
@@ -163,7 +163,7 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	log.Printf("[INFO] frontend rule '%s' updated", rule.Name)
+	tflog.Info(ctx, "frontend rule updated", map[string]interface{}{"name": rule.Name, "service_uuid": serviceID, "fe_name": feName})
 	return diags
 }
 
@@ -173,7 +173,9 @@ func resourceFrontendRuleDelete(ctx context.Context, d *schema.ResourceData, met
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] deleting frontend rule '%s'", d.Id())
+
+	tflog.Info(ctx, "deleting frontend rule", map[string]interface{}{"name": name, "service_uuid": serviceID, "fe_name": feName})
+
 	return diag.FromErr(svc.DeleteLoadBalancerFrontendRule(ctx, &request.DeleteLoadBalancerFrontendRuleRequest{
 		ServiceUUID:  serviceID,
 		FrontendName: feName,

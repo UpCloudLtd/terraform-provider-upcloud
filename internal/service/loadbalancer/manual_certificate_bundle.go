@@ -2,12 +2,12 @@ package loadbalancer
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -85,7 +85,7 @@ func resourceManualCertificateBundleCreate(ctx context.Context, d *schema.Resour
 		return diags
 	}
 
-	log.Printf("[INFO] certificate bundle '%s' created", b.Name)
+	tflog.Info(ctx, "certificate bundle created", map[string]interface{}{"name": b.Name, "uuid": b.UUID})
 	return diags
 }
 
@@ -124,13 +124,13 @@ func resourceManualCertificateBundleUpdate(ctx context.Context, d *schema.Resour
 		return diags
 	}
 
-	log.Printf("[INFO] certificate bundle '%s' updated", b.Name)
+	tflog.Info(ctx, "certificate bundle updated", map[string]interface{}{"name": b.Name, "uuid": b.UUID})
 	return diags
 }
 
 func resourceCertificateBundleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.ServiceContext)
-	log.Printf("[INFO] deleting certificate bundle '%s' (%s)", d.Get("name").(string), d.Id())
+	tflog.Info(ctx, "deleting certificate bundle", map[string]interface{}{"name": d.Get("name").(string), "uuid": d.Id()})
 	return diag.FromErr(svc.DeleteLoadBalancerCertificateBundle(ctx, &request.DeleteLoadBalancerCertificateBundleRequest{UUID: d.Id()}))
 }
 

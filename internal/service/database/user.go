@@ -3,12 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -100,9 +100,9 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 	d.SetId(buildManagedDatabaseSubResourceID(serviceID, d.Get("username").(string)))
-	log.Printf("[INFO] managed database user %v/%v (%v/%v) created",
-		serviceDetails.Name, d.Get("username").(string),
-		serviceID, d.Get("username").(string))
+
+	tflog.Info(ctx, "managed database user created", map[string]interface{}{
+		"service_name": serviceDetails.Name, "username": d.Get("username").(string), "service_uuid": serviceID})
 
 	return resourceUserRead(ctx, d, meta)
 }
@@ -136,9 +136,8 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] managed database user %v/%v (%v/%v) read",
-		serviceDetails.Name, username,
-		serviceID, username)
+	tflog.Info(ctx, "managed database user read", map[string]interface{}{
+		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID})
 	return copyUserDetailsToResource(d, userDetails)
 }
 
@@ -169,9 +168,9 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] managed database user %v/%v (%v/%v) deleted",
-		serviceDetails.Name, username,
-		serviceID, username)
+	tflog.Info(ctx, "managed database user updated", map[string]interface{}{
+		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID})
+
 	return resourceUserRead(ctx, d, meta)
 }
 
@@ -182,7 +181,7 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		if d.HasChange("username") {
 			return diag.FromErr(fmt.Errorf("primary username cannot be changed %q", d.Id()))
 		}
-		log.Printf("[DEBUG] ignoring delete for primary user %q", d.Id())
+		tflog.Debug(ctx, "ignoring delete for primary user %q", map[string]interface{}{"uuid": d.Id()})
 		return nil
 	}
 
@@ -209,9 +208,9 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] managed database user %v/%v (%v/%v) deleted",
-		serviceDetails.Name, username,
-		serviceID, username)
+	tflog.Info(ctx, "managed database user deleted", map[string]interface{}{
+		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID})
+
 	return nil
 }
 

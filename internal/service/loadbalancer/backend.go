@@ -2,11 +2,11 @@ package loadbalancer
 
 import (
 	"context"
-	"log"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -86,7 +86,7 @@ func resourceBackendCreate(ctx context.Context, d *schema.ResourceData, meta int
 		return diags
 	}
 
-	log.Printf("[INFO] backend '%s' created", be.Name)
+	tflog.Info(ctx, "backend created", map[string]interface{}{"name": be.Name, "service_uuid": serviceID})
 	return diags
 }
 
@@ -144,7 +144,7 @@ func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		return diags
 	}
 
-	log.Printf("[INFO] backend '%s' updated", be.Name)
+	tflog.Info(ctx, "backend updated", map[string]interface{}{"name": be.Name, "service_uuid": serviceID})
 	return diags
 }
 
@@ -154,7 +154,7 @@ func resourceBackendDelete(ctx context.Context, d *schema.ResourceData, meta int
 	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] deleting backend '%s'", d.Id())
+	tflog.Info(ctx, "deleting backend", map[string]interface{}{"name": name, "service_uuid": serviceID})
 	return diag.FromErr(svc.DeleteLoadBalancerBackend(ctx, &request.DeleteLoadBalancerBackendRequest{
 		ServiceUUID: serviceID,
 		Name:        name,

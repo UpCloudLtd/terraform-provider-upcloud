@@ -2,12 +2,12 @@ package loadbalancer
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -90,7 +90,7 @@ func resourceDynamicCertificateBundleCreate(ctx context.Context, d *schema.Resou
 		return diags
 	}
 
-	log.Printf("[INFO] certificate bundle '%s' created", b.Name)
+	tflog.Info(ctx, "certificate bundle created", map[string]interface{}{"name": b.Name, "uuid": b.UUID})
 	return diags
 }
 
@@ -131,7 +131,7 @@ func resourceDynamicCertificateBundleUpdate(ctx context.Context, d *schema.Resou
 		return diags
 	}
 
-	log.Printf("[INFO] certificate bundle '%s' updated", b.Name)
+	tflog.Info(ctx, "certificate bundle updated", map[string]interface{}{"name": b.Name, "uuid": b.UUID})
 	return diags
 }
 
