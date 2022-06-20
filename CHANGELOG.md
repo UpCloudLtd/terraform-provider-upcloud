@@ -5,10 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [2.5.0] - 2022-06-20
+
 ### Added
 - lbaas: frontend and backend properties
-- firewall: allow specifying default rules
 - lbaas: `set_forwarded_headers` frontend rule action
+- firewall: allow specifying default rules
 
 ### Changed
 - New upcloud-go-api version 4.7.0 with context support
@@ -227,7 +229,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.4.2...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.3.0...v2.4.0
