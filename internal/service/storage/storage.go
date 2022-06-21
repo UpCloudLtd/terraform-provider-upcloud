@@ -3,10 +3,10 @@ package storage
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
@@ -257,7 +257,7 @@ func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 
 			if err := d.Set("backup_rule", backupRule); err != nil {
-				log.Println("\033[31m [DEBUG] Err on set simple backup\033[0m")
+				tflog.Debug(ctx, "error on set simple backup")
 				return diag.FromErr(err)
 			}
 		}

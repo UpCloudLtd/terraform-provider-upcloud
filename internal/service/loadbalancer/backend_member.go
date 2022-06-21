@@ -2,12 +2,12 @@ package loadbalancer
 
 import (
 	"context"
-	"log"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -162,7 +162,7 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 
 		d.SetId(marshalID(serviceID, beName, member.Name))
 
-		log.Printf("[INFO] backend member '%s' created", member.Name)
+		tflog.Info(ctx, "backend member created", map[string]interface{}{"name": member.Name, "service_uuid": serviceID, "be_name": beName})
 		return diags
 	}
 }
@@ -226,7 +226,7 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	log.Printf("[INFO] backend member '%s' updated", member.Name)
+	tflog.Info(ctx, "backend member updated", map[string]interface{}{"name": member.Name, "service_uuid": serviceID, "be_name": beName})
 	return diags
 }
 
@@ -236,7 +236,7 @@ func resourceBackendMemberDelete(ctx context.Context, d *schema.ResourceData, me
 	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] deleting backend member '%s'", d.Id())
+	tflog.Info(ctx, "deleting backend member", map[string]interface{}{"name": name, "service_uuid": serviceID, "be_name": beName})
 	return diag.FromErr(svc.DeleteLoadBalancerBackendMember(ctx, &request.DeleteLoadBalancerBackendMemberRequest{
 		ServiceUUID: serviceID,
 		BackendName: beName,

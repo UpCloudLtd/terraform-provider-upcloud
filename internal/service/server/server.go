@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-uuid"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -407,7 +407,7 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	d.SetId(serverDetails.UUID)
-	log.Printf("[INFO] Server %s with UUID %s created", serverDetails.Title, serverDetails.UUID)
+	tflog.Info(ctx, "server created", map[string]interface{}{"title": serverDetails.Title, "uuid": serverDetails.UUID})
 
 	// set template id from the payload (if passed)
 	if _, ok := d.GetOk("template.0"); ok {
@@ -526,8 +526,6 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	storageDevices := []interface{}{}
-	log.Printf("[DEBUG] Configured storage devices in state: %+v", d.Get("storage_devices"))
-	log.Printf("[DEBUG] Actual storage devices on server: %v", server.StorageDevices)
 	for _, serverStorage := range server.StorageDevices {
 		// the template is managed within the server
 		if serverStorage.UUID == d.Get("template.0.id") {
@@ -811,7 +809,7 @@ func resourceServerDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	deleteServerRequest := &request.DeleteServerRequest{
 		UUID: d.Id(),
 	}
-	log.Printf("[INFO] Deleting server (server UUID: %s)", d.Id())
+	tflog.Info(ctx, "deleting server", map[string]interface{}{"uuid": d.Id()})
 	if err := client.DeleteServer(ctx, deleteServerRequest); err != nil {
 		return diag.FromErr(err)
 	}
@@ -822,7 +820,7 @@ func resourceServerDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		deleteStorageRequest := &request.DeleteStorageRequest{
 			UUID: template["id"].(string),
 		}
-		log.Printf("[INFO] Deleting server storage (storage UUID: %s)", deleteStorageRequest.UUID)
+		tflog.Info(ctx, "deleting server storage", map[string]interface{}{"storage_uuid": deleteStorageRequest.UUID})
 		if err := client.DeleteStorage(ctx, deleteStorageRequest); err != nil {
 			return diag.FromErr(err)
 		}

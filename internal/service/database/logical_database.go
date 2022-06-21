@@ -3,13 +3,13 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -104,9 +104,8 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 	d.SetId(buildManagedDatabaseSubResourceID(serviceID, d.Get("name").(string)))
-	log.Printf("[INFO] managed database logical database %v/%v (%v/%v) created",
-		serviceDetails.Name, d.Get("name").(string),
-		serviceID, d.Get("name").(string))
+	tflog.Info(ctx, "managed database logical database created", map[string]interface{}{
+		"service_name": serviceDetails.Name, "name": d.Get("name").(string), "service_uuid": serviceID})
 
 	return resourceLogicalDatabaseRead(ctx, d, meta)
 }
@@ -151,9 +150,9 @@ func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	log.Printf("[DEBUG] managed database logical database %v/%v (%v/%v) read",
-		serviceDetails.Name, name,
-		serviceID, name)
+	tflog.Info(ctx, "managed database logical database read", map[string]interface{}{
+		"service_name": serviceDetails.Name, "name": name, "service_uuid": serviceID})
+
 	return copyLogicalDatabaseDetailsToResource(d, details)
 }
 
@@ -183,9 +182,9 @@ func resourceLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] managed database logical database %v/%v (%v/%v) deleted",
-		serviceDetails.Name, name,
-		serviceID, name)
+	tflog.Info(ctx, "managed database logical database deleted", map[string]interface{}{
+		"service_name": serviceDetails.Name, "name": name, "service_uuid": serviceID})
+
 	return nil
 }
 

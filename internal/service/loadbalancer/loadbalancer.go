@@ -3,13 +3,13 @@ package loadbalancer
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -121,7 +121,7 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	log.Printf("[INFO] load balancer '%s' created", lb.Name)
+	tflog.Info(ctx, "load balancer created", map[string]interface{}{"name": lb.Name, "uuid": lb.UUID})
 	return diags
 }
 
@@ -159,7 +159,7 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	log.Printf("[INFO] load balancer '%s' updated", lb.Name)
+	tflog.Info(ctx, "load balancer updated", map[string]interface{}{"name": lb.Name, "uuid": lb.UUID})
 	return diags
 }
 
@@ -168,7 +168,7 @@ func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, met
 	if err := svc.DeleteLoadBalancer(ctx, &request.DeleteLoadBalancerRequest{UUID: d.Id()}); err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] deleted load balancer '%s' (%s)", d.Get("name").(string), d.Id())
+	tflog.Info(ctx, "load balancer deleted", map[string]interface{}{"name": d.Get("name").(string), "uuid": d.Id()})
 
 	// Wait load balancer to shutdown before continuing so that e.g. network can be deleted (if needed)
 	return diag.FromErr(waitLoadBalancerToShutdown(ctx, svc, d.Id()))
@@ -246,7 +246,7 @@ func waitLoadBalancerToShutdown(ctx context.Context, svc *service.ServiceContext
 				}
 				return err
 			}
-			log.Printf("[INFO] waiting load balancer %s to shutdown (%s)", lb.Name, lb.OperationalState)
+			tflog.Info(ctx, "waiting load balancer to shutdown", map[string]interface{}{"name": lb.Name, "state": lb.OperationalState})
 		}
 		time.Sleep(5 * time.Second)
 	}

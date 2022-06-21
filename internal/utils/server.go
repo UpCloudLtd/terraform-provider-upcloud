@@ -2,12 +2,12 @@ package utils
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequest, meta interface{}) error {
@@ -29,7 +29,7 @@ func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequ
 	}
 	if server.State != upcloud.ServerStateStopped {
 		// Soft stop with 2 minute timeout, after which hard stop occurs
-		log.Printf("[INFO] Stopping server (server UUID: %s)", stopRequest.UUID)
+		tflog.Info(ctx, "stopping server", map[string]interface{}{"uuid": stopRequest.UUID})
 		_, err := client.StopServer(ctx, &stopRequest)
 		if err != nil {
 			return err
@@ -61,7 +61,7 @@ func VerifyServerStarted(ctx context.Context, startRequest request.StartServerRe
 		return err
 	}
 	if server.State != upcloud.ServerStateStarted {
-		log.Printf("[INFO] Starting server (server UUID: %s)", startRequest.UUID)
+		tflog.Info(ctx, "starting server", map[string]interface{}{"uuid": startRequest.UUID})
 		_, err := client.StartServer(ctx, &startRequest)
 		if err != nil {
 			return err

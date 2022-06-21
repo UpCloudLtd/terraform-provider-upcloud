@@ -3,12 +3,12 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 type Config struct {
@@ -23,7 +23,7 @@ func (c *Config) Client() (*service.ServiceContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[INFO] UpCloud Client configured for user: %s", res.UserName)
+	tflog.Info(context.Background(), "UpCloud Client configured", map[string]interface{}{"user": res.UserName})
 	return svc, nil
 }
 
