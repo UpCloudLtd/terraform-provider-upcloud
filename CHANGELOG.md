@@ -10,7 +10,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - dbaas: PostgreSQL properties `default_toast_compression` and `max_slot_wal_keep_size`
 
 ### Fixed
-- dbaas: changed `autovacuum_analyze_scale_factor`, `autovacuum_vacuum_scale_factor` and `bgwriter_lru_multiplier` field type from int to float to support values with decimal component
+- dbaas: fractional values in PostgreSQL properties `autovacuum_analyze_scale_factor`, `autovacuum_vacuum_scale_factor` and `bgwriter_lru_multiplier`
 
 ### Changed
 - dbaas: updated property descriptions
