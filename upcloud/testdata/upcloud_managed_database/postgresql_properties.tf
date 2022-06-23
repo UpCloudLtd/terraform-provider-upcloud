@@ -23,6 +23,7 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     bgwriter_lru_maxpages               = 1
     bgwriter_lru_multiplier             = 9.2
     deadlock_timeout                    = 501
+    default_toast_compression           = "lz4"
     idle_in_transaction_session_timeout = 1
     ip_filter                           = ["127.0.0.1", "127.0.0.2"]
     jit                                 = true
@@ -38,6 +39,7 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     max_pred_locks_per_transaction      = 64
     max_prepared_transactions           = 1
     max_replication_slots               = 8
+    max_slot_wal_keep_size              = 10
     max_stack_depth                     = 2097152
     max_standby_archive_delay           = 1
     max_standby_streaming_delay         = 1

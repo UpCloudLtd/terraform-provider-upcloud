@@ -71,8 +71,9 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 				`is forced to prevent transaction ID wraparound within the table. 
 				Note that the system will launch autovacuum processes to prevent wraparound even when autovacuum is otherwise disabled. 
 				This parameter will cause the server to be restarted.`,
-			Optional: true,
-			Computed: true,
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(200000000, 1500000000)),
 		},
 		"autovacuum_max_workers": {
 			Type: schema.TypeInt,
@@ -160,6 +161,13 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(500, 1800000)),
 		},
+		"default_toast_compression": {
+			Type:             schema.TypeString,
+			Description:      "Controls the amount of detail written in the server log for each message that is logged.",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"lz4", "pglz"}, false)),
+		},
 		"idle_in_transaction_session_timeout": {
 			Type:             schema.TypeInt,
 			Description:      "Time out sessions with open transactions after this number of milliseconds.",
@@ -186,7 +194,7 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Description:      "Controls the amount of detail written in the server log for each message that is logged.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"TERSE", "DEFAULT", "VERBOSE"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"TERSE", "DEFAULT", "VERBOSE"}, false)),
 		},
 		"log_line_prefix": {
 			Type:        schema.TypeString,
@@ -262,6 +270,13 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(8, 64)),
 		},
+		"max_slot_wal_keep_size": {
+			Type:             schema.TypeInt,
+			Description:      "PostgreSQL maximum WAL size (MB) reserved for replication slots. Default is `-1` (unlimited). `wal_keep_size` minimum WAL size setting takes precedence over this.",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(-1, 2147483647)),
+		},
 		"max_stack_depth": {
 			Type:             schema.TypeInt,
 			Description:      "Maximum depth of the stack in bytes.",
@@ -334,7 +349,7 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			or none to disable statement statistics collection.` + "The default value is `top`.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"all", "top", "none"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"all", "top", "none"}, false)),
 		},
 		"shared_buffers_percentage": {
 			Type: schema.TypeInt,
@@ -349,7 +364,7 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Description:      "Synchronous replication type. Note that the service plan also needs to support synchronous replication.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"quorum", "off"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"quorum", "off"}, false)),
 		},
 		"temp_file_limit": {
 			Type:             schema.TypeInt,
@@ -363,7 +378,7 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Description:      "timezone",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(1, 64)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 64)),
 		},
 		"track_activity_query_size": {
 			Type:             schema.TypeInt,
@@ -377,14 +392,14 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Description:      "Record commit time of transactions.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"on", "off"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"on", "off"}, false)),
 		},
 		"track_functions": {
 			Type:             schema.TypeString,
 			Description:      "Enables tracking of function call counts and time used.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"all", "pl", "none"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"all", "pl", "none"}, false)),
 		},
 		"track_io_timing": {
 			Type: schema.TypeString,
@@ -392,28 +407,31 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			This parameter is off by default, because it will repeatedly query the operating system for the current time, which may cause significant overhead on some platforms.`,
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"on", "off"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"on", "off"}, false)),
 		},
 		"variant": {
 			Type:             schema.TypeString,
 			Description:      "Variant of the PostgreSQL service, may affect the features that are exposed by default",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"aiven", "timescale"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"aiven", "timescale"}, false)),
 		},
 		"version": {
 			Type:             schema.TypeString,
 			Description:      "PostgreSQL major version",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"12", "13", "14"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"12", "13", "14"}, false)),
 		},
 		"wal_sender_timeout": {
-			Type:             schema.TypeInt,
-			Description:      "Terminate replication connections that are inactive for longer than this amount of time, in milliseconds. Setting this value to `0` disables the timeout.",
-			Optional:         true,
-			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 10800000)),
+			Type:        schema.TypeInt,
+			Description: "Terminate replication connections that are inactive for longer than this amount of time, in milliseconds. Setting this value to `0` disables the timeout.",
+			Optional:    true,
+			Computed:    true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.Any(
+				validation.IntBetween(0, 0),
+				validation.IntBetween(5000, 10800000)),
+			),
 		},
 		"wal_writer_delay": {
 			Type:             schema.TypeInt,
@@ -499,7 +517,7 @@ func schemaPostgreSQLPGBouncer() map[string]*schema.Schema {
 			Description:      "PGBouncer pool mode",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"session", "transaction", "statement"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"session", "transaction", "statement"}, false)),
 		},
 		"autodb_pool_size": {
 			Type:             schema.TypeInt,

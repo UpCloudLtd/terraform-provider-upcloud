@@ -93,6 +93,7 @@ Optional:
 - **bgwriter_lru_maxpages** (Number) In each round, no more than this many buffers will be written by the background writer. Setting this to zero disables background writing. Default is `100`.
 - **bgwriter_lru_multiplier** (Number) The average recent need for new buffers is multiplied by `bgwriter_lru_multiplier` to arrive at an estimate of the number that will be needed during the next round (up to `bgwriter_lru_maxpages`). `1.0` represents a "just in time" policy of writing exactly the number of buffers predicted to be needed. Larger values provide some cushion against spikes in demand, while smaller values intentionally leave writes to be done by server processes. The default is `2.0`.
 - **deadlock_timeout** (Number) This is the amount of time, in milliseconds, to wait on a lock before checking to see if there is a deadlock condition.
+- **default_toast_compression** (String) Controls the amount of detail written in the server log for each message that is logged.
 - **idle_in_transaction_session_timeout** (Number) Time out sessions with open transactions after this number of milliseconds.
 - **ip_filter** (List of String) IP filter
 - **jit** (Boolean) Controls system-wide use of Just-in-Time Compilation (JIT).
@@ -108,6 +109,7 @@ Optional:
 - **max_pred_locks_per_transaction** (Number) PostgreSQL maximum predicate locks per transaction.
 - **max_prepared_transactions** (Number) PostgreSQL maximum prepared transactions
 - **max_replication_slots** (Number) PostgreSQL maximum replication slots.
+- **max_slot_wal_keep_size** (Number) PostgreSQL maximum WAL size (MB) reserved for replication slots. Default is `-1` (unlimited). `wal_keep_size` minimum WAL size setting takes precedence over this.
 - **max_stack_depth** (Number) Maximum depth of the stack in bytes.
 - **max_standby_archive_delay** (Number) Max standby archive delay in milliseconds.
 - **max_standby_streaming_delay** (Number) Max standby streaming delay in milliseconds.

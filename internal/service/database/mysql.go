@@ -65,7 +65,7 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Description:      "Default server time zone as an offset from UTC (from -12:00 to +12:00), a time zone name, or `SYSTEM` to use the MySQL server default.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(1, 101)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(2, 100)),
 		},
 		"group_concat_max_len": {
 			Type:        schema.TypeInt,
@@ -74,7 +74,7 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Computed:    true,
 			// int max is lower than actual acceptable limit but as this field is integer
 			// it's probably safer to use type limits here.
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(2, math.MaxInt)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(4, math.MaxInt)),
 		},
 		"information_schema_stats_expiry": {
 			Type:             schema.TypeInt,
@@ -143,7 +143,7 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Description:      "The storage engine for in-memory internal temporary tables.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"TempTable", "MEMORY"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"TempTable", "MEMORY"}, false)),
 		},
 		"long_query_time": {
 			Type:             schema.TypeInt,
@@ -221,7 +221,7 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Description:      "MySQL major version",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"8"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"8"}, false)),
 		},
 		"wait_timeout": {
 			Type:             schema.TypeInt,
