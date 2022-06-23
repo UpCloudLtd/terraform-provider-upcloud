@@ -90,6 +90,7 @@ Optional:
 
 - **http_redirect** (Block List, Max: 100) Redirects HTTP requests to specified location or URL schema. (see [below for nested schema](#nestedblock--actions--http_redirect))
 - **http_return** (Block List, Max: 100) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
+- **set_forwarded_headers** (Block List, Max: 100) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
 - **tcp_reject** (Block List, Max: 100) Terminates a connection. (see [below for nested schema](#nestedblock--actions--tcp_reject))
 - **use_backend** (Block List, Max: 100) Routes traffic to specified `backend`. (see [below for nested schema](#nestedblock--actions--use_backend))
 
@@ -109,6 +110,14 @@ Required:
 - **content_type** (String) Content type.
 - **payload** (String) The payload.
 - **status** (Number) HTTP status code.
+
+
+<a id="nestedblock--actions--set_forwarded_headers"></a>
+### Nested Schema for `actions.set_forwarded_headers`
+
+Optional:
+
+- **active** (Boolean)
 
 
 <a id="nestedblock--actions--tcp_reject"></a>
