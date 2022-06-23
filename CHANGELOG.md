@@ -5,7 +5,15 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- dbaas: property validators
+- dbaas: PostgreSQL properties `default_toast_compression` and `max_slot_wal_keep_size`
+
+### Fixed
+- dbaas: changed `autovacuum_analyze_scale_factor`, `autovacuum_vacuum_scale_factor` and `bgwriter_lru_multiplier` field type from int to float to support values with decimal component
+
 ### Changed
+- dbaas: updated property descriptions
 - structured logging with `tflog`
 
 ## [2.5.0] - 2022-06-20
