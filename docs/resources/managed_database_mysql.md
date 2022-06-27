@@ -107,7 +107,7 @@ Optional:
 - **migration** (Block List, Max: 1) Migrate data from existing server (see [below for nested schema](#nestedblock--properties--migration))
 - **net_read_timeout** (Number) The number of seconds to wait for more data from a connection before aborting the read.
 - **net_write_timeout** (Number) The number of seconds to wait for a block to be written to a connection before aborting the write.
-- **public_access** (Boolean) Public Access
+- **public_access** (Boolean) Public access allows connections to your Managed Database services via the public internet.
 - **slow_query_log** (Boolean) Slow query log enables capturing of slow queries. Setting `slow_query_log` to false also truncates the `mysql.slow_log` table. Default is off
 - **sort_buffer_size** (Number) Sort buffer size in bytes for `ORDER BY` optimization. Default is `262144` (256K)
 - **sql_mode** (String) Global SQL mode. Set to empty to use MySQL server defaults. 

@@ -125,7 +125,7 @@ Optional:
 			or none to disable statement statistics collection.The default value is `top`.
 - **pgbouncer** (Block List, Max: 1) PGBouncer connection pooling settings (see [below for nested schema](#nestedblock--properties--pgbouncer))
 - **pglookout** (Block List, Max: 1) PGLookout settings (see [below for nested schema](#nestedblock--properties--pglookout))
-- **public_access** (Boolean) Public Access
+- **public_access** (Boolean) Public access allows connections to your Managed Database services via the public internet.
 - **shared_buffers_percentage** (Number) Percentage of total RAM that the database server uses for shared memory buffers. 
 				Valid range is 20-60 (float), which corresponds to 20% - 60%. This setting adjusts the `shared_buffers` configuration value.
 - **synchronous_replication** (String) Synchronous replication type. Note that the service plan also needs to support synchronous replication.

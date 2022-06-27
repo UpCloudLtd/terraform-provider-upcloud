@@ -161,7 +161,7 @@ func schemaDatabaseCommonProperties() map[string]*schema.Schema {
 		},
 		"public_access": {
 			Type:        schema.TypeBool,
-			Description: "Public Access",
+			Description: "Public access allows connections to your Managed Database services via the public internet.",
 			Optional:    true,
 			Default:     false,
 		},
