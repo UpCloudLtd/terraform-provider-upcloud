@@ -374,6 +374,7 @@ func ResourceServer() *schema.Resource {
 		CustomizeDiff: customdiff.Sequence(
 			// Validate tags here, because in-schema validation is only available for primitive types
 			validateTagsChange,
+			validateKeysChange,
 		),
 	}
 }

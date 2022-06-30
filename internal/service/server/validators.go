@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/crypto/ssh"
 )
 
 func validateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
@@ -110,5 +111,17 @@ func validateTagsChange(ctx context.Context, d *schema.ResourceDiff, meta interf
 		return fmt.Errorf("tags can not contain case-insensitive duplicates (%s)", strings.Join(duplicates, ", "))
 	}
 
+	return nil
+}
+
+func validateKeysChange(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	e := d.Get("login").(*schema.Set).List()[0]
+	m := e.(map[string]interface{})
+	for _, k := range m["keys"].([]interface{}) {
+		ks := k.(string)
+		if _, err := ssh.ParsePublicKey([]byte(ks)); err != nil {
+			return fmt.Errorf("invalid SSH key %s", err)
+		}
+	}
 	return nil
 }
