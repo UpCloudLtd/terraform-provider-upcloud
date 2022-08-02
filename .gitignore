@@ -40,3 +40,5 @@ Temporary Items
 
 dist/
 terraform/
+/go.work
+/go.work.sum
