@@ -330,7 +330,7 @@ func ResourceServer() *schema.Resource {
 							Default:     false,
 						},
 						"password_delivery": {
-							Description:  "The delivery method for the server’s root password",
+							Description:  "The delivery method for the server's root password (one of `none`, `email` or `sms`)",
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "none",

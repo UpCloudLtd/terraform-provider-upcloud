@@ -105,7 +105,7 @@ Optional:
 
 - **create_password** (Boolean) Indicates a password should be create to allow access
 - **keys** (List of String) A list of ssh keys to access the server
-- **password_delivery** (String) The delivery method for the server’s root password
+- **password_delivery** (String) The delivery method for the server's root password (one of `none`, `email` or `sms`)
 - **user** (String) Username to be create to access the server
 
 
