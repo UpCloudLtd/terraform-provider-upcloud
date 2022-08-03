@@ -44,13 +44,16 @@ resource "upcloud_managed_database_logical_database" "example2_db" {
 
 ### Required
 
-- **name** (String) Name of the logical database
-- **service** (String) Service's UUID for which this user belongs to
+- `name` (String) Name of the logical database
+- `service` (String) Service's UUID for which this user belongs to
 
 ### Optional
 
-- **character_set** (String) Default character set for the database (LC_CTYPE)
-- **collation** (String) Default collation for the database (LC_COLLATE)
-- **id** (String) The ID of this resource.
+- `character_set` (String) Default character set for the database (LC_CTYPE)
+- `collation` (String) Default collation for the database (LC_COLLATE)
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 

@@ -47,33 +47,33 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Required
 
-- **loadbalancer** (String) ID of the load balancer to which the backend is connected.
-- **name** (String) The name of the backend must be unique within the load balancer service.
+- `loadbalancer` (String) ID of the load balancer to which the backend is connected.
+- `name` (String) The name of the backend must be unique within the load balancer service.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **properties** (Block List, Max: 1) Backend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
-- **resolver_name** (String) Domain Name Resolver used with dynamic type members.
+- `properties` (Block List, Max: 1) Backend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
+- `resolver_name` (String) Domain Name Resolver used with dynamic type members.
 
 ### Read-Only
 
-- **members** (List of String) Backend members receive traffic dispatched from the frontends
+- `id` (String) The ID of this resource.
+- `members` (List of String) Backend members receive traffic dispatched from the frontends
 
 <a id="nestedblock--properties"></a>
 ### Nested Schema for `properties`
 
 Optional:
 
-- **health_check_expected_status** (Number) Expected HTTP status code returned by the customer application to mark server as healthy. Ignored for tcp type.
-- **health_check_fall** (Number) Sets how many failed health checks are allowed until the backend member is taken off from the rotation.
-- **health_check_interval** (Number) Interval between health checks.
-- **health_check_rise** (Number) Sets how many passing checks there must be before returning the backend member to the rotation.
-- **health_check_type** (String) Health check type.
-- **health_check_url** (String) Target path for health check HTTP GET requests. Ignored for tcp type.
-- **outbound_proxy_protocol** (String) Enable outbound proxy protocol by setting the desired version. Empty string disables proxy protocol.
-- **sticky_session_cookie_name** (String) Sets sticky session cookie name. Empty string disables sticky session.
-- **timeout_server** (Number) Backend server timeout in seconds.
-- **timeout_tunnel** (Number) Maximum inactivity time on the client and server side for tunnels in seconds.
+- `health_check_expected_status` (Number) Expected HTTP status code returned by the customer application to mark server as healthy. Ignored for tcp type.
+- `health_check_fall` (Number) Sets how many failed health checks are allowed until the backend member is taken off from the rotation.
+- `health_check_interval` (Number) Interval between health checks.
+- `health_check_rise` (Number) Sets how many passing checks there must be before returning the backend member to the rotation.
+- `health_check_type` (String) Health check type.
+- `health_check_url` (String) Target path for health check HTTP GET requests. Ignored for tcp type.
+- `outbound_proxy_protocol` (String) Enable outbound proxy protocol by setting the desired version. Empty string disables proxy protocol.
+- `sticky_session_cookie_name` (String) Sets sticky session cookie name. Empty string disables sticky session.
+- `timeout_server` (Number) Backend server timeout in seconds.
+- `timeout_tunnel` (Number) Maximum inactivity time on the client and server side for tunnels in seconds.
 
 

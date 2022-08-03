@@ -27,16 +27,13 @@ resource "upcloud_router" "my_example_router" {
 
 ### Required
 
-- **name** (String) Name of the router
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `name` (String) Name of the router
 
 ### Read-Only
 
-- **attached_networks** (List of String) A collection of UUID representing networks attached to this router
-- **type** (String) The type of router
+- `attached_networks` (List of String) A collection of UUID representing networks attached to this router
+- `id` (String) The ID of this resource.
+- `type` (String) The type of router
 
 ## Import
 

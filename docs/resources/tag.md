@@ -17,12 +17,15 @@ This resource is deprecated, use tags schema in server resource
 
 ### Required
 
-- **name** (String) The value representing the tag
+- `name` (String) The value representing the tag
 
 ### Optional
 
-- **description** (String) Free form text representing the meaning of the tag
-- **id** (String) The ID of this resource.
-- **servers** (Set of String) A collection of servers that have been assigned the tag
+- `description` (String) Free form text representing the meaning of the tag
+- `servers` (Set of String) A collection of servers that have been assigned the tag
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 

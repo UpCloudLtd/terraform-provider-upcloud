@@ -39,33 +39,33 @@ resource "upcloud_router" "example_router" {
 
 ### Required
 
-- **ip_network** (Block List, Min: 1, Max: 1) A list of IP subnets within the network (see [below for nested schema](#nestedblock--ip_network))
-- **name** (String) A valid name for the network
-- **zone** (String) The zone the network is in
+- `ip_network` (Block List, Min: 1, Max: 1) A list of IP subnets within the network (see [below for nested schema](#nestedblock--ip_network))
+- `name` (String) A valid name for the network
+- `zone` (String) The zone the network is in
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **router** (String) The UUID of a router
+- `router` (String) The UUID of a router
 
 ### Read-Only
 
-- **type** (String) The network type
+- `id` (String) The ID of this resource.
+- `type` (String) The network type
 
 <a id="nestedblock--ip_network"></a>
 ### Nested Schema for `ip_network`
 
 Required:
 
-- **address** (String) The CIDR range of the subnet
-- **dhcp** (Boolean) Is DHCP enabled?
-- **family** (String) IP address family
+- `address` (String) The CIDR range of the subnet
+- `dhcp` (Boolean) Is DHCP enabled?
+- `family` (String) IP address family
 
 Optional:
 
-- **dhcp_default_route** (Boolean) Is the gateway the DHCP default route?
-- **dhcp_dns** (Set of String) The DNS servers given by DHCP
-- **gateway** (String) Gateway address given by DHCP
+- `dhcp_default_route` (Boolean) Is the gateway the DHCP default route?
+- `dhcp_dns` (Set of String) The DNS servers given by DHCP
+- `gateway` (String) Gateway address given by DHCP
 
 ## Import
 

@@ -42,22 +42,22 @@ resource "upcloud_loadbalancer" "lb" {
 
 ### Required
 
-- **name** (String) The name of the service must be unique within customer account.
-- **network** (String) Private network UUID where traffic will be routed. Must reside in load balancer zone.
-- **plan** (String) Plan which the service will have
-- **zone** (String) Zone in which the service will be hosted, e.g. `fi-hel1`.
+- `name` (String) The name of the service must be unique within customer account.
+- `network` (String) Private network UUID where traffic will be routed. Must reside in load balancer zone.
+- `plan` (String) Plan which the service will have
+- `zone` (String) Zone in which the service will be hosted, e.g. `fi-hel1`.
 
 ### Optional
 
-- **configured_status** (String) The service configured status indicates the service's current intended status. Managed by the customer.
-- **id** (String) The ID of this resource.
+- `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
 
 ### Read-Only
 
-- **backends** (List of String) Backends are groups of customer servers whose traffic should be balanced.
-- **dns_name** (String) DNS name of the load balancer
-- **frontends** (List of String) Frontends receive the traffic before dispatching it to the backends.
-- **operational_state** (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
-- **resolvers** (List of String) Domain Name Resolvers must be configured in case of customer uses dynamic type members
+- `backends` (List of String) Backends are groups of customer servers whose traffic should be balanced.
+- `dns_name` (String) DNS name of the load balancer
+- `frontends` (List of String) Frontends receive the traffic before dispatching it to the backends.
+- `id` (String) The ID of this resource.
+- `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
+- `resolvers` (List of String) Domain Name Resolvers must be configured in case of customer uses dynamic type members
 
 

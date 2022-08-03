@@ -55,28 +55,28 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Required
 
-- **default_backend_name** (String) The name of the default backend where traffic will be routed. Note, default backend can be overwritten in frontend rules.
-- **loadbalancer** (String) ID of the load balancer to which the frontend is connected.
-- **mode** (String) When load balancer operating in `tcp` mode it acts as a layer 4 proxy. In `http` mode it acts as a layer 7 proxy.
-- **name** (String) The name of the frontend must be unique within the load balancer service.
-- **port** (Number) Port to listen incoming requests
+- `default_backend_name` (String) The name of the default backend where traffic will be routed. Note, default backend can be overwritten in frontend rules.
+- `loadbalancer` (String) ID of the load balancer to which the frontend is connected.
+- `mode` (String) When load balancer operating in `tcp` mode it acts as a layer 4 proxy. In `http` mode it acts as a layer 7 proxy.
+- `name` (String) The name of the frontend must be unique within the load balancer service.
+- `port` (Number) Port to listen incoming requests
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **properties** (Block List, Max: 1) Frontend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
+- `properties` (Block List, Max: 1) Frontend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
 
 ### Read-Only
 
-- **rules** (List of String) Set of frontend rule names
-- **tls_configs** (List of String) Set of TLS config names
+- `id` (String) The ID of this resource.
+- `rules` (List of String) Set of frontend rule names
+- `tls_configs` (List of String) Set of TLS config names
 
 <a id="nestedblock--properties"></a>
 ### Nested Schema for `properties`
 
 Optional:
 
-- **inbound_proxy_protocol** (Boolean) Enable or disable inbound proxy protocol support.
-- **timeout_client** (Number) Client request timeout in seconds.
+- `inbound_proxy_protocol` (Boolean) Enable or disable inbound proxy protocol support.
+- `timeout_client` (Number) Client request timeout in seconds.
 
 

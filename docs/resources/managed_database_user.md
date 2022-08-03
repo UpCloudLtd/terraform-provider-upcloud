@@ -32,16 +32,16 @@ resource "upcloud_managed_database_user" "example_user" {
 
 ### Required
 
-- **service** (String) Service's UUID for which this user belongs to
-- **username** (String) Name of the database user
+- `service` (String) Service's UUID for which this user belongs to
+- `username` (String) Name of the database user
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **password** (String, Sensitive) Password for the database user. Defaults to a random value
+- `password` (String, Sensitive) Password for the database user. Defaults to a random value
 
 ### Read-Only
 
-- **type** (String) Type of the user. Only normal type users can be created
+- `id` (String) The ID of this resource.
+- `type` (String) Type of the user. Only normal type users can be created
 
 

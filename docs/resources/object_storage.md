@@ -39,41 +39,41 @@ resource "upcloud_object_storage" "my_object_storage" {
 
 ### Required
 
-- **access_key** (String) The access key used to identify user.
+- `access_key` (String) The access key used to identify user.
 				Can be set to an empty string, which will tell the provider to get the access key from environment variable.
 				The environment variable should be "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_{name}".
 				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
 				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
 				use environment variable named "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_MY_FILES".
-- **name** (String) The name of the object storage instance to be created
-- **secret_key** (String) The secret key used to authenticate user.
+- `name` (String) The name of the object storage instance to be created
+- `secret_key` (String) The secret key used to authenticate user.
 				Can be set to an empty string, which will tell the provider to get the secret key from environment variable.
 				The environment variable should be "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_{name}".
 				{name} is the name given to object storage instance (so not the resource label), it should be all uppercased
 				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
 				use environment variable named "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_MY_FILES".
-- **size** (Number) The size of the object storage instance in gigabytes
-- **zone** (String) The zone in which the object storage instance will be created
+- `size` (Number) The size of the object storage instance in gigabytes
+- `zone` (String) The zone in which the object storage instance will be created
 
 ### Optional
 
-- **bucket** (Block Set) (see [below for nested schema](#nestedblock--bucket))
-- **description** (String) The description of the object storage instance to be created
-- **id** (String) The ID of this resource.
+- `bucket` (Block Set) (see [below for nested schema](#nestedblock--bucket))
+- `description` (String) The description of the object storage instance to be created
 
 ### Read-Only
 
-- **created** (String)
-- **state** (String)
-- **url** (String)
-- **used_space** (Number)
+- `created` (String)
+- `id` (String) The ID of this resource.
+- `state` (String)
+- `url` (String)
+- `used_space` (Number)
 
 <a id="nestedblock--bucket"></a>
 ### Nested Schema for `bucket`
 
 Required:
 
-- **name** (String) The name of the bucket
+- `name` (String) The name of the bucket
 
 ## Import
 

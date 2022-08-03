@@ -63,40 +63,40 @@ resource "upcloud_firewall_rules" "example" {
 
 ### Required
 
-- **firewall_rule** (Block List, Min: 1, Max: 1000) A single firewall rule.
+- `firewall_rule` (Block List, Min: 1, Max: 1000) A single firewall rule.
 				If used, IP address and port ranges must have both start and end values specified. These can be the same value if only one IP address or port number is specified.
 				Source and destination port numbers can only be set if the protocol is TCP or UDP.
 				The ICMP type may only be set if the protocol is ICMP.
 				Typical firewall rule should have "action", "direction", "protocol", "family" and at least one destination/source-address/port range.
 				The default rule can be created by providing only "action" and "direction" attributes. Default rule should be defined last. (see [below for nested schema](#nestedblock--firewall_rule))
-- **server_id** (String) The unique id of the server to be protected the firewall rules
+- `server_id` (String) The unique id of the server to be protected the firewall rules
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--firewall_rule"></a>
 ### Nested Schema for `firewall_rule`
 
 Required:
 
-- **action** (String) Action to take if the rule conditions are met
-- **direction** (String) The direction of network traffic this rule will be applied to
+- `action` (String) Action to take if the rule conditions are met
+- `direction` (String) The direction of network traffic this rule will be applied to
 
 Optional:
 
-- **comment** (String) Freeform comment string for the rule
-- **destination_address_end** (String) The destination address range ends from this address
-- **destination_address_start** (String) The destination address range starts from this address
-- **destination_port_end** (String) The destination port range ends from this port number
-- **destination_port_start** (String) The destination port range starts from this port number
-- **family** (String) The address family of new firewall rule
-- **icmp_type** (String) The ICMP type
-- **protocol** (String) The protocol this rule will be applied to
-- **source_address_end** (String) The source address range ends from this address
-- **source_address_start** (String) The source address range starts from this address
-- **source_port_end** (String) The source port range ends from this port number
-- **source_port_start** (String) The source port range starts from this port number
+- `comment` (String) Freeform comment string for the rule
+- `destination_address_end` (String) The destination address range ends from this address
+- `destination_address_start` (String) The destination address range starts from this address
+- `destination_port_end` (String) The destination port range ends from this port number
+- `destination_port_start` (String) The destination port range starts from this port number
+- `family` (String) The address family of new firewall rule
+- `icmp_type` (String) The ICMP type
+- `protocol` (String) The protocol this rule will be applied to
+- `source_address_end` (String) The source address range ends from this address
+- `source_address_start` (String) The source address range starts from this address
+- `source_port_end` (String) The source port range ends from this port number
+- `source_port_start` (String) The source port range starts from this port number
 
 ## Import
 
