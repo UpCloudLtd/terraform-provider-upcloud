@@ -94,6 +94,14 @@ make testacc TESTARGS='-run=TestUpcloudServer_*'
 In order to view the documentation change rendering visite
 [the terraform documentation preview](https://registry.terraform.io/tools/doc-preview).
 
+## Generating documentation
+
+The documentation in [docs](./docs/) directory is generated with [tfplugindocs](https://github.com/hashicorp/terraform-plugin-docs). To install the tool and build the docs, run `make docs`.
+
+```sh
+make docs
+```
+
 ## Go version upgrades
 
 Upgrading Go version for the project requires the following changes:

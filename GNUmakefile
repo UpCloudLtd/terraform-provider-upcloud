@@ -13,6 +13,8 @@ PROVIDER_TYPE=upcloud
 PROVIDER_TARGET=$(shell go env GOOS)_$(shell go env GOARCH)
 PROVIDER_PATH=~/.terraform.d/plugins/$(PROVIDER_HOSTNAME)/$(PROVIDER_NAMESPACE)/$(PROVIDER_TYPE)/$(VERSION)/$(PROVIDER_TARGET)
 
+TOOLS_DIR := $(CURDIR)/.ci/bin
+
 default: build
 
 build: fmtcheck
@@ -62,7 +64,11 @@ test-compile:
 update-deps:
 	go mod vendor
 
-docs:
+install-tools:
+	cd .ci/tools && GOBIN=$(TOOLS_DIR) go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+
+docs: install-tools
 	terraform fmt -recursive examples/
-	tfplugindocs
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_13 docs
+	$(TOOLS_DIR)/tfplugindocs
+
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_12 install-tools docs
