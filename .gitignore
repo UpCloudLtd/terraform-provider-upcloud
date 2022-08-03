@@ -42,3 +42,6 @@ dist/
 terraform/
 /go.work
 /go.work.sum
+
+# Ignore tools installed by make install-tools
+/.ci/bin
