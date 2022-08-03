@@ -67,18 +67,21 @@ resource "upcloud_loadbalancer_dynamic_backend_member" "lb_be_1_dm_1" {
 
 ### Required
 
-- **backend** (String) ID of the load balancer backend to which the member is connected.
-- **max_sessions** (Number) Maximum number of sessions before queueing.
-- **name** (String) The name of the member must be unique within the load balancer backend service.
-- **weight** (Number) Used to adjust the server's weight relative to other servers. 
+- `backend` (String) ID of the load balancer backend to which the member is connected.
+- `max_sessions` (Number) Maximum number of sessions before queueing.
+- `name` (String) The name of the member must be unique within the load balancer backend service.
+- `weight` (Number) Used to adjust the server's weight relative to other servers. 
 				All servers will receive a load proportional to their weight relative to the sum of all weights, so the higher the weight, the higher the load. 
 				A value of 0 means the server will not participate in load balancing but will still accept persistent connections.
 
 ### Optional
 
-- **enabled** (Boolean) Indicates if the member is enabled. Disabled members are excluded from load balancing.
-- **id** (String) The ID of this resource.
-- **ip** (String) Optional fallback IP address in case of failure on DNS resolving.
-- **port** (Number) Server port. Port is optional and can be specified in DNS SRV record.
+- `enabled` (Boolean) Indicates if the member is enabled. Disabled members are excluded from load balancing.
+- `ip` (String) Optional fallback IP address in case of failure on DNS resolving.
+- `port` (Number) Server port. Port is optional and can be specified in DNS SRV record.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 

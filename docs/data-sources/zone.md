@@ -17,15 +17,12 @@ Data-source is deprecated.
 
 ### Required
 
-- **name** (String) Unique lablel for the zone
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `name` (String) Unique lablel for the zone
 
 ### Read-Only
 
-- **description** (String) Meaningful text describing the zone
-- **public** (Boolean) Indicates whether the zone is public
+- `description` (String) Meaningful text describing the zone
+- `id` (String) The ID of this resource.
+- `public` (Boolean) Indicates whether the zone is public
 
 

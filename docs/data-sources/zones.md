@@ -17,11 +17,11 @@ Data-source is deprecated.
 
 ### Optional
 
-- **filter_type** (String)
-- **id** (String) The ID of this resource.
+- `filter_type` (String)
 
 ### Read-Only
 
-- **zone_ids** (Set of String)
+- `id` (String) The ID of this resource.
+- `zone_ids` (Set of String)
 
 

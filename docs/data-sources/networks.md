@@ -32,37 +32,37 @@ data "upcloud_networks" "upcloud_by_zone" {
 
 ### Optional
 
-- **filter_name** (String) If specified, results will be filtered to match name using a regular expression
-- **id** (String) The ID of this resource.
-- **zone** (String) If specified, this data source will return only networks from this zone
+- `filter_name` (String) If specified, results will be filtered to match name using a regular expression
+- `zone` (String) If specified, this data source will return only networks from this zone
 
 ### Read-Only
 
-- **networks** (Set of Object) (see [below for nested schema](#nestedatt--networks))
+- `id` (String) The ID of this resource.
+- `networks` (Set of Object) (see [below for nested schema](#nestedatt--networks))
 
 <a id="nestedatt--networks"></a>
 ### Nested Schema for `networks`
 
 Read-Only:
 
-- **id** (String)
-- **ip_network** (Set of Object) (see [below for nested schema](#nestedobjatt--networks--ip_network))
-- **name** (String)
-- **servers** (Set of Object) (see [below for nested schema](#nestedobjatt--networks--servers))
-- **type** (String)
-- **zone** (String)
+- `id` (String)
+- `ip_network` (Set of Object) (see [below for nested schema](#nestedobjatt--networks--ip_network))
+- `name` (String)
+- `servers` (Set of Object) (see [below for nested schema](#nestedobjatt--networks--servers))
+- `type` (String)
+- `zone` (String)
 
 <a id="nestedobjatt--networks--ip_network"></a>
 ### Nested Schema for `networks.ip_network`
 
 Read-Only:
 
-- **address** (String)
-- **dhcp** (Boolean)
-- **dhcp_default_route** (Boolean)
-- **dhcp_dns** (List of String)
-- **family** (String)
-- **gateway** (String)
+- `address` (String)
+- `dhcp` (Boolean)
+- `dhcp_default_route` (Boolean)
+- `dhcp_dns` (List of String)
+- `family` (String)
+- `gateway` (String)
 
 
 <a id="nestedobjatt--networks--servers"></a>
@@ -70,7 +70,7 @@ Read-Only:
 
 Read-Only:
 
-- **id** (String)
-- **title** (String)
+- `id` (String)
+- `title` (String)
 
 

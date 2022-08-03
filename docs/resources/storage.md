@@ -108,13 +108,13 @@ resource "upcloud_server" "example_server" {
 
 ### Required
 
-- **size** (Number) The size of the storage in gigabytes
-- **title** (String) A short, informative description
-- **zone** (String) The zone in which the storage will be created
+- `size` (Number) The size of the storage in gigabytes
+- `title` (String) A short, informative description
+- `zone` (String) The zone in which the storage will be created
 
 ### Optional
 
-- **backup_rule** (Block List, Max: 1) The criteria to backup the storage  
+- `backup_rule` (Block List, Max: 1) The criteria to backup the storage  
 		Please keep in mind that it's not possible to have a server with backup_rule attached to a server with simple_backup specified.
 		Such configurations will throw errors during execution.  
 		Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, 
@@ -122,24 +122,27 @@ resource "upcloud_server" "example_server" {
 		If you want to switch from using server simple backup to per-storage defined backup rules, 
 		please first remove simple_backup block from a server, run 'terraform apply', 
 		then add 'backup_rule' to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--backup_rule))
-- **clone** (Block Set, Max: 1) Block defining another storage/template to clone to storage (see [below for nested schema](#nestedblock--clone))
-- **delete_autoresize_backup** (Boolean) If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.
-- **filesystem_autoresize** (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes.
+- `clone` (Block Set, Max: 1) Block defining another storage/template to clone to storage (see [below for nested schema](#nestedblock--clone))
+- `delete_autoresize_backup` (Boolean) If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.
+- `filesystem_autoresize` (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes.
 				Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
 				to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
 				Taking and keeping backups incure costs.
-- **id** (String) The ID of this resource.
-- **import** (Block Set, Max: 1) Block defining external data to import to storage (see [below for nested schema](#nestedblock--import))
-- **tier** (String) The storage tier to use
+- `import` (Block Set, Max: 1) Block defining external data to import to storage (see [below for nested schema](#nestedblock--import))
+- `tier` (String) The storage tier to use
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--backup_rule"></a>
 ### Nested Schema for `backup_rule`
 
 Required:
 
-- **interval** (String) The weekday when the backup is created
-- **retention** (Number) The number of days before a backup is automatically deleted
-- **time** (String) The time of day when the backup is created
+- `interval` (String) The weekday when the backup is created
+- `retention` (Number) The number of days before a backup is automatically deleted
+- `time` (String) The time of day when the backup is created
 
 
 <a id="nestedblock--clone"></a>
@@ -147,7 +150,7 @@ Required:
 
 Required:
 
-- **id** (String) The unique identifier of the storage/template to clone
+- `id` (String) The unique identifier of the storage/template to clone
 
 
 <a id="nestedblock--import"></a>
@@ -155,17 +158,17 @@ Required:
 
 Required:
 
-- **source** (String) The mode of the import task. One of `http_import` or `direct_upload`.
-- **source_location** (String) The location of the file to import. For `http_import` an accessible URL for `direct_upload` a local file.
+- `source` (String) The mode of the import task. One of `http_import` or `direct_upload`.
+- `source_location` (String) The location of the file to import. For `http_import` an accessible URL for `direct_upload` a local file.
 
 Optional:
 
-- **source_hash** (String) For `direct_upload`; an optional hash of the file to upload.
+- `source_hash` (String) For `direct_upload`; an optional hash of the file to upload.
 
 Read-Only:
 
-- **sha256sum** (String) sha256 sum of the imported data
-- **written_bytes** (Number) Number of bytes imported
+- `sha256sum` (String) sha256 sum of the imported data
+- `written_bytes` (Number) Number of bytes imported
 
 ## Import
 

@@ -48,21 +48,20 @@ resource "upcloud_server" "example" {
 
 ### Required
 
-- **hostname** (String) A valid domain name
-- **network_interface** (Block List, Min: 1) One or more blocks describing the network interfaces of the server. (see [below for nested schema](#nestedblock--network_interface))
-- **zone** (String) The zone in which the server will be hosted
+- `hostname` (String) A valid domain name
+- `network_interface` (Block List, Min: 1) One or more blocks describing the network interfaces of the server. (see [below for nested schema](#nestedblock--network_interface))
+- `zone` (String) The zone in which the server will be hosted
 
 ### Optional
 
-- **cpu** (Number) The number of CPU for the server
-- **firewall** (Boolean) Are firewall rules active for the server
-- **host** (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
-- **id** (String) The ID of this resource.
-- **login** (Block Set, Max: 1) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
-- **mem** (Number) The size of memory for the server (in megabytes)
-- **metadata** (Boolean) Is the metadata service active for the server
-- **plan** (String) The pricing plan used for the server
-- **simple_backup** (Block Set, Max: 1) Simple backup schedule configuration  
+- `cpu` (Number) The number of CPU for the server
+- `firewall` (Boolean) Are firewall rules active for the server
+- `host` (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
+- `login` (Block Set, Max: 1) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
+- `mem` (Number) The size of memory for the server (in megabytes)
+- `metadata` (Boolean) Is the metadata service active for the server
+- `plan` (String) The pricing plan used for the server
+- `simple_backup` (Block Set, Max: 1) Simple backup schedule configuration  
 				The idea behind simple backups is to provide a simplified way of backing up *all* of the storages attached to a given server. 
 				This means you cannot have simple backup set for a server, and then some individual backup_rules on the storages attached to said server. 
 				Such configuration will throw an error during execution. This also apply to backup_rules set for server templates.  
@@ -71,31 +70,35 @@ resource "upcloud_server" "example" {
 				If you want to switch from using server simple backup to per-storage defined backup rules, 
 				please first remove simple_backup block from a server, run 'terraform apply', 
 				then add backup_rule to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--simple_backup))
-- **storage_devices** (Block Set) A list of storage devices associated with the server (see [below for nested schema](#nestedblock--storage_devices))
-- **tags** (List of String) The server related tags
-- **template** (Block List, Max: 1) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
-- **title** (String) A short, informational description
-- **user_data** (String) Defines URL for a server setup script, or the script body itself
+- `storage_devices` (Block Set) A list of storage devices associated with the server (see [below for nested schema](#nestedblock--storage_devices))
+- `tags` (List of String) The server related tags
+- `template` (Block List, Max: 1) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
+- `title` (String) A short, informational description
+- `user_data` (String) Defines URL for a server setup script, or the script body itself
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--network_interface"></a>
 ### Nested Schema for `network_interface`
 
 Required:
 
-- **type** (String) Network interface type. For private network interfaces, a network must be specified with an existing network id.
+- `type` (String) Network interface type. For private network interfaces, a network must be specified with an existing network id.
 
 Optional:
 
-- **bootable** (Boolean) `true` if this interface should be used for network booting.
-- **ip_address** (String) The assigned IP address.
-- **ip_address_family** (String) The IP address type of this interface (one of `IPv4` or `IPv6`).
-- **network** (String) The unique ID of a network to attach this network to.
-- **source_ip_filtering** (Boolean) `true` if source IP should be filtered.
+- `bootable` (Boolean) `true` if this interface should be used for network booting.
+- `ip_address` (String) The assigned IP address.
+- `ip_address_family` (String) The IP address type of this interface (one of `IPv4` or `IPv6`).
+- `network` (String) The unique ID of a network to attach this network to.
+- `source_ip_filtering` (Boolean) `true` if source IP should be filtered.
 
 Read-Only:
 
-- **ip_address_floating** (Boolean) `true` is a floating IP address is attached.
-- **mac_address** (String) The assigned MAC address.
+- `ip_address_floating` (Boolean) `true` is a floating IP address is attached.
+- `mac_address` (String) The assigned MAC address.
 
 
 <a id="nestedblock--login"></a>
@@ -103,10 +106,10 @@ Read-Only:
 
 Optional:
 
-- **create_password** (Boolean) Indicates a password should be create to allow access
-- **keys** (List of String) A list of ssh keys to access the server
-- **password_delivery** (String) The delivery method for the server's root password (one of `none`, `email` or `sms`)
-- **user** (String) Username to be create to access the server
+- `create_password` (Boolean) Indicates a password should be create to allow access
+- `keys` (List of String) A list of ssh keys to access the server
+- `password_delivery` (String) The delivery method for the server's root password (one of `none`, `email` or `sms`)
+- `user` (String) Username to be create to access the server
 
 
 <a id="nestedblock--simple_backup"></a>
@@ -114,8 +117,8 @@ Optional:
 
 Required:
 
-- **plan** (String) Simple backup plan. Accepted values: dailies, weeklies, monthlies.
-- **time** (String) Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).
+- `plan` (String) Simple backup plan. Accepted values: dailies, weeklies, monthlies.
+- `time` (String) Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).
 
 
 <a id="nestedblock--storage_devices"></a>
@@ -123,12 +126,12 @@ Required:
 
 Required:
 
-- **storage** (String) A valid storage UUID
+- `storage` (String) A valid storage UUID
 
 Optional:
 
-- **address** (String) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
-- **type** (String) The device type the storage will be attached as
+- `address` (String) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
+- `type` (String) The device type the storage will be attached as
 
 
 <a id="nestedblock--template"></a>
@@ -136,12 +139,12 @@ Optional:
 
 Required:
 
-- **storage** (String) A valid storage UUID or template name
+- `storage` (String) A valid storage UUID or template name
 
 Optional:
 
-- **address** (String) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
-- **backup_rule** (Block List, Max: 1) The criteria to backup the storage  
+- `address` (String) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
+- `backup_rule` (Block List, Max: 1) The criteria to backup the storage  
 		Please keep in mind that it's not possible to have a server with backup_rule attached to a server with simple_backup specified.
 		Such configurations will throw errors during execution.  
 		Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, 
@@ -149,27 +152,27 @@ Optional:
 		If you want to switch from using server simple backup to per-storage defined backup rules, 
 		please first remove simple_backup block from a server, run 'terraform apply', 
 		then add 'backup_rule' to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--template--backup_rule))
-- **delete_autoresize_backup** (Boolean) If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.
-- **filesystem_autoresize** (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of template storage changes.
+- `delete_autoresize_backup` (Boolean) If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.
+- `filesystem_autoresize` (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of template storage changes.
 							Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
 							to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
 							Taking and keeping backups incure costs.
-- **size** (Number) The size of the storage in gigabytes
-- **title** (String) A short, informative description
+- `size` (Number) The size of the storage in gigabytes
+- `title` (String) A short, informative description
 
 Read-Only:
 
-- **id** (String) The unique identifier for the storage
-- **tier** (String) The storage tier to use
+- `id` (String) The unique identifier for the storage
+- `tier` (String) The storage tier to use
 
 <a id="nestedblock--template--backup_rule"></a>
 ### Nested Schema for `template.backup_rule`
 
 Required:
 
-- **interval** (String) The weekday when the backup is created
-- **retention** (Number) The number of days before a backup is automatically deleted
-- **time** (String) The time of day when the backup is created
+- `interval` (String) The weekday when the backup is created
+- `retention` (Number) The number of days before a backup is automatically deleted
+- `time` (String) The time of day when the backup is created
 
 ## Import
 

@@ -67,22 +67,22 @@ resource "upcloud_server" "example2" {
 
 ### Required
 
-- **type** (String) Storage type (normal, backup, cdrom, template). Use 'favorite' as type to filter storages on the list of favorites.
+- `type` (String) Storage type (normal, backup, cdrom, template). Use 'favorite' as type to filter storages on the list of favorites.
 
 ### Optional
 
-- **access_type** (String) Storage access type (public, private)
-- **id** (String) The ID of this resource.
-- **most_recent** (Boolean) If more than one result is returned, use the most recent storage. This is only useful with private storages. Public storages might give unpredictable results.
-- **name** (String) Exact name of the storage (same as title)
-- **name_regex** (String) Use regular expression to match storage name
-- **zone** (String) The zone in which the storage resides
+- `access_type` (String) Storage access type (public, private)
+- `most_recent` (Boolean) If more than one result is returned, use the most recent storage. This is only useful with private storages. Public storages might give unpredictable results.
+- `name` (String) Exact name of the storage (same as title)
+- `name_regex` (String) Use regular expression to match storage name
+- `zone` (String) The zone in which the storage resides
 
 ### Read-Only
 
-- **size** (Number) Size of the storage in gigabytes
-- **state** (String) Current state of the storage
-- **tier** (String) Storage tier in use
-- **title** (String) Title of the storage
+- `id` (String) The ID of this resource.
+- `size` (Number) Size of the storage in gigabytes
+- `state` (String) Current state of the storage
+- `tier` (String) Storage tier in use
+- `title` (String) Title of the storage
 
 

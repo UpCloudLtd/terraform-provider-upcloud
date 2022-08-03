@@ -73,33 +73,36 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Required
 
-- **frontend** (String) ID of the load balancer frontend to which the rule is connected.
-- **name** (String) The name of the frontend rule must be unique within the load balancer service.
-- **priority** (Number) Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.
+- `frontend` (String) ID of the load balancer frontend to which the rule is connected.
+- `name` (String) The name of the frontend rule must be unique within the load balancer service.
+- `priority` (Number) Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.
 
 ### Optional
 
-- **actions** (Block List, Max: 1) Set of rule actions. (see [below for nested schema](#nestedblock--actions))
-- **id** (String) The ID of this resource.
-- **matchers** (Block List, Max: 1) Set of rule matchers. if rule doesn't have matchers, then action applies to all incoming requests. (see [below for nested schema](#nestedblock--matchers))
+- `actions` (Block List, Max: 1) Set of rule actions. (see [below for nested schema](#nestedblock--actions))
+- `matchers` (Block List, Max: 1) Set of rule matchers. if rule doesn't have matchers, then action applies to all incoming requests. (see [below for nested schema](#nestedblock--matchers))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--actions"></a>
 ### Nested Schema for `actions`
 
 Optional:
 
-- **http_redirect** (Block List, Max: 100) Redirects HTTP requests to specified location or URL schema. (see [below for nested schema](#nestedblock--actions--http_redirect))
-- **http_return** (Block List, Max: 100) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
-- **set_forwarded_headers** (Block List, Max: 100) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
-- **tcp_reject** (Block List, Max: 100) Terminates a connection. (see [below for nested schema](#nestedblock--actions--tcp_reject))
-- **use_backend** (Block List, Max: 100) Routes traffic to specified `backend`. (see [below for nested schema](#nestedblock--actions--use_backend))
+- `http_redirect` (Block List, Max: 100) Redirects HTTP requests to specified location or URL schema. (see [below for nested schema](#nestedblock--actions--http_redirect))
+- `http_return` (Block List, Max: 100) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
+- `set_forwarded_headers` (Block List, Max: 100) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
+- `tcp_reject` (Block List, Max: 100) Terminates a connection. (see [below for nested schema](#nestedblock--actions--tcp_reject))
+- `use_backend` (Block List, Max: 100) Routes traffic to specified `backend`. (see [below for nested schema](#nestedblock--actions--use_backend))
 
 <a id="nestedblock--actions--http_redirect"></a>
 ### Nested Schema for `actions.http_redirect`
 
 Required:
 
-- **location** (String) Target location.
+- `location` (String) Target location.
 
 
 <a id="nestedblock--actions--http_return"></a>
@@ -107,9 +110,9 @@ Required:
 
 Required:
 
-- **content_type** (String) Content type.
-- **payload** (String) The payload.
-- **status** (Number) HTTP status code.
+- `content_type` (String) Content type.
+- `payload` (String) The payload.
+- `status` (Number) HTTP status code.
 
 
 <a id="nestedblock--actions--set_forwarded_headers"></a>
@@ -117,7 +120,7 @@ Required:
 
 Optional:
 
-- **active** (Boolean)
+- `active` (Boolean)
 
 
 <a id="nestedblock--actions--tcp_reject"></a>
@@ -125,7 +128,7 @@ Optional:
 
 Optional:
 
-- **active** (Boolean)
+- `active` (Boolean)
 
 
 <a id="nestedblock--actions--use_backend"></a>
@@ -133,7 +136,7 @@ Optional:
 
 Required:
 
-- **backend_name** (String) The name of the backend where traffic will be routed.
+- `backend_name` (String) The name of the backend where traffic will be routed.
 
 
 
@@ -142,28 +145,28 @@ Required:
 
 Optional:
 
-- **body_size** (Block List, Max: 100) Matches by HTTP request body size. (see [below for nested schema](#nestedblock--matchers--body_size))
-- **body_size_range** (Block List, Max: 100) Matches by range of HTTP request body sizes (see [below for nested schema](#nestedblock--matchers--body_size_range))
-- **cookie** (Block List, Max: 100) Matches by HTTP cookie value. Cookie name must be provided. (see [below for nested schema](#nestedblock--matchers--cookie))
-- **header** (Block List, Max: 100) Matches by HTTP header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--header))
-- **host** (Block List, Max: 100) Matches by hostname. Header extracted from HTTP Headers or from TLS certificate in case of secured connection. (see [below for nested schema](#nestedblock--matchers--host))
-- **http_method** (Block List, Max: 100) Matches by HTTP method. (see [below for nested schema](#nestedblock--matchers--http_method))
-- **num_members_up** (Block List, Max: 100) Matches by number of healthy backend members. (see [below for nested schema](#nestedblock--matchers--num_members_up))
-- **path** (Block List, Max: 100) Matches by URL path. (see [below for nested schema](#nestedblock--matchers--path))
-- **src_ip** (Block List, Max: 100) Matches by source IP address. (see [below for nested schema](#nestedblock--matchers--src_ip))
-- **src_port** (Block List, Max: 100) Matches by source port number. (see [below for nested schema](#nestedblock--matchers--src_port))
-- **src_port_range** (Block List, Max: 100) Matches by range of source port numbers (see [below for nested schema](#nestedblock--matchers--src_port_range))
-- **url** (Block List, Max: 100) Matches by URL without schema, e.g. `example.com/dashboard`. (see [below for nested schema](#nestedblock--matchers--url))
-- **url_param** (Block List, Max: 100) Matches by URL query parameter value. Query parameter name must be provided (see [below for nested schema](#nestedblock--matchers--url_param))
-- **url_query** (Block List, Max: 100) Matches by URL query string. (see [below for nested schema](#nestedblock--matchers--url_query))
+- `body_size` (Block List, Max: 100) Matches by HTTP request body size. (see [below for nested schema](#nestedblock--matchers--body_size))
+- `body_size_range` (Block List, Max: 100) Matches by range of HTTP request body sizes (see [below for nested schema](#nestedblock--matchers--body_size_range))
+- `cookie` (Block List, Max: 100) Matches by HTTP cookie value. Cookie name must be provided. (see [below for nested schema](#nestedblock--matchers--cookie))
+- `header` (Block List, Max: 100) Matches by HTTP header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--header))
+- `host` (Block List, Max: 100) Matches by hostname. Header extracted from HTTP Headers or from TLS certificate in case of secured connection. (see [below for nested schema](#nestedblock--matchers--host))
+- `http_method` (Block List, Max: 100) Matches by HTTP method. (see [below for nested schema](#nestedblock--matchers--http_method))
+- `num_members_up` (Block List, Max: 100) Matches by number of healthy backend members. (see [below for nested schema](#nestedblock--matchers--num_members_up))
+- `path` (Block List, Max: 100) Matches by URL path. (see [below for nested schema](#nestedblock--matchers--path))
+- `src_ip` (Block List, Max: 100) Matches by source IP address. (see [below for nested schema](#nestedblock--matchers--src_ip))
+- `src_port` (Block List, Max: 100) Matches by source port number. (see [below for nested schema](#nestedblock--matchers--src_port))
+- `src_port_range` (Block List, Max: 100) Matches by range of source port numbers (see [below for nested schema](#nestedblock--matchers--src_port_range))
+- `url` (Block List, Max: 100) Matches by URL without schema, e.g. `example.com/dashboard`. (see [below for nested schema](#nestedblock--matchers--url))
+- `url_param` (Block List, Max: 100) Matches by URL query parameter value. Query parameter name must be provided (see [below for nested schema](#nestedblock--matchers--url_param))
+- `url_query` (Block List, Max: 100) Matches by URL query string. (see [below for nested schema](#nestedblock--matchers--url_query))
 
 <a id="nestedblock--matchers--body_size"></a>
 ### Nested Schema for `matchers.body_size`
 
 Required:
 
-- **method** (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
-- **value** (Number) Integer value.
+- `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
+- `value` (Number) Integer value.
 
 
 <a id="nestedblock--matchers--body_size_range"></a>
@@ -171,8 +174,8 @@ Required:
 
 Required:
 
-- **range_end** (Number) Integer value.
-- **range_start** (Number) Integer value.
+- `range_end` (Number) Integer value.
+- `range_start` (Number) Integer value.
 
 
 <a id="nestedblock--matchers--cookie"></a>
@@ -180,13 +183,13 @@ Required:
 
 Required:
 
-- **method** (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
-- **name** (String) Name of the argument.
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `name` (String) Name of the argument.
 
 Optional:
 
-- **ignore_case** (Boolean) Ignore case, default `false`.
-- **value** (String) String value.
+- `ignore_case` (Boolean) Ignore case, default `false`.
+- `value` (String) String value.
 
 
 <a id="nestedblock--matchers--header"></a>
@@ -194,13 +197,13 @@ Optional:
 
 Required:
 
-- **method** (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
-- **name** (String) Name of the argument.
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `name` (String) Name of the argument.
 
 Optional:
 
-- **ignore_case** (Boolean) Ignore case, default `false`.
-- **value** (String) String value.
+- `ignore_case` (Boolean) Ignore case, default `false`.
+- `value` (String) String value.
 
 
 <a id="nestedblock--matchers--host"></a>
@@ -208,7 +211,7 @@ Optional:
 
 Required:
 
-- **value** (String) String value.
+- `value` (String) String value.
 
 
 <a id="nestedblock--matchers--http_method"></a>
@@ -216,7 +219,7 @@ Required:
 
 Required:
 
-- **value** (String) String value (`GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT`, `OPTIONS`, `TRACE`).
+- `value` (String) String value (`GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT`, `OPTIONS`, `TRACE`).
 
 
 <a id="nestedblock--matchers--num_members_up"></a>
@@ -224,9 +227,9 @@ Required:
 
 Required:
 
-- **backend_name** (String) The name of the `backend` which members will be monitored.
-- **method** (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
-- **value** (Number) Integer value.
+- `backend_name` (String) The name of the `backend` which members will be monitored.
+- `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
+- `value` (Number) Integer value.
 
 
 <a id="nestedblock--matchers--path"></a>
@@ -234,12 +237,12 @@ Required:
 
 Required:
 
-- **method** (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
 
 Optional:
 
-- **ignore_case** (Boolean) Ignore case, default `false`.
-- **value** (String) String value.
+- `ignore_case` (Boolean) Ignore case, default `false`.
+- `value` (String) String value.
 
 
 <a id="nestedblock--matchers--src_ip"></a>
@@ -247,7 +250,7 @@ Optional:
 
 Required:
 
-- **value** (String) IP address. CIDR masks are supported, e.g. `192.168.0.0/24`.
+- `value` (String) IP address. CIDR masks are supported, e.g. `192.168.0.0/24`.
 
 
 <a id="nestedblock--matchers--src_port"></a>
@@ -255,8 +258,8 @@ Required:
 
 Required:
 
-- **method** (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
-- **value** (Number) Integer value.
+- `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
+- `value` (Number) Integer value.
 
 
 <a id="nestedblock--matchers--src_port_range"></a>
@@ -264,8 +267,8 @@ Required:
 
 Required:
 
-- **range_end** (Number) Integer value.
-- **range_start** (Number) Integer value.
+- `range_end` (Number) Integer value.
+- `range_start` (Number) Integer value.
 
 
 <a id="nestedblock--matchers--url"></a>
@@ -273,12 +276,12 @@ Required:
 
 Required:
 
-- **method** (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
 
 Optional:
 
-- **ignore_case** (Boolean) Ignore case, default `false`.
-- **value** (String) String value.
+- `ignore_case` (Boolean) Ignore case, default `false`.
+- `value` (String) String value.
 
 
 <a id="nestedblock--matchers--url_param"></a>
@@ -286,13 +289,13 @@ Optional:
 
 Required:
 
-- **method** (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
-- **name** (String) Name of the argument.
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `name` (String) Name of the argument.
 
 Optional:
 
-- **ignore_case** (Boolean) Ignore case, default `false`.
-- **value** (String) String value.
+- `ignore_case` (Boolean) Ignore case, default `false`.
+- `value` (String) String value.
 
 
 <a id="nestedblock--matchers--url_query"></a>
@@ -300,11 +303,11 @@ Optional:
 
 Required:
 
-- **method** (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
 
 Optional:
 
-- **ignore_case** (Boolean) Ignore case, default `false`.
-- **value** (String) String value.
+- `ignore_case` (Boolean) Ignore case, default `false`.
+- `value` (String) String value.
 
 
