@@ -1,0 +1,39 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - test-docs-generator # for testing
+
+jobs:
+  update:
+    name: Update
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: "1.17"
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+    - name: Generate documentation
+      run: |
+        terraform version
+        make docs
+    - name: Create PR for docs update
+      uses: peter-evans/create-pull-request@v4
+      with:
+        add-paths: docs/
+        branch: chore/update-docs
+        commit-message: "chore(docs): update documentation"
+        committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+        reviewers: ${{ github.actor }}
+        title: Update documentation
+        body: "This is an automatically created PR. Changes were created by running `make docs` on ${{ github.sha }}."
