@@ -96,7 +96,9 @@ In order to view the documentation change rendering visite
 
 ## Generating documentation
 
-The documentation in [docs](./docs/) directory is generated with [tfplugindocs](https://github.com/hashicorp/terraform-plugin-docs). To install the tool and build the docs, run `make docs`.
+The documentation in [docs](./docs/) directory is generated with [tfplugindocs](https://github.com/hashicorp/terraform-plugin-docs). This is done automatically when changes are merged to the `main` branch. If there are documentation changes, actions will create a new pull request for documentation changes. Review and merge this pull-request.
+
+To generate the docs locally, run `make docs`. This installs the tool and builds the docs.
 
 ```sh
 make docs
