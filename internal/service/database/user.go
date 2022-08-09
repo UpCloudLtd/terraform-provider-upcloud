@@ -102,7 +102,8 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	d.SetId(buildManagedDatabaseSubResourceID(serviceID, d.Get("username").(string)))
 
 	tflog.Info(ctx, "managed database user created", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": d.Get("username").(string), "service_uuid": serviceID})
+		"service_name": serviceDetails.Name, "username": d.Get("username").(string), "service_uuid": serviceID,
+	})
 
 	return resourceUserRead(ctx, d, meta)
 }
@@ -125,7 +126,8 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	userDetails, err := client.GetManagedDatabaseUser(ctx, &request.GetManagedDatabaseUserRequest{
 		ServiceUUID: serviceID,
-		Username:    username})
+		Username:    username,
+	})
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseUserNotFoundErrorCode {
 			var diags diag.Diagnostics
@@ -137,7 +139,8 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	tflog.Info(ctx, "managed database user read", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID})
+		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID,
+	})
 	return copyUserDetailsToResource(d, userDetails)
 }
 
@@ -169,7 +172,8 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 	tflog.Info(ctx, "managed database user updated", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID})
+		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID,
+	})
 
 	return resourceUserRead(ctx, d, meta)
 }
@@ -209,7 +213,8 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 	tflog.Info(ctx, "managed database user deleted", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID})
+		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID,
+	})
 
 	return nil
 }

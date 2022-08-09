@@ -74,7 +74,6 @@ func resourceManualCertificateBundleCreate(ctx context.Context, d *schema.Resour
 		Intermediates: d.Get("intermediates").(string),
 		PrivateKey:    d.Get("private_key").(string),
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -94,7 +93,6 @@ func resourceManualCertificateBundleRead(ctx context.Context, d *schema.Resource
 	b, err := svc.GetLoadBalancerCertificateBundle(ctx, &request.GetLoadBalancerCertificateBundleRequest{
 		UUID: d.Id(),
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
@@ -115,7 +113,6 @@ func resourceManualCertificateBundleUpdate(ctx context.Context, d *schema.Resour
 		Intermediates: upcloud.StringPtr(d.Get("intermediates").(string)),
 		PrivateKey:    d.Get("private_key").(string),
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

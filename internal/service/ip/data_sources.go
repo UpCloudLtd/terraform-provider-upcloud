@@ -77,7 +77,6 @@ func dataSourceIPAddressesRead(ctx context.Context, d *schema.ResourceData, meta
 	var diags diag.Diagnostics
 
 	ipAddresses, err := client.GetIPAddresses(ctx)
-
 	if err != nil {
 		diag.FromErr(err)
 	}

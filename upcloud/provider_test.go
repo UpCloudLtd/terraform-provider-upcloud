@@ -9,10 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-var testAccProviders map[string]*schema.Provider
-var testAccProviderFactories func(providers *[]*schema.Provider) map[string]func() (*schema.Provider, error)
-var testAccProvider *schema.Provider
-var testAccProviderFunc func() *schema.Provider
+var (
+	testAccProviders         map[string]*schema.Provider
+	testAccProviderFactories func(providers *[]*schema.Provider) map[string]func() (*schema.Provider, error)
+	testAccProvider          *schema.Provider
+	testAccProviderFunc      func() *schema.Provider
+)
 
 func init() {
 	testAccProvider = Provider()
@@ -21,8 +23,8 @@ func init() {
 	}
 
 	testAccProviderFactories = func(providers *[]*schema.Provider) map[string]func() (*schema.Provider, error) {
-		var providerNames = []string{"upcloud"}
-		var factories = make(map[string]func() (*schema.Provider, error), len(providerNames))
+		providerNames := []string{"upcloud"}
+		factories := make(map[string]func() (*schema.Provider, error), len(providerNames))
 		for _, name := range providerNames {
 			p := Provider()
 			factories[name] = func() (*schema.Provider, error) { //nolint:unparam

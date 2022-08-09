@@ -462,7 +462,6 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 			_, err := client.GetObjectStorageDetails(context.Background(), &request.GetObjectStorageDetailsRequest{
 				UUID: rs.Primary.ID,
 			})
-
 			if err != nil {
 				svcErr, ok := err.(*upcloud.Error)
 

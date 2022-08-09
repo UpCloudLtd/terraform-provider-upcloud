@@ -588,7 +588,6 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		},
 			meta,
 		)
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -897,7 +896,6 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 				l, err := meta.(*service.ServiceContext).GetStorages(ctx, &request.GetStoragesRequest{
 					Type: upcloud.StorageTypeTemplate,
 				})
-
 				if err != nil {
 					return nil, err
 				}

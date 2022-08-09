@@ -51,7 +51,6 @@ func dataSourceTagsRead(ctx context.Context, d *schema.ResourceData, meta interf
 	var diags diag.Diagnostics
 
 	tags, err := client.GetTags(ctx)
-
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching tags: %s", err))
 	}
@@ -59,7 +58,7 @@ func dataSourceTagsRead(ctx context.Context, d *schema.ResourceData, meta interf
 	var values []map[string]interface{}
 
 	for _, tag := range tags.Tags {
-		var servers = []string{}
+		servers := []string{}
 		for _, server := range tag.Servers {
 			servers = append(servers, server)
 		}

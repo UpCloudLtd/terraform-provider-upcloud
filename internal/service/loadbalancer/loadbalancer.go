@@ -129,7 +129,6 @@ func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta 
 	var err error
 	svc := meta.(*service.ServiceContext)
 	lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{UUID: d.Id()})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
@@ -150,7 +149,6 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 		Plan:             d.Get("plan").(string),
 		ConfiguredStatus: d.Get("configured_status").(string),
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

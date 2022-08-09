@@ -215,7 +215,6 @@ func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	firewallRules, err := client.GetFirewallRules(ctx, opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -262,7 +261,6 @@ func resourceFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	err := client.CreateFirewallRules(ctx, opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

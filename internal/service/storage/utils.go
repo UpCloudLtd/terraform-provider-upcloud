@@ -62,7 +62,8 @@ func cloneStorage(
 	tier string,
 	title string,
 	zone string,
-	d *schema.ResourceData) diag.Diagnostics {
+	d *schema.ResourceData,
+) diag.Diagnostics {
 	cloneStorageRequest := request.CloneStorageRequest{
 		Zone:  zone,
 		Tier:  tier,
@@ -133,7 +134,8 @@ func createStorage(
 	tier string,
 	title string,
 	zone string,
-	d *schema.ResourceData) diag.Diagnostics {
+	d *schema.ResourceData,
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	createStorageRequest := request.CreateStorageRequest{

@@ -92,7 +92,6 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 			Actions:  actions,
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -118,7 +117,6 @@ func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta 
 		FrontendName: feName,
 		Name:         name,
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}

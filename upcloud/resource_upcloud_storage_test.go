@@ -275,7 +275,6 @@ func testAccCheckClonedStorageSize(resourceName string, expected int, storage *u
 		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: storage.UUID,
 		})
-
 		if err != nil {
 			return err
 		}
@@ -306,7 +305,6 @@ func testAccCheckStorageExists(resourceName string, storage *upcloud.StorageDeta
 		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
-
 		if err != nil {
 			return err
 		}
