@@ -1,6 +1,4 @@
 package config
 
-var (
-	// Version contains the current software version from git.
-	Version = "dev"
-)
+// Version contains the current software version from git.
+var Version = "dev"

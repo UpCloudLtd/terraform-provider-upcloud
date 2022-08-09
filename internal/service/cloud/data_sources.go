@@ -59,7 +59,6 @@ func dataSourceHostsRead(ctx context.Context, d *schema.ResourceData, meta inter
 	var diags diag.Diagnostics
 
 	hosts, err := client.GetHosts(ctx)
-
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching hosts: %s", err))
 	}
@@ -115,7 +114,6 @@ func resourceZoneRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	var diags diag.Diagnostics
 
 	zones, err := client.GetZones(ctx)
-
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching zones: %s", err))
 	}
@@ -174,7 +172,6 @@ func dataSourceZonesRead(ctx context.Context, d *schema.ResourceData, meta inter
 	var diags diag.Diagnostics
 
 	zones, err := client.GetZones(ctx)
-
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching zones: %s", err))
 	}

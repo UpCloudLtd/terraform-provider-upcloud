@@ -111,7 +111,6 @@ func dataSourceStorageRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	storageType := d.Get("type").(string)
 	storages, err := svc.GetStorages(ctx, &request.GetStoragesRequest{Type: storageType})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

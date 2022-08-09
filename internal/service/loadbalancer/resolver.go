@@ -113,7 +113,6 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 			CacheInvalid: d.Get("cache_invalid").(int),
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -138,7 +137,6 @@ func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta inte
 		ServiceUUID: serviceID,
 		Name:        name,
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
@@ -182,7 +180,6 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			CacheInvalid: d.Get("cache_invalid").(int),
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -100,7 +100,6 @@ func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta inter
 		ServiceUUID: serviceID,
 		Name:        name,
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}

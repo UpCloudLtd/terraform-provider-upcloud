@@ -104,7 +104,6 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 			Properties:     frontendPropertiesFromResourceData(d),
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -129,7 +128,6 @@ func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta inte
 		ServiceUUID: serviceID,
 		Name:        name,
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}

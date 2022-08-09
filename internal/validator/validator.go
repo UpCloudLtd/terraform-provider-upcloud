@@ -85,7 +85,6 @@ func ValidateDomainNameDiag(val interface{}, path cty.Path) diag.Diagnostics {
 	}
 
 	err := ValidateDomainName(name)
-
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity:      diag.Error,

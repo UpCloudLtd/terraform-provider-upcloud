@@ -71,7 +71,6 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	tag, err := client.CreateTag(ctx, createTagRequest)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -87,7 +86,6 @@ func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface
 	var diags diag.Diagnostics
 
 	tags, err := client.GetTags(ctx)
-
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -114,7 +112,7 @@ func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.FromErr(err)
 	}
 
-	var servers = []string{}
+	servers := []string{}
 	for _, server := range tag.Servers {
 		servers = append(servers, server)
 	}
@@ -150,7 +148,6 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	_, err := client.ModifyTag(ctx, r)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -167,7 +164,6 @@ func resourceTagDelete(ctx context.Context, d *schema.ResourceData, meta interfa
 		Name: d.Id(),
 	}
 	err := client.DeleteTag(ctx, deleteTagRequest)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -246,7 +246,6 @@ func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resou
 		latest, err := client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
-
 		if err != nil {
 			return err
 		}
@@ -297,7 +296,6 @@ func testAccCheckNetworkExists(resourceName string, network *upcloud.Network) re
 		latest, err := client.GetNetworkDetails(context.Background(), &request.GetNetworkDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
-
 		if err != nil {
 			return err
 		}

@@ -79,7 +79,6 @@ func resourceDynamicCertificateBundleCreate(ctx context.Context, d *schema.Resou
 		KeyType:   d.Get("key_type").(string),
 		Hostnames: hostnames,
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -99,7 +98,6 @@ func resourceDynamicCertificateBundleRead(ctx context.Context, d *schema.Resourc
 	b, err := svc.GetLoadBalancerCertificateBundle(ctx, &request.GetLoadBalancerCertificateBundleRequest{
 		UUID: d.Id(),
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
@@ -122,7 +120,6 @@ func resourceDynamicCertificateBundleUpdate(ctx context.Context, d *schema.Resou
 		Name:      d.Get("name").(string),
 		Hostnames: hostnames,
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

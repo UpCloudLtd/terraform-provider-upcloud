@@ -114,7 +114,7 @@ func TestUpcloudServer_minimal(t *testing.T) {
 							type = "utility"
 						}
 					}`,
-				ExpectNonEmptyPlan: false, //ensure nothing changed
+				ExpectNonEmptyPlan: false, // ensure nothing changed
 			},
 		},
 	})
@@ -1069,7 +1069,8 @@ func TestUpcloudServer_updatePreChecks(t *testing.T) {
 				ExpectError:        regexp.MustCompile("expected plan to be one of"),
 				Check:              resource.TestCheckResourceAttr("upcloud_server.pre-checks", "plan", "1xCPU-1GB"),
 			},
-		}})
+		},
+	})
 }
 
 func TestUpcloudServer_createPreChecks(t *testing.T) {
@@ -1117,5 +1118,6 @@ func TestUpcloudServer_createPreChecks(t *testing.T) {
 				ExpectNonEmptyPlan: true,
 				ExpectError:        regexp.MustCompile("expected zone to be one of"),
 			},
-		}})
+		},
+	})
 }

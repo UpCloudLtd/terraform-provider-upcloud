@@ -393,7 +393,6 @@ func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *
 		UUID:          d.Id(),
 		TargetVersion: d.Get("properties.0.version").(string),
 	})
-
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

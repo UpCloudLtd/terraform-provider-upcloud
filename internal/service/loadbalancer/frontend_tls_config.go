@@ -57,7 +57,6 @@ func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData
 			CertificateBundleUUID: d.Get("certificate_bundle").(string),
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -83,7 +82,6 @@ func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, 
 		FrontendName: feName,
 		Name:         name,
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
@@ -114,7 +112,6 @@ func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData
 			CertificateBundleUUID: d.Get("certificate_bundle").(string),
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

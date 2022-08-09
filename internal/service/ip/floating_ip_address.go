@@ -81,7 +81,6 @@ func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData
 	}
 
 	ipAddress, err := client.AssignIPAddress(ctx, assignIPAddressRequest)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -105,7 +104,6 @@ func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	ipAddress, err := client.GetIPAddressDetails(ctx, getIPAddressDetailsRequest)
-
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == ipAddressNotFoundErrorCode {
 			name := "ip address" // set default name because ip_address is optional field
@@ -184,7 +182,6 @@ func resourceFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData
 	}
 
 	err := client.ReleaseIPAddress(ctx, releaseIPAddressRequest)
-
 	if err != nil {
 		diag.FromErr(err)
 	}

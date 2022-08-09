@@ -59,7 +59,6 @@ func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	router, err := client.CreateRouter(ctx, opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -89,7 +88,6 @@ func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	router, err := client.GetRouterDetails(ctx, opts)
-
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == routerNotFoundErrorCode {
 			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
@@ -130,7 +128,6 @@ func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	_, err := client.ModifyRouter(ctx, opts)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -145,7 +142,6 @@ func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	router, err := client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{
 		UUID: d.Id(),
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

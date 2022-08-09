@@ -178,7 +178,6 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 		BackendName: beName,
 		Name:        name,
 	})
-
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
@@ -215,7 +214,6 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 			Port:        d.Get("port").(int),
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -105,7 +105,8 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 	}
 	d.SetId(buildManagedDatabaseSubResourceID(serviceID, d.Get("name").(string)))
 	tflog.Info(ctx, "managed database logical database created", map[string]interface{}{
-		"service_name": serviceDetails.Name, "name": d.Get("name").(string), "service_uuid": serviceID})
+		"service_name": serviceDetails.Name, "name": d.Get("name").(string), "service_uuid": serviceID,
+	})
 
 	return resourceLogicalDatabaseRead(ctx, d, meta)
 }
@@ -151,7 +152,8 @@ func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	tflog.Info(ctx, "managed database logical database read", map[string]interface{}{
-		"service_name": serviceDetails.Name, "name": name, "service_uuid": serviceID})
+		"service_name": serviceDetails.Name, "name": name, "service_uuid": serviceID,
+	})
 
 	return copyLogicalDatabaseDetailsToResource(d, details)
 }
@@ -183,7 +185,8 @@ func resourceLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 	tflog.Info(ctx, "managed database logical database deleted", map[string]interface{}{
-		"service_name": serviceDetails.Name, "name": name, "service_uuid": serviceID})
+		"service_name": serviceDetails.Name, "name": name, "service_uuid": serviceID,
+	})
 
 	return nil
 }

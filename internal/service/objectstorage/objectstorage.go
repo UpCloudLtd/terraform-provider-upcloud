@@ -186,7 +186,6 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 	objectDetails, err := client.GetObjectStorageDetails(ctx, &request.GetObjectStorageDetailsRequest{
 		UUID: uuid,
 	})
-
 	if err != nil {
 		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudObjectStorageNotFoundErrorCode {
 			var diags diag.Diagnostics
@@ -239,7 +238,6 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 			accessKey,
 			secretKey,
 		)
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -357,7 +355,6 @@ func modifyObjectStorage(ctx context.Context, client *service.ServiceContext, re
 
 func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
 	conn, err := GetBucketConnection(URL, accessKey, secretKey)
-
 	if err != nil {
 		return nil, err
 	}
