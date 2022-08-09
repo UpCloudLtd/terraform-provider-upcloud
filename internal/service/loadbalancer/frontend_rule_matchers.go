@@ -586,9 +586,8 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 		default:
 			return fmt.Errorf("received unsupported matcher type '%s' %+v", m.Type, m)
 		}
-		if v != nil {
-			matchers[t] = append(matchers[t], v)
-		}
+
+		matchers[t] = append(matchers[t], v)
 	}
 
 	return d.Set("matchers", []interface{}{matchers})

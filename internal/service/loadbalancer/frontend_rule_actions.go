@@ -190,9 +190,8 @@ func setFrontendRuleActionsResourceData(d *schema.ResourceData, rule *upcloud.Lo
 		default:
 			return fmt.Errorf("received unsupported action type '%s' %+v", a.Type, a)
 		}
-		if v != nil {
-			actions[t] = append(actions[t], v)
-		}
+
+		actions[t] = append(actions[t], v)
 	}
 	return d.Set("actions", []interface{}{actions})
 }
