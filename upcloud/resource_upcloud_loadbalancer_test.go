@@ -1,7 +1,7 @@
 package upcloud
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -9,11 +9,11 @@ import (
 )
 
 func TestAccUpcloudLoadBalancer(t *testing.T) {
-	testDataS1, err := ioutil.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s1.tf")
+	testDataS1, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s1.tf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	testDataS2, err := ioutil.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s2.tf")
+	testDataS2, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s2.tf")
 	if err != nil {
 		t.Fatal(err)
 	}

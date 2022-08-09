@@ -1,7 +1,7 @@
 package upcloud
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
@@ -10,11 +10,11 @@ import (
 )
 
 func TestAccUpcloudManagedDatabase(t *testing.T) {
-	testDataS1, err := ioutil.ReadFile("testdata/upcloud_managed_database/managed_database_s1.tf")
+	testDataS1, err := os.ReadFile("testdata/upcloud_managed_database/managed_database_s1.tf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	testDataS2, err := ioutil.ReadFile("testdata/upcloud_managed_database/managed_database_s2.tf")
+	testDataS2, err := os.ReadFile("testdata/upcloud_managed_database/managed_database_s2.tf")
 	if err != nil {
 		t.Fatal(err)
 	}

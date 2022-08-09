@@ -2,7 +2,7 @@ package upcloud
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
-	testData, err := ioutil.ReadFile("testdata/upcloud_managed_database/postgresql_properties.tf")
+	testData, err := os.ReadFile("testdata/upcloud_managed_database/postgresql_properties.tf")
 	if err != nil {
 		t.Fatal(err)
 	}
