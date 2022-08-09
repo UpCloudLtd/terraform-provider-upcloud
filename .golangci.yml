@@ -5,14 +5,19 @@ linters:
   # Run golangci-lint linters to see the list of all linters
   # Please keep them sorted alphabetically
   enable:
+    - asasalint
+    - asciicheck
+    - bidichk
     - bodyclose
+    - containedctx
     - deadcode
     - depguard
     - dogsled
     - errcheck
     - goconst
-    - gofmt
+    - gofumpt
     - goimports
+    - gomoddirectives
     - goprintffuncname
     # - gosec
     - gosimple
@@ -21,6 +26,8 @@ linters:
     - misspell
     - nakedret
     - nolintlint
+    - nosprintfhostport
+    - predeclared
     - revive
     - rowserrcheck
     - staticcheck
@@ -28,10 +35,25 @@ linters:
     - stylecheck
     - typecheck
     - unconvert
-    # - unparam
+    - unused
     - varcheck
+    - wastedassign
     - whitespace
+
+output:
+  uniq-by-line: false
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - funlen
+        - bodyclose
 
 linters-settings:
   goconst:
     min-len: 5
+  predeclared:
+    ignore: "new"
