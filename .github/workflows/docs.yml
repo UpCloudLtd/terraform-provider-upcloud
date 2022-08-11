@@ -1,14 +1,17 @@
 name: Documentation
 
 on:
-  push:
+  pull_request:
+    types:
+    - closed
     branches:
-      - main
-      - test-docs-generator # for testing
+    - main
+    - test-docs-generator # for testing
 
 jobs:
   update:
     name: Update
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - name: Setup Go
@@ -21,8 +24,6 @@ jobs:
         terraform_wrapper: false
     - name: Checkout
       uses: actions/checkout@v2
-      with:
-        ref: ${{ github.head_ref }}
     - name: Generate documentation
       run: |
         terraform version
@@ -32,8 +33,9 @@ jobs:
       with:
         add-paths: docs/
         branch: chore/update-docs
-        commit-message: "chore(docs): update documentation"
+        commit-message: "chore(docs): update documentation for #${{ github.event.number }}"
         committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
         reviewers: ${{ github.actor }}
         title: Update documentation
-        body: "This is an automatically created PR. Changes were created by running `make docs` on ${{ github.sha }}."
+        body: "This is an automatically created PR. Changes were created by running `make docs` after merging #${{ github.event.number }} (${{ github.sha }})."
+        base: ${{ github.event.pull_request.base.ref }}
