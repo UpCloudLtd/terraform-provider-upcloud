@@ -35,15 +35,15 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"username": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("UPCLOUD_USERNAME", nil),
-				Description: "UpCloud username with API access",
+				Description: "UpCloud username with API access. Can also be configured using the `UPCLOUD_USERNAME` environment variable.",
 			},
 			"password": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("UPCLOUD_PASSWORD", nil),
-				Description: "Password for UpCloud API user",
+				Description: "Password for UpCloud API user. Can also be configured using the `UPCLOUD_PASSWORD` environment variable.",
 			},
 			"retry_wait_min_sec": {
 				Type:        schema.TypeInt,

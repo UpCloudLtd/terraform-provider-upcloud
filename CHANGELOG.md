@@ -17,6 +17,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - dbaas: updated property descriptions
 - structured logging with `tflog`
 - storage: update maximum storage size from 2048 to 4096 gigabytes
+- provider: changed `username` and `password` into optional parameters. This does not change how these parameters are used: providing these values in the provider block has already been optional, if credentials were defined as environment variables.
 
 ## [2.5.0] - 2022-06-20
 
