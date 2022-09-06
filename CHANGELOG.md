@@ -13,6 +13,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - dbaas: fractional values in PostgreSQL properties `autovacuum_analyze_scale_factor`, `autovacuum_vacuum_scale_factor` and `bgwriter_lru_multiplier`
 
 ### Changed
+- storage: update maximum storage size from 2048 to 4096 gigabytes
+
+### Changed
 - dbaas: updated property descriptions
 - structured logging with `tflog`
 
