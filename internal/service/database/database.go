@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -241,10 +240,6 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
 				r[upcloud.ManagedDatabasePropertyKey(field)] = listValue[0]
 			}
-		case "pg_stat_statements_track", "pg_partman_bgw_role", "pg_partman_bgw_interval":
-			// with these fields last underscore needs to be converted to dot e.g. pg_stat_statements_track -> pg_stat_statements.track
-			c := strings.Split(field, "_")
-			r[upcloud.ManagedDatabasePropertyKey(fmt.Sprintf("%s.%s", strings.Join(c[:len(c)-1], "_"), c[len(c)-1]))] = value
 		default:
 			r[upcloud.ManagedDatabasePropertyKey(field)] = value
 		}
@@ -261,9 +256,6 @@ func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase, d *
 			if m, ok := iv.(map[string]interface{}); ok {
 				props[string(key)] = []map[string]interface{}{m}
 			}
-		case "pg_stat_statements.track", "pg_partman_bgw.role", "pg_partman_bgw.interval":
-			// with these fields last dot needs to be converted to underscore e.g. pg_stat_statements.track -> pg_stat_statements_track
-			props[(strings.Replace(string(key), ".", "_", 1))] = iv
 		default:
 			props[string(key)] = iv
 		}

@@ -11,13 +11,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - dbaas: fractional values in PostgreSQL properties `autovacuum_analyze_scale_factor`, `autovacuum_vacuum_scale_factor` and `bgwriter_lru_multiplier`
-
-### Changed
-- storage: update maximum storage size from 2048 to 4096 gigabytes
+- dbaas: removed logic to replace last `_` with `.` in `pg_stat_statements_track`, `pg_partman_bgw_role`, `pg_partman_bgw_interval` property names as these are now handled in snake case also in the API.
 
 ### Changed
 - dbaas: updated property descriptions
 - structured logging with `tflog`
+- storage: update maximum storage size from 2048 to 4096 gigabytes
 
 ## [2.5.0] - 2022-06-20
 
