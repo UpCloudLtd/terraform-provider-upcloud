@@ -16,6 +16,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - dbaas: updated property descriptions
 - structured logging with `tflog`
+- storage: update maximum storage size from 2048 to 4096 gigabytes
 
 ## [2.5.0] - 2022-06-20
 

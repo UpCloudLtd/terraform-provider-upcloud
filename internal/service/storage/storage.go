@@ -36,7 +36,7 @@ func ResourceStorage() *schema.Resource {
 				Description:  "The size of the storage in gigabytes",
 				Type:         schema.TypeInt,
 				Required:     true,
-				ValidateFunc: validation.IntBetween(10, 2048),
+				ValidateFunc: validation.IntBetween(10, 4096),
 			},
 			"tier": {
 				Description:  "The storage tier to use",
