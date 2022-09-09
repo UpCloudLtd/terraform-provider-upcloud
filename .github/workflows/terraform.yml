@@ -6,6 +6,10 @@ on:
       - upcloud/**
       - internal/**
 
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   Test:
     runs-on: ubuntu-latest
