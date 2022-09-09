@@ -172,7 +172,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			// Attempt to upgrade version after the database was powered on
 			if d.HasChange("properties.0.version") {
 				// Upgrade is only allowed when database is in "Running" state, so we have to wait for that after powering it on
-				_, err := resourceUpCloudManagedDatabaseWaitState(ctx, d.Id(), client, time.Minute*5, upcloud.ManagedDatabaseStateRunning)
+				_, err := resourceUpCloudManagedDatabaseWaitState(ctx, d.Id(), client, time.Minute*15, upcloud.ManagedDatabaseStateRunning)
 
 				if err != nil {
 					diags = append(diags, diag.Diagnostic{
