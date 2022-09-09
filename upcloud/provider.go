@@ -17,6 +17,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
@@ -88,16 +89,19 @@ func Provider() *schema.Provider {
 			"upcloud_loadbalancer_frontend_tls_config":        loadbalancer.ResourceFrontendTLSConfig(),
 			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
 			"upcloud_loadbalancer_manual_certificate_bundle":  loadbalancer.ResourceManualCertificateBundle(),
+			"upcloud_kubernetes_cluster":                      kubernetes.ResourceCluster(),
+			"upcloud_kubernetes_node_group":                   kubernetes.ResourceNodeGroup(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"upcloud_zone":         cloud.DataSourceZone(),
-			"upcloud_zones":        cloud.DataSourceZones(),
-			"upcloud_networks":     network.DataSourceNetworks(),
-			"upcloud_hosts":        cloud.DataSourceHosts(),
-			"upcloud_ip_addresses": ip.DataSourceIPAddresses(),
-			"upcloud_tags":         tag.DataSourceTags(),
-			"upcloud_storage":      storage.DataSourceStorage(),
+			"upcloud_zone":               cloud.DataSourceZone(),
+			"upcloud_zones":              cloud.DataSourceZones(),
+			"upcloud_networks":           network.DataSourceNetworks(),
+			"upcloud_hosts":              cloud.DataSourceHosts(),
+			"upcloud_ip_addresses":       ip.DataSourceIPAddresses(),
+			"upcloud_tags":               tag.DataSourceTags(),
+			"upcloud_storage":            storage.DataSourceStorage(),
+			"upcloud_kubernetes_cluster": kubernetes.DataSourceCluster(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
