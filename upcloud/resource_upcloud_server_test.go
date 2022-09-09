@@ -123,6 +123,8 @@ func TestUpcloudServer_minimal(t *testing.T) {
 func TestUpcloudServer_basic(t *testing.T) {
 	var providers []*schema.Provider
 
+	fmt.Println("basic")
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),

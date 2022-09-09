@@ -17,6 +17,7 @@ func TestServerDefaultTitle(t *testing.T) {
 
 	want = "terraform (managed by terraform)"
 	got = defaultTitleFromHostname("terraform")
+	fmt.Println(got)
 	if want != got {
 		t.Errorf("defaultTitleFromHostname failed want '%s' got '%s'", want, got)
 	}
