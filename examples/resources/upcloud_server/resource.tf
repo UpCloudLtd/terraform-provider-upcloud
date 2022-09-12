@@ -18,6 +18,11 @@ resource "upcloud_server" "example" {
     type = "public"
   }
 
+  labels = {
+    env        = "dev"
+    production = "false"
+  }
+
   login {
     user = "myusername"
 

@@ -193,6 +193,12 @@ func ResourceServer() *schema.Resource {
 					},
 				},
 			},
+			"labels": {
+				Description: "Labels contain key-value pairs to classify the server",
+				Type:        schema.TypeMap,
+				Elem:        schema.TypeString,
+				Optional:    true,
+			},
 			"user_data": {
 				Description: "Defines URL for a server setup script, or the script body itself",
 				Type:        schema.TypeString,
@@ -472,6 +478,15 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("zone", server.Zone)
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
+
+	if len(server.Labels) > 0 {
+		labels := make(map[string]interface{})
+		for _, v := range server.Labels {
+			labels[v.Key] = v.Value
+		}
+
+		_ = d.Set("labels", labels)
+	}
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
 
@@ -598,6 +613,9 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	r.Hostname = d.Get("hostname").(string)
+	if d.HasChange("labels") {
+		r.Labels = buildLabels(d.Get("labels").(map[string]interface{}))
+	}
 
 	if attr, ok := d.GetOk("title"); ok {
 		r.Title = attr.(string)
@@ -841,6 +859,9 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 			r.Firewall = "off"
 		}
 	}
+	if attr, ok := d.GetOk("labels"); ok {
+		r.Labels = buildLabels(attr.(map[string]interface{}))
+	}
 	if attr, ok := d.GetOk("metadata"); ok {
 		if attr.(bool) {
 			r.Metadata = upcloud.True
@@ -935,6 +956,19 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	return r, nil
+}
+
+func buildLabels(m map[string]interface{}) *upcloud.LabelSlice {
+	var labels upcloud.LabelSlice
+
+	for k, v := range m {
+		labels = append(labels, upcloud.Label{
+			Key:   k,
+			Value: v.(string),
+		})
+	}
+
+	return &labels
 }
 
 func buildSimpleBackupOpts(attrs map[string]interface{}) string {
