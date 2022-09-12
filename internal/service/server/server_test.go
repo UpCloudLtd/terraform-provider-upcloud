@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServerDefaultTitle(t *testing.T) {
@@ -51,4 +54,13 @@ func TestBuildSimpleBackupOpts_withInvalidInput(t *testing.T) {
 		t.Logf("BuildSimpleBackuOpts produced unexpected value. Expected: %s, received: %s", expected, sb)
 		t.Fail()
 	}
+}
+
+func TestBuildLabels(t *testing.T) {
+	attr := map[string]interface{}{
+		"origin": "unit-test",
+	}
+
+	l := buildLabels(attr)
+	assert.Equal(t, &upcloud.LabelSlice{upcloud.Label{Key: "origin", Value: "unit-test"}}, l)
 }

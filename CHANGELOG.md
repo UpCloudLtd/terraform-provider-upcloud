@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - dbaas: property validators
 - dbaas: PostgreSQL properties `default_toast_compression` and `max_slot_wal_keep_size`
+- server: Labels
 
 ### Fixed
 - dbaas: fractional values in PostgreSQL properties `autovacuum_analyze_scale_factor`, `autovacuum_vacuum_scale_factor` and `bgwriter_lru_multiplier`
