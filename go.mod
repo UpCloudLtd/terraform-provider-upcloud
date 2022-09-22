@@ -3,7 +3,7 @@ module github.com/UpCloudLtd/terraform-provider-upcloud
 go 1.17
 
 require (
-	github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220912033431-5f6e629cfe2d
+	github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220922030611-0223f24e140a
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/go-retryablehttp v0.6.8
 	github.com/hashicorp/go-uuid v1.0.3
@@ -11,6 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.15.0
 	github.com/minio/minio-go/v7 v7.0.10
 	github.com/stretchr/testify v1.7.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -69,5 +70,4 @@ require (
 	google.golang.org/grpc v1.45.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
