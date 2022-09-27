@@ -24,14 +24,16 @@ const (
 	kubeconfigDescription           = "Kubernetes config file contents for the cluster."
 	nameDescription                 = "Cluster name. Needs to be unique within the account."
 	networkDescription              = "Network ID for the cluster to run in."
+	networkCIDRDescription          = "Network CIDR for the given network. Computed automatically."
 	nodeGroupsCountDescription      = "Amount of nodes to provision in the node group."
-	nodeGroupsDescription           = "Node groups for the Kubernetes cluster workloads."
+	nodeGroupsDescription           = "Node groups for workloads. Currenlyt not available in state, altough created."
 	nodeGroupsLabelsDescription     = "Key-value pairs to classify the node group."
 	nodeGroupsNameDescription       = "The name of the node group. Needs to be unique within a cluster."
 	nodeGroupsPlanDescription       = "The pricing plan used for the node group. Valid values available in `upcloud_kubernetes_plans.plans` datasource key pair values."
 	nodeGroupsSSHKeysDescription    = "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running."
 	plansDescription                = "Pricing plans for node groups as key-value pairs. Use the value as node group plan, e.g. `K8S-2xCPU-4GB`."
-	stateDescription                = "Operational state of the cluster. Values: `ready|configuring`."
+	stateDescription                = "Operational state of the cluster."
+	storageDescription              = "Storage template ID for node groups."
 	typeDescription                 = "Cluster type. Values: `standalone`"
 	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
 )
@@ -57,6 +59,11 @@ func ResourceCluster() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
+			},
+			"network_cidr": {
+				Description: networkCIDRDescription,
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"node_groups": {
 				Description: nodeGroupsDescription,
@@ -102,6 +109,12 @@ func ResourceCluster() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"storage": {
+				Description: storageDescription,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"type": {
 				Description: typeDescription,
 				Type:        schema.TypeString,
@@ -128,9 +141,10 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	req := &request.CreateKubernetesClusterRequest{
 		Name:       d.Get("name").(string),
-		Zone:       d.Get("zone").(string),
 		Network:    d.Get("network").(string),
 		NodeGroups: nodeGroups,
+		Storage:    d.Get("storage").(string),
+		Zone:       d.Get("zone").(string),
 	}
 	c, err := svc.CreateKubernetesCluster(ctx, req)
 	if err != nil {
@@ -177,7 +191,15 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("network_cidr", c.Network); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set("state", c.Network); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("storage", c.Network); err != nil {
 		return diag.FromErr(err)
 	}
 

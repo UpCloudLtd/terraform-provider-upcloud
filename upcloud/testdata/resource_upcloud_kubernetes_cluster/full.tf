@@ -41,5 +41,6 @@ resource "upcloud_kubernetes_cluster" "full" {
       plan = "K8S-4xCPU-8GB"
     }
   ]
-  zone = var.zone
+  storage = "01000000-0000-4000-8000-000160010100"
+  zone    = var.zone
 }
