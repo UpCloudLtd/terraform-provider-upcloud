@@ -25,7 +25,7 @@ const (
 	networkDescription              = "Network ID for the cluster to run in."
 	networkCIDRDescription          = "Network CIDR for the given network. Computed automatically."
 	nodeGroupsCountDescription      = "Amount of nodes to provision in the node group."
-	nodeGroupsDescription           = "Node groups for workloads. Currenlyt not available in state, altough created."
+	nodeGroupsDescription           = "Node groups for workloads. Currenlyt not available in state, although created."
 	nodeGroupsLabelsDescription     = "Key-value pairs to classify the node group."
 	nodeGroupsNameDescription       = "The name of the node group. Needs to be unique within a cluster."
 	nodeGroupsPlanDescription       = "The pricing plan used for the node group. Valid values available in `upcloud_kubernetes_plans.plans` datasource key pair values."
