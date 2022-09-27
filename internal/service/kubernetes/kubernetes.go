@@ -81,8 +81,10 @@ func ResourceCluster() *schema.Resource {
 						"labels": {
 							Description: nodeGroupsLabelsDescription,
 							Type:        schema.TypeMap,
-							Elem:        schema.TypeString,
-							Optional:    true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Optional: true,
 						},
 						"name": {
 							Description: nodeGroupsNameDescription,
@@ -99,7 +101,9 @@ func ResourceCluster() *schema.Resource {
 							Description: nodeGroupsSSHKeysDescription,
 							Type:        schema.TypeSet,
 							Optional:    true,
-							Elem:        schema.TypeString,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
 						},
 					},
 				},
@@ -131,11 +135,13 @@ func ResourceCluster() *schema.Resource {
 }
 
 func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+	tflog.Debug(ctx, "\033[31mCreate is being run!!!!\n\033[0m")
 	svc := meta.(*service.ServiceContext)
 
 	nodeGroups := make([]upcloud.KubernetesNodeGroup, 0)
 	err := json.Unmarshal([]byte(d.Get("node_groups").(string)), &nodeGroups)
 	if err != nil {
+		tflog.Debug(ctx, fmt.Sprintf("\033[31mError while unmarshalling node groups: %s\n\033[0m", err.Error()))
 		return diag.FromErr(err)
 	}
 
