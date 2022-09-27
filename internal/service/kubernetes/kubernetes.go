@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -135,23 +134,16 @@ func ResourceCluster() *schema.Resource {
 }
 
 func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	tflog.Debug(ctx, "\033[31mCreate is being run!!!!\n\033[0m")
 	svc := meta.(*service.ServiceContext)
-
-	nodeGroups := make([]upcloud.KubernetesNodeGroup, 0)
-	err := json.Unmarshal([]byte(d.Get("node_groups").(string)), &nodeGroups)
-	if err != nil {
-		tflog.Debug(ctx, fmt.Sprintf("\033[31mError while unmarshalling node groups: %s\n\033[0m", err.Error()))
-		return diag.FromErr(err)
-	}
 
 	req := &request.CreateKubernetesClusterRequest{
 		Name:       d.Get("name").(string),
 		Network:    d.Get("network").(string),
-		NodeGroups: nodeGroups,
+		NodeGroups: getNodeGroupsFromConfig(d),
 		Storage:    d.Get("storage").(string),
 		Zone:       d.Get("zone").(string),
 	}
+	tflog.Debug(ctx, fmt.Sprintf("\033[31mEREQUEST: %+v\n\033[0m", req))
 	c, err := svc.CreateKubernetesCluster(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
@@ -243,4 +235,36 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.ServiceContext,
 	}
 
 	return fmt.Errorf("max retries (%d)reached while waiting for cluster to be deleted", maxRetries)
+}
+
+func getNodeGroupsFromConfig(d *schema.ResourceData) []upcloud.KubernetesNodeGroup {
+	result := make([]upcloud.KubernetesNodeGroup, 0)
+	config := d.Get("node_groups").(*schema.Set)
+
+	for _, el := range config.List() {
+		data := el.(map[string]interface{})
+
+		sshKeys := []string{}
+		for _, key := range data["ssh_keys"].(*schema.Set).List() {
+			sshKeys = append(sshKeys, key.(string))
+		}
+
+		labels := upcloud.LabelSlice{}
+		for k, v := range data["labels"].(map[string]interface{}) {
+			labels = append(labels, upcloud.Label{
+				Key:   k,
+				Value: v.(string),
+			})
+		}
+
+		result = append(result, upcloud.KubernetesNodeGroup{
+			Count:   data["count"].(int),
+			Name:    data["name"].(string),
+			Plan:    data["plan"].(string),
+			SSHKeys: sshKeys,
+			Labels:  labels,
+		})
+	}
+
+	return result
 }
