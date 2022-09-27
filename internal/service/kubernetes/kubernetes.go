@@ -143,7 +143,7 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 		Storage:    d.Get("storage").(string),
 		Zone:       d.Get("zone").(string),
 	}
-	tflog.Debug(ctx, fmt.Sprintf("\033[31mEREQUEST: %+v\n\033[0m", req))
+
 	c, err := svc.CreateKubernetesCluster(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
