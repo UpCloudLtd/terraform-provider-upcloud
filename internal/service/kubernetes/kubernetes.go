@@ -227,6 +227,12 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.ServiceContext,
 					return nil
 				}
 
+				// Support for legacy-style API errors
+				// TODO: remove when all API endpoints support the json+problem error handling
+				if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == "NotFound" {
+					return nil
+				}
+
 				return err
 			}
 
