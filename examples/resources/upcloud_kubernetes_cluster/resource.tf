@@ -1,5 +1,11 @@
-# Use `upcloud_kubernetes_plans` to query node group plans
-data "upcloud_kubernetes_plans" "example" {}
+# Use `upcloud_kubernetes_plan` to query node group plans
+data "upcloud_kubernetes_plan" "medium" {
+  name = "medium"
+}
+
+data "upcloud_kubernetes_plan" "large" {
+  name = "large"
+}
 
 # Create a network for the Kubernetes cluster
 resource "upcloud_network" "example" {
@@ -23,7 +29,7 @@ resource "upcloud_kubernetes_cluster" "example" {
         managedBy = "terraform"
       }
       name = "node-group-large"
-      plan = lookup(data.upcloud_kubernetes_plans.example.plans, "large", "K8S-4xCPU-8GB")
+      plan = data.upcloud_kubernetes_plan.large.description
       ssh_keys = [
         // insert your SSH key(s) here to access the worker nodes
       ]
@@ -34,7 +40,7 @@ resource "upcloud_kubernetes_cluster" "example" {
         managedBy = "terraform"
       }
       name = "node-group-medium"
-      plan = lookup(data.upcloud_kubernetes_plans.example.plans, "medium", "K8S-4xCPU-8GB")
+      plan = data.upcloud_kubernetes_plan.medium.description
       ssh_keys = [
         // insert your SSH key(s) here to access the worker nodes
       ]

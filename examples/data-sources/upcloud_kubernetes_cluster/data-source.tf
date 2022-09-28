@@ -14,7 +14,7 @@ resource "upcloud_network" "example" {
 # Create a Kubernetes cluster
 resource "upcloud_kubernetes_cluster" "example" {
   name    = "example"
-  network = upcloud_network.cluster_private_network.id
+  network = upcloud_network.example.id
   node_groups = [
     {
       count = 4
@@ -27,7 +27,7 @@ resource "upcloud_kubernetes_cluster" "example" {
       plan  = "K8S-8xCPU-32GB"
     }
   ]
-  zone = upcloud_network.cluster_private_network.zone
+  zone = upcloud_network.example.zone
 }
 
 # Read the details of the newly created cluster

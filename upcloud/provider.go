@@ -101,7 +101,7 @@ func Provider() *schema.Provider {
 			"upcloud_tags":               tag.DataSourceTags(),
 			"upcloud_storage":            storage.DataSourceStorage(),
 			"upcloud_kubernetes_cluster": kubernetes.DataSourceCluster(),
-			"upcloud_kubernetes_plans":   kubernetes.DataSourcePlans(),
+			"upcloud_kubernetes_plan":    kubernetes.DataSourcePlan(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

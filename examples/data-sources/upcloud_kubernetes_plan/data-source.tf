@@ -1,5 +1,10 @@
-# Use `upcloud_kubernetes_plans` to query node group plans
-data "upcloud_kubernetes_plans" "example" {}
+# Use `upcloud_kubernetes_plan` to query node group plans
+data "upcloud_kubernetes_plan" "medium" {
+  name = "medium"
+}
+data "upcloud_kubernetes_plan" "large" {
+  name = "large"
+}
 
 # Create a network for the Kubernetes cluster
 resource "upcloud_network" "example" {
@@ -15,18 +20,18 @@ resource "upcloud_network" "example" {
 # Create a Kubernetes cluster
 resource "upcloud_kubernetes_cluster" "example" {
   name    = "example"
-  network = upcloud_network.cluster_private_network.id
+  network = upcloud_network.example.id
   node_groups = [
     {
       count = 4
       name  = "node-group-medium"
-      plan  = lookup(data.upcloud_kubernetes_plans.example.plans, "medium", "K8S-4xCPU-8GB")
+      plan  = data.upcloud_kubernetes_plan.medium.description
     },
     {
       count = 4
       name  = "node-group-large"
-      plan  = lookup(data.upcloud_kubernetes_plans.example.plans, "large", "K8S-8xCPU-32GB")
+      plan  = data.upcloud_kubernetes_plan.large.description
     }
   ]
-  zone = upcloud_network.cluster_private_network.zone
+  zone = upcloud_network.example.zone
 }
