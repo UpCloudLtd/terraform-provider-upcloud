@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -149,42 +151,57 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 	return diags
 }
 
-func DataSourcePlans() *schema.Resource {
+func DataSourcePlan() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourcePlansRead,
+		Description: "Pricing plans for node groups. Use the description as `upcloud_kubernetes_cluster.node_group[*].plan`.",
+		ReadContext: dataSourcePlanRead,
 		Schema: map[string]*schema.Schema{
-			"plans": {
-				Description: plansDescription,
-				Type:        schema.TypeMap,
-				Elem:        schema.TypeString,
+			"description": {
+				Description: planDescriptionDescription,
+				Type:        schema.TypeString,
 				Computed:    true,
+			},
+			"name": {
+				Description: planNameDescription,
+				Type:        schema.TypeString,
+				Required:    true,
+				ValidateDiagFunc: validation.ToDiagFunc(
+					validation.StringInSlice(
+						[]string{
+							"small",
+							"medium",
+							"large",
+						},
+						false,
+					)),
 			},
 		},
 	}
 }
 
-func dataSourcePlansRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+func dataSourcePlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	client := meta.(*service.ServiceContext)
 
-	p, err := client.GetKubernetesPlans(ctx, &request.GetKubernetesPlansRequest{})
+	plans, err := client.GetKubernetesPlans(ctx, &request.GetKubernetesPlansRequest{})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if len(p) == 0 {
+	if len(plans) == 0 {
 		return diag.FromErr(fmt.Errorf("no plans available: %w", err))
 	}
 
-	dPlans := make([]map[string]string, len(p))
+	name := d.Get("name").(string)
+	err = fmt.Errorf("plan not available: %s", name)
 
-	for k, v := range p {
-		dPlans[k] = map[string]string{
-			"description": v.Description,
-			"name":        v.Name,
+	for _, v := range plans {
+		if v.Name == name {
+			d.SetId(v.Name)
+			err = d.Set("description", v.Description)
+
+			break
 		}
 	}
-
-	err = d.Set("plans", dPlans)
 
 	if err != nil {
 		return diag.FromErr(err)
