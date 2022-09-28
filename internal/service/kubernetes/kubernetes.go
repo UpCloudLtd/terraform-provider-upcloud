@@ -223,7 +223,16 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.ServiceContext,
 		default:
 			c, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: id})
 			if err != nil {
+
+				tflog.Debug(ctx, fmt.Sprintf("\033[31mERROR: %+v \n\033[0m", err))
 				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
+					return nil
+				}
+
+				// Support for legacy-style API errors
+				// TODO: remove when all API endpoints support the json+problem error handling
+				if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == "NotFound" {
+					tflog.Debug(ctx, fmt.Sprintf("\033[31mOLD ERROR: %+v \n\033[0m", svcErr))
 					return nil
 				}
 
