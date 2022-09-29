@@ -22,21 +22,33 @@ type kubeconfig struct {
 }
 
 type kubeconfigCluster struct {
+	Cluster kubeconfigClusterData `yaml:"cluster"`
+	Name    string                `yaml:"name"`
+}
+
+type kubeconfigClusterData struct {
 	CertificateAuthorityData string `yaml:"certificate-authority-data"`
-	Name                     string `yaml:"name"`
 	Server                   string `yaml:"server"`
 }
 
 type kubeconfigContext struct {
+	Context kubeconfigContextData `yaml:"context"`
+	Name    string                `yaml:"name"`
+}
+
+type kubeconfigContextData struct {
 	Cluster string `yaml:"cluster"`
-	Name    string `yaml:"name"`
 	User    string `yaml:"user"`
 }
 
 type kubeconfigUser struct {
+	User kubeconfigUserData `yaml:"user"`
+	Name string             `yaml:"name"`
+}
+
+type kubeconfigUserData struct {
 	ClientCertificateData string `yaml:"client-certificate-data"`
 	ClientKeyData         string `yaml:"client-key-data"`
-	Name                  string `yaml:"name"`
 }
 
 func DataSourceCluster() *schema.Resource {
@@ -86,9 +98,10 @@ func DataSourceCluster() *schema.Resource {
 
 func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	client := meta.(*service.ServiceContext)
+	clusterID := d.Get("id").(string)
 
 	s, err := client.GetKubernetesKubeconfig(ctx, &request.GetKubernetesKubeconfigRequest{
-		UUID: d.Get("id").(string),
+		UUID: clusterID,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -98,6 +111,8 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.FromErr(fmt.Errorf("kubeconfig is empty: %w", err))
 	}
 
+	d.SetId(clusterID)
+
 	err = d.Set("kubeconfig", s)
 	if err != nil {
 		return diag.FromErr(err)
@@ -105,7 +120,7 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	k := kubeconfig{}
 
-	err = yaml.Unmarshal([]byte(s), k)
+	err = yaml.Unmarshal([]byte(s), &k)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("kubeconfig yaml unmarshal failed: %w", err))
 	}
@@ -118,12 +133,12 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	for _, v := range k.Clusters {
 		if v.Name == currentContext[1] {
-			err = d.Set("cluster_ca_certificate", v.CertificateAuthorityData)
+			err = d.Set("cluster_ca_certificate", v.Cluster.CertificateAuthorityData)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
-			err = d.Set("host", v.Server)
+			err = d.Set("host", v.Cluster.Server)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -132,12 +147,12 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	for _, v := range k.Users {
 		if v.Name == currentContext[0] {
-			err = d.Set("client_certificate", v.ClientCertificateData)
+			err = d.Set("client_certificate", v.User.ClientCertificateData)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
-			err = d.Set("client_key", v.ClientKeyData)
+			err = d.Set("client_key", v.User.ClientKeyData)
 			if err != nil {
 				return diag.FromErr(err)
 			}
