@@ -207,19 +207,19 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("network_cidr", c.Network); err != nil {
+	if err := d.Set("network_cidr", c.NetworkCIDR); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("state", c.Network); err != nil {
+	if err := d.Set("state", c.State); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("storage", c.Network); err != nil {
+	if err := d.Set("storage", c.Storage); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("type", c.Network); err != nil {
+	if err := d.Set("type", c.Type); err != nil {
 		return diag.FromErr(err)
 	}
 
