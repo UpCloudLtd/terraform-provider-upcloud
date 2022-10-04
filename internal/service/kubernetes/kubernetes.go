@@ -182,8 +182,6 @@ func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta inter
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
-	tflog.Info(ctx, fmt.Sprintf("\033[31mReading cluster data: %+v\033[0m\n", cluster))
-
 	return setClusterResourceData(d, cluster)
 }
 
