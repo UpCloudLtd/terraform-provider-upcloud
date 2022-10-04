@@ -113,7 +113,7 @@ func testAccCheckUpcloudKubernetesClusterIsReadyViaAPI(c *upcloud.KubernetesClus
 			return fmt.Errorf("cluster is nil")
 		}
 
-		if c.State != upcloud.KuberetesClusterStateReady {
+		if c.State != upcloud.KubernetesClusterStateRunning {
 			return fmt.Errorf("cluster is not ready: %s", c.State)
 		}
 

@@ -154,7 +154,11 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	diags = setClusterResourceData(d, c)
 
-	err = waitForClusterToBeReady(ctx, svc, c.UUID)
+	_, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
+		DesiredState: upcloud.KubernetesClusterStateRunning,
+		Timeout:      time.Minute * 5,
+		UUID:         c.UUID,
+	})
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -177,6 +181,8 @@ func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta inter
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
 	}
+
+	tflog.Info(ctx, fmt.Sprintf("\033[31mReading cluster data: %+v\033[0m\n", cluster))
 
 	return setClusterResourceData(d, cluster)
 }
@@ -222,40 +228,6 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	}
 
 	return diags
-}
-
-func waitForClusterToBeReady(ctx context.Context, svc *service.ServiceContext, id string) error {
-	const maxRetries int = 100
-
-	for i := 0; i <= maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			cluster, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: id})
-			if err != nil {
-				if svcErr, ok := err.(*upcloud.Problem); ok {
-					return fmt.Errorf(svcErr.Title)
-				}
-
-				// Support for legacy-style API errors
-				// TODO: remove when all API endpoints support the json+problem error handling
-				if svcErr, ok := err.(*upcloud.Error); ok {
-					return fmt.Errorf(svcErr.ErrorMessage)
-				}
-
-				return err
-			}
-
-			if cluster.State == "ready" {
-				return nil
-			}
-		}
-
-		time.Sleep(time.Second * 5)
-	}
-
-	return fmt.Errorf("max retries (%d) reached while waiting for cluster to be ready", maxRetries)
 }
 
 func waitForClusterToBeDeleted(ctx context.Context, svc *service.ServiceContext, id string) error {
