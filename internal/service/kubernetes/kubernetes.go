@@ -152,9 +152,7 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	d.SetId(c.UUID)
 
-	diags = setClusterResourceData(d, c)
-
-	_, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
+	c, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
 		DesiredState: upcloud.KubernetesClusterStateRunning,
 		Timeout:      time.Minute * 5,
 		UUID:         c.UUID,
@@ -166,6 +164,8 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 			Detail:   err.Error(),
 		})
 	}
+
+	diags = append(diags, setClusterResourceData(d, c)...)
 
 	// No error, log a success message
 	if len(diags) == 0 {
