@@ -6,16 +6,6 @@ github.com/Microsoft/go-winio v0.4.16 h1:FtSW/jqD+l4ba5iPBj9CODVtgfYAD8w2wS923g/
 github.com/Microsoft/go-winio v0.4.16/go.mod h1:XB6nPKklQyQ7GC9LdcBEcBl8PF76WugXOPRXwdLnMv0=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 h1:YoJbenK9C67SkzkDfmQuVln04ygHj3vjZfd9FL+GmQQ=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220927103913-4f98b5e50252 h1:aSHG6giCuwPNyCk7F+bH+6Yqf6M2TNAFqqiCKtCwpVQ=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220927103913-4f98b5e50252/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220929121345-df7fd25ac7e8 h1:P8FHVocM78VK1/3UYmB36sJ8JBDwQOOFZ56to8zvMlY=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220929121345-df7fd25ac7e8/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220929165442-302e3b540687 h1:G5SNBGCOc8jZlKYFLO6lTyL07GuO/K4slGsxf8vOyng=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220929165442-302e3b540687/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221004110951-4538c556a94c h1:vc4Oj/sTxnyJKjKJwr3vHvBAD8RL3okhEC8B+5+N4rc=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221004110951-4538c556a94c/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005105821-80f08ede36a2 h1:rKoAnT2v3RfsBX1qcr8m+oriIS6nVX+TxxF5e4X1cqE=
-github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005105821-80f08ede36a2/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
 github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005132110-62c4164508d5 h1:MHLjV7Hpn12lsdwMMA/6FKF7eBdagXuyeg44jeT+u+M=
 github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005132110-62c4164508d5/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
 github.com/acomagu/bufpipe v1.0.3 h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=
