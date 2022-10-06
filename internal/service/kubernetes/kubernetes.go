@@ -12,30 +12,36 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
-	clientCertificateDescription    = "TLS authentication client certificate, encoded (PEM)."
-	clientKeyDescription            = "Key to pair with `client_certificate`, encoded (PEM)."
-	clusterCACertificateDescription = "TLS authentication root certificate bundle, encoded (PEM)."
-	hostDescription                 = "Hostname of the cluster API. Defined as URI."
-	idDescription                   = "Cluster ID."
-	kubeconfigDescription           = "Kubernetes config file contents for the cluster."
-	nameDescription                 = "Cluster name. Needs to be unique within the account."
-	networkDescription              = "Network ID for the cluster to run in."
-	networkCIDRDescription          = "Network CIDR for the given network. Computed automatically."
-	nodeGroupsCountDescription      = "Amount of nodes to provision in the node group."
-	nodeGroupsDescription           = "Node groups for workloads. Currently not available in state, although created."
-	nodeGroupsLabelsDescription     = "Key-value pairs to classify the node group."
-	nodeGroupsNameDescription       = "The name of the node group. Needs to be unique within a cluster."
-	nodeGroupsPlanDescription       = "The pricing plan used for the node group. Valid values available via `upcloud_kubernetes_plan` datasource field `description`."
-	nodeGroupsSSHKeysDescription    = "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running."
-	planNameDescription             = "The name used to identify a pricing plan, e.g. `large`."
-	planDescriptionDescription      = "The description of a pricing plan. e.g. `K8S-2xCPU-4GB`."
-	stateDescription                = "Operational state of the cluster."
-	storageDescription              = "Storage template ID for node groups."
-	typeDescription                 = "Cluster type. Values: `standalone`"
-	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
+	clientCertificateDescription     = "TLS authentication client certificate, encoded (PEM)."
+	clientKeyDescription             = "Key to pair with `client_certificate`, encoded (PEM)."
+	clusterCACertificateDescription  = "TLS authentication root certificate bundle, encoded (PEM)."
+	hostDescription                  = "Hostname of the cluster API. Defined as URI."
+	idDescription                    = "Cluster ID."
+	kubeconfigDescription            = "Kubernetes config file contents for the cluster."
+	nameDescription                  = "Cluster name. Needs to be unique within the account."
+	networkDescription               = "Network ID for the cluster to run in."
+	networkCIDRDescription           = "Network CIDR for the given network. Computed automatically."
+	nodeGroupsCountDescription       = "Amount of nodes to provision in the node group."
+	nodeGroupsDescription            = "Node groups for workloads. Currently not available in state, although created."
+	nodeGroupsLabelsDescription      = "Key-value pairs to classify the node group."
+	nodeGroupsNameDescription        = "The name of the node group. Needs to be unique within a cluster."
+	nodeGroupsPlanDescription        = "The pricing plan used for the node group. Valid values available via `upcloud_kubernetes_plan` datasource field `description`."
+	nodeGroupsSSHKeysDescription     = "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running."
+	nodeGroupsKubeletArgsDescription = "Additional arguments for kubelet for the nodes in this group."
+	nodeGroupTaintsDescription       = "Taints for the nodes in this group."
+	nodeGroupTaintEffectDescription  = "Taint effect."
+	nodeGroupTaintKeyDescription     = "Taint key."
+	nodeGroupTaintValueDescription   = "Taint value."
+	planNameDescription              = "The name used to identify a pricing plan, e.g. `large`."
+	planDescriptionDescription       = "The description of a pricing plan. e.g. `K8S-2xCPU-4GB`."
+	stateDescription                 = "Operational state of the cluster."
+	storageDescription               = "Storage template ID for node groups."
+	typeDescription                  = "Cluster type. Values: `standalone`"
+	zoneDescription                  = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
 )
 
 func ResourceCluster() *schema.Resource {
@@ -86,6 +92,43 @@ func ResourceCluster() *schema.Resource {
 							},
 							Optional: true,
 						},
+						"kubelet_args": {
+							Description: nodeGroupsKubeletArgsDescription,
+							Type:        schema.TypeMap,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Optional: true,
+						},
+						"taint": {
+							Description: nodeGroupTaintsDescription,
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"effect": {
+										Description: "Taint effect.",
+										Type:        schema.TypeString,
+										Required:    true,
+										ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+											string(upcloud.KubernetesClusterTaintEffectNoExecute),
+											string(upcloud.KubernetesClusterTaintEffectNoSchedule),
+											string(upcloud.KubernetesClusterTaintEffectPreferNoSchedule),
+										}, false)),
+									},
+									"key": {
+										Description: "Taint key",
+										Type:        schema.TypeString,
+										Required:    true,
+									},
+									"value": {
+										Description: "Taint value",
+										Type:        schema.TypeString,
+										Required:    true,
+									},
+								},
+							},
+						},
 						"name": {
 							Description: nodeGroupsNameDescription,
 							Type:        schema.TypeString,
@@ -113,17 +156,6 @@ func ResourceCluster() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
-			"storage": {
-				Description: storageDescription,
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"type": {
-				Description: typeDescription,
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
 			"zone": {
 				Description: zoneDescription,
 				Type:        schema.TypeString,
@@ -141,7 +173,6 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 		Name:       d.Get("name").(string),
 		Network:    d.Get("network").(string),
 		NodeGroups: getNodeGroupsFromConfig(d),
-		Storage:    d.Get("storage").(string),
 		Zone:       d.Get("zone").(string),
 	}
 
@@ -213,19 +244,53 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("storage", c.Storage); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("type", c.Type); err != nil {
-		return diag.FromErr(err)
-	}
-
 	if err := d.Set("zone", c.Zone); err != nil {
 		return diag.FromErr(err)
 	}
 
+	if err := setClusterNodeGroupsData(d, c); err != nil {
+		return diag.FromErr(err)
+	}
+
 	return diags
+}
+
+func setClusterNodeGroupsData(d *schema.ResourceData, c *upcloud.KubernetesCluster) error {
+	result := []map[string]interface{}{}
+
+	for _, g := range c.NodeGroups {
+		group := map[string]interface{}{}
+		group["count"] = g.Count
+		group["name"] = g.Name
+		group["plan"] = g.Plan
+		group["ssh_keys"] = g.SSHKeys
+
+		kubeletArgs := map[string]string{}
+		for _, arg := range g.KubeletArgs {
+			kubeletArgs[arg.Key] = arg.Value
+		}
+		group["kubelet_args"] = kubeletArgs
+
+		labels := map[string]string{}
+		for _, lab := range g.Labels {
+			labels[lab.Key] = lab.Value
+		}
+		group["labels"] = labels
+
+		taints := []map[string]string{}
+		for _, t := range g.Taints {
+			taints = append(taints, map[string]string{
+				"effect": string(t.Effect),
+				"key":    t.Key,
+				"value":  t.Value,
+			})
+		}
+		group["taint"] = taints
+
+		result = append(result, group)
+	}
+
+	return d.Set("node_groups", result)
 }
 
 func waitForClusterToBeDeleted(ctx context.Context, svc *service.ServiceContext, id string) error {
@@ -279,12 +344,34 @@ func getNodeGroupsFromConfig(d *schema.ResourceData) []upcloud.KubernetesNodeGro
 			})
 		}
 
+		kubeletArgs := []upcloud.KubernetesKubeletArg{}
+		for k, v := range data["kubelet_args"].(map[string]interface{}) {
+			kubeletArgs = append(kubeletArgs, upcloud.KubernetesKubeletArg{
+				Key:   k,
+				Value: v.(string),
+			})
+		}
+
+		taints := []upcloud.KubernetesTaint{}
+		for _, taint := range data["taint"].(*schema.Set).List() {
+			taintData := taint.(map[string]interface{})
+			effectStr := taintData["effect"].(string)
+
+			taints = append(taints, upcloud.KubernetesTaint{
+				Effect: upcloud.KubernetesClusterTaintEffect(effectStr),
+				Key:    taintData["key"].(string),
+				Value:  taintData["value"].(string),
+			})
+		}
+
 		result = append(result, upcloud.KubernetesNodeGroup{
-			Count:   data["count"].(int),
-			Name:    data["name"].(string),
-			Plan:    data["plan"].(string),
-			SSHKeys: sshKeys,
-			Labels:  labels,
+			Count:       data["count"].(int),
+			Name:        data["name"].(string),
+			Plan:        data["plan"].(string),
+			SSHKeys:     sshKeys,
+			Labels:      labels,
+			KubeletArgs: kubeletArgs,
+			Taints:      taints,
 		})
 	}
 

@@ -14,6 +14,10 @@ github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220929165442-302e3b540687 h1:
 github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20220929165442-302e3b540687/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
 github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221004110951-4538c556a94c h1:vc4Oj/sTxnyJKjKJwr3vHvBAD8RL3okhEC8B+5+N4rc=
 github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221004110951-4538c556a94c/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
+github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005105821-80f08ede36a2 h1:rKoAnT2v3RfsBX1qcr8m+oriIS6nVX+TxxF5e4X1cqE=
+github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005105821-80f08ede36a2/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
+github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005132110-62c4164508d5 h1:MHLjV7Hpn12lsdwMMA/6FKF7eBdagXuyeg44jeT+u+M=
+github.com/UpCloudLtd/upcloud-go-api/v4 v4.8.1-0.20221005132110-62c4164508d5/go.mod h1:X8GxND6eEUfQVBeRdsXlKa6BhhHcI1ZPlF9BfTuPPWY=
 github.com/acomagu/bufpipe v1.0.3 h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=
 github.com/acomagu/bufpipe v1.0.3/go.mod h1:mxdxdup/WdsKVreO5GpW4+M/1CE2sMG4jeGJ2sYmHc4=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
