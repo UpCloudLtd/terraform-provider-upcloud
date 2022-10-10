@@ -52,7 +52,7 @@ func TestAccUpcloudKubernetesCluster(t *testing.T) {
 					resource.TestCheckResourceAttrSet(dataSourceName, "kubeconfig"),
 
 					// Check state for kubernetes plans data source
-					resource.TestCheckResourceAttr("data.upcloud_kubernetes_plan.small", "description", "K8S-2xCPU-4GB")
+					resource.TestCheckResourceAttr("data.upcloud_kubernetes_plan.small", "description", "K8S-2xCPU-4GB"),
 				),
 			},
 		},
@@ -64,7 +64,7 @@ func testAccCheckUpcloudKubernetesClusterExistsViaAPI(name string) resource.Test
 		// retrieve the resource by name from state
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("cluster not found in state when checking existance: %s", name)
+			return fmt.Errorf("cluster not found in state when checking existence: %s", name)
 		}
 
 		if rs.Primary.ID == "" {
@@ -73,7 +73,7 @@ func testAccCheckUpcloudKubernetesClusterExistsViaAPI(name string) resource.Test
 
 		svc, ok := testAccProvider.Meta().(*service.ServiceContext)
 		if !ok {
-			return fmt.Errorf("upcloud service unavailable when checking for cluster existance")
+			return fmt.Errorf("upcloud service unavailable when checking for cluster existence")
 		}
 
 		resp, err := svc.GetKubernetesCluster(context.Background(), &request.GetKubernetesClusterRequest{
