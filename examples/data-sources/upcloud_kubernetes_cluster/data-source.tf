@@ -13,21 +13,34 @@ resource "upcloud_network" "example" {
 
 # Create a Kubernetes cluster
 resource "upcloud_kubernetes_cluster" "example" {
-  name    = "example"
+  name    = "exampleapp"
   network = upcloud_network.example.id
-  node_groups = [
-    {
-      count = 4
-      name  = "node-group-medium"
-      plan  = "K8S-4xCPU-8GB"
-    },
-    {
-      count = 4
-      name  = "node-group-large"
-      plan  = "K8S-8xCPU-32GB"
+  zone    = "de-fra1"
+
+  # Create a group of worker nodes with common settings
+  node_group {
+    count    = 2
+    name     = "group1"
+    plan     = "K8S-2xCPU-4GB"
+    ssh_keys = ["public_ssh_key"]
+
+    labels = {
+      managedBy = "terraform"
     }
-  ]
-  zone = upcloud_network.example.zone
+
+    taint {
+      effect = "NoExecute"
+      key    = "taintKey"
+      value  = "taintValue"
+    }
+  }
+
+  # Create another node group, only required attributes
+  node_group {
+    count = 2
+    name  = "group2"
+    plan  = "K8S-2xCPU-4GB"
+  }
 }
 
 # Read the details of the newly created cluster

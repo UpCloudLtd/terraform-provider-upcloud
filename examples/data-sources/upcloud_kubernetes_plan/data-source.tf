@@ -21,17 +21,18 @@ resource "upcloud_network" "example" {
 resource "upcloud_kubernetes_cluster" "example" {
   name    = "example"
   network = upcloud_network.example.id
-  node_groups = [
-    {
-      count = 4
-      name  = "node-group-medium"
-      plan  = data.upcloud_kubernetes_plan.medium.description
-    },
-    {
-      count = 4
-      name  = "node-group-large"
-      plan  = data.upcloud_kubernetes_plan.large.description
-    }
-  ]
-  zone = upcloud_network.example.zone
+  zone    = upcloud_network.example.zone
+
+  node_group {
+    count = 4
+    name  = "node-group-medium"
+    plan  = data.upcloud_kubernetes_plan.medium.description
+  }
+
+  node_group {
+    count = 4
+    name  = "node-group-large"
+    plan  = data.upcloud_kubernetes_plan.large.description
+  }
+
 }
