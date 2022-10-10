@@ -222,7 +222,17 @@ func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta int
 	tflog.Info(ctx, "cluster deleted", map[string]interface{}{"name": d.Get("name").(string), "uuid": d.Id()})
 
 	// wait before continuing so that e.g. network can be deleted (if needed)
-	return diag.FromErr(waitForClusterToBeDeleted(ctx, svc, d.Id()))
+	diags := diag.FromErr(waitForClusterToBeDeleted(ctx, svc, d.Id()))
+
+	// If there was an error during while waiting for the cluster to be deleted - just end the delete operation here
+	if len(diags) > 0 {
+		return diags
+	}
+
+	// Additionally wait some time so that all cleanup operations can finish
+	time.Sleep(time.Second * 30)
+
+	return diags
 }
 
 func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster) (diags diag.Diagnostics) {
