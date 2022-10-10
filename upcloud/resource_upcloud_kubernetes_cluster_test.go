@@ -106,7 +106,6 @@ func testAccCheckUpcloudKubernetesClusterIsReadyViaAPI(name string) resource.Tes
 		resp, err := svc.GetKubernetesCluster(context.Background(), &request.GetKubernetesClusterRequest{
 			UUID: rs.Primary.ID,
 		})
-
 		if err != nil {
 			return fmt.Errorf("Error while fetching cluster details (%s)", name)
 		}
