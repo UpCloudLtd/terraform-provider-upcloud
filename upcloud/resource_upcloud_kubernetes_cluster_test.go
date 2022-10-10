@@ -15,61 +15,56 @@ import (
 )
 
 func TestAccUpcloudKubernetesCluster(t *testing.T) {
-	basic, err := os.ReadFile("testdata/resource_upcloud_kubernetes_cluster/basic.tf")
+	testClusterDataS1, err := os.ReadFile("testdata/upcloud_kubernetes/kubernetes_s1.tf")
 	if err != nil {
 		t.Fatal(fmt.Errorf("could not load testdata: %w", err))
 	}
 
-	full, err := os.ReadFile("testdata/resource_upcloud_kubernetes_cluster/full.tf")
-	if err != nil {
-		t.Fatal(fmt.Errorf("could not load testdata: %w", err))
-	}
-
-	resourceName := "upcloud_kubernetes_cluster.cluster"
+	resourceName := "upcloud_kubernetes_cluster.main"
+	dataSourceName := "data.upcloud_kubernetes_cluster.main"
 
 	var providers []*schema.Provider
-	var c upcloud.KubernetesCluster
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: string(basic),
+				Config: string(testClusterDataS1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckUpcloudKubernetesClusterExistsViaAPI(providers, resourceName, &c),
-					testAccCheckUpcloudKubernetesClusterIsReadyViaAPI(&c),
-					resource.TestCheckResourceAttrSet(resourceName, "name"),
+					// Basic checks via API
+					testAccCheckUpcloudKubernetesClusterExistsViaAPI(resourceName),
+					testAccCheckUpcloudKubernetesClusterIsReadyViaAPI(resourceName),
+
+					// Check the state of the cluster resource
+					resource.TestCheckResourceAttr(resourceName, "name", "tf-acc-test"),
 					resource.TestCheckResourceAttrSet(resourceName, "network"),
 					resource.TestCheckResourceAttrSet(resourceName, "network_cidr"),
-					resource.TestCheckResourceAttrSet(resourceName, "state"),
-					resource.TestCheckResourceAttrSet(resourceName, "zone"),
+					resource.TestCheckResourceAttr(resourceName, "state", "running"),
+					resource.TestCheckResourceAttr(resourceName, "zone", "de-fra1"),
+
+					// Check the state of cluster data source
+					resource.TestCheckResourceAttrSet(dataSourceName, "client_certificate"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "client_key"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "cluster_ca_certificate"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "id"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "host"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "kubeconfig"),
+
+					// Check state for kubernetes plans data source
+					resource.TestCheckResourceAttr("data.upcloud_kubernetes_plan.small", "description", "K8S-2xCPU-4GB")
 				),
-				Destroy: true,
-			},
-			{
-				Config: string(full),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckUpcloudKubernetesClusterExistsViaAPI(providers, resourceName, &c),
-					testAccCheckUpcloudKubernetesClusterIsReadyViaAPI(&c),
-					resource.TestCheckResourceAttrSet(resourceName, "name"),
-					resource.TestCheckResourceAttrSet(resourceName, "network"),
-					resource.TestCheckResourceAttrSet(resourceName, "network_cidr"),
-					resource.TestCheckResourceAttrSet(resourceName, "state"),
-					resource.TestCheckResourceAttrSet(resourceName, "zone"),
-				),
-				Destroy: true,
 			},
 		},
 	})
 }
 
-func testAccCheckUpcloudKubernetesClusterExistsViaAPI(providers []*schema.Provider, name string, c *upcloud.KubernetesCluster) resource.TestCheckFunc {
+func testAccCheckUpcloudKubernetesClusterExistsViaAPI(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// retrieve the resource by name from state
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("cluster not found in state: %s", name)
+			return fmt.Errorf("cluster not found in state when checking existance: %s", name)
 		}
 
 		if rs.Primary.ID == "" {
@@ -78,7 +73,7 @@ func testAccCheckUpcloudKubernetesClusterExistsViaAPI(providers []*schema.Provid
 
 		svc, ok := testAccProvider.Meta().(*service.ServiceContext)
 		if !ok {
-			return fmt.Errorf("provider client type assertion failed: upcloud")
+			return fmt.Errorf("upcloud service unavailable when checking for cluster existance")
 		}
 
 		resp, err := svc.GetKubernetesCluster(context.Background(), &request.GetKubernetesClusterRequest{
@@ -88,29 +83,36 @@ func testAccCheckUpcloudKubernetesClusterExistsViaAPI(providers []*schema.Provid
 			return fmt.Errorf("getting cluster failed: %w", err)
 		}
 
-		if resp == nil {
-			return fmt.Errorf("cluster not found: %s", rs.Primary.ID)
-		}
-
 		if resp.UUID != rs.Primary.ID {
 			return fmt.Errorf("cluster id does not match: expected: %s, actual: %s", rs.Primary.ID, resp.UUID)
 		}
-
-		// store the response
-		c = resp
 
 		return nil
 	}
 }
 
-func testAccCheckUpcloudKubernetesClusterIsReadyViaAPI(c *upcloud.KubernetesCluster) resource.TestCheckFunc {
+func testAccCheckUpcloudKubernetesClusterIsReadyViaAPI(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if c == nil {
-			return fmt.Errorf("cluster is nil")
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("cluster not found in state when checking readiness: %s", name)
 		}
 
-		if c.State != upcloud.KubernetesClusterStateRunning {
-			return fmt.Errorf("cluster is not ready: %s", c.State)
+		svc, ok := testAccProvider.Meta().(*service.ServiceContext)
+		if !ok {
+			return fmt.Errorf("upcloud service unavailable when checking readiness")
+		}
+
+		resp, err := svc.GetKubernetesCluster(context.Background(), &request.GetKubernetesClusterRequest{
+			UUID: rs.Primary.ID,
+		})
+
+		if err != nil {
+			return fmt.Errorf("Error while fetching cluster details (%s)", name)
+		}
+
+		if resp.State != upcloud.KubernetesClusterStateRunning {
+			return fmt.Errorf("cluster is not ready: %s", resp.State)
 		}
 
 		return nil

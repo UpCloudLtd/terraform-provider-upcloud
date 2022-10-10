@@ -41,7 +41,7 @@ const (
 	stateDescription                = "Operational state of the cluster."
 	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
 
-	cleanupWaitTimeSeconds = 120
+	cleanupWaitTimeSeconds = 240
 )
 
 func ResourceCluster() *schema.Resource {
