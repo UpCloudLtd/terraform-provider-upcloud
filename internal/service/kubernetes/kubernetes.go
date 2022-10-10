@@ -40,6 +40,8 @@ const (
 	planDescriptionDescription       = "The description of a pricing plan. e.g. `K8S-2xCPU-4GB`."
 	stateDescription                 = "Operational state of the cluster."
 	zoneDescription                  = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
+
+	cleanupWaitTimeSeconds = 120
 )
 
 func ResourceCluster() *schema.Resource {
@@ -230,7 +232,7 @@ func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	// Additionally wait some time so that all cleanup operations can finish
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * cleanupWaitTimeSeconds)
 
 	return diags
 }
