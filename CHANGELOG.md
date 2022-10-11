@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [2.6.1] - 2022-10-12
+
+### Fixed
+- kubernetes: add mention about k8s resources being in alpha to the docs
+
 ## [2.6.0] - 2022-10-11
 
 ### Added
@@ -248,7 +253,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.6.1...HEAD
+[2.6.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.4.1...v2.4.2
