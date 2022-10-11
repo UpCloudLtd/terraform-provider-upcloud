@@ -53,7 +53,7 @@ type kubeconfigUserData struct {
 
 func DataSourceCluster() *schema.Resource {
 	return &schema.Resource{
-		Description: "Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.",
+		Description: "Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.",
 		ReadContext: dataSourceClusterRead,
 		Schema: map[string]*schema.Schema{
 			"client_certificate": {
@@ -168,7 +168,7 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 
 func DataSourcePlan() *schema.Resource {
 	return &schema.Resource{
-		Description: "Pricing plans for node groups. Use the description as `upcloud_kubernetes_cluster.node_group[*].plan`.",
+		Description: "Pricing plans for node groups. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.",
 		ReadContext: dataSourcePlanRead,
 		Schema: map[string]*schema.Schema{
 			"description": {

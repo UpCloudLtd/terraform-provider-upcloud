@@ -48,7 +48,7 @@ const (
 
 func ResourceCluster() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Kubernetes cluster",
+		Description:   "Kubernetes cluster. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.",
 		CreateContext: resourceClusterCreate,
 		ReadContext:   resourceClusterRead,
 		DeleteContext: resourceClusterDelete,
