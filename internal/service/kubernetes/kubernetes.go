@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
@@ -31,7 +32,7 @@ const (
 	nodeGroupNameDescription        = "The name of the node group. Needs to be unique within a cluster."
 	nodeGroupPlanDescription        = "The pricing plan used for the node group. Valid values available via `upcloud_kubernetes_plan` datasource field `description`."
 	nodeGroupSSHKeysDescription     = "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running."
-	nodeGroupKubeletArgsDescription = "Additional arguments for kubelet for the nodes in this group."
+	nodeGroupKubeletArgsDescription = "Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args."
 	nodeGroupTaintsDescription      = "Taints for the nodes in this group."
 	nodeGroupTaintEffectDescription = "Taint effect."
 	nodeGroupTaintKeyDescription    = "Taint key."
@@ -42,6 +43,7 @@ const (
 	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
 
 	cleanupWaitTimeSeconds = 240
+	maxResourceNameLength  = 63
 )
 
 func ResourceCluster() *schema.Resource {
@@ -55,10 +57,11 @@ func ResourceCluster() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: nameDescription,
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:      nameDescription,
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				ValidateDiagFunc: validateResourceName,
 			},
 			"network": {
 				Description: networkDescription,
@@ -130,9 +133,10 @@ func ResourceCluster() *schema.Resource {
 							},
 						},
 						"name": {
-							Description: nodeGroupNameDescription,
-							Type:        schema.TypeString,
-							Required:    true,
+							Description:      nodeGroupNameDescription,
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: validateResourceName,
 						},
 						"plan": {
 							Description: nodeGroupPlanDescription,
@@ -387,3 +391,25 @@ func getNodeGroupsFromConfig(d *schema.ResourceData) []upcloud.KubernetesNodeGro
 
 	return result
 }
+
+var validateResourceName = validation.ToDiagFunc(func(i interface{}, s string) (warns []string, errs []error) {
+	val, ok := i.(string)
+	if !ok {
+		errs = append(errs, fmt.Errorf("Provided value is not a string"))
+		return
+	}
+
+	if len(val) > maxResourceNameLength {
+		errs = append(errs, fmt.Errorf("Resource name (%s) too long, max allowed length is %d", val, maxResourceNameLength))
+		return
+	}
+
+	nameRegexp := "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+	nameValid := regexp.MustCompile(nameRegexp).MatchString(val)
+	if !nameValid {
+		errs = append(errs, fmt.Errorf("Name (%s) is not valid. Regular expresion used to check validation: %s", val, nameRegexp))
+		return
+	}
+
+	return
+})
