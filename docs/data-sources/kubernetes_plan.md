@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_plan Data Source - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Pricing plans for node groups. Use the description as upcloud_kubernetes_cluster.node_group[*].plan.
+  Pricing plans for node groups. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.
 ---
 
 # upcloud_kubernetes_plan (Data Source)
 
-Pricing plans for node groups. Use the description as `upcloud_kubernetes_cluster.node_group[*].plan`.
+Pricing plans for node groups. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.
 
 ## Example Usage
 
