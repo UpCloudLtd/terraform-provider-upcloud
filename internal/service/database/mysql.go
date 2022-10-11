@@ -110,14 +110,14 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Description:      "The size in bytes of the buffer that InnoDB uses to write to the log files on disk.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1048576, 4294967295)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1048576, math.MaxInt)),
 		},
 		"innodb_online_alter_log_max_size": {
 			Type:             schema.TypeInt,
 			Description:      "The upper limit in bytes on the size of the temporary log files used during online DDL operations for InnoDB tables.",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(65536, 1099511627776)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(65536, math.MaxInt)),
 		},
 		"innodb_print_all_deadlocks": {
 			Type:        schema.TypeBool,
