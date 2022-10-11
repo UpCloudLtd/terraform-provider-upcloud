@@ -395,19 +395,19 @@ func getNodeGroupsFromConfig(d *schema.ResourceData) []upcloud.KubernetesNodeGro
 var validateResourceName = validation.ToDiagFunc(func(i interface{}, s string) (warns []string, errs []error) {
 	val, ok := i.(string)
 	if !ok {
-		errs = append(errs, fmt.Errorf("Provided value is not a string"))
+		errs = append(errs, fmt.Errorf("provided value is not a string"))
 		return
 	}
 
 	if len(val) > maxResourceNameLength {
-		errs = append(errs, fmt.Errorf("Resource name (%s) too long, max allowed length is %d", val, maxResourceNameLength))
+		errs = append(errs, fmt.Errorf("resource name (%s) too long, max allowed length is %d", val, maxResourceNameLength))
 		return
 	}
 
 	nameRegexp := "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 	nameValid := regexp.MustCompile(nameRegexp).MatchString(val)
 	if !nameValid {
-		errs = append(errs, fmt.Errorf("Name (%s) is not valid. Regular expresion used to check validation: %s", val, nameRegexp))
+		errs = append(errs, fmt.Errorf("name (%s) is not valid. Regular expresion used to check validation: %s", val, nameRegexp))
 		return
 	}
 
