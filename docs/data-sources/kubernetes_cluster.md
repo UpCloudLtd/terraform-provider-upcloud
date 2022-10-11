@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_cluster Data Source - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.
+  Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.
 ---
 
 # upcloud_kubernetes_cluster (Data Source)
 
-Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.
+Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.
 
 ## Example Usage
 
