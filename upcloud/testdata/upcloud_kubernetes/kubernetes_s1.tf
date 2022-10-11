@@ -35,7 +35,7 @@ resource "upcloud_kubernetes_cluster" "main" {
     }
     name = "small"
     plan = data.upcloud_kubernetes_plan.small.description
-    ssh_keys = ["some_key"]
+    ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"]
   }
 
   node_group {
@@ -46,7 +46,7 @@ resource "upcloud_kubernetes_cluster" "main" {
     }
     name = "medium"
     plan = data.upcloud_kubernetes_plan.small.description
-    ssh_keys = ["some_key"]
+    ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"]
   }
 }
 
