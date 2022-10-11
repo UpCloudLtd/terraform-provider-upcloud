@@ -21,7 +21,7 @@ import (
 
 const (
 	objectStorageTestExpectedDescription = "My object storage"
-	objectStorageTestExpectedZone        = "pl-waw1"
+	objectStorageTestExpectedZone        = "au-syd1"
 	objectStorageTestExpectedKey         = "an access key"
 	objectStorageTestExpectedSecret      = "a secret key"
 	objectStorageTestRunPrefix           = "testacc-"
