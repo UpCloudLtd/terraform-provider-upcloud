@@ -66,7 +66,7 @@ resource "upcloud_server" "example" {
 - `login` (Block Set, Max: 1) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
 - `mem` (Number) The size of memory for the server (in megabytes)
 - `metadata` (Boolean) Is the metadata service active for the server
-- `plan` (String) The pricing plan used for the server
+- `plan` (String) The pricing plan used for the server. You can list available server plans with `upctl server plans`
 - `simple_backup` (Block Set, Max: 1) Simple backup schedule configuration  
 				The idea behind simple backups is to provide a simplified way of backing up *all* of the storages attached to a given server. 
 				This means you cannot have simple backup set for a server, and then some individual backup_rules on the storages attached to said server. 

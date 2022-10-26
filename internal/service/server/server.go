@@ -206,7 +206,7 @@ func ResourceServer() *schema.Resource {
 				ForceNew:    true,
 			},
 			"plan": {
-				Description: "The pricing plan used for the server",
+				Description: "The pricing plan used for the server. You can list available server plans with `upctl server plans`",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
