@@ -286,7 +286,7 @@ func ResourceServer() *schema.Resource {
 							ValidateFunc: validation.StringLenBetween(0, 64),
 						},
 						"storage": {
-							Description: "A valid storage UUID or template name",
+							Description: "A valid storage UUID or template name. You can list available public templates with `upctl storage list --public --template` and available private templates with `upctl storage list --template`.",
 							Type:        schema.TypeString,
 							ForceNew:    true,
 							Required:    true,

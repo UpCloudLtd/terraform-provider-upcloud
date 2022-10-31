@@ -145,7 +145,7 @@ Optional:
 
 Required:
 
-- `storage` (String) A valid storage UUID or template name
+- `storage` (String) A valid storage UUID or template name. You can list available public templates with `upctl storage list --public --template` and available private templates with `upctl storage list --template`.
 
 Optional:
 
