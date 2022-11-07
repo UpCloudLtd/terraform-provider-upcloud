@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -156,65 +154,6 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 			if err != nil {
 				return diag.FromErr(err)
 			}
-		}
-	}
-
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
-}
-
-func DataSourcePlan() *schema.Resource {
-	return &schema.Resource{
-		Description: "Pricing plans for node groups. NOTE: this is an experimental feature in an alpha phase, the resource definition will change in the future.",
-		ReadContext: dataSourcePlanRead,
-		Schema: map[string]*schema.Schema{
-			"description": {
-				Description: planDescriptionDescription,
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"name": {
-				Description: planNameDescription,
-				Type:        schema.TypeString,
-				Required:    true,
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.StringInSlice(
-						[]string{
-							"small",
-							"medium",
-							"large",
-						},
-						false,
-					)),
-			},
-		},
-	}
-}
-
-func dataSourcePlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	client := meta.(*service.ServiceContext)
-
-	plans, err := client.GetKubernetesPlans(ctx, &request.GetKubernetesPlansRequest{})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if len(plans) == 0 {
-		return diag.FromErr(fmt.Errorf("no plans available: %w", err))
-	}
-
-	name := d.Get("name").(string)
-	err = fmt.Errorf("plan not available: %s", name)
-
-	for _, v := range plans {
-		if v.Name == name {
-			d.SetId(v.Name)
-			err = d.Set("description", v.Description)
-
-			break
 		}
 	}
 

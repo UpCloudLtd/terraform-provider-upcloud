@@ -1,12 +1,3 @@
-# Use `upcloud_kubernetes_plan` to query node group plans
-data "upcloud_kubernetes_plan" "medium" {
-  name = "medium"
-}
-
-data "upcloud_kubernetes_plan" "large" {
-  name = "large"
-}
-
 # Create a network for the Kubernetes cluster
 resource "upcloud_network" "example" {
   name = "example-network"
@@ -28,7 +19,7 @@ resource "upcloud_kubernetes_cluster" "example" {
   node_group {
     count    = 2
     name     = "group1"
-    plan     = "K8S-2xCPU-4GB"
+    plan     = "2xCPU-4GB" # Use the same plans as for regular servers
     ssh_keys = ["public_ssh_key"]
 
     labels = {
@@ -46,6 +37,6 @@ resource "upcloud_kubernetes_cluster" "example" {
   node_group {
     count = 2
     name  = "group2"
-    plan  = "K8S-2xCPU-4GB"
+    plan  = "2xCPU-4GB"
   }
 }

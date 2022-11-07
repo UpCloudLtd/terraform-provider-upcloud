@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Removed
+- kubernetes: kubernetes plan datasource
+
 ## [2.6.1] - 2022-10-12
 
 ### Fixed
