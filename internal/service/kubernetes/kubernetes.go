@@ -37,8 +37,6 @@ const (
 	nodeGroupTaintEffectDescription = "Taint effect."
 	nodeGroupTaintKeyDescription    = "Taint key."
 	nodeGroupTaintValueDescription  = "Taint value."
-	planNameDescription             = "The name used to identify a pricing plan, e.g. `large`."
-	planDescriptionDescription      = "The description of a pricing plan. e.g. `K8S-2xCPU-4GB`."
 	stateDescription                = "Operational state of the cluster."
 	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
 
