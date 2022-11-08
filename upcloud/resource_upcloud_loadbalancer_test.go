@@ -17,6 +17,14 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	testDataS3, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testDataS4, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s4.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
 	var providers []*schema.Provider
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
@@ -151,6 +159,28 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", "v2"),
 					resource.TestCheckResourceAttr(be2sm1Name, "weight", "0"),
+				),
+			},
+			{
+				Config:            string(testDataS3),
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(lbName, "network", ""),
+					resource.TestCheckResourceAttr(lbName, "networks.#", "2"),
+					resource.TestCheckResourceAttr(lbName, "networks.0.name", "lan-1"),
+					resource.TestCheckResourceAttr(lbName, "networks.0.type", "private"),
+					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-2"),
+					resource.TestCheckResourceAttr(lbName, "networks.1.type", "private"),
+				),
+			},
+			{
+				Config:            string(testDataS4),
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(lbName, "networks.0.name", "lan-a"),
+					resource.TestCheckResourceAttr(lbName, "networks.0.type", "private"),
+					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-b"),
+					resource.TestCheckResourceAttr(lbName, "networks.1.type", "private"),
 				),
 			},
 		},

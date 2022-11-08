@@ -19,6 +19,9 @@ resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
   mode                 = "http"
   port                 = 8080
   default_backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  networks {
+    name = resource.upcloud_loadbalancer.lb.networks[1].name
+  }
 }
 
 resource "upcloud_loadbalancer" "lb" {
@@ -26,7 +29,17 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
-  network           = resource.upcloud_network.lb_network.id
+  networks {
+    name    = "Private-Net"
+    type    = "private"
+    family  = "IPv4"
+    network = resource.upcloud_network.lb_network.id
+  }
+  networks {
+    name   = "Public-Net"
+    type   = "public"
+    family = "IPv4"
+  }
 }
 
 resource "upcloud_loadbalancer_backend" "lb_be_1" {

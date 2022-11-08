@@ -34,6 +34,9 @@ resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
   mode                 = "http"
   port                 = 8080
   default_backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+  networks {
+    name = resource.upcloud_loadbalancer.lb.networks[1].name
+  }
 }
 
 resource "upcloud_loadbalancer" "lb" {
@@ -41,7 +44,17 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
-  network           = resource.upcloud_network.lb_network.id
+  networks {
+    name    = "Private-Net"
+    type    = "private"
+    family  = "IPv4"
+    network = resource.upcloud_network.lb_network.id
+  }
+  networks {
+    name   = "Public-Net"
+    type   = "public"
+    family = "IPv4"
+  }
 }
 
 resource "upcloud_loadbalancer_backend" "lb_be_1" {
@@ -63,6 +76,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Optional
 
+- `networks` (Block List) Networks that frontend will be listening. Networks are required if load balancer has `networks` defined. This field will be required when deprecated field `network` is removed from load balancer resource. (see [below for nested schema](#nestedblock--networks))
 - `properties` (Block List, Max: 1) Frontend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
 
 ### Read-Only
@@ -70,6 +84,14 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 - `id` (String) The ID of this resource.
 - `rules` (List of String) Set of frontend rule names
 - `tls_configs` (List of String) Set of TLS config names
+
+<a id="nestedblock--networks"></a>
+### Nested Schema for `networks`
+
+Required:
+
+- `name` (String) Name of the load balancer network
+
 
 <a id="nestedblock--properties"></a>
 ### Nested Schema for `properties`

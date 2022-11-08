@@ -85,6 +85,21 @@ func ResourceFrontend() *schema.Resource {
 					Schema: schemaFrontendProperties(),
 				},
 			},
+			"networks": {
+				Description: "Networks that frontend will be listening. Networks are required if load balancer has `networks` defined. " +
+					"This field will be required when deprecated field `network` is removed from load balancer resource.",
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Description: "Name of the load balancer network",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -102,6 +117,7 @@ func resourceFrontendCreate(ctx context.Context, d *schema.ResourceData, meta in
 			Rules:          []request.LoadBalancerFrontendRule{},
 			TLSConfigs:     []request.LoadBalancerFrontendTLSConfig{},
 			Properties:     frontendPropertiesFromResourceData(d),
+			Networks:       loadBalancerFrontendNetworksFromResourceData(d),
 		},
 	})
 	if err != nil {
@@ -263,4 +279,17 @@ func schemaFrontendProperties() map[string]*schema.Schema {
 			Default:     false,
 		},
 	}
+}
+
+func loadBalancerFrontendNetworksFromResourceData(d *schema.ResourceData) []upcloud.LoadBalancerFrontendNetwork {
+	req := make([]upcloud.LoadBalancerFrontendNetwork, 0)
+	if nets, ok := d.GetOk("networks"); ok {
+		for _, n := range nets.([]interface{}) {
+			n := n.(map[string]interface{})
+			req = append(req, upcloud.LoadBalancerFrontendNetwork{
+				Name: n["name"].(string),
+			})
+		}
+	}
+	return req
 }

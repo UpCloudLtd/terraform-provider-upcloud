@@ -5,6 +5,16 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- lbaas: private network support
+
+### Changed
+- Update terraform-plugin-sdk to v2.24.0
+- Update upcloud-go-api to v4.10.0
+
+### Deprecated
+- lbaas: `upcloud_loadbalancer` resource fields `dns_name` and `network`
+
 ## [2.6.1] - 2022-10-12
 
 ### Fixed
