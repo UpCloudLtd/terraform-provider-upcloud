@@ -8,15 +8,11 @@ variable "zone" {
   type    = string
 }
 
-data "upcloud_kubernetes_plan" "small" {
-  name = "small"
-}
-
 resource "upcloud_network" "main" {
   name = "terraform-provider-upcloud-test"
   zone = var.zone
   ip_network {
-    address = "10.99.0.0/24"
+    address = "172.23.5.0/24"
     dhcp    = true
     family  = "IPv4"
   }
@@ -34,7 +30,7 @@ resource "upcloud_kubernetes_cluster" "main" {
       managedBy = "tf"
     }
     name = "small"
-    plan = data.upcloud_kubernetes_plan.small.description
+    plan = "2xCPU-4GB"
     ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"]
   }
 
@@ -45,7 +41,7 @@ resource "upcloud_kubernetes_cluster" "main" {
       managedBy = "tf"
     }
     name = "medium"
-    plan = data.upcloud_kubernetes_plan.small.description
+    plan = "2xCPU-4GB"
     ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"]
   }
 }

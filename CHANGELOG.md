@@ -15,6 +15,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Deprecated
 - lbaas: `upcloud_loadbalancer` resource fields `dns_name` and `network`
 
+### Removed
+- kubernetes: kubernetes plan datasource
+
 ## [2.6.1] - 2022-10-12
 
 ### Fixed
