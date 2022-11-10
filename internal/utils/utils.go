@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -74,7 +77,7 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 	return nil, err
 }
 
-// ExpandStrings expands a terraform interface to slice of str
+// ExpandStrings expands a terraform list to slice of str
 func ExpandStrings(data interface{}) []string {
 	strSlice := []string{}
 	for _, s := range data.([]interface{}) {
@@ -82,6 +85,55 @@ func ExpandStrings(data interface{}) []string {
 	}
 
 	return strSlice
+}
+
+// SetOfStringsToSlice transforms a terraform set of strings to a slice of strings
+func SetOfStringsToSlice(ctx context.Context, data interface{}) ([]string, error) {
+	result := []string{}
+
+	stringsSet, ok := data.(*schema.Set)
+	if !ok {
+		tflog.Debug(ctx, fmt.Sprintf("transforming set of strings into slice failed; expected input data to be a schema.TypeSet but received %T", data))
+		return result, fmt.Errorf("provider error: failed to transform set data")
+	}
+
+	for _, val := range stringsSet.List() {
+		valStr, ok := val.(string)
+		if !ok {
+			tflog.Debug(ctx, fmt.Sprintf("transforming set of strings into slice failed; expected set elements to be of type string but received %T", val))
+			return result, fmt.Errorf("provider error: failed to transform set data")
+		}
+
+		result = append(result, valStr)
+	}
+
+	return result, nil
+}
+
+// MapOfStringsToLabelSlice transforms a terraform map of strings to a LabelSlice
+func MapOfStringsToLabelSlice(ctx context.Context, data interface{}) (upcloud.LabelSlice, error) {
+	result := upcloud.LabelSlice{}
+
+	labelsMap, ok := data.(map[string]interface{})
+	if !ok {
+		tflog.Debug(ctx, fmt.Sprintf("transforming map of strings into labels slice failed; expected input data to be a map of strings but received %T", data))
+		return result, fmt.Errorf("provider error: failed to transform labels data")
+	}
+
+	for k, v := range labelsMap {
+		value, ok := v.(string)
+		if !ok {
+			tflog.Debug(ctx, fmt.Sprintf("transforming map of strings into labels slice failed; expected map elements to be of type string but received %T", v))
+			return result, fmt.Errorf("provider error: failed to transform labels data")
+		}
+
+		result = append(result, upcloud.Label{
+			Key:   k,
+			Value: value,
+		})
+	}
+
+	return result, nil
 }
 
 // StorageAddressFormat takes the address in any format and extracts the bus
