@@ -104,7 +104,6 @@ func ResourceServer() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "One or more blocks describing the network interfaces of the server.",
 				Required:    true,
-				ForceNew:    true,
 				MinItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -112,7 +111,6 @@ func ResourceServer() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
 							Optional:    true,
-							ForceNew:    true,
 							Default:     upcloud.IPAddressFamilyIPv4,
 							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
 								switch v.(string) {
@@ -135,7 +133,6 @@ func ResourceServer() *schema.Resource {
 							Description: "The assigned IP address.",
 							Optional:    true,
 							Computed:    true,
-							ForceNew:    true,
 						},
 						"ip_address_floating": {
 							Type:        schema.TypeBool,
@@ -151,7 +148,6 @@ func ResourceServer() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Network interface type. For private network interfaces, a network must be specified with an existing network id.",
 							Required:    true,
-							ForceNew:    true,
 							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
 								switch v.(string) {
 								case upcloud.NetworkTypePrivate, upcloud.NetworkTypeUtility, upcloud.NetworkTypePublic:
@@ -172,21 +168,18 @@ func ResourceServer() *schema.Resource {
 						"network": {
 							Type:        schema.TypeString,
 							Description: "The unique ID of a network to attach this network to.",
-							ForceNew:    true,
 							Optional:    true,
 							Computed:    true,
 						},
 						"source_ip_filtering": {
 							Type:        schema.TypeBool,
 							Description: "`true` if source IP should be filtered.",
-							ForceNew:    true,
 							Optional:    true,
 							Default:     true,
 						},
 						"bootable": {
 							Type:        schema.TypeBool,
 							Description: "`true` if this interface should be used for network booting.",
-							ForceNew:    true,
 							Optional:    true,
 							Default:     false,
 						},
@@ -536,8 +529,9 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 			connIP = iface.IPAddresses[0].Address
 		}
 	}
-	if len(networkInterfaces) > 0 {
-		_ = d.Set("network_interface", networkInterfaces)
+
+	if err := d.Set("network_interface", networkInterfaces); err != nil {
+		return diag.FromErr(err)
 	}
 
 	storageDevices := []interface{}{}
@@ -597,7 +591,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	// Stop the server if the requested changes require it
-	if d.HasChanges("cpu", "mem", "template.0.size", "storage_devices") || planHasChange {
+	if d.HasChanges("cpu", "mem", "template.0.size", "storage_devices", "network_interface") || planHasChange {
 		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: d.Id(),
 		},
@@ -791,6 +785,12 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 			}); err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	if d.HasChange("network_interface") {
+		if err := reconfigureServerNetworkInterfaces(ctx, client, d); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
