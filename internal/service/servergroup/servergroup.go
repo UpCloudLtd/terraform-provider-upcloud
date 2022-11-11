@@ -70,54 +70,24 @@ func ResourceServerGroup() *schema.Resource {
 
 func resourceServerGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.ServiceContext)
+	baseErrMsg := "creating server group failed"
 
-	req := &request.CreateServerGroupRequest{
-		Title: d.Get("title").(string),
-	}
+	req, err := createServerGroupRequestFromConfig(ctx, d)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  baseErrMsg,
+			Detail:   err.Error(),
+		})
 
-	if d.Get("anti_affinity").(bool) {
-		req.AntiAffinity = upcloud.True
-	} else {
-		req.AntiAffinity = upcloud.False
-	}
-
-	members, membersWereSet := d.GetOk("members")
-	if membersWereSet {
-		membersSlice, err := utils.SetOfStringsToSlice(ctx, members)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Creating server group failed",
-				Detail:   err.Error(),
-			})
-
-			return diags
-		}
-
-		req.Members = membersSlice
-	}
-
-	labels, labelsWereSet := d.GetOk("labels")
-	if labelsWereSet {
-		labelsSlice, err := utils.MapOfStringsToLabelSlice(ctx, labels)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Creating server group failed",
-				Detail:   err.Error(),
-			})
-
-			return diags
-		}
-
-		req.Labels = &labelsSlice
+		return diags
 	}
 
 	group, err := svc.CreateServerGroup(ctx, req)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Creating server group failed",
+			Summary:  baseErrMsg,
 			Detail:   err.Error(),
 		})
 
@@ -132,6 +102,7 @@ func resourceServerGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceServerGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.ServiceContext)
+	baseErrMsg := "reading server group data failed"
 
 	group, err := svc.GetServerGroup(ctx, &request.GetServerGroupRequest{UUID: d.Id()})
 	if err != nil {
@@ -141,20 +112,23 @@ func resourceServerGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 			return diags
 		}
 
-		diags = append(diags, diag.FromErr(err)...)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  baseErrMsg,
+			Detail:   err.Error(),
+		})
+
 		return diags
 	}
 
-	d.Set("title", group.Title)
-	d.Set("anti_affinity", group.AntiAffinity.Bool())
-	d.Set("members", group.Members)
-
-	labels := map[string]string{}
-	for _, label := range group.Labels {
-		labels[label.Key] = label.Value
+	err = setServerGroupData(group, d)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  baseErrMsg,
+			Detail:   err.Error(),
+		})
 	}
-
-	d.Set("labels", labels)
 
 	return diags
 }
@@ -172,4 +146,58 @@ func resourceServerGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	return diags
+}
+
+func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) error {
+	if err := d.Set("title", group.Title); err != nil {
+		return err
+	}
+
+	if err := d.Set("members", group.Members); err != nil {
+		return err
+	}
+
+	if err := d.Set("anti_affinity", group.AntiAffinity.Bool()); err != nil {
+		return err
+	}
+
+	if err := d.Set("labels", utils.LabelSliceToMap(group.Labels)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceData) (*request.CreateServerGroupRequest, error) {
+	result := &request.CreateServerGroupRequest{
+		Title: d.Get("title").(string),
+	}
+
+	if d.Get("anti_affinity").(bool) {
+		result.AntiAffinity = upcloud.True
+	} else {
+		result.AntiAffinity = upcloud.False
+	}
+
+	members, membersWereSet := d.GetOk("members")
+	if membersWereSet {
+		membersSlice, err := utils.SetOfStringsToSlice(ctx, members)
+		if err != nil {
+			return result, err
+		}
+
+		result.Members = membersSlice
+	}
+
+	labels, labelsWereSet := d.GetOk("labels")
+	if labelsWereSet {
+		labelsSlice, err := utils.MapOfStringsToLabelSlice(ctx, labels)
+		if err != nil {
+			return result, err
+		}
+
+		result.Labels = &labelsSlice
+	}
+
+	return result, nil
 }

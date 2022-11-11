@@ -90,18 +90,20 @@ func ExpandStrings(data interface{}) []string {
 // SetOfStringsToSlice transforms a terraform set of strings to a slice of strings
 func SetOfStringsToSlice(ctx context.Context, data interface{}) ([]string, error) {
 	result := []string{}
+	providerErrMsg := "provider error: failed to transform set data"
+	debugLogPrefix := "transforming set of strings into slice failed;"
 
 	stringsSet, ok := data.(*schema.Set)
 	if !ok {
-		tflog.Debug(ctx, fmt.Sprintf("transforming set of strings into slice failed; expected input data to be a schema.TypeSet but received %T", data))
-		return result, fmt.Errorf("provider error: failed to transform set data")
+		tflog.Debug(ctx, fmt.Sprintf("%s expected input data to be a schema.TypeSet but received %T", debugLogPrefix, data))
+		return result, fmt.Errorf(providerErrMsg)
 	}
 
 	for _, val := range stringsSet.List() {
 		valStr, ok := val.(string)
 		if !ok {
-			tflog.Debug(ctx, fmt.Sprintf("transforming set of strings into slice failed; expected set elements to be of type string but received %T", val))
-			return result, fmt.Errorf("provider error: failed to transform set data")
+			tflog.Debug(ctx, fmt.Sprintf("%s expected set elements to be of type string but received %T", debugLogPrefix, val))
+			return result, fmt.Errorf(providerErrMsg)
 		}
 
 		result = append(result, valStr)
@@ -113,18 +115,20 @@ func SetOfStringsToSlice(ctx context.Context, data interface{}) ([]string, error
 // MapOfStringsToLabelSlice transforms a terraform map of strings to a LabelSlice
 func MapOfStringsToLabelSlice(ctx context.Context, data interface{}) (upcloud.LabelSlice, error) {
 	result := upcloud.LabelSlice{}
+	providerErrMsg := "provider error: failed to transform labels data"
+	debugLogPrefix := "transforming map of strings into labels slice failed;"
 
 	labelsMap, ok := data.(map[string]interface{})
 	if !ok {
-		tflog.Debug(ctx, fmt.Sprintf("transforming map of strings into labels slice failed; expected input data to be a map of strings but received %T", data))
-		return result, fmt.Errorf("provider error: failed to transform labels data")
+		tflog.Debug(ctx, fmt.Sprintf("%s expected input data to be a map of strings but received %T", debugLogPrefix, data))
+		return result, fmt.Errorf(providerErrMsg)
 	}
 
 	for k, v := range labelsMap {
 		value, ok := v.(string)
 		if !ok {
-			tflog.Debug(ctx, fmt.Sprintf("transforming map of strings into labels slice failed; expected map elements to be of type string but received %T", v))
-			return result, fmt.Errorf("provider error: failed to transform labels data")
+			tflog.Debug(ctx, fmt.Sprintf("%s expected map elements to be of type string but received %T", debugLogPrefix, v))
+			return result, fmt.Errorf(providerErrMsg)
 		}
 
 		result = append(result, upcloud.Label{
@@ -134,6 +138,17 @@ func MapOfStringsToLabelSlice(ctx context.Context, data interface{}) (upcloud.La
 	}
 
 	return result, nil
+}
+
+// LabelSliceToMap transorms `upcloud.LabelSlice` into a map of strings.
+// This can be used to set labels fetched from the API into a state
+func LabelSliceToMap(data upcloud.LabelSlice) map[string]string {
+	result := map[string]string{}
+	for _, label := range data {
+		result[label.Key] = label.Value
+	}
+
+	return result
 }
 
 // StorageAddressFormat takes the address in any format and extracts the bus
