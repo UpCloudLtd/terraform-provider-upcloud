@@ -154,11 +154,7 @@ func LabelSliceToMap(data upcloud.LabelSlice) map[string]string {
 // SliceOfStringToServerUUIDSlice converts slice of strings into `upcloud.ServerUUIDSlice`
 func SliceOfStringToServerUUIDSlice(strs []string) upcloud.ServerUUIDSlice {
 	result := make(upcloud.ServerUUIDSlice, len(strs))
-
-	for i, val := range strs {
-		result[i] = val
-	}
-
+	copy(result, strs)
 	return result
 }
 
