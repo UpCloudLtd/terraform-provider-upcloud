@@ -149,8 +149,10 @@ func resourceServerGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) error {
-	if err := d.Set("title", group.Title); err != nil {
-		return err
+	if group.Title != "" {
+		if err := d.Set("title", group.Title); err != nil {
+			return err
+		}
 	}
 
 	if err := d.Set("members", group.Members); err != nil {
