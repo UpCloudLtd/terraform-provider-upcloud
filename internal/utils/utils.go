@@ -151,6 +151,17 @@ func LabelSliceToMap(data upcloud.LabelSlice) map[string]string {
 	return result
 }
 
+// SliceOfStringToServerUUIDSlice converts slice of strings into `upcloud.ServerUUIDSlice`
+func SliceOfStringToServerUUIDSlice(strs []string) upcloud.ServerUUIDSlice {
+	result := make(upcloud.ServerUUIDSlice, len(strs))
+
+	for i, val := range strs {
+		result[i] = val
+	}
+
+	return result
+}
+
 // StorageAddressFormat takes the address in any format and extracts the bus
 // type only (ide/scsi/virtio)
 func StorageAddressFormat(address string) string {

@@ -56,7 +56,7 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 
 					resource.TestCheckResourceAttr(group2, "title", "tf_test_2"),
 					resource.TestCheckResourceAttr(group2, "anti_affinity", "false"),
-					resource.TestCheckNoResourceAttr(group2, "members"),
+					resource.TestCheckResourceAttr(group2, "members.#", "0"),
 					resource.TestCheckResourceAttr(group2, "labels.%", "2"),
 					resource.TestCheckResourceAttr(group2, "labels.key1", "val1"),
 					resource.TestCheckResourceAttr(group2, "labels.key2", "val2"),

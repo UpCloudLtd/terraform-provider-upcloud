@@ -17,7 +17,7 @@ func ResourceServerGroup() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceServerGroupCreate,
 		ReadContext:   resourceServerGroupRead,
-		// UpdateContext: resourceServerGroupUpdate,
+		UpdateContext: resourceServerGroupUpdate,
 		DeleteContext: resourceServerGroupDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -27,7 +27,6 @@ func ResourceServerGroup() *schema.Resource {
 				Description: "Title of your server group",
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
 			},
 			"labels": {
 				Description: "Labels for your server group",
@@ -36,7 +35,6 @@ func ResourceServerGroup() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 			"members": {
 				Description: "UUIDs of the servers that are members of this group",
@@ -45,7 +43,6 @@ func ResourceServerGroup() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 			"anti_affinity": {
 				Description: `Is group an anti-affinity group. Setting this to true will result in
@@ -62,7 +59,6 @@ func ResourceServerGroup() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
-				ForceNew: true,
 			},
 		},
 	}
@@ -133,9 +129,33 @@ func resourceServerGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	return diags
 }
 
-// func resourceServerGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-// 	return resourceServerGroupRead(ctx, d, meta)
-// }
+func resourceServerGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+	svc := meta.(*service.ServiceContext)
+	baseErrMsg := "modifying server group data failed"
+
+	req, err := modifyServerGroupRequestFromConfig(ctx, d)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  baseErrMsg,
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = svc.ModifyServerGroup(ctx, req)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  baseErrMsg,
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	diags = append(diags, resourceServerGroupRead(ctx, d, meta)...)
+	return diags
+}
 
 func resourceServerGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.ServiceContext)
@@ -155,11 +175,11 @@ func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) erro
 		}
 	}
 
-	if err := d.Set("members", group.Members); err != nil {
+	if err := d.Set("anti_affinity", group.AntiAffinity.Bool()); err != nil {
 		return err
 	}
 
-	if err := d.Set("anti_affinity", group.AntiAffinity.Bool()); err != nil {
+	if err := d.Set("members", group.Members); err != nil {
 		return err
 	}
 
@@ -199,6 +219,40 @@ func createServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceD
 		}
 
 		result.Labels = &labelsSlice
+	}
+
+	return result, nil
+}
+
+func modifyServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceData) (*request.ModifyServerGroupRequest, error) {
+	result := &request.ModifyServerGroupRequest{
+		Title: d.Get("title").(string),
+		UUID:  d.Id(),
+	}
+
+	if d.Get("anti_affinity").(bool) {
+		result.AntiAffinity = upcloud.True
+	} else {
+		result.AntiAffinity = upcloud.False
+	}
+
+	if d.HasChange("members") {
+		members, err := utils.SetOfStringsToSlice(ctx, d.Get("members"))
+		if err != nil {
+			return result, err
+		}
+
+		membersUUIDSlice := utils.SliceOfStringToServerUUIDSlice(members)
+		result.Members = &membersUUIDSlice
+	}
+
+	if d.HasChange("labels") {
+		labels, err := utils.MapOfStringsToLabelSlice(ctx, d.Get("labels"))
+		if err != nil {
+			return result, err
+		}
+
+		result.Labels = &labels
 	}
 
 	return result, nil
