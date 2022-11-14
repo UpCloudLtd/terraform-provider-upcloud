@@ -5,6 +5,7 @@ on:
     paths:
       - upcloud/**
       - internal/**
+      - go.mod
 
 concurrency:
   group: ${{ github.repository }}-${{ github.workflow }}
