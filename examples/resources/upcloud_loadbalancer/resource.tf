@@ -18,5 +18,15 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
-  network           = resource.upcloud_network.lb_network.id
+  networks {
+    name    = "Private-Net"
+    type    = "private"
+    family  = "IPv4"
+    network = resource.upcloud_network.lb_network.id
+  }
+  networks {
+    name   = "Public-Net"
+    type   = "public"
+    family = "IPv4"
+  }
 }

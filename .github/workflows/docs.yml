@@ -3,10 +3,10 @@ name: Documentation
 on:
   pull_request:
     types:
-    - closed
+      - closed
     branches:
-    - main
-    - test-docs-generator # for testing
+      - main
+      - test-docs-generator # for testing
 
 jobs:
   update:
@@ -14,28 +14,28 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: "1.17"
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_wrapper: false
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Generate documentation
-      run: |
-        terraform version
-        make docs
-    - name: Create PR for docs update
-      uses: peter-evans/create-pull-request@v4
-      with:
-        add-paths: docs/
-        branch: chore/update-docs
-        commit-message: "chore(docs): update documentation for #${{ github.event.number }}"
-        committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-        reviewers: ${{ github.actor }}
-        title: Update documentation
-        body: "This is an automatically created PR. Changes were created by running `make docs` after merging #${{ github.event.number }} (${{ github.sha }})."
-        base: ${{ github.event.pull_request.base.ref }}
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.18"
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Generate documentation
+        run: |
+          terraform version
+          make docs
+      - name: Create PR for docs update
+        uses: peter-evans/create-pull-request@v4
+        with:
+          add-paths: docs/
+          branch: chore/update-docs
+          commit-message: "chore(docs): update documentation for #${{ github.event.number }}"
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          reviewers: ${{ github.actor }}
+          title: Update documentation
+          body: "This is an automatically created PR. Changes were created by running `make docs` after merging #${{ github.event.number }} (${{ github.sha }})."
+          base: ${{ github.event.pull_request.base.ref }}

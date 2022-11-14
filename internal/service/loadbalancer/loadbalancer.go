@@ -3,7 +3,9 @@ package loadbalancer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
@@ -11,6 +13,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -42,11 +45,16 @@ func ResourceLoadBalancer() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"network": {
-				Description: "Private network UUID where traffic will be routed. Must reside in load balancer zone.",
-				Type:        schema.TypeString,
-				ForceNew:    true,
-				Required:    true,
+			"networks": {
+				ExactlyOneOf: []string{"network"},
+				Description:  "Attached Networks from where traffic consumed and routed. Private networks must reside in loadbalancer zone.",
+				Type:         schema.TypeList,
+				Optional:     true,
+				MaxItems:     8,
+				MinItems:     2,
+				Elem: &schema.Resource{
+					Schema: loadBalancerNetworkSchema(),
+				},
 			},
 			"configured_status": {
 				Description: "The service configured status indicates the service's current intended status. Managed by the customer.",
@@ -89,10 +97,132 @@ func ResourceLoadBalancer() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"nodes": {
+				Description: "Nodes are instances running load balancer service",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: loadBalancerNodeSchema(),
+				},
+			},
+			"network": {
+				Deprecated:  "Use 'networks' to define networks attached to load balancer",
+				Description: "Private network UUID where traffic will be routed. Must reside in load balancer zone.",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Optional:    true,
+			},
 			"dns_name": {
+				Deprecated:  "Use 'networks' to get network DNS name",
 				Description: "DNS name of the load balancer",
 				Type:        schema.TypeString,
 				Computed:    true,
+			},
+		},
+		CustomizeDiff: customdiff.ForceNewIfChange("networks.#", func(ctx context.Context, old, new, meta interface{}) bool {
+			return new.(int) != old.(int)
+		}),
+	}
+}
+
+func loadBalancerNetworkSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Description: "The name of the network must be unique within the service.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.All(
+				validation.StringLenBetween(0, 65),
+				validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), ""),
+			)),
+		},
+		"type": {
+			Description: "The type of the network. Only one public network can be attached and at least one private network must be attached.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			ValidateDiagFunc: validation.ToDiagFunc(
+				validation.StringInSlice([]string{
+					string(upcloud.LoadBalancerNetworkTypePrivate),
+					string(upcloud.LoadBalancerNetworkTypePublic),
+				}, false),
+			),
+		},
+		"family": {
+			Description: "Network family. Currently only `IPv4` is supported.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			ValidateDiagFunc: validation.ToDiagFunc(
+				validation.StringInSlice([]string{
+					string(upcloud.LoadBalancerAddressFamilyIPv4),
+				}, false),
+			),
+		},
+		"network": {
+			Description: "Private network UUID. Required for private networks and must reside in loadbalancer zone. For public network the field should be omitted.",
+			Type:        schema.TypeString,
+			ForceNew:    true,
+			Optional:    true,
+		},
+		"dns_name": {
+			Description: "DNS name of the load balancer network",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"id": {
+			Description: "Network identifier.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+	}
+}
+
+func loadBalancerNodeSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"operational_state": {
+			Description: "Node's operational state. Managed by the system.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"networks": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: loadBalancerNodeNetworkSchema(),
+			},
+		},
+	}
+}
+
+func loadBalancerNodeNetworkSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Description: "The name of the network.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"type": {
+			Description: "The type of the network.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"ip_addresses": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"address": {
+						Description: "Node's IP address.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"listen": {
+						Description: "Does IP address listen network connections.",
+						Type:        schema.TypeBool,
+						Computed:    true,
+					},
+				},
 			},
 		},
 	}
@@ -100,6 +230,10 @@ func ResourceLoadBalancer() *schema.Resource {
 
 func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.ServiceContext)
+	networks, err := loadBalancerNetworksFromResourceData(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	req := &request.CreateLoadBalancerRequest{
 		Name:             d.Get("name").(string),
 		Plan:             d.Get("plan").(string),
@@ -109,10 +243,11 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 		Frontends:        []request.LoadBalancerFrontend{},
 		Backends:         []request.LoadBalancerBackend{},
 		Resolvers:        []request.LoadBalancerResolver{},
+		Networks:         networks,
 	}
 	lb, err := svc.CreateLoadBalancer(ctx, req)
 	if err != nil {
-		return diag.FromErr(err)
+		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
 	d.SetId(lb.UUID)
@@ -143,6 +278,11 @@ func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta 
 func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.ServiceContext)
 
+	// handle network renaming before modifying load balancer so that new network names are present in `lb` before setting state
+	if diags = resourceLoadBalancerNetworkUpdate(ctx, d, svc); len(diags) > 0 {
+		return diags
+	}
+
 	lb, err := svc.ModifyLoadBalancer(ctx, &request.ModifyLoadBalancerRequest{
 		UUID:             d.Id(),
 		Name:             d.Get("name").(string),
@@ -150,7 +290,7 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 		ConfiguredStatus: d.Get("configured_status").(string),
 	})
 	if err != nil {
-		return diag.FromErr(err)
+		return handleResourceError(d.Get("name").(string), d, err)
 	}
 
 	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
@@ -158,6 +298,38 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	tflog.Info(ctx, "load balancer updated", map[string]interface{}{"name": lb.Name, "uuid": lb.UUID})
+	return diags
+}
+
+func resourceLoadBalancerNetworkUpdate(ctx context.Context, d *schema.ResourceData, svc *service.ServiceContext) (diags diag.Diagnostics) {
+	if !d.HasChange("networks") {
+		return nil
+	}
+	if nets, ok := d.GetOk("networks"); ok {
+		for i := range nets.([]interface{}) {
+			key := fmt.Sprintf("networks.%d.name", i)
+			if d.HasChange(key) {
+				if name, ok := d.Get(key).(string); ok {
+					var serviceID, networkName, id string
+					idKey := fmt.Sprintf("networks.%d.id", i)
+					if id, ok = d.Get(idKey).(string); !ok {
+						return diag.FromErr(fmt.Errorf("unable to determine network ID %s", idKey))
+					}
+					if err := unmarshalID(id, &serviceID, &networkName); err != nil {
+						return diag.FromErr(err)
+					}
+					req := &request.ModifyLoadBalancerNetworkRequest{
+						ServiceUUID: serviceID,
+						Name:        networkName,
+						Network:     request.ModifyLoadBalancerNetwork{Name: name},
+					}
+					if _, err := svc.ModifyLoadBalancerNetwork(ctx, req); err != nil {
+						return diag.FromErr(err)
+					}
+				}
+			}
+		}
+	}
 	return diags
 }
 
@@ -182,10 +354,6 @@ func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalance
 	}
 
 	if err := d.Set("zone", lb.Zone); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("network", lb.NetworkUUID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -227,6 +395,65 @@ func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalance
 		return diag.FromErr(err)
 	}
 
+	nodes := make([]map[string]interface{}, 0)
+	for _, n := range lb.Nodes {
+		node := map[string]interface{}{
+			"operational_state": n.OperationalState,
+		}
+		networks := make([]map[string]interface{}, 0)
+		for _, net := range n.Networks {
+			ips := make([]map[string]interface{}, 0)
+			for _, ip := range net.IPAddresses {
+				ips = append(ips, map[string]interface{}{
+					"address": ip.Address,
+					"listen":  ip.Listen,
+				})
+			}
+			networks = append(networks, map[string]interface{}{
+				"name":         net.Name,
+				"type":         net.Type,
+				"ip_addresses": ips,
+			})
+		}
+		node["networks"] = networks
+		nodes = append(nodes, node)
+	}
+	if err := d.Set("nodes", nodes); err != nil {
+		return diag.FromErr(err)
+	}
+	return setLoadBalancerNetworkResourceData(d, lb)
+}
+
+func setLoadBalancerNetworkResourceData(d *schema.ResourceData, lb *upcloud.LoadBalancer) (diags diag.Diagnostics) {
+	// If legacy network UUID is set do not populate state with autogenerated network objects
+	if lb.NetworkUUID != "" {
+		if err := d.Set("networks", nil); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set("network", lb.NetworkUUID); err != nil {
+			return diag.FromErr(err)
+		}
+		return
+	}
+
+	// network objects are in use, reset network field
+	if err := d.Set("network", nil); err != nil {
+		return diag.FromErr(err)
+	}
+	networks := make([]map[string]string, 0)
+	for _, net := range lb.Networks {
+		networks = append(networks, map[string]string{
+			"name":     net.Name,
+			"type":     string(net.Type),
+			"family":   string(net.Family),
+			"network":  net.UUID,
+			"dns_name": net.DNSName,
+			"id":       marshalID(lb.UUID, net.Name),
+		})
+	}
+	if err := d.Set("networks", networks); err != nil {
+		return diag.FromErr(err)
+	}
 	return diags
 }
 
@@ -249,4 +476,27 @@ func waitLoadBalancerToShutdown(ctx context.Context, svc *service.ServiceContext
 		time.Sleep(5 * time.Second)
 	}
 	return errors.New("max retries reached while waiting for load balancer instance to shutdown")
+}
+
+func loadBalancerNetworksFromResourceData(d *schema.ResourceData) ([]request.LoadBalancerNetwork, error) {
+	req := make([]request.LoadBalancerNetwork, 0)
+	if nets, ok := d.GetOk("networks"); ok {
+		for i, n := range nets.([]interface{}) {
+			n := n.(map[string]interface{})
+			r := request.LoadBalancerNetwork{
+				Name:   n["name"].(string),
+				Type:   upcloud.LoadBalancerNetworkType(n["type"].(string)),
+				Family: upcloud.LoadBalancerAddressFamily(n["family"].(string)),
+				UUID:   n["network"].(string),
+			}
+			if r.Type == upcloud.LoadBalancerNetworkTypePrivate && r.UUID == "" {
+				return req, fmt.Errorf("load balancer's private network (#%d) ID is required", i)
+			}
+			if r.Type == upcloud.LoadBalancerNetworkTypePublic && r.UUID != "" {
+				return req, fmt.Errorf("setting load balancer's public network (#%d) ID is not supported", i)
+			}
+			req = append(req, r)
+		}
+	}
+	return req, nil
 }

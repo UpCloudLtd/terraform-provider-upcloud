@@ -33,7 +33,17 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
-  network           = resource.upcloud_network.lb_network.id
+  networks {
+    name    = "Private-Net"
+    type    = "private"
+    family  = "IPv4"
+    network = resource.upcloud_network.lb_network.id
+  }
+  networks {
+    name   = "Public-Net"
+    type   = "public"
+    family = "IPv4"
+  }
 }
 ```
 
@@ -43,21 +53,67 @@ resource "upcloud_loadbalancer" "lb" {
 ### Required
 
 - `name` (String) The name of the service must be unique within customer account.
-- `network` (String) Private network UUID where traffic will be routed. Must reside in load balancer zone.
 - `plan` (String) Plan which the service will have
 - `zone` (String) Zone in which the service will be hosted, e.g. `fi-hel1`.
 
 ### Optional
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
+- `network` (String, Deprecated) Private network UUID where traffic will be routed. Must reside in load balancer zone.
+- `networks` (Block List, Max: 8) Attached Networks from where traffic consumed and routed. Private networks must reside in loadbalancer zone. (see [below for nested schema](#nestedblock--networks))
 
 ### Read-Only
 
 - `backends` (List of String) Backends are groups of customer servers whose traffic should be balanced.
-- `dns_name` (String) DNS name of the load balancer
+- `dns_name` (String, Deprecated) DNS name of the load balancer
 - `frontends` (List of String) Frontends receive the traffic before dispatching it to the backends.
 - `id` (String) The ID of this resource.
+- `nodes` (List of Object) Nodes are instances running load balancer service (see [below for nested schema](#nestedatt--nodes))
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 - `resolvers` (List of String) Domain Name Resolvers must be configured in case of customer uses dynamic type members
+
+<a id="nestedblock--networks"></a>
+### Nested Schema for `networks`
+
+Required:
+
+- `family` (String) Network family. Currently only `IPv4` is supported.
+- `name` (String) The name of the network must be unique within the service.
+- `type` (String) The type of the network. Only one public network can be attached and at least one private network must be attached.
+
+Optional:
+
+- `network` (String) Private network UUID. Required for private networks and must reside in loadbalancer zone. For public network the field should be omitted.
+
+Read-Only:
+
+- `dns_name` (String) DNS name of the load balancer network
+- `id` (String) Network identifier.
+
+
+<a id="nestedatt--nodes"></a>
+### Nested Schema for `nodes`
+
+Read-Only:
+
+- `networks` (List of Object) (see [below for nested schema](#nestedobjatt--nodes--networks))
+- `operational_state` (String)
+
+<a id="nestedobjatt--nodes--networks"></a>
+### Nested Schema for `nodes.networks`
+
+Read-Only:
+
+- `ip_addresses` (List of Object) (see [below for nested schema](#nestedobjatt--nodes--networks--ip_addresses))
+- `name` (String)
+- `type` (String)
+
+<a id="nestedobjatt--nodes--networks--ip_addresses"></a>
+### Nested Schema for `nodes.networks.ip_addresses`
+
+Read-Only:
+
+- `address` (String)
+- `listen` (Boolean)
 
 
