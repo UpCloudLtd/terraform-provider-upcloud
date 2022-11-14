@@ -31,7 +31,7 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 			{
 				Config: string(testDataStep1),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckNoResourceAttr(group1, "title"),
+					resource.TestCheckResourceAttr(group1, "title", "tf_test_1"),
 					resource.TestCheckNoResourceAttr(group1, "members"),
 					resource.TestCheckNoResourceAttr(group1, "labels"),
 					resource.TestCheckResourceAttr(group1, "anti_affinity", "false"),

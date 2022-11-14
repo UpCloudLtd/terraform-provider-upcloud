@@ -26,7 +26,7 @@ func ResourceServerGroup() *schema.Resource {
 			"title": {
 				Description: "Title of your server group",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"labels": {
 				Description: "Labels for your server group",
@@ -169,10 +169,8 @@ func resourceServerGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) error {
-	if group.Title != "" {
-		if err := d.Set("title", group.Title); err != nil {
-			return err
-		}
+	if err := d.Set("title", group.Title); err != nil {
+		return err
 	}
 
 	if err := d.Set("anti_affinity", group.AntiAffinity.Bool()); err != nil {
