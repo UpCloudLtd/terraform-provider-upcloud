@@ -168,7 +168,6 @@ func loadBalancerNetworkSchema() map[string]*schema.Schema {
 		"dns_name": {
 			Description: "DNS name of the load balancer network",
 			Type:        schema.TypeString,
-			ForceNew:    true,
 			Computed:    true,
 		},
 		"id": {
