@@ -7,6 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - lbaas: private network support
+- new server group resource with experimental anti affinity support
 
 ### Changed
 - Update terraform-plugin-sdk to v2.24.0
