@@ -187,15 +187,11 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	c, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
 		DesiredState: upcloud.KubernetesClusterStateRunning,
-		Timeout:      time.Minute * 5,
+		Timeout:      time.Minute * 20,
 		UUID:         c.UUID,
 	})
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "cluster did not reach ready state",
-			Detail:   err.Error(),
-		})
+		return diag.FromErr(err)
 	}
 
 	diags = append(diags, setClusterResourceData(d, c)...)
