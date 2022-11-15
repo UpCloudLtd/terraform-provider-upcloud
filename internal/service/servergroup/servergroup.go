@@ -45,15 +45,12 @@ func ResourceServerGroup() *schema.Resource {
 				Optional: true,
 			},
 			"anti_affinity": {
-				Description: `Is group an anti-affinity group. Setting this to true will result in
-				all servers in the group being placed on separate compute hosts.
-
+				Description: `Is group an anti-affinity group. Setting this to true will result in all servers in the group being placed on separate compute hosts.
 				NOTE: this is an experimental feature. The anti-affinity policy is "best-effort" and it is not
 				guaranteed that all the servers will end up on a separate compute hosts. You can verify if the
 				anti-affinity policies are met by requesting a server group details from API. For more information
 				please see UpCloud API documentation on server groups
-				
-				NOTE: anti-affinity policies are only applied on server start. This means that if anti-affinity
+				Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
 				policies in server group are not met, you need to manually restart the servers in said group,
 				for example via API, UpCloud Control Panel or upctl (UpCloud CLI)`,
 				Type:     schema.TypeBool,
