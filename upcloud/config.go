@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -16,9 +16,9 @@ type Config struct {
 	Password string
 }
 
-func (c *Config) Client() (*service.ServiceContext, error) {
-	client := client.NewWithContext(c.Username, c.Password)
-	svc := service.NewWithContext(client)
+func (c *Config) Client() (*service.Service, error) {
+	client := client.New(c.Username, c.Password)
+	svc := service.New(client)
 	res, err := c.checkLogin(svc)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (c *Config) Client() (*service.ServiceContext, error) {
 	return svc, nil
 }
 
-func (c *Config) checkLogin(svc *service.ServiceContext) (*upcloud.Account, error) {
+func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
 	const numRetries = 10
 	var (
 		err error

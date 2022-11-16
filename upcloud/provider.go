@@ -8,8 +8,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
@@ -136,10 +136,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	return service, diags
 }
 
-func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.ServiceContext {
-	client := client.NewWithHTTPClientContext(username, password, httpClient)
-	client.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
-	client.SetTimeout(upcloudAPITimeout)
+func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.Service {
+	httpClient.Timeout = upcloudAPITimeout
+	providerClient := client.New(username, password, client.WithHTTPClient(httpClient))
+	providerClient.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
 
-	return service.NewWithContext(client)
+	return service.New(providerClient)
 }

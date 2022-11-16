@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -458,7 +458,7 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 				continue
 			}
 
-			client := testAccProvider.Meta().(*service.ServiceContext)
+			client := testAccProvider.Meta().(*service.Service)
 			_, err := client.GetObjectStorageDetails(context.Background(), &request.GetObjectStorageDetailsRequest{
 				UUID: rs.Primary.ID,
 			})

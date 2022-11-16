@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func ResizeStoragePartitionAndFs(ctx context.Context, client *service.ServiceContext, UUID, title string, deleteBackup bool) diag.Diagnostics {
+func ResizeStoragePartitionAndFs(ctx context.Context, client *service.Service, UUID, title string, deleteBackup bool) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
 	backup, err := client.ResizeStorageFilesystem(ctx, &request.ResizeStorageFilesystemRequest{
@@ -57,7 +57,7 @@ func ResizeStoragePartitionAndFs(ctx context.Context, client *service.ServiceCon
 
 func cloneStorage(
 	ctx context.Context,
-	client *service.ServiceContext,
+	client *service.Service,
 	size int,
 	tier string,
 	title string,
@@ -129,7 +129,7 @@ func cloneStorage(
 
 func createStorage(
 	ctx context.Context,
-	client *service.ServiceContext,
+	client *service.Service,
 	size int,
 	tier string,
 	title string,
@@ -209,7 +209,7 @@ func createStorage(
 	return diags
 }
 
-func isStorageSimpleBackupEnabled(ctx context.Context, service *service.ServiceContext, storageID string) (bool, error) {
+func isStorageSimpleBackupEnabled(ctx context.Context, service *service.Service, storageID string) (bool, error) {
 	details, err := service.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{UUID: storageID})
 	if err != nil {
 		return false, err
@@ -226,7 +226,7 @@ func isStorageSimpleBackupEnabled(ctx context.Context, service *service.ServiceC
 	return false, nil
 }
 
-func diagAndTidy(ctx context.Context, client *service.ServiceContext, storageUUID string, err error) diag.Diagnostics {
+func diagAndTidy(ctx context.Context, client *service.Service, storageUUID string, err error) diag.Diagnostics {
 	_, waitErr := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         storageUUID,
 		DesiredState: upcloud.StorageStateOnline,

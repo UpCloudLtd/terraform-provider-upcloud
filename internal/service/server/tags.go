@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 )
 
-func getTagsAsMap(ctx context.Context, service *service.ServiceContext) (map[string]upcloud.Tag, error) {
+func getTagsAsMap(ctx context.Context, service *service.Service) (map[string]upcloud.Tag, error) {
 	currTags := make(map[string]upcloud.Tag)
 
 	resp, err := service.GetTags(ctx)
@@ -29,7 +29,7 @@ func getTagsAsMap(ctx context.Context, service *service.ServiceContext) (map[str
 
 // removeTags removes tags from server and
 // deletes the tag if it is not used by any other server.
-func removeTags(ctx context.Context, service *service.ServiceContext, serverUUID string, tags []string) error {
+func removeTags(ctx context.Context, service *service.Service, serverUUID string, tags []string) error {
 	if len(tags) == 0 {
 		return nil
 	}
@@ -76,7 +76,7 @@ func (w tagsExistsWarning) Error() string {
 }
 
 // AddTags creates tags that do not yet exist and tags server with given tags.
-func addTags(ctx context.Context, service *service.ServiceContext, serverUUID string, tags []string) error {
+func addTags(ctx context.Context, service *service.Service, serverUUID string, tags []string) error {
 	if len(tags) == 0 {
 		return nil
 	}
@@ -119,7 +119,7 @@ func addTags(ctx context.Context, service *service.ServiceContext, serverUUID st
 	return nil
 }
 
-func updateTags(ctx context.Context, service *service.ServiceContext, serverUUID string, oldTags, newTags []string) error {
+func updateTags(ctx context.Context, service *service.Service, serverUUID string, oldTags, newTags []string) error {
 	tagsToAdd, tagsToDelete := getTagChange(oldTags, newTags)
 
 	if err := removeTags(ctx, service, serverUUID, tagsToDelete); err != nil {

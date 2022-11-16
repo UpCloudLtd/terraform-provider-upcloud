@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -61,7 +61,7 @@ func ResourceFloatingIPAddress() *schema.Resource {
 }
 
 func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	assignIPAddressRequest := &request.AssignIPAddressRequest{
 		Floating: upcloud.True,
@@ -95,7 +95,7 @@ func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -141,7 +141,7 @@ func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	modifyIPAddressRequest := &request.ModifyIPAddressRequest{
 		IPAddress: d.Id(),
@@ -161,7 +161,7 @@ func resourceFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 

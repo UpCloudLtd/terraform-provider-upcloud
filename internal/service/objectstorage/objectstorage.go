@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -127,7 +127,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 		req   request.CreateObjectStorageRequest
 	)
 
-	client := m.(*service.ServiceContext)
+	client := m.(*service.Service)
 
 	accessKey, _, err := getAccessKey(d)
 	if err != nil {
@@ -179,7 +179,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*service.ServiceContext)
+	client := m.(*service.Service)
 
 	uuid := d.Id()
 
@@ -200,7 +200,7 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*service.ServiceContext)
+	client := m.(*service.Service)
 
 	accessKey, _, err := getAccessKey(d)
 	if err != nil {
@@ -263,7 +263,7 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func resourceObjectStorageDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*service.ServiceContext)
+	client := m.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -322,7 +322,7 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	return diag.Diagnostics{}
 }
 
-func createObjectStorage(ctx context.Context, client *service.ServiceContext, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
+func createObjectStorage(ctx context.Context, client *service.Service, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
 		err        error
 		objStorage *upcloud.ObjectStorageDetails
@@ -338,7 +338,7 @@ func createObjectStorage(ctx context.Context, client *service.ServiceContext, re
 	return objStorage, err
 }
 
-func modifyObjectStorage(ctx context.Context, client *service.ServiceContext, req *request.ModifyObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
+func modifyObjectStorage(ctx context.Context, client *service.Service, req *request.ModifyObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
 		err        error
 		objStorage *upcloud.ObjectStorageDetails

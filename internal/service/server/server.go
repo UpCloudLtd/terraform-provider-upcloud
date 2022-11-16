@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -378,7 +378,7 @@ func ResourceServer() *schema.Resource {
 }
 
 func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
 	if err := validatePlan(ctx, client, d.Get("plan").(string)); err != nil {
@@ -447,7 +447,7 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
 	r := &request.GetServerDetailsRequest{
@@ -573,7 +573,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
 	planHasChange := d.HasChange("plan")
@@ -804,7 +804,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceServerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -914,7 +914,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		if source := template["storage"].(string); source != "" {
 			// Assume template name is given and attempt map name to UUID
 			if _, err := uuid.ParseUUID(source); err != nil {
-				l, err := meta.(*service.ServiceContext).GetStorages(ctx, &request.GetStoragesRequest{
+				l, err := meta.(*service.Service).GetStorages(ctx, &request.GetStoragesRequest{
 					Type: upcloud.StorageTypeTemplate,
 				})
 				if err != nil {

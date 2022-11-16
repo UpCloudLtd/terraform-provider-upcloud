@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -154,7 +154,7 @@ func ResourceFirewallRules() *schema.Resource {
 }
 
 func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	opts := &request.CreateFirewallRulesRequest{
 		ServerUUID: d.Get("server_id").(string),
@@ -206,7 +206,7 @@ func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -254,7 +254,7 @@ func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	opts := &request.CreateFirewallRulesRequest{
 		ServerUUID: d.Id(),
@@ -305,7 +305,7 @@ func resourceFirewallRulesUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
