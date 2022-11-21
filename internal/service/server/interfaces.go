@@ -29,24 +29,24 @@ func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Servic
 		return err
 	}
 
-	// Try to preserve public network interface so that public IP doesn't change
-	var preservePublicInterface int
+	// Try to preserve public (IPv4 or IPv6) and utility network interfaces so that IPs doesn't change
+	preserveInterfaces := make(map[int]bool, 0)
 	// flush interfaces
 	for i, n := range s.Networking.Interfaces {
-		if n.Type == upcloud.NetworkTypePublic && len(reqs) >= i && reqs[i].Type == upcloud.NetworkTypePublic && reqs[i].Index == n.Index {
-			preservePublicInterface = n.Index
-		} else {
-			if err := svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: d.Id(),
-				Index:      n.Index,
-			}); err != nil {
-				return fmt.Errorf("unable to delete interface #%d; %w", n.Index, err)
-			}
+		if (n.Type == upcloud.NetworkTypePublic || n.Type == upcloud.NetworkTypeUtility) && len(reqs) > i && interfacesEquals(n, reqs[i]) {
+			preserveInterfaces[n.Index] = true
+			continue
+		}
+		if err := svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+			ServerUUID: d.Id(),
+			Index:      n.Index,
+		}); err != nil {
+			return fmt.Errorf("unable to delete interface #%d; %w", n.Index, err)
 		}
 	}
 	// apply interfaces from state
 	for _, r := range reqs {
-		if r.Type == upcloud.NetworkTypePublic && preservePublicInterface == r.Index {
+		if _, ok := preserveInterfaces[r.Index]; ok && (r.Type == upcloud.NetworkTypePublic || r.Type == upcloud.NetworkTypeUtility) {
 			continue
 		}
 		if _, err := svc.CreateNetworkInterface(ctx, &r); err != nil {
@@ -135,4 +135,20 @@ func resolveInterfaceIPAddress(network *upcloud.Network, ipAddress string) (stri
 		return "", nil
 	}
 	return "", fmt.Errorf("IP address %s is not valid for network %s (%s) which doesn't have DHCP enabled", ipAddress, network.Name, network.UUID)
+}
+
+func interfacesEquals(a upcloud.ServerInterface, b request.CreateNetworkInterfaceRequest) bool {
+	if a.Type != b.Type {
+		return false
+	}
+	if a.Index != b.Index {
+		return false
+	}
+	if len(a.IPAddresses) != 1 || len(b.IPAddresses) != 1 {
+		return false
+	}
+	if a.IPAddresses[0].Family != b.IPAddresses[0].Family {
+		return false
+	}
+	return true
 }
