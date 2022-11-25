@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+- new upcloud-go-api version 5
+
 ## [2.7.0] - 2022-11-16
 
 ### Added
