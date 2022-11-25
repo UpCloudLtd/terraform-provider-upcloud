@@ -173,6 +173,14 @@ func schemaDatabaseCommonProperties() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem:        &schema.Resource{Schema: schemaDatabaseMigration()},
 		},
+		"additional_backup_regions": {
+			Type: schema.TypeList,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			Description: "Additional Cloud Regions for Backup Replication",
+			Computed:    true,
+		},
 	}
 }
 

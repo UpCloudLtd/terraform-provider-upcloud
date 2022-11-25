@@ -10,7 +10,11 @@ import (
 )
 
 func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
-	testData, err := os.ReadFile("testdata/upcloud_managed_database/mysql_properties.tf")
+	testDataS1, err := os.ReadFile("testdata/upcloud_managed_database/mysql_properties_s1.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testDataS2, err := os.ReadFile("testdata/upcloud_managed_database/mysql_properties_s2.tf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +28,7 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: string(testData),
+				Config: string(testDataS1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(name, "zone", "fi-hel2"),
@@ -66,6 +70,17 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "components.#", "2"),
 					resource.TestCheckResourceAttr(name, "node_states.0.state", "running"),
 					resource.TestCheckResourceAttr(name, "node_states.0.role", "master"),
+				),
+			},
+			{
+				Config: string(testDataS2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, prop("innodb_read_io_threads"), "10"),
+					resource.TestCheckResourceAttr(name, prop("innodb_flush_neighbors"), "0"),
+					resource.TestCheckResourceAttr(name, prop("innodb_change_buffer_max_size"), "26"),
+					resource.TestCheckResourceAttr(name, prop("net_buffer_length"), "1024"),
+					resource.TestCheckResourceAttr(name, prop("innodb_thread_concurrency"), "2"),
+					resource.TestCheckResourceAttr(name, prop("innodb_write_io_threads"), "5"),
 				),
 			},
 		},

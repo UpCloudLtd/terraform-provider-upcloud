@@ -230,5 +230,41 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 2147483)),
 		},
+		"innodb_read_io_threads": {
+			Type:        schema.TypeInt,
+			Description: "The number of I/O threads for read operations in InnoDB. Default is 4. Changing this parameter will lead to a restart of the MySQL service.",
+			Optional:    true,
+			Computed:    true,
+		},
+		"innodb_flush_neighbors": {
+			Type:        schema.TypeInt,
+			Description: "Specifies whether flushing a page from the InnoDB buffer pool also flushes other dirty pages in the same extent (default is 1): 0 - dirty pages in the same extent are not flushed,  1 - flush contiguous dirty pages in the same extent,  2 - flush dirty pages in the same extent",
+			Optional:    true,
+			Computed:    true,
+		},
+		"innodb_change_buffer_max_size": {
+			Description: "Maximum size for the InnoDB change buffer, as a percentage of the total size of the buffer pool. Default is 25",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+		"net_buffer_length": {
+			Description: "Start sizes of connection buffer and result buffer. Default is 16384 (16K). Changing this parameter will lead to a restart of the MySQL service.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+		"innodb_thread_concurrency": {
+			Type:        schema.TypeInt,
+			Description: "Defines the maximum number of threads permitted inside of InnoDB. Default is 0 (infinite concurrency - no limit)",
+			Optional:    true,
+			Computed:    true,
+		},
+		"innodb_write_io_threads": {
+			Type:        schema.TypeInt,
+			Description: "The number of I/O threads for write operations in InnoDB. Default is 4. Changing this parameter will lead to a restart of the MySQL service.",
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }

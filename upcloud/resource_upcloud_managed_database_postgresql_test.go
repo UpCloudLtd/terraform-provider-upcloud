@@ -10,7 +10,11 @@ import (
 )
 
 func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
-	testData, err := os.ReadFile("testdata/upcloud_managed_database/postgresql_properties.tf")
+	testDataS1, err := os.ReadFile("testdata/upcloud_managed_database/postgresql_properties_s1.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testDataS2, err := os.ReadFile("testdata/upcloud_managed_database/postgresql_properties_s2.tf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +28,7 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: string(testData),
+				Config: string(testDataS1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(name, "zone", "fi-hel1"),
@@ -100,6 +104,15 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "components.#", "2"),
 					resource.TestCheckResourceAttr(name, "node_states.0.state", "running"),
 					resource.TestCheckResourceAttr(name, "node_states.0.role", "master"),
+				),
+			},
+			{
+				Config: string(testDataS2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, prop("pg_stat_monitor_pgsm_max_buckets"), "10"),
+					resource.TestCheckResourceAttr(name, prop("pg_stat_monitor_pgsm_enable_query_plan"), "true"),
+					resource.TestCheckResourceAttr(name, prop("log_temp_files"), "16"),
+					resource.TestCheckResourceAttr(name, prop("pg_stat_monitor_enable"), "true"),
 				),
 			},
 		},
