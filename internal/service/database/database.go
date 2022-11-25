@@ -250,6 +250,9 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase, d *schema.ResourceData) map[string]interface{} {
 	props := d.Get("properties.0").(map[string]interface{})
 	for key, iv := range db.Properties {
+		if _, ok := props[string(key)]; !ok {
+			continue
+		}
 		switch key {
 		case "migration", "pglookout", "timescaledb", "pgbouncer":
 			// convert API objects into list of objects

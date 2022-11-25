@@ -2,7 +2,6 @@ package upcloud
 
 import (
 	"fmt"
-	"math/rand"
 	"net"
 	"regexp"
 	"strings"
@@ -754,6 +753,7 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 						"upcloud_server.my-server",
 						"network_interface.0.network"),
 					testAccGetServerID("upcloud_server.my-server", &serverID),
+					testAccCheckServerIDEqual("upcloud_server.my-server", &serverID),
 				),
 			},
 			{
@@ -802,7 +802,7 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 					resource.TestCheckResourceAttrSet(
 						"upcloud_server.my-server",
 						"network_interface.1.ip_address"),
-					testAccCheckServerIDNotEqual("upcloud_server.my-server", serverID),
+					testAccCheckServerIDEqual("upcloud_server.my-server", &serverID),
 					testAccCheckNetwork("upcloud_server.my-server", 1, "upcloud_network.test_network_1"),
 					testAccGetServerID("upcloud_server.my-server", &serverID),
 				),
@@ -854,7 +854,7 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 					resource.TestCheckResourceAttrSet(
 						"upcloud_server.my-server",
 						"network_interface.1.ip_address"),
-					testAccCheckServerIDNotEqual("upcloud_server.my-server", serverID),
+					testAccCheckServerIDEqual("upcloud_server.my-server", &serverID),
 					testAccCheckNetwork("upcloud_server.my-server", 1, "upcloud_network.test_network_11"),
 				),
 			},
@@ -865,16 +865,15 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 func testAccGetServerID(resourceName string, id *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		*id = s.RootModule().Resources[resourceName].Primary.ID
-
 		return nil
 	}
 }
 
-func testAccCheckServerIDNotEqual(resourceName string, id string) resource.TestCheckFunc {
+func testAccCheckServerIDEqual(resourceName string, id *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		newID := s.RootModule().Resources[resourceName].Primary.ID
-		if newID == id {
-			return fmt.Errorf("new server ID unexpectedly equals old ID: %s == %s", newID, id)
+		if newID != *id {
+			return fmt.Errorf("new server ID unexpectedly does not equal old ID: %s == %s", newID, *id)
 		}
 
 		return nil
@@ -993,7 +992,6 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	`)
 
 	for i, ni := range nis {
-		netID := rand.Intn(255)
 		if ni.network {
 			builder.WriteString(fmt.Sprintf(`
 				resource "upcloud_network" "test_network_%d" {
@@ -1008,10 +1006,9 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, i, i, netID, netID))
+			`, i, i, i, i))
 		}
 
-		netID = rand.Intn(255)
 		if ni.newNetwork {
 			builder.WriteString(fmt.Sprintf(`
 				resource "upcloud_network" "test_network_%d" {
@@ -1026,7 +1023,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, 10+i, 10+i, netID, netID))
+			`, 10+i, 10+i, 10+i, 10+i))
 		}
 	}
 
