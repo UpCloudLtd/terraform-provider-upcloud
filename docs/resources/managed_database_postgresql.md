@@ -101,6 +101,7 @@ Optional:
 - `log_error_verbosity` (String) Controls the amount of detail written in the server log for each message that is logged.
 - `log_line_prefix` (String) Choose from one of the available log-formats. These can support popular log analyzers like pgbadger, pganalyze etc.
 - `log_min_duration_statement` (Number) Log statements that take more than this number of milliseconds to run, `-1` disables
+- `log_temp_files` (Number) Log statements for each temporary file created larger than this number of kilobytes, -1 disables
 - `max_files_per_process` (Number) PostgreSQL maximum number of files that can be open per process.
 - `max_locks_per_transaction` (Number) PostgreSQL maximum locks per transaction.
 - `max_logical_replication_workers` (Number) PostgreSQL maximum logical replication workers (taken from the pool of `max_parallel_workers`).
@@ -120,6 +121,9 @@ Optional:
 - `pg_partman_bgw_role` (String) Controls which role to use for pg_partman's scheduled background tasks.
 - `pg_read_replica` (Boolean, Deprecated) Should the service which is being forked be a read replica (deprecated, use read_replica service integration instead).
 - `pg_service_to_fork_from` (String) Name of the PG Service from which to fork (deprecated, use service_to_fork_from). This has effect only when a new service is being created.
+- `pg_stat_monitor_enable` (Boolean) Enable the pg_stat_monitor extension. Enabling this extension will cause the cluster to be restarted.When this extension is enabled, pg_stat_statements results for utility commands are unreliable
+- `pg_stat_monitor_pgsm_enable_query_plan` (Boolean) Enables or disables query plan monitoring
+- `pg_stat_monitor_pgsm_max_buckets` (Number) Sets the maximum number of buckets
 - `pg_stat_statements_track` (String) Controls which statements are counted. 
 			Specify top to track top-level statements (those issued directly by clients), all to also track nested statements (such as statements invoked within functions), 
 			or none to disable statement statistics collection.The default value is `top`.
@@ -143,6 +147,11 @@ Optional:
 - `wal_writer_delay` (Number) WAL flush interval in milliseconds. Note that setting this value to lower than the default `200`ms may negatively impact performance
 - `work_mem` (Number) Sets the maximum amount of memory to be used by a query operation (such as a sort or hash table) before writing to temporary disk files, 
 			in MB. Default is 1MB + 0.075% of total RAM (up to 32MB).
+
+Read-Only:
+
+- `additional_backup_regions` (List of String) Additional Cloud Regions for Backup Replication
+- `enable_ipv6` (Boolean) Register AAAA DNS records for the service, and allow IPv6 packets to service ports
 
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`

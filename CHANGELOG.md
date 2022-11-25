@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- dbaas: new properties to MySQL and PostgreSQL resources
+
+### Changed
+- server: rebuild network interfaces without re-creating server
+
 ## [2.7.0] - 2022-11-16
 
 ### Added
