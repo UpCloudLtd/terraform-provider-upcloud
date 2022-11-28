@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.ServiceContext, d *schema.ResourceData) error {
+func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData) error {
 	// assert server is stopped
 	s, err := svc.GetServerDetails(ctx, &request.GetServerDetailsRequest{
 		UUID: d.Id(),
@@ -56,7 +56,7 @@ func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Servic
 	return nil
 }
 
-func networkInterfacesFromResourceData(ctx context.Context, svc *service.ServiceContext, d *schema.ResourceData) ([]request.CreateNetworkInterfaceRequest, error) {
+func networkInterfacesFromResourceData(ctx context.Context, svc *service.Service, d *schema.ResourceData) ([]request.CreateNetworkInterfaceRequest, error) {
 	rs := make([]request.CreateNetworkInterfaceRequest, 0)
 	nInf, ok := d.Get("network_interface.#").(int)
 	if !ok {

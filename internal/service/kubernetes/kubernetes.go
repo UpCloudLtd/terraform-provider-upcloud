@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -169,7 +169,7 @@ func ResourceCluster() *schema.Resource {
 }
 
 func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 
 	req := &request.CreateKubernetesClusterRequest{
 		Name:       d.Get("name").(string),
@@ -205,7 +205,7 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	cluster, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: d.Id()})
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
@@ -215,7 +215,7 @@ func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	if err := svc.DeleteKubernetesCluster(ctx, &request.DeleteKubernetesClusterRequest{UUID: d.Id()}); err != nil {
 		return diag.FromErr(err)
 	}
@@ -301,7 +301,7 @@ func setClusterNodeGroupsData(d *schema.ResourceData, c *upcloud.KubernetesClust
 	return d.Set("node_group", result)
 }
 
-func waitForClusterToBeDeleted(ctx context.Context, svc *service.ServiceContext, id string) error {
+func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
 	const maxRetries int = 100
 
 	for i := 0; i <= maxRetries; i++ {

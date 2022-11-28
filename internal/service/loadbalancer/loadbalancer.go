@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -229,7 +229,7 @@ func loadBalancerNodeNetworkSchema() map[string]*schema.Schema {
 }
 
 func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	networks, err := loadBalancerNetworksFromResourceData(d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -262,7 +262,7 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 
 func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	var err error
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{UUID: d.Id()})
 	if err != nil {
 		return handleResourceError(d.Get("name").(string), d, err)
@@ -276,7 +276,7 @@ func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 
 	// handle network renaming before modifying load balancer so that new network names are present in `lb` before setting state
 	if diags = resourceLoadBalancerNetworkUpdate(ctx, d, svc); len(diags) > 0 {
@@ -301,7 +301,7 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 	return diags
 }
 
-func resourceLoadBalancerNetworkUpdate(ctx context.Context, d *schema.ResourceData, svc *service.ServiceContext) (diags diag.Diagnostics) {
+func resourceLoadBalancerNetworkUpdate(ctx context.Context, d *schema.ResourceData, svc *service.Service) (diags diag.Diagnostics) {
 	if !d.HasChange("networks") {
 		return nil
 	}
@@ -334,7 +334,7 @@ func resourceLoadBalancerNetworkUpdate(ctx context.Context, d *schema.ResourceDa
 }
 
 func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	if err := svc.DeleteLoadBalancer(ctx, &request.DeleteLoadBalancerRequest{UUID: d.Id()}); err != nil {
 		return diag.FromErr(err)
 	}
@@ -457,7 +457,7 @@ func setLoadBalancerNetworkResourceData(d *schema.ResourceData, lb *upcloud.Load
 	return diags
 }
 
-func waitLoadBalancerToShutdown(ctx context.Context, svc *service.ServiceContext, id string) error {
+func waitLoadBalancerToShutdown(ctx context.Context, svc *service.Service, id string) error {
 	const maxRetries int = 100
 	for i := 0; i <= maxRetries; i++ {
 		select {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,7 +50,7 @@ func validateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
 	}
 }
 
-func validatePlan(ctx context.Context, service *service.ServiceContext, plan string) error {
+func validatePlan(ctx context.Context, service *service.Service, plan string) error {
 	if plan == "" {
 		return nil
 	}
@@ -68,7 +68,7 @@ func validatePlan(ctx context.Context, service *service.ServiceContext, plan str
 	return fmt.Errorf("expected plan to be one of [%s], got %s", strings.Join(availablePlans, ", "), plan)
 }
 
-func validateZone(ctx context.Context, service *service.ServiceContext, zone string) error {
+func validateZone(ctx context.Context, service *service.Service, zone string) error {
 	zones, err := service.GetZones(ctx)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func validateZone(ctx context.Context, service *service.ServiceContext, zone str
 func validateTagsChange(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	old, new := d.GetChange("tags")
 	if tagsHasChange(old, new) {
-		client := meta.(*service.ServiceContext)
+		client := meta.(*service.Service)
 
 		if isSubaccount, err := isProviderAccountSubaccount(ctx, client); err != nil || isSubaccount {
 			if err != nil {

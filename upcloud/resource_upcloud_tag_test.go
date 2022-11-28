@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -87,7 +87,7 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.ServiceContext)
+		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetTags(context.Background())
 		if err != nil {
 			return err
@@ -106,7 +106,7 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.ServiceContext)
+		client := testAccProvider.Meta().(*service.Service)
 		tags, err := client.GetTags(context.Background())
 		if err != nil {
 			return fmt.Errorf(

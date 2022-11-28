@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -68,7 +68,7 @@ func ResourceDynamicCertificateBundle() *schema.Resource {
 }
 
 func resourceDynamicCertificateBundleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	hostnames := make([]string, 0)
 	for _, h := range d.Get("hostnames").([]interface{}) {
 		hostnames = append(hostnames, h.(string))
@@ -94,7 +94,7 @@ func resourceDynamicCertificateBundleCreate(ctx context.Context, d *schema.Resou
 }
 
 func resourceDynamicCertificateBundleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	b, err := svc.GetLoadBalancerCertificateBundle(ctx, &request.GetLoadBalancerCertificateBundleRequest{
 		UUID: d.Id(),
 	})
@@ -110,7 +110,7 @@ func resourceDynamicCertificateBundleRead(ctx context.Context, d *schema.Resourc
 }
 
 func resourceDynamicCertificateBundleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	hostnames := make([]string, 0)
 	for _, h := range d.Get("hostnames").([]interface{}) {
 		hostnames = append(hostnames, h.(string))

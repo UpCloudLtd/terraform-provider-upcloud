@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -18,7 +18,7 @@ func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequ
 		stopRequest.StopType = upcloud.StopTypeSoft
 	}
 
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
 		UUID: stopRequest.UUID,
@@ -47,11 +47,7 @@ func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequ
 }
 
 func VerifyServerStarted(ctx context.Context, startRequest request.StartServerRequest, meta interface{}) error {
-	if startRequest.Timeout == 0 {
-		startRequest.Timeout = time.Minute * 2
-	}
-
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
 		UUID: startRequest.UUID,

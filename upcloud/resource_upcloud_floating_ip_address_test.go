@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -156,7 +156,7 @@ func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.ServiceContext)
+		client := testAccProvider.Meta().(*service.Service)
 		addresses, err := client.GetIPAddresses(context.Background())
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing Floating IP Addresses when deleting upcloud floating IP Address (%s): %s", rs.Primary.ID, err)
