@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+- dbaas: new DB properties causing error when updating state
+
 ### Added
 - dbaas: new properties to MySQL and PostgreSQL resources
 

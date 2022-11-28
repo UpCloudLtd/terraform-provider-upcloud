@@ -494,10 +494,11 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			},
 		},
 		"pg_stat_monitor_pgsm_max_buckets": {
-			Type:        schema.TypeInt,
-			Description: "Sets the maximum number of buckets ",
-			Optional:    true,
-			Computed:    true,
+			Type:             schema.TypeInt,
+			Description:      "Sets the maximum number of buckets ",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 10)),
 		},
 		"enable_ipv6": {
 			Type:        schema.TypeBool,
@@ -511,10 +512,11 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"log_temp_files": {
-			Type:        schema.TypeInt,
-			Description: "Log statements for each temporary file created larger than this number of kilobytes, -1 disables",
-			Optional:    true,
-			Computed:    true,
+			Type:             schema.TypeInt,
+			Description:      "Log statements for each temporary file created larger than this number of kilobytes, -1 disables",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(-1, 2147483647)),
 		},
 		"pg_stat_monitor_enable": {
 			Type:        schema.TypeBool,
