@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -20,7 +20,7 @@ func resourceUpCloudManagedDatabaseWaitState(
 	timeout time.Duration,
 	targetStates ...upcloud.ManagedDatabaseState,
 ) (*upcloud.ManagedDatabase, error) {
-	client := m.(*service.ServiceContext)
+	client := m.(*service.Service)
 	refresher := func() (result interface{}, state string, err error) {
 		resp, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id})
 		if err != nil {

@@ -7,9 +7,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -119,7 +119,7 @@ func ResourceNetwork() *schema.Resource {
 }
 
 func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	req := request.CreateNetworkRequest{}
 	if v := d.Get("name"); v != nil {
@@ -164,7 +164,7 @@ func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	req := request.GetNetworkDetailsRequest{
 		UUID: d.Id(),
@@ -214,7 +214,7 @@ func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	req := request.ModifyNetworkRequest{
 		UUID: d.Id(),
@@ -269,7 +269,7 @@ func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	req := request.DeleteNetworkRequest{
 		UUID: d.Id(),

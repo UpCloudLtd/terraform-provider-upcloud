@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -84,7 +84,7 @@ func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
 	if username == "" || password == "" {
 		t.Skip("UpCloud credentials not set.")
 	}
-	svc := service.NewWithContext(client.NewWithContext(username, password))
+	svc := service.New(client.New(username, password))
 	dbt, err := svc.GetManagedDatabaseServiceType(context.Background(), &request.GetManagedDatabaseServiceTypeRequest{
 		Type: dbType,
 	})

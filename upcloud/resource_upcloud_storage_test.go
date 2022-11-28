@@ -12,9 +12,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -271,7 +271,7 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 func testAccCheckClonedStorageSize(resourceName string, expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.ServiceContext)
+		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: storage.UUID,
 		})
@@ -301,7 +301,7 @@ func testAccCheckStorageExists(resourceName string, storage *upcloud.StorageDeta
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.ServiceContext)
+		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
@@ -322,7 +322,7 @@ func testAccCheckStorageDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.ServiceContext)
+		client := testAccProvider.Meta().(*service.Service)
 		storages, err := client.GetStorages(context.Background(), &request.GetStoragesRequest{})
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing storage when deleting upcloud storage (%s): %s", rs.Primary.ID, err)

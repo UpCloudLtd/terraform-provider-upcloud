@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,7 +31,7 @@ var resourceUpcloudManagedDatabaseModifiableStates = []upcloud.ManagedDatabaseSt
 
 func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) schema.CreateContextFunc {
 	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		client := meta.(*service.ServiceContext)
+		client := meta.(*service.Service)
 
 		if err := d.Set("type", string(serviceType)); err != nil {
 			return diag.FromErr(err)
@@ -97,7 +97,7 @@ func resourceDatabaseCreate(serviceType upcloud.ManagedDatabaseServiceType) sche
 
 func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	var err error
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	req := request.GetManagedDatabaseRequest{UUID: d.Id()}
 	details, err := client.GetManagedDatabase(ctx, &req)
 	if err != nil {
@@ -131,7 +131,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
 	if d.HasChanges("plan", "title", "zone",
@@ -216,7 +216,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	req := request.DeleteManagedDatabaseRequest{UUID: d.Id()}
 	if err := client.DeleteManagedDatabase(ctx, &req); err != nil {
@@ -337,7 +337,7 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 	return d.Set("primary_database", details.ServiceURIParams.DatabaseName)
 }
 
-func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.ServiceContext, db *upcloud.ManagedDatabase) error {
+func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Service, db *upcloud.ManagedDatabase) error {
 	const maxRetries int = 100
 	var err error
 	for i := 0; i <= maxRetries; i++ {
@@ -381,7 +381,7 @@ func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
 	return errors.New("max retries reached while waiting for service name to propagate")
 }
 
-func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *service.ServiceContext) diag.Diagnostics {
+func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *service.Service) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
 	_, err := client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{

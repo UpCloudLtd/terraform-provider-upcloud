@@ -3,9 +3,9 @@ package loadbalancer
 import (
 	"context"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -44,7 +44,7 @@ func ResourceFrontendTLSConfig() *schema.Resource {
 }
 
 func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var serviceID, feName string
 	if err := unmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
 		return diag.FromErr(err)
@@ -72,7 +72,7 @@ func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
@@ -98,7 +98,7 @@ func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
@@ -127,7 +127,7 @@ func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceFrontendTLSConfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var serviceID, feName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)

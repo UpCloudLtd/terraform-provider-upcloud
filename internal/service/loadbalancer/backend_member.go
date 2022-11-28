@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -134,7 +134,7 @@ func ResourceDynamicBackendMember() *schema.Resource {
 
 func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMemberType) schema.CreateContextFunc {
 	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-		svc := meta.(*service.ServiceContext)
+		svc := meta.(*service.Service)
 		var serviceID, beName string
 		if err := unmarshalID(d.Get("backend").(string), &serviceID, &beName); err != nil {
 			return diag.FromErr(err)
@@ -168,7 +168,7 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 }
 
 func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var serviceID, beName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
@@ -196,7 +196,7 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var serviceID, beName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
@@ -229,7 +229,7 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceBackendMemberDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var serviceID, beName, name string
 	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)

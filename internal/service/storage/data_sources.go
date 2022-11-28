@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -101,7 +101,7 @@ Storage types are: %s`, strings.Join(storageTypes, ", ")),
 }
 
 func dataSourceStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	var re *regexp.Regexp
 
 	nameRegex, nameRegexExists := d.GetOk("name_regex")

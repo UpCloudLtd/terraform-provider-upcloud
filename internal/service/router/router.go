@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -50,7 +50,7 @@ func ResourceRouter() *schema.Resource {
 }
 
 func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -79,7 +79,7 @@ func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -117,7 +117,7 @@ func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	opts := &request.ModifyRouterRequest{
 		UUID: d.Id(),
@@ -136,7 +136,7 @@ func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	var diags diag.Diagnostics
 
 	router, err := client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{

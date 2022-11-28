@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -62,7 +62,7 @@ func ResourceServerGroup() *schema.Resource {
 }
 
 func resourceServerGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	baseErrMsg := "creating server group failed"
 
 	req, err := createServerGroupRequestFromConfig(ctx, d)
@@ -94,7 +94,7 @@ func resourceServerGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceServerGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	baseErrMsg := "reading server group data failed"
 
 	group, err := svc.GetServerGroup(ctx, &request.GetServerGroupRequest{UUID: d.Id()})
@@ -127,7 +127,7 @@ func resourceServerGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceServerGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 	baseErrMsg := "modifying server group data failed"
 
 	req, err := modifyServerGroupRequestFromConfig(ctx, d)
@@ -155,7 +155,7 @@ func resourceServerGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceServerGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.ServiceContext)
+	svc := meta.(*service.Service)
 
 	err := svc.DeleteServerGroup(ctx, &request.DeleteServerGroupRequest{UUID: d.Id()})
 	if err != nil {

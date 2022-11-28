@@ -9,9 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v4/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -152,7 +152,7 @@ func ResourceStorage() *schema.Resource {
 }
 
 func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -198,7 +198,7 @@ func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
@@ -296,7 +296,7 @@ func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
 	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
@@ -377,7 +377,7 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.ServiceContext)
+	client := meta.(*service.Service)
 
 	var diags diag.Diagnostics
 
