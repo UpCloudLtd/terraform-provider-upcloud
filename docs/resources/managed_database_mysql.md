@@ -91,13 +91,18 @@ Optional:
 - `default_time_zone` (String) Default server time zone as an offset from UTC (from -12:00 to +12:00), a time zone name, or `SYSTEM` to use the MySQL server default.
 - `group_concat_max_len` (Number) The maximum permitted result length in bytes for the `GROUP_CONCAT()` function.
 - `information_schema_stats_expiry` (Number) The time, in seconds, before cached statistics expire.
+- `innodb_change_buffer_max_size` (Number) Maximum size for the InnoDB change buffer, as a percentage of the total size of the buffer pool. Default is 25
+- `innodb_flush_neighbors` (Number) Specifies whether flushing a page from the InnoDB buffer pool also flushes other dirty pages in the same extent (default is 1): 0 - dirty pages in the same extent are not flushed,  1 - flush contiguous dirty pages in the same extent,  2 - flush dirty pages in the same extent
 - `innodb_ft_min_token_size` (Number) Minimum length of words that are stored in an InnoDB `FULLTEXT` index.
 - `innodb_ft_server_stopword_table` (String) This option is used to specify your own InnoDB `FULLTEXT` index stopword list for all InnoDB tables.
 - `innodb_lock_wait_timeout` (Number) The length of time in seconds an InnoDB transaction waits for a row lock before giving up.
 - `innodb_log_buffer_size` (Number) The size in bytes of the buffer that InnoDB uses to write to the log files on disk.
 - `innodb_online_alter_log_max_size` (Number) The upper limit in bytes on the size of the temporary log files used during online DDL operations for InnoDB tables.
 - `innodb_print_all_deadlocks` (Boolean) When enabled, information about all deadlocks in InnoDB user transactions is recorded in the error log. Disabled by default.
+- `innodb_read_io_threads` (Number) The number of I/O threads for read operations in InnoDB. Default is 4. Changing this parameter will lead to a restart of the MySQL service.
 - `innodb_rollback_on_timeout` (Boolean) When enabled a transaction timeout causes InnoDB to abort and roll back the entire transaction.
+- `innodb_thread_concurrency` (Number) Defines the maximum number of threads permitted inside of InnoDB. Default is 0 (infinite concurrency - no limit)
+- `innodb_write_io_threads` (Number) The number of I/O threads for write operations in InnoDB. Default is 4. Changing this parameter will lead to a restart of the MySQL service.
 - `interactive_timeout` (Number) The number of seconds the server waits for activity on an interactive connection before closing it.
 - `internal_tmp_mem_storage_engine` (String) The storage engine for in-memory internal temporary tables.
 - `ip_filter` (List of String) IP filter
@@ -105,6 +110,7 @@ Optional:
 - `max_allowed_packet` (Number) Size of the largest message in bytes that can be received by the server. Default is `67108864` (64M)
 - `max_heap_table_size` (Number) Limits the size of internal in-memory tables. Also set `tmp_table_size`. Default is `16777216` (16M)
 - `migration` (Block List, Max: 1) Migrate data from existing server (see [below for nested schema](#nestedblock--properties--migration))
+- `net_buffer_length` (Number) Start sizes of connection buffer and result buffer. Default is 16384 (16K). Changing this parameter will lead to a restart of the MySQL service.
 - `net_read_timeout` (Number) The number of seconds to wait for more data from a connection before aborting the read.
 - `net_write_timeout` (Number) The number of seconds to wait for a block to be written to a connection before aborting the write.
 - `public_access` (Boolean) Public access allows connections to your Managed Database services via the public internet.
@@ -117,6 +123,10 @@ Optional:
 - `tmp_table_size` (Number) Limits the size of internal in-memory tables. Also set `max_heap_table_size`. Default is `16777216` (16M)
 - `version` (String) MySQL major version
 - `wait_timeout` (Number) The number of seconds the server waits for activity on a noninteractive connection before closing it.
+
+Read-Only:
+
+- `additional_backup_regions` (List of String) Additional Cloud Regions for Backup Replication
 
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`

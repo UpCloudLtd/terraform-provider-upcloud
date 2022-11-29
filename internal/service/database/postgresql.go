@@ -493,6 +493,37 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 				},
 			},
 		},
+		"pg_stat_monitor_pgsm_max_buckets": {
+			Type:             schema.TypeInt,
+			Description:      "Sets the maximum number of buckets ",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 10)),
+		},
+		"enable_ipv6": {
+			Type:        schema.TypeBool,
+			Description: "Register AAAA DNS records for the service, and allow IPv6 packets to service ports",
+			Computed:    true,
+		},
+		"pg_stat_monitor_pgsm_enable_query_plan": {
+			Type:        schema.TypeBool,
+			Description: "Enables or disables query plan monitoring",
+			Optional:    true,
+			Computed:    true,
+		},
+		"log_temp_files": {
+			Type:             schema.TypeInt,
+			Description:      "Log statements for each temporary file created larger than this number of kilobytes, -1 disables",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(-1, 2147483647)),
+		},
+		"pg_stat_monitor_enable": {
+			Type:        schema.TypeBool,
+			Description: "Enable the pg_stat_monitor extension. Enabling this extension will cause the cluster to be restarted.When this extension is enabled, pg_stat_statements results for utility commands are unreliable",
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 

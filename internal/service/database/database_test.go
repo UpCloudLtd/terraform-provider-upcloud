@@ -2,10 +2,17 @@ package database
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestIsManagedDatabaseFullyCreated(t *testing.T) {
@@ -52,5 +59,45 @@ func TestWaitServiceNameToPropagateContextTimeout(t *testing.T) {
 	if err := waitServiceNameToPropagate(ctx, name); err == nil {
 		d, _ := ctx.Deadline()
 		t.Errorf("waitServiceNameToPropagate failed didn't timeout before deadline %s", d.Format(time.RFC3339))
+	}
+}
+
+func TestPostgreSQLProperties(t *testing.T) {
+	s := utils.JoinSchemas(
+		schemaDatabaseCommonProperties(),
+		schemaPostgreSQLProperties(),
+	)
+	testProperties(t, "pg", s)
+}
+
+func TestMySQLProperties(t *testing.T) {
+	s := utils.JoinSchemas(
+		schemaDatabaseCommonProperties(),
+		schemaMySQLProperties(),
+	)
+	testProperties(t, "mysql", s)
+}
+
+func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
+	username := os.Getenv("UPCLOUD_USERNAME")
+	password := os.Getenv("UPCLOUD_PASSWORD")
+	if username == "" || password == "" {
+		t.Skip("UpCloud credentials not set.")
+	}
+	svc := service.New(client.New(username, password))
+	dbt, err := svc.GetManagedDatabaseServiceType(context.Background(), &request.GetManagedDatabaseServiceTypeRequest{
+		Type: dbType,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	for key, prop := range dbt.Properties {
+		if _, ok := s[key]; !ok {
+			js, err := json.MarshalIndent(&prop, " ", " ")
+			if err != nil {
+				js = []byte{}
+			}
+			t.Logf("%s property '%s' is not defined in schema\n%s", dbType, key, string(js))
+		}
 	}
 }
