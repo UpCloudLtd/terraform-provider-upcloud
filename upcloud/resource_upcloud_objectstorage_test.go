@@ -12,9 +12,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/minio/minio-go/v7"
 )
@@ -37,63 +35,57 @@ var (
 	objectStorageTestExpectedName4 = fmt.Sprintf("%s%d-4", objectStorageTestRunPrefix, objectStorageTestRunID)
 )
 
-func init() {
-	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
-		Name: "object_storage_cleanup",
-		F: func(region string) error {
-			username, ok := os.LookupEnv("UPCLOUD_USERNAME")
-			if !ok {
-				return fmt.Errorf("UPCLOUD_USERNAME must be set for acceptance tests")
-			}
-
-			password, ok := os.LookupEnv("UPCLOUD_PASSWORD")
-			if !ok {
-				return fmt.Errorf("UPCLOUD_PASSWORD must be set for acceptance tests")
-			}
-
-			client := retryablehttp.NewClient()
-
-			service := newUpCloudServiceConnection(username, password, client.HTTPClient)
-
-			objectStorages, err := service.GetObjectStorages(context.Background())
-			if err != nil {
-				return err
-			}
-
-			for _, objectStorage := range objectStorages.ObjectStorages {
-				if !strings.HasPrefix(objectStorage.Name, objectStorageTestRunPrefix) {
-					continue
+/*
+	func init() {
+		resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
+			Name: "object_storage_cleanup",
+			F: func(region string) error {
+				username, ok := os.LookupEnv("UPCLOUD_USERNAME")
+				if !ok {
+					return fmt.Errorf("UPCLOUD_USERNAME must be set for acceptance tests")
 				}
 
-				err = service.DeleteObjectStorage(
-					context.Background(),
-					&request.DeleteObjectStorageRequest{
-						UUID: objectStorage.UUID,
-					})
+				password, ok := os.LookupEnv("UPCLOUD_PASSWORD")
+				if !ok {
+					return fmt.Errorf("UPCLOUD_PASSWORD must be set for acceptance tests")
+				}
 
+				client := retryablehttp.NewClient()
+
+				service := newUpCloudServiceConnection(username, password, client.HTTPClient)
+
+				objectStorages, err := service.GetObjectStorages(context.Background())
 				if err != nil {
 					return err
 				}
-			}
 
-			return nil
-		},
-	})
-}
+				for _, objectStorage := range objectStorages.ObjectStorages {
+					if !strings.HasPrefix(objectStorage.Name, objectStorageTestRunPrefix) {
+						continue
+					}
 
-// TestMain is boilerplate needed for -sweep command line parameters to work
-func TestMain(m *testing.M) {
-	resource.TestMain(m)
-}
+					err = service.DeleteObjectStorage(
+						context.Background(),
+						&request.DeleteObjectStorageRequest{
+							UUID: objectStorage.UUID,
+						})
 
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		})
+	}
+*/
 func TestUpCloudObjectStorage_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "250"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName1),
 		Steps: []resource.TestStep{
 			{
@@ -121,8 +113,6 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_basic_update(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "500"
 
 	const expectedUpdatedSize = "1000"
@@ -132,7 +122,7 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -173,8 +163,6 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_default_values(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "500"
 	const expectedUpdatedSize = "1000"
 	const expectedUpdatedKey = "an updated access key"
@@ -182,7 +170,7 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -214,8 +202,6 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "500"
 	const expectedBucketName1 = "bucket1"
 	const expectedBucketName2 = "bucket2"
@@ -225,7 +211,7 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -302,8 +288,6 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 
 // We bundle creating object storage using env vars and import because import relies on passing access and secret key as env vars
 func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
-	var providers []*schema.Provider
-
 	name := objectStorageTestExpectedName4
 	zone := "pl-waw1"
 	desc := "just some random stuff"
@@ -324,7 +308,7 @@ func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
 			os.Setenv(accessKeyEnvVarName, accessKey)
 			os.Setenv(secretKeyEnvVarName, secretKey)
 		},
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      verifyObjectStorageDoesNotExist(accessKey, secretKey, name),
 		Steps: []resource.TestStep{
 			{
@@ -457,9 +441,12 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 			if rs.Type != "upcloud_storage" {
 				continue
 			}
-
+			testAccProvider, err := testAccProviderFactories["upcloud"]()
+			if err != nil {
+				return err
+			}
 			client := testAccProvider.Meta().(*service.Service)
-			_, err := client.GetObjectStorageDetails(context.Background(), &request.GetObjectStorageDetailsRequest{
+			_, err = client.GetObjectStorageDetails(context.Background(), &request.GetObjectStorageDetailsRequest{
 				UUID: rs.Primary.ID,
 			})
 			if err != nil {

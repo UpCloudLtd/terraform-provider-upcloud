@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
@@ -18,14 +17,13 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var providers []*schema.Provider
 	name := "upcloud_managed_database_postgresql.postgresql_properties"
 	prop := func(name string) string {
 		return fmt.Sprintf("properties.0.%s", name)
 	}
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: string(testDataS1),

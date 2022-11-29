@@ -8,15 +8,12 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccUpCloudNetwork_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
@@ -24,7 +21,7 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
@@ -44,8 +41,6 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
@@ -53,7 +48,7 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
@@ -86,8 +81,6 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_withRouter(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
@@ -95,7 +88,7 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true),
@@ -116,8 +109,6 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
@@ -125,7 +116,7 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
@@ -160,8 +151,6 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
@@ -169,7 +158,7 @@ func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false),

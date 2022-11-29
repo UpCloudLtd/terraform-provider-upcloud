@@ -117,15 +117,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		Password: d.Get("password").(string),
 	}
 
-	httpClient := retryablehttp.NewClient()
-	httpClient.RetryWaitMin = time.Duration(d.Get("retry_wait_min_sec").(int)) * time.Second
-	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
-	httpClient.RetryMax = d.Get("retry_max").(int)
-
 	service := newUpCloudServiceConnection(
 		d.Get("username").(string),
 		d.Get("password").(string),
-		httpClient.HTTPClient,
+		httpClientFromResourceData(d),
 	)
 
 	_, err := config.checkLogin(service)
@@ -147,4 +142,12 @@ func newUpCloudServiceConnection(username, password string, httpClient *http.Cli
 	providerClient.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
 
 	return service.New(providerClient)
+}
+
+func httpClientFromResourceData(d *schema.ResourceData) *http.Client {
+	httpClient := retryablehttp.NewClient()
+	httpClient.RetryWaitMin = time.Duration(d.Get("retry_wait_min_sec").(int)) * time.Second
+	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
+	httpClient.RetryMax = d.Get("retry_max").(int)
+	return httpClient.HTTPClient
 }

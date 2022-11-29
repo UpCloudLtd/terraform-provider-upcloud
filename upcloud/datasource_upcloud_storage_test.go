@@ -4,17 +4,14 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccDataSourceUpCloudStorage(t *testing.T) {
-	var providers []*schema.Provider
-
 	templateResourceName := "data.upcloud_storage.ubuntu_template"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: dataSourceUpCloudStorageTestTemplateConfig(),

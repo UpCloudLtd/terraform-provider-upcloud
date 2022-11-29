@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudLoadBalancer(t *testing.T) {
@@ -25,7 +24,6 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var providers []*schema.Provider
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
 	be1Name := "upcloud_loadbalancer_backend.lb_be_1"
@@ -41,7 +39,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: string(testDataS1),

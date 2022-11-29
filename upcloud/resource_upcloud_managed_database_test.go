@@ -6,7 +6,6 @@ import (
 
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudManagedDatabase(t *testing.T) {
@@ -19,7 +18,6 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var providers []*schema.Provider
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
 	msql1Name := "upcloud_managed_database_mysql.msql1"
@@ -28,7 +26,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: string(testDataS1),

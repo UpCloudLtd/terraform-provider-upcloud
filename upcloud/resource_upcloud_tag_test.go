@@ -10,19 +10,17 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccUpcloudTag_basic(t *testing.T) {
-	var providers []*schema.Provider
 	tag1 := acctest.RandString(10)
 	tag2 := acctest.RandString(10)
 	expectedNames := []string{tag1, tag2}
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -47,7 +45,6 @@ func TestAccUpcloudTag_basic(t *testing.T) {
 }
 
 func TestAccUpCloudTag_import(t *testing.T) {
-	var providers []*schema.Provider
 	var tags upcloud.Tags
 
 	tag1 := acctest.RandString(10)
@@ -55,7 +52,7 @@ func TestAccUpCloudTag_import(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -87,6 +84,10 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		}
 
 		// Use the API SDK to locate the remote resource.
+		testAccProvider, err := testAccProviderFactories["upcloud-tags"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetTags(context.Background())
 		if err != nil {
@@ -106,6 +107,10 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 			continue
 		}
 
+		testAccProvider, err := testAccProviderFactories["upcloud-tags"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		tags, err := client.GetTags(context.Background())
 		if err != nil {
@@ -134,6 +139,7 @@ func testUpcloudTagInstanceConfig(names []string) string {
 	for idx, name := range names {
 		config.WriteString(fmt.Sprintf(`
 		resource "upcloud_tag" "my_tag_%s" {
+			provider = "upcloud-tags"
   			name = "%s"
   			description = "Represents the %s environment"
 		}`, fmt.Sprint(idx+1), name, name))

@@ -16,7 +16,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -30,11 +29,9 @@ const (
 )
 
 func TestAccUpcloudStorage_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -125,7 +122,6 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_import(t *testing.T) {
-	var providers []*schema.Provider
 	var storageDetails upcloud.StorageDetails
 
 	expectedSize := "10"
@@ -135,7 +131,7 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -154,12 +150,11 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_StorageImport(t *testing.T) {
-	var providers []*schema.Provider
 	var storageDetails upcloud.StorageDetails
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -179,7 +174,6 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 
 func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 	if os.Getenv(resource.EnvTfAcc) != "" {
-		var providers []*schema.Provider
 		var storageDetails upcloud.StorageDetails
 
 		imagePath, sum, err := createTempImage()
@@ -191,7 +185,7 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 
 		resource.ParallelTest(t, resource.TestCase{
 			PreCheck:          func() { testAccPreCheck(t) },
-			ProviderFactories: testAccProviderFactories(&providers),
+			ProviderFactories: testAccProviderFactories,
 			CheckDestroy:      testAccCheckStorageDestroy,
 			Steps: []resource.TestStep{
 				{
@@ -211,11 +205,9 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -229,11 +221,9 @@ func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -245,13 +235,12 @@ func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
-	var providers []*schema.Provider
 	var storageDetailsPlain upcloud.StorageDetails
 	var storageDetailsClone upcloud.StorageDetails
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -271,6 +260,10 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 func testAccCheckClonedStorageSize(resourceName string, expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Use the API SDK to locate the remote resource.
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: storage.UUID,
@@ -301,6 +294,10 @@ func testAccCheckStorageExists(resourceName string, storage *upcloud.StorageDeta
 		}
 
 		// Use the API SDK to locate the remote resource.
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
 			UUID: rs.Primary.ID,
@@ -322,6 +319,10 @@ func testAccCheckStorageDestroy(s *terraform.State) error {
 			continue
 		}
 
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		storages, err := client.GetStorages(context.Background(), &request.GetStoragesRequest{})
 		if err != nil {

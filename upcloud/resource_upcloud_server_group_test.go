@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpCloudServerGroup(t *testing.T) {
@@ -19,14 +18,12 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var providers []*schema.Provider
-
 	group1 := "upcloud_server_group.tf_test_1"
 	group2 := "upcloud_server_group.tf_test_2"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: string(testDataStep1),

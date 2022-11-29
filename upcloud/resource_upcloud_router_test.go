@@ -10,19 +10,16 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccUpCloudRouter(t *testing.T) {
-	var providers []*schema.Provider
-
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -37,15 +34,13 @@ func TestAccUpCloudRouter(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_update(t *testing.T) {
-	var providers []*schema.Provider
-
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 	updateName := fmt.Sprintf("tf-test-update-%s", acctest.RandString(10))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -67,13 +62,11 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_import(t *testing.T) {
-	var providers []*schema.Provider
-
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-import-%s", acctest.RandString(10))
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -92,12 +85,11 @@ func TestAccUpCloudRouter_import(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_detach(t *testing.T) {
-	var providers []*schema.Provider
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -161,12 +153,11 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
-	var providers []*schema.Provider
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -242,6 +233,10 @@ func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resou
 		}
 
 		// Use the API SDK to locate the remote resource.
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
 			UUID: rs.Primary.ID,
@@ -265,8 +260,12 @@ func testAccCheckRouterDoesntExist(resourceName string, router *upcloud.Router) 
 		}
 
 		// Use the API SDK to locate the remote resource.
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
-		_, err := client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
+		_, err = client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
 			UUID: router.UUID,
 		})
 
@@ -292,6 +291,10 @@ func testAccCheckNetworkExists(resourceName string, network *upcloud.Network) re
 		}
 
 		// Use the API SDK to locate the remote resource.
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetNetworkDetails(context.Background(), &request.GetNetworkDetailsRequest{
 			UUID: rs.Primary.ID,
@@ -324,6 +327,10 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 			continue
 		}
 
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		routers, err := client.GetRouters(context.Background())
 		if err != nil {
@@ -341,6 +348,10 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 }
 
 func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
+	testAccProvider, err := testAccProviderFactories["upcloud"]()
+	if err != nil {
+		return err
+	}
 	client := testAccProvider.Meta().(*service.Service)
 	for _, rs := range s.RootModule().Resources {
 		switch rs.Type {

@@ -8,7 +8,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -17,13 +16,12 @@ import (
 const firewallRulesResourceName = "upcloud_firewall_rules.my_rule"
 
 func TestUpcloudFirewallRules_basic(t *testing.T) {
-	var providers []*schema.Provider
 	var firewallRules upcloud.FirewallRules
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -66,14 +64,12 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 }
 
 func TestUpcloudFirewallRules_update(t *testing.T) {
-	var providers []*schema.Provider
-
 	var firewallRules upcloud.FirewallRules
 	resourceName := "upcloud_firewall_rules.my_rule"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -95,14 +91,12 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 }
 
 func TestUpcloudFirewallRules_import(t *testing.T) {
-	var providers []*schema.Provider
-
 	var firewallRules upcloud.FirewallRules
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		ProviderFactories: testAccProviderFactories,
 		CheckDestroy:      testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -121,6 +115,10 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 }
 
 func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
+	testAccProvider, err := testAccProviderFactories["upcloud"]()
+	if err != nil {
+		return err
+	}
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "upcloud_firewall_rules" {
 			continue
@@ -128,7 +126,7 @@ func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
 
 		client := testAccProvider.Meta().(*service.Service)
 
-		_, err := client.GetFirewallRules(context.Background(), &request.GetFirewallRulesRequest{
+		_, err = client.GetFirewallRules(context.Background(), &request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
 		})
 		if err == nil {
@@ -155,6 +153,10 @@ func testAccCheckFirewallRulesExists(resourceName string, firewallRules *upcloud
 			return fmt.Errorf("No Firewall ID is set")
 		}
 
+		testAccProvider, err := testAccProviderFactories["upcloud"]()
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetFirewallRules(context.Background(), &request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
