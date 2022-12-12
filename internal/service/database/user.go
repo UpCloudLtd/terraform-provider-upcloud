@@ -67,6 +67,87 @@ func schemaUser() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"authentication": {
+			Description: "MySQL only, authentication type.",
+			Type:        schema.TypeString,
+			Default:     upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password,
+			Optional:    true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+				string(upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password),
+				string(upcloud.ManagedDatabaseUserAuthenticationMySQLNativePassword),
+			}, false)),
+		},
+		"pg_access_control": {
+			Description:   "PostgreSQL access control object.",
+			ConflictsWith: []string{"redis_access_control"},
+			Type:          schema.TypeList,
+			Optional:      true,
+			MaxItems:      1,
+			Elem: &schema.Resource{
+				Schema: schemaPostgreSQLUserAccessControl(),
+			},
+		},
+		"redis_access_control": {
+			Description: "Redis access control object.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: schemaRedisUserAccessControl(),
+			},
+		},
+	}
+}
+
+func schemaPostgreSQLUserAccessControl() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"allow_replication": {
+			Description: "Grant replication privilege",
+			Type:        schema.TypeBool,
+			Default:     true,
+			Optional:    true,
+		},
+	}
+}
+
+func schemaRedisUserAccessControl() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"categories": {
+			Description: "Set access control to all commands in specified categories.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"channels": {
+			Description: "Set access control to Pub/Sub channels.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"commands": {
+			Description: "Set access control to commands.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"keys": {
+			Description: "Set access control to keys.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 	}
 }
 
@@ -91,12 +172,27 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.CreateManagedDatabaseUser(ctx, &request.CreateManagedDatabaseUserRequest{
+	req := &request.CreateManagedDatabaseUserRequest{
 		ServiceUUID: serviceID,
 		Username:    d.Get("username").(string),
 		Password:    d.Get("password").(string),
-	})
-	if err != nil {
+	}
+	switch serviceDetails.Type {
+	case upcloud.ManagedDatabaseServiceTypeMySQL:
+		if val, ok := d.Get("authentication").(string); ok && val != "" {
+			req.Authentication = upcloud.ManagedDatabaseUserAuthenticationType(val)
+		}
+	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
+		if v, ok := d.Get("pg_access_control.0.allow_replication").(bool); ok {
+			req.PGAccessControl = &upcloud.ManagedDatabaseUserPGAccessControl{
+				AllowReplication: v,
+			}
+		}
+	case upcloud.ManagedDatabaseServiceTypeRedis:
+		req.RedisAccessControl = redisAccessControlFromResourceData(d)
+	}
+
+	if _, err = client.CreateManagedDatabaseUser(ctx, req); err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(buildManagedDatabaseSubResourceID(serviceID, d.Get("username").(string)))
@@ -163,13 +259,33 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	_, err = client.ModifyManagedDatabaseUser(ctx, &request.ModifyManagedDatabaseUserRequest{
+	req := &request.ModifyManagedDatabaseUserRequest{
 		ServiceUUID: serviceID,
 		Username:    username,
 		Password:    d.Get("password").(string),
-	})
-	if err != nil {
+	}
+	if serviceDetails.Type == upcloud.ManagedDatabaseServiceTypeMySQL {
+		if val, ok := d.Get("authentication").(string); ok && val != "" {
+			req.Authentication = upcloud.ManagedDatabaseUserAuthenticationType(val)
+		}
+	}
+	if _, err = client.ModifyManagedDatabaseUser(ctx, req); err != nil {
 		return diag.FromErr(err)
+	}
+
+	switch serviceDetails.Type {
+	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
+		if d.HasChange("pg_access_control.0") {
+			if _, err := modifyPostgreSQLUserAccessControl(ctx, client, d); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	case upcloud.ManagedDatabaseServiceTypeRedis:
+		if d.HasChange("redis_access_control.0") {
+			if _, err := modifyRedisUserAccessControl(ctx, client, d); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 	tflog.Info(ctx, "managed database user updated", map[string]interface{}{
 		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID,
@@ -220,20 +336,91 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func copyUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedDatabaseUser) diag.Diagnostics {
-	setFields := []struct {
-		name string
-		val  interface{}
-	}{
-		{name: "username", val: details.Username},
-		{name: "password", val: details.Password},
-		{name: "type", val: string(details.Type)},
+	if err := d.Set("username", details.Username); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("password", details.Password); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("type", details.Type); err != nil {
+		return diag.FromErr(err)
+	}
+	if details.Authentication != "" {
+		if err := d.Set("authentication", details.Authentication); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if details.PGAccessControl != nil {
+		if err := d.Set("pg_access_control", []map[string]interface{}{
+			{
+				"allow_replication": details.PGAccessControl.AllowReplication,
+			},
+		}); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	for _, sf := range setFields {
-		if err := d.Set(sf.name, sf.val); err != nil {
+	if details.RedisAccessControl != nil {
+		if err := d.Set("redis_access_control", []map[string][]string{
+			{
+				"categories": details.RedisAccessControl.Categories,
+				"channels":   details.RedisAccessControl.Channels,
+				"commands":   details.RedisAccessControl.Commands,
+				"keys":       details.RedisAccessControl.Keys,
+			},
+		}); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	return nil
+}
+
+func modifyPostgreSQLUserAccessControl(ctx context.Context, svc *service.Service, d *schema.ResourceData) (*upcloud.ManagedDatabaseUser, error) {
+	req := &request.ModifyManagedDatabaseUserAccessControlRequest{
+		ServiceUUID: d.Get("service").(string),
+		Username:    d.Get("username").(string),
+		PGAccessControl: &upcloud.ManagedDatabaseUserPGAccessControl{
+			AllowReplication: d.Get("pg_access_control.0.allow_replication").(bool),
+		},
+	}
+	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
+}
+
+func modifyRedisUserAccessControl(ctx context.Context, svc *service.Service, d *schema.ResourceData) (*upcloud.ManagedDatabaseUser, error) {
+	req := &request.ModifyManagedDatabaseUserAccessControlRequest{
+		ServiceUUID:        d.Get("service").(string),
+		Username:           d.Get("username").(string),
+		RedisAccessControl: redisAccessControlFromResourceData(d),
+	}
+	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
+}
+
+func redisAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserRedisAccessControl {
+	acl := &upcloud.ManagedDatabaseUserRedisAccessControl{}
+	if v, ok := d.Get("redis_access_control.0.categories").([]interface{}); ok {
+		acl.Categories = make([]string, len(v))
+		for i := range v {
+			acl.Categories[i] = v[i].(string)
+		}
+	}
+	if v, ok := d.Get("redis_access_control.0.channels").([]interface{}); ok {
+		acl.Channels = make([]string, len(v))
+		for i := range v {
+			acl.Channels[i] = v[i].(string)
+		}
+	}
+	if v, ok := d.Get("redis_access_control.0.commands").([]interface{}); ok {
+		acl.Commands = make([]string, len(v))
+		for i := range v {
+			acl.Commands[i] = v[i].(string)
+		}
+	}
+	if v, ok := d.Get("redis_access_control.0.keys").([]interface{}); ok {
+		acl.Keys = make([]string, len(v))
+		for i := range v {
+			acl.Keys[i] = v[i].(string)
+		}
+	}
+	return acl
 }

@@ -79,6 +79,7 @@ func Provider() *schema.Provider {
 			"upcloud_object_storage":                          objectstorage.ResourceObjectStorage(),
 			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
 			"upcloud_managed_database_mysql":                  database.ResourceMySQL(),
+			"upcloud_managed_database_redis":                  database.ResourceRedis(),
 			"upcloud_managed_database_user":                   database.ResourceUser(),
 			"upcloud_managed_database_logical_database":       database.ResourceLogicalDatabase(),
 			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),

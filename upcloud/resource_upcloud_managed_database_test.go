@@ -24,7 +24,10 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
 	msql1Name := "upcloud_managed_database_mysql.msql1"
 	lgDBName := "upcloud_managed_database_logical_database.logical_db_1"
-	userName := "upcloud_managed_database_user.db_user_1"
+	userName1 := "upcloud_managed_database_user.db_user_1"
+	userName2 := "upcloud_managed_database_user.db_user_2"
+	userName3 := "upcloud_managed_database_user.db_user_3"
+	redisName := "upcloud_managed_database_redis.r1"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -49,8 +52,8 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg2Name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(pg2Name, "title", "tf-test-pg-2"),
 					resource.TestCheckResourceAttr(pg2Name, "zone", "pl-waw1"),
-					resource.TestCheckResourceAttr(pg2Name, "powered", "false"),
-					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "13"),
+					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
+					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
 
 					resource.TestCheckResourceAttr(msql1Name, "name", "tf-mysql-test-2"),
 					resource.TestCheckResourceAttr(msql1Name, "plan", "1x1xCPU-2GB-25GB"),
@@ -61,9 +64,23 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(lgDBName, "name", "tf-test-logical-db-1"),
 					resource.TestCheckResourceAttrSet(lgDBName, "service"),
 
-					resource.TestCheckResourceAttr(userName, "username", "somename"),
-					resource.TestCheckResourceAttr(userName, "password", "Superpass123"),
-					resource.TestCheckResourceAttrSet(userName, "service"),
+					resource.TestCheckResourceAttr(userName1, "username", "somename"),
+					resource.TestCheckResourceAttr(userName1, "password", "Superpass123"),
+					resource.TestCheckResourceAttr(userName1, "authentication", "mysql_native_password"),
+					resource.TestCheckResourceAttrSet(userName1, "service"),
+
+					resource.TestCheckResourceAttr(userName2, "pg_access_control.0.allow_replication", "false"),
+
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.categories.0", "+@set"),
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.channels.0", "*"),
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.commands.0", "+set"),
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.keys.0", "key_*"),
+
+					resource.TestCheckResourceAttr(redisName, "name", "tf-redis-test-1"),
+					resource.TestCheckResourceAttr(redisName, "plan", "1x1xCPU-2GB"),
+					resource.TestCheckResourceAttr(redisName, "title", "tf-test-redis-1"),
+					resource.TestCheckResourceAttr(redisName, "zone", "pl-waw1"),
+					resource.TestCheckResourceAttr(redisName, "powered", "true"),
 				),
 			},
 			{
@@ -85,7 +102,21 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 
 					resource.TestCheckResourceAttr(lgDBName, "name", "tf-test-updated-logical-db-1"),
 
-					resource.TestCheckResourceAttr(userName, "password", "Superpass890"),
+					resource.TestCheckResourceAttr(userName1, "password", "Superpass890"),
+					resource.TestCheckResourceAttr(userName1, "authentication", "caching_sha2_password"),
+
+					resource.TestCheckResourceAttr(userName2, "pg_access_control.0.allow_replication", "true"),
+
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.categories.#", "0"),
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.channels.#", "0"),
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.commands.#", "0"),
+					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.keys.0", "key*"),
+
+					resource.TestCheckResourceAttr(redisName, "name", "tf-redis-test-1"),
+					resource.TestCheckResourceAttr(redisName, "plan", "1x1xCPU-2GB"),
+					resource.TestCheckResourceAttr(redisName, "title", "tf-test-redis-title-1"),
+					resource.TestCheckResourceAttr(redisName, "zone", "pl-waw1"),
+					resource.TestCheckResourceAttr(redisName, "powered", "true"),
 				),
 			},
 		},

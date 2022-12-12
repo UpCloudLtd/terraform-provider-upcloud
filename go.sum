@@ -10,6 +10,8 @@ github.com/UpCloudLtd/upcloud-go-api/v5 v5.0.0-20221116095140-4590f92bc16a h1:oz
 github.com/UpCloudLtd/upcloud-go-api/v5 v5.0.0-20221116095140-4590f92bc16a/go.mod h1:GsIjDi8llEXPuoqa7fTilTF/89vIVFQXpmVVJIot3hw=
 github.com/UpCloudLtd/upcloud-go-api/v5 v5.0.0 h1:XU0sgzI8xA0Lg1/dTulY/D2qRjyqDLdH15OrSNOmjmQ=
 github.com/UpCloudLtd/upcloud-go-api/v5 v5.0.0/go.mod h1:AujcayelvOLjiwbulTrC0wzbykpsrcNcc1HuZ3Tloek=
+github.com/UpCloudLtd/upcloud-go-api/v5 v5.1.1-0.20221212070218-e926317ad4f1 h1:zSk0Hf0s2SyHBnlqx9EV2oBEhE/w/UtXLpI+Y5IhrQw=
+github.com/UpCloudLtd/upcloud-go-api/v5 v5.1.1-0.20221212070218-e926317ad4f1/go.mod h1:AujcayelvOLjiwbulTrC0wzbykpsrcNcc1HuZ3Tloek=
 github.com/acomagu/bufpipe v1.0.3 h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=
 github.com/acomagu/bufpipe v1.0.3/go.mod h1:mxdxdup/WdsKVreO5GpW4+M/1CE2sMG4jeGJ2sYmHc4=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=

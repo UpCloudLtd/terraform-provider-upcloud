@@ -37,11 +37,32 @@ resource "upcloud_managed_database_user" "example_user" {
 
 ### Optional
 
+- `authentication` (String) MySQL only, authentication type.
 - `password` (String, Sensitive) Password for the database user. Defaults to a random value
+- `pg_access_control` (Block List, Max: 1) PostgreSQL access control object. (see [below for nested schema](#nestedblock--pg_access_control))
+- `redis_access_control` (Block List, Max: 1) Redis access control object. (see [below for nested schema](#nestedblock--redis_access_control))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
 - `type` (String) Type of the user. Only normal type users can be created
+
+<a id="nestedblock--pg_access_control"></a>
+### Nested Schema for `pg_access_control`
+
+Optional:
+
+- `allow_replication` (Boolean) Grant replication privilege
+
+
+<a id="nestedblock--redis_access_control"></a>
+### Nested Schema for `redis_access_control`
+
+Optional:
+
+- `categories` (List of String) Set access control to all commands in specified categories.
+- `channels` (List of String) Set access control to Pub/Sub channels.
+- `commands` (List of String) Set access control to commands.
+- `keys` (List of String) Set access control to keys.
 
 
