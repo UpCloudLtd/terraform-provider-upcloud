@@ -18,15 +18,6 @@ resource "upcloud_server_group" "tf_test_1" {
   anti_affinity = true
   labels = {
     "key1" = "val1"
-  }
-  members = [upcloud_server.test.id]
-}
-
-resource "upcloud_server_group" "tf_test_2" {
-  title         = "tf_test_2"
-  anti_affinity = false
-  labels = {
-    "key1" = "val1"
     "key2" = "val2"
   }
 }

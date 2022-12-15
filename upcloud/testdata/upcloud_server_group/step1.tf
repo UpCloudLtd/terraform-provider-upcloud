@@ -14,11 +14,7 @@ resource "upcloud_server" "test" {
 }
 
 resource "upcloud_server_group" "tf_test_1" {
-  title = "tf_test_1"
-}
-
-resource "upcloud_server_group" "tf_test_2" {
-  title         = "tf_test_2"
+  title         = "tf_test_1"
   anti_affinity = false
   labels = {
     "key1" = "val1"
