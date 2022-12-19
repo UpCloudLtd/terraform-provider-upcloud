@@ -53,7 +53,7 @@ resource "upcloud_loadbalancer" "lb" {
 ### Required
 
 - `name` (String) The name of the service must be unique within customer account.
-- `plan` (String) Plan which the service will have
+- `plan` (String) Plan which the service will have. You can list available loadbalancer plans with `upctl loadbalancer plans`
 - `zone` (String) Zone in which the service will be hosted, e.g. `fi-hel1`.
 
 ### Optional

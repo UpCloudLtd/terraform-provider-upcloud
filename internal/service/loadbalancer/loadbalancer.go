@@ -36,7 +36,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"plan": {
-				Description: "Plan which the service will have",
+				Description: "Plan which the service will have. You can list available loadbalancer plans with `upctl loadbalancer plans`",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
