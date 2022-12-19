@@ -122,6 +122,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.num_members_up.0.method", "less"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.use_backend.0.backend_name", "lb-be-1-test"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_redirect.0.location", "/app"),
+					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_redirect.1.scheme", "https"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.status", "404"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.content_type", "text/plain"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.payload", "UmVzb3VyY2Ugbm90IGZvdW5kIQ=="),

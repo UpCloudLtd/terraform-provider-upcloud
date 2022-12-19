@@ -154,6 +154,9 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     http_redirect {
       location = "/app"
     }
+    http_redirect {
+      scheme = "https"
+    }
     http_return {
       content_type = "text/plain"
       payload      = base64encode("Resource not found!")
