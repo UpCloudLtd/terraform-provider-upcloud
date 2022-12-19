@@ -110,7 +110,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 	}
 }
 
-func schemaDatabaseCommonProperties() map[string]*schema.Schema {
+func schemaRDBMSDatabaseCommonProperties() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"admin_password": {
 			Type:             schema.TypeString,
@@ -127,12 +127,6 @@ func schemaDatabaseCommonProperties() map[string]*schema.Schema {
 			Computed:         true,
 			DiffSuppressFunc: diffSuppressCreateOnlyProperty,
 		},
-		"automatic_utility_network_ip_filter": {
-			Type:        schema.TypeBool,
-			Description: "Automatic utility network IP Filter",
-			Optional:    true,
-			Default:     true,
-		},
 		"backup_hour": {
 			Type:             schema.TypeInt,
 			Description:      "The hour of day (in UTC) when backup for the service is started. New backup is only started if previous backup has already completed.",
@@ -146,6 +140,17 @@ func schemaDatabaseCommonProperties() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 59)),
+		},
+	}
+}
+
+func schemaDatabaseCommonProperties() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"automatic_utility_network_ip_filter": {
+			Type:        schema.TypeBool,
+			Description: "Automatic utility network IP Filter",
+			Optional:    true,
+			Default:     true,
 		},
 		"ip_filter": {
 			Type: schema.TypeList,

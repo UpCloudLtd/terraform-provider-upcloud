@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -12,7 +13,7 @@ import (
 func ResourceMySQL() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents MySQL managed database",
-		CreateContext: resourceDatabaseCreate(managedDatabaseTypeMySQL),
+		CreateContext: resourceDatabaseCreate(upcloud.ManagedDatabaseServiceTypeMySQL),
 		ReadContext:   resourceDatabaseRead,
 		UpdateContext: resourceDatabaseUpdate,
 		DeleteContext: resourceDatabaseDelete,
@@ -36,6 +37,7 @@ func schemaMySQLEngine() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: utils.JoinSchemas(
+					schemaRDBMSDatabaseCommonProperties(),
 					schemaDatabaseCommonProperties(),
 					schemaMySQLProperties(),
 				),

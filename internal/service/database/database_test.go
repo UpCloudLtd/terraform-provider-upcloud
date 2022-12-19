@@ -64,6 +64,7 @@ func TestWaitServiceNameToPropagateContextTimeout(t *testing.T) {
 
 func TestPostgreSQLProperties(t *testing.T) {
 	s := utils.JoinSchemas(
+		schemaRDBMSDatabaseCommonProperties(),
 		schemaDatabaseCommonProperties(),
 		schemaPostgreSQLProperties(),
 	)
@@ -72,10 +73,19 @@ func TestPostgreSQLProperties(t *testing.T) {
 
 func TestMySQLProperties(t *testing.T) {
 	s := utils.JoinSchemas(
+		schemaRDBMSDatabaseCommonProperties(),
 		schemaDatabaseCommonProperties(),
 		schemaMySQLProperties(),
 	)
 	testProperties(t, "mysql", s)
+}
+
+func TestRedisProperties(t *testing.T) {
+	s := utils.JoinSchemas(
+		schemaDatabaseCommonProperties(),
+		schemaRedisProperties(),
+	)
+	testProperties(t, "redis", s)
 }
 
 func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
@@ -91,6 +101,7 @@ func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
 	if err != nil {
 		t.Error(err)
 	}
+	// check fields that are not in schema
 	for key, prop := range dbt.Properties {
 		if _, ok := s[key]; !ok {
 			js, err := json.MarshalIndent(&prop, " ", " ")
@@ -98,6 +109,12 @@ func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
 				js = []byte{}
 			}
 			t.Logf("%s property '%s' is not defined in schema\n%s", dbType, key, string(js))
+		}
+	}
+	// check removed fields from schema
+	for key := range s {
+		if _, ok := dbt.Properties[key]; !ok {
+			t.Logf("%s schema field '%s' is no longer supported", dbType, key)
 		}
 	}
 }

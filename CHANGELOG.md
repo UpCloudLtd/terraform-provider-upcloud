@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- dbaas: experimental support for Managed Redis Database
+- dbaas: user ACL properties for Redis and PostgreSQL
+- dbaas: MySQL user authentication type field
+
+### Changed
+- update upcloud-go-api to v5.2.0
+
 ## [2.7.1] - 2022-11-29
 
 ### Fixed

@@ -177,9 +177,14 @@ func EnvKeyExists(keyPrefix string) bool {
 	return false
 }
 
-func JoinSchemas(src, dst map[string]*schema.Schema) map[string]*schema.Schema {
-	for key, value := range src {
-		dst[key] = value
+func JoinSchemas(dst map[string]*schema.Schema, s ...map[string]*schema.Schema) map[string]*schema.Schema {
+	if len(s) == 0 {
+		return dst
+	}
+	for i := range s {
+		for key, value := range s[i] {
+			dst[key] = value
+		}
 	}
 	return dst
 }

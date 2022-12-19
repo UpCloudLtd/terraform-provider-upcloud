@@ -17,8 +17,6 @@ import (
 )
 
 const (
-	managedDatabaseTypePostgreSQL                  = upcloud.ManagedDatabaseServiceTypePostgreSQL
-	managedDatabaseTypeMySQL                       = upcloud.ManagedDatabaseServiceTypeMySQL
 	upcloudDatabaseNotFoundErrorCode        string = "SERVICE_NOT_FOUND"
 	upcloudLogicalDatabaseNotFoundErrorCode string = "DB_NOT_FOUND"
 	upcloudDatabaseUserNotFoundErrorCode    string = "USER_NOT_FOUND"
@@ -112,7 +110,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	tflog.Debug(ctx, "managed database read", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 
-	if d.Get("type").(string) == string(managedDatabaseTypePostgreSQL) {
+	if d.Get("type").(string) == string(upcloud.ManagedDatabaseServiceTypePostgreSQL) {
 		if err := d.Set("sslmode", details.ServiceURIParams.SSLMode); err != nil {
 			return diag.FromErr(err)
 		}
@@ -230,8 +228,16 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceData) request.ManagedDatabasePropertiesRequest {
 	resourceProps := d.Get("properties.0").(map[string]interface{})
 	r := make(map[upcloud.ManagedDatabasePropertyKey]interface{})
-	for field, value := range resourceProps {
-		if !d.HasChange(fmt.Sprintf("properties.0.%s", field)) {
+	for field := range resourceProps {
+		key := fmt.Sprintf("properties.0.%s", field)
+		value, isNotZero := d.GetOk(key)
+		// It seems to be hard to detect changes in boolen fields in some scenarios.
+		// E.g. if boolean field is optional and has default value true, but is initially set as false in config
+		// then it's interpreted as boolean zero value and no change is detected.
+		//
+		// This might need more thinking, but for now, exclude field from the request if
+		// it's not boolean, has type's "zero" value and value hasn't changed.
+		if _, isBool := value.(bool); !isBool && !isNotZero && !d.HasChange(key) {
 			continue
 		}
 		switch field {

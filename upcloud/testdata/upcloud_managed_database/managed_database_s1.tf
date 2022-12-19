@@ -18,9 +18,9 @@ resource "upcloud_managed_database_postgresql" "pg2" {
   plan    = "1x1xCPU-2GB-25GB"
   title   = "tf-test-pg-2"
   zone    = "pl-waw1"
-  powered = false
+  powered = true
   properties {
-    version = 13
+    version = 14
   }
 }
 
@@ -36,8 +36,37 @@ resource "upcloud_managed_database_logical_database" "logical_db_1" {
   name    = "tf-test-logical-db-1"
 }
 
+resource "upcloud_managed_database_redis" "r1" {
+  name  = "tf-redis-test-1"
+  plan  = "1x1xCPU-2GB"
+  title = "tf-test-redis-1"
+  zone  = "pl-waw1"
+}
+
 resource "upcloud_managed_database_user" "db_user_1" {
-  service  = upcloud_managed_database_mysql.msql1.id
+  service        = upcloud_managed_database_mysql.msql1.id
+  username       = "somename"
+  password       = "Superpass123"
+  authentication = "mysql_native_password"
+}
+
+resource "upcloud_managed_database_user" "db_user_2" {
+  service  = upcloud_managed_database_postgresql.pg2.id
   username = "somename"
   password = "Superpass123"
+  pg_access_control {
+    allow_replication = false
+  }
+}
+
+resource "upcloud_managed_database_user" "db_user_3" {
+  service  = upcloud_managed_database_redis.r1.id
+  username = "somename"
+  password = "Superpass123"
+  redis_access_control {
+    categories = ["+@set"]
+    channels   = ["*"]
+    commands   = ["+set"]
+    keys       = ["key_*"]
+  }
 }

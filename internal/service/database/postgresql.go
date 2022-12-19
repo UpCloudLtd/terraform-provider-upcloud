@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -12,7 +13,7 @@ import (
 func ResourcePostgreSQL() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents PostgreSQL managed database",
-		CreateContext: resourceDatabaseCreate(managedDatabaseTypePostgreSQL),
+		CreateContext: resourceDatabaseCreate(upcloud.ManagedDatabaseServiceTypePostgreSQL),
 		ReadContext:   resourceDatabaseRead,
 		UpdateContext: resourceDatabaseUpdate,
 		DeleteContext: resourceDatabaseDelete,
@@ -41,6 +42,7 @@ func schemaPostgreSQLEngine() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: utils.JoinSchemas(
+					schemaRDBMSDatabaseCommonProperties(),
 					schemaDatabaseCommonProperties(),
 					schemaPostgreSQLProperties(),
 				),
