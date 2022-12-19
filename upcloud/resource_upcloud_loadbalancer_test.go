@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -183,6 +184,55 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-b"),
 					resource.TestCheckResourceAttr(lbName, "networks.1.type", "private"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
+	// These test data files should fail in pre-plan validation. Thus, these tests are run in plan-only mode.
+	testDataE1, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e1.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testDataE2, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e2.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testDataE3, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e3.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testDataE4, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config:      string(testDataE1),
+				ExpectError: regexp.MustCompile("actions block should contain at least one action"),
+				PlanOnly:    true,
+			},
+			{
+				Config:      string(testDataE2),
+				ExpectError: regexp.MustCompile("either location or scheme should be defined for http_redirect"),
+				PlanOnly:    true,
+			},
+			{
+				Config:      string(testDataE3),
+				ExpectError: regexp.MustCompile(`Error: expected .*scheme to be one of \[http https\], got invalid`),
+				PlanOnly:    true,
+			},
+			{
+				Config:      string(testDataE4),
+				ExpectError: regexp.MustCompile(`only either location or scheme should be defined at a time for http_redirect`),
+				PlanOnly:    true,
 			},
 		},
 	})
