@@ -1,31 +1,20 @@
 package upcloud
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudLoadBalancer(t *testing.T) {
-	testDataS1, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s1.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataS2, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s2.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataS3, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataS4, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_s4.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
+	testDataS4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s4.tf")
+
 	var providers []*schema.Provider
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
@@ -45,7 +34,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: string(testDataS1),
+				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
@@ -139,7 +128,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				),
 			},
 			{
-				Config:            string(testDataS2),
+				Config:            testDataS2,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
@@ -164,7 +153,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				),
 			},
 			{
-				Config:            string(testDataS3),
+				Config:            testDataS3,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "network", ""),
@@ -176,7 +165,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				),
 			},
 			{
-				Config:            string(testDataS4),
+				Config:            testDataS4,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "networks.0.name", "lan-a"),
@@ -191,22 +180,10 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 
 func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 	// These test data files should fail in pre-plan validation. Thus, these tests are run in plan-only mode.
-	testDataE1, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e1.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataE2, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e2.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataE3, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e3.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataE4, err := os.ReadFile("testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
+	testDataE1 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e1.tf")
+	testDataE2 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e2.tf")
+	testDataE3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e3.tf")
+	testDataE4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
 
 	var providers []*schema.Provider
 
@@ -215,22 +192,22 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config:      string(testDataE1),
+				Config:      testDataE1,
 				ExpectError: regexp.MustCompile("actions block should contain at least one action"),
 				PlanOnly:    true,
 			},
 			{
-				Config:      string(testDataE2),
+				Config:      testDataE2,
 				ExpectError: regexp.MustCompile("either location or scheme should be defined for http_redirect"),
 				PlanOnly:    true,
 			},
 			{
-				Config:      string(testDataE3),
+				Config:      testDataE3,
 				ExpectError: regexp.MustCompile(`Error: expected .*scheme to be one of \[http https\], got invalid`),
 				PlanOnly:    true,
 			},
 			{
-				Config:      string(testDataE4),
+				Config:      testDataE4,
 				ExpectError: regexp.MustCompile(`only either location or scheme should be defined at a time for http_redirect`),
 				PlanOnly:    true,
 			},
