@@ -1,6 +1,7 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
@@ -37,10 +38,21 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"location": {
-						Description: "Target location.",
+						Description:      "Target location.",
+						Type:             schema.TypeString,
+						Optional:         true,
+						ForceNew:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+					},
+					"scheme": {
+						Description: "Target scheme.",
 						Type:        schema.TypeString,
-						Required:    true,
+						Optional:    true,
 						ForceNew:    true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							string(upcloud.LoadBalancerActionHTTPRedirectSchemeHTTP),
+							string(upcloud.LoadBalancerActionHTTPRedirectSchemeHTTPS),
+						}, false)),
 					},
 				},
 			},
@@ -143,9 +155,20 @@ func loadBalancerActionsFromResourceData(d *schema.ResourceData) ([]upcloud.Load
 		))
 	}
 
-	for _, v := range d.Get("actions.0.http_redirect").([]interface{}) {
-		v := v.(map[string]interface{})
-		a = append(a, request.NewLoadBalancerHTTPRedirectAction(v["location"].(string)))
+	for i := range d.Get("actions.0.http_redirect").([]interface{}) {
+		key := fmt.Sprintf("actions.0.http_redirect.%d", i)
+		location, locationOK := d.GetOk(key + ".location")
+		scheme, schemeOK := d.GetOk(key + ".scheme")
+		if schemeOK && locationOK {
+			return nil, errors.New("http_redirect action can have either target location or target scheme not both")
+		}
+		if locationOK {
+			a = append(a, request.NewLoadBalancerHTTPRedirectAction(location.(string)))
+		}
+
+		if schemeOK {
+			a = append(a, request.NewLoadBalancerHTTPRedirectSchemeAction(upcloud.LoadBalancerActionHTTPRedirectScheme(scheme.(string))))
+		}
 	}
 
 	for range d.Get("actions.0.tcp_reject").([]interface{}) {
@@ -172,6 +195,7 @@ func setFrontendRuleActionsResourceData(d *schema.ResourceData, rule *upcloud.Lo
 		case upcloud.LoadBalancerActionTypeHTTPRedirect:
 			v = map[string]interface{}{
 				"location": a.HTTPRedirect.Location,
+				"scheme":   a.HTTPRedirect.Scheme,
 			}
 		case upcloud.LoadBalancerActionTypeHTTPReturn:
 			v = map[string]interface{}{

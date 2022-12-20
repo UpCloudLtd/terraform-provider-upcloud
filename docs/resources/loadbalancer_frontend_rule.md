@@ -100,9 +100,10 @@ Optional:
 <a id="nestedblock--actions--http_redirect"></a>
 ### Nested Schema for `actions.http_redirect`
 
-Required:
+Optional:
 
 - `location` (String) Target location.
+- `scheme` (String) Target scheme.
 
 
 <a id="nestedblock--actions--http_return"></a>

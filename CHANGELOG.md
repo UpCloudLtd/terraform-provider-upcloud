@@ -9,6 +9,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - dbaas: experimental support for Managed Redis Database
 - dbaas: user ACL properties for Redis and PostgreSQL
 - dbaas: MySQL user authentication type field
+- lbaas: `scheme` field to frontend rule HTTP redirect action.
 
 ### Changed
 - update upcloud-go-api to v5.2.0
