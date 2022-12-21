@@ -8,6 +8,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -22,6 +23,11 @@ func ResourceFrontendRule() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: customdiff.All(
+			// Validate http_redirect fields here, because ExactlyOneOf does not work when MaxItems > 1
+			validateHTTPRedirectChange,
+			validateActionsNotEmpty,
+		),
 		Schema: map[string]*schema.Schema{
 			"frontend": {
 				Description: "ID of the load balancer frontend to which the rule is connected.",

@@ -1,6 +1,7 @@
 package loadbalancer
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -30,7 +31,7 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 			},
 		},
 		"http_redirect": {
-			Description: "Redirects HTTP requests to specified location or URL schema.",
+			Description: "Redirects HTTP requests to specified location or URL scheme. Only either location or scheme can be defined at a time.",
 			Type:        schema.TypeList,
 			Optional:    true,
 			MaxItems:    100,
@@ -160,6 +161,7 @@ func loadBalancerActionsFromResourceData(d *schema.ResourceData) ([]upcloud.Load
 		location, locationOK := d.GetOk(key + ".location")
 		scheme, schemeOK := d.GetOk(key + ".scheme")
 		if schemeOK && locationOK {
+			// This is also validated by CustomizeDiff in ResourceFrontendRule so execution should not enter this block
 			return nil, errors.New("http_redirect action can have either target location or target scheme not both")
 		}
 		if locationOK {
@@ -218,4 +220,45 @@ func setFrontendRuleActionsResourceData(d *schema.ResourceData, rule *upcloud.Lo
 		actions[t] = append(actions[t], v)
 	}
 	return d.Set("actions", []interface{}{actions})
+}
+
+func getString(m map[string]interface{}, key string) string {
+	raw := m[key]
+	val, ok := raw.(string)
+	if !ok {
+		return ""
+	}
+	return val
+}
+
+func validateHTTPRedirectChange(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	for _, v := range d.Get("actions.0.http_redirect").([]interface{}) {
+		v, ok := v.(map[string]interface{})
+		if !ok {
+			// block is likely empty and `v` thus nil
+			return fmt.Errorf("either location or scheme should be defined for http_redirect")
+		}
+
+		location := getString(v, "location")
+		scheme := getString(v, "scheme")
+
+		if location != "" && scheme != "" {
+			return fmt.Errorf("only either location or scheme should be defined at a time for http_redirect")
+		}
+	}
+
+	return nil
+}
+
+func validateActionsNotEmpty(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	actions, ok := d.Get("actions.0").(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("received actions in unknown format")
+	}
+
+	if len(actions) == 0 {
+		return fmt.Errorf("actions block should contain at least one action")
+	}
+
+	return nil
 }
