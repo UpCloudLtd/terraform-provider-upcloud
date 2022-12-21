@@ -91,7 +91,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 Optional:
 
-- `http_redirect` (Block List, Max: 100) Redirects HTTP requests to specified location or URL schema. (see [below for nested schema](#nestedblock--actions--http_redirect))
+- `http_redirect` (Block List, Max: 100) Redirects HTTP requests to specified location or URL scheme. Only either location or scheme can be defined at a time. (see [below for nested schema](#nestedblock--actions--http_redirect))
 - `http_return` (Block List, Max: 100) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
 - `set_forwarded_headers` (Block List, Max: 100) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
 - `tcp_reject` (Block List, Max: 100) Terminates a connection. (see [below for nested schema](#nestedblock--actions--tcp_reject))
