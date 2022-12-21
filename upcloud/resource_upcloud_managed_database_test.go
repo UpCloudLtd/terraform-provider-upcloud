@@ -1,23 +1,17 @@
 package upcloud
 
 import (
-	"os"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudManagedDatabase(t *testing.T) {
-	testDataS1, err := os.ReadFile("testdata/upcloud_managed_database/managed_database_s1.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataS2, err := os.ReadFile("testdata/upcloud_managed_database/managed_database_s2.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s2.tf")
 
 	var providers []*schema.Provider
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
@@ -34,7 +28,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: string(testDataS1),
+				Config: testDataS1,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(pg1Name, "name", "tf-pg-test-1"),
 					resource.TestCheckResourceAttr(pg1Name, "plan", "1x1xCPU-2GB-25GB"),
@@ -84,7 +78,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 				),
 			},
 			{
-				Config: string(testDataS2),
+				Config: testDataS2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(pg1Name, "title", "tf-test-updated-pg-1"),
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_time", "11:00:00"),

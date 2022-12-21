@@ -2,22 +2,17 @@ package upcloud
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
-	testDataS1, err := os.ReadFile("testdata/upcloud_managed_database/mysql_properties_s1.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	testDataS2, err := os.ReadFile("testdata/upcloud_managed_database/mysql_properties_s2.tf")
-	if err != nil {
-		t.Fatal(err)
-	}
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/mysql_properties_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/mysql_properties_s2.tf")
+
 	var providers []*schema.Provider
 	name := "upcloud_managed_database_mysql.mysql_properties"
 	prop := func(name string) string {
@@ -28,7 +23,7 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: string(testDataS1),
+				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(name, "zone", "fi-hel2"),
@@ -73,7 +68,7 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 				),
 			},
 			{
-				Config: string(testDataS2),
+				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, prop("innodb_read_io_threads"), "10"),
 					resource.TestCheckResourceAttr(name, prop("innodb_flush_neighbors"), "0"),
