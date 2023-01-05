@@ -12,8 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const ipAddressNotFoundErrorCode string = "IP_ADDRESS_NOT_FOUND"
-
 func ResourceFloatingIPAddress() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents a UpCloud floating IP address resource.",
@@ -105,16 +103,11 @@ func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, 
 
 	ipAddress, err := client.GetIPAddressDetails(ctx, getIPAddressDetailsRequest)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == ipAddressNotFoundErrorCode {
-			name := "ip address" // set default name because ip_address is optional field
-			if ip, ok := d.GetOk("ip_address"); ok {
-				name = ip.(string)
-			}
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, name))
-			d.SetId("")
-			return diags
+		name := "ip address" // set default name because ip_address is optional field
+		if ip, ok := d.GetOk("ip_address"); ok {
+			name = ip.(string)
 		}
-		diag.FromErr(err)
+		return utils.HandleResourceError(name, d, err)
 	}
 
 	if err := d.Set("ip_address", ipAddress.Address); err != nil {

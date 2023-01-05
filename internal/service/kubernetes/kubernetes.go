@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
@@ -26,17 +27,7 @@ const (
 	nameDescription                 = "Cluster name. Needs to be unique within the account."
 	networkDescription              = "Network ID for the cluster to run in."
 	networkCIDRDescription          = "Network CIDR for the given network. Computed automatically."
-	nodeGroupCountDescription       = "Amount of nodes to provision in the node group."
-	nodeGroupDescription            = "Node groups for workloads. Currently not available in state, although created."
-	nodeGroupLabelsDescription      = "Key-value pairs to classify the node group."
-	nodeGroupNameDescription        = "The name of the node group. Needs to be unique within a cluster."
-	nodeGroupPlanDescription        = "The pricing plan used for the node group. Valid values available via `upcloud_kubernetes_plan` datasource field `description`."
-	nodeGroupSSHKeysDescription     = "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running."
-	nodeGroupKubeletArgsDescription = "Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args."
-	nodeGroupTaintsDescription      = "Taints for the nodes in this group."
-	nodeGroupTaintEffectDescription = "Taint effect."
-	nodeGroupTaintKeyDescription    = "Taint key."
-	nodeGroupTaintValueDescription  = "Taint value."
+	nodeGroupNamesDescription       = "Names of the node groups configured to cluster"
 	stateDescription                = "Operational state of the cluster."
 	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
 
@@ -61,6 +52,12 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:         true,
 				ValidateDiagFunc: validateResourceName,
 			},
+			"zone": {
+				Description: zoneDescription,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
 			"network": {
 				Description: networkDescription,
 				Type:        schema.TypeString,
@@ -72,97 +69,18 @@ func ResourceCluster() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
-			"node_group": {
-				Description: nodeGroupDescription,
-				Type:        schema.TypeSet,
-				Required:    true,
-				ForceNew:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"count": {
-							Description: nodeGroupCountDescription,
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Computed:    true,
-						},
-						"labels": {
-							Description: nodeGroupLabelsDescription,
-							Type:        schema.TypeMap,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-							Optional: true,
-						},
-						"kubelet_args": {
-							Description: nodeGroupKubeletArgsDescription,
-							Type:        schema.TypeMap,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-							Optional: true,
-						},
-						"taint": {
-							Description: nodeGroupTaintsDescription,
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"effect": {
-										Description: nodeGroupTaintEffectDescription,
-										Type:        schema.TypeString,
-										Required:    true,
-										ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-											string(upcloud.KubernetesClusterTaintEffectNoExecute),
-											string(upcloud.KubernetesClusterTaintEffectNoSchedule),
-											string(upcloud.KubernetesClusterTaintEffectPreferNoSchedule),
-										}, false)),
-									},
-									"key": {
-										Description: nodeGroupTaintKeyDescription,
-										Type:        schema.TypeString,
-										Required:    true,
-									},
-									"value": {
-										Description: nodeGroupTaintValueDescription,
-										Type:        schema.TypeString,
-										Required:    true,
-									},
-								},
-							},
-						},
-						"name": {
-							Description:      nodeGroupNameDescription,
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: validateResourceName,
-						},
-						"plan": {
-							Description: nodeGroupPlanDescription,
-							Type:        schema.TypeString,
-							Optional:    true,
-							Computed:    true,
-						},
-						"ssh_keys": {
-							Description: nodeGroupSSHKeysDescription,
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-						},
-					},
+			"node_groups": {
+				Description: nodeGroupNamesDescription,
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
 			},
 			"state": {
 				Description: stateDescription,
 				Type:        schema.TypeString,
 				Computed:    true,
-			},
-			"zone": {
-				Description: zoneDescription,
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
 			},
 		},
 	}
@@ -172,10 +90,9 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 	svc := meta.(*service.Service)
 
 	req := &request.CreateKubernetesClusterRequest{
-		Name:       d.Get("name").(string),
-		Network:    d.Get("network").(string),
-		NodeGroups: getNodeGroupsFromConfig(d),
-		Zone:       d.Get("zone").(string),
+		Name:    d.Get("name").(string),
+		Network: d.Get("network").(string),
+		Zone:    d.Get("zone").(string),
 	}
 
 	c, err := svc.CreateKubernetesCluster(ctx, req)
@@ -208,7 +125,7 @@ func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta inter
 	svc := meta.(*service.Service)
 	cluster, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: d.Id()})
 	if err != nil {
-		return handleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	return setClusterResourceData(d, cluster)
@@ -256,49 +173,15 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 		return diag.FromErr(err)
 	}
 
-	if err := setClusterNodeGroupsData(d, c); err != nil {
+	groups := make([]string, 0)
+	for _, g := range c.NodeGroups {
+		groups = append(groups, g.Name)
+	}
+	if err := d.Set("node_groups", groups); err != nil {
 		return diag.FromErr(err)
 	}
 
 	return diags
-}
-
-func setClusterNodeGroupsData(d *schema.ResourceData, c *upcloud.KubernetesCluster) error {
-	result := []map[string]interface{}{}
-
-	for _, g := range c.NodeGroups {
-		group := map[string]interface{}{}
-		group["count"] = g.Count
-		group["name"] = g.Name
-		group["plan"] = g.Plan
-		group["ssh_keys"] = g.SSHKeys
-
-		kubeletArgs := map[string]string{}
-		for _, arg := range g.KubeletArgs {
-			kubeletArgs[arg.Key] = arg.Value
-		}
-		group["kubelet_args"] = kubeletArgs
-
-		labels := map[string]string{}
-		for _, lab := range g.Labels {
-			labels[lab.Key] = lab.Value
-		}
-		group["labels"] = labels
-
-		taints := []map[string]string{}
-		for _, t := range g.Taints {
-			taints = append(taints, map[string]string{
-				"effect": string(t.Effect),
-				"key":    t.Key,
-				"value":  t.Value,
-			})
-		}
-		group["taint"] = taints
-
-		result = append(result, group)
-	}
-
-	return d.Set("node_group", result)
 }
 
 func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
@@ -315,9 +198,7 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id str
 					return nil
 				}
 
-				// Support for legacy-style API errors
-				// TODO: remove when all API endpoints support the json+problem error handling
-				if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == "NotFound" {
+				if svcErr, ok := err.(*upcloud.Error); ok && svcErr.Status == http.StatusNotFound {
 					return nil
 				}
 
@@ -330,60 +211,6 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id str
 	}
 
 	return fmt.Errorf("max retries (%d)reached while waiting for cluster to be deleted", maxRetries)
-}
-
-func getNodeGroupsFromConfig(d *schema.ResourceData) []upcloud.KubernetesNodeGroup {
-	result := make([]upcloud.KubernetesNodeGroup, 0)
-	config := d.Get("node_group").(*schema.Set)
-
-	for _, el := range config.List() {
-		data := el.(map[string]interface{})
-
-		sshKeys := []string{}
-		for _, key := range data["ssh_keys"].(*schema.Set).List() {
-			sshKeys = append(sshKeys, key.(string))
-		}
-
-		labels := upcloud.LabelSlice{}
-		for k, v := range data["labels"].(map[string]interface{}) {
-			labels = append(labels, upcloud.Label{
-				Key:   k,
-				Value: v.(string),
-			})
-		}
-
-		kubeletArgs := []upcloud.KubernetesKubeletArg{}
-		for k, v := range data["kubelet_args"].(map[string]interface{}) {
-			kubeletArgs = append(kubeletArgs, upcloud.KubernetesKubeletArg{
-				Key:   k,
-				Value: v.(string),
-			})
-		}
-
-		taints := []upcloud.KubernetesTaint{}
-		for _, taint := range data["taint"].(*schema.Set).List() {
-			taintData := taint.(map[string]interface{})
-			effectStr := taintData["effect"].(string)
-
-			taints = append(taints, upcloud.KubernetesTaint{
-				Effect: upcloud.KubernetesClusterTaintEffect(effectStr),
-				Key:    taintData["key"].(string),
-				Value:  taintData["value"].(string),
-			})
-		}
-
-		result = append(result, upcloud.KubernetesNodeGroup{
-			Count:       data["count"].(int),
-			Name:        data["name"].(string),
-			Plan:        data["plan"].(string),
-			SSHKeys:     sshKeys,
-			Labels:      labels,
-			KubeletArgs: kubeletArgs,
-			Taints:      taints,
-		})
-	}
-
-	return result
 }
 
 var validateResourceName = validation.ToDiagFunc(func(i interface{}, s string) (warns []string, errs []error) {

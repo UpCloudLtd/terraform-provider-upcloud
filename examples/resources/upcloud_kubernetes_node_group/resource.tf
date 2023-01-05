@@ -15,3 +15,21 @@ resource "upcloud_kubernetes_cluster" "example" {
   network = upcloud_network.example.id
   zone    = "de-fra1"
 }
+
+# Create a Kubernetes cluster node group
+resource "upcloud_kubernetes_node_group" "group" {
+  cluster    = resource.upcloud_kubernetes_cluster.main.id
+  node_count = 2
+  name       = "medium"
+  plan       = "2xCPU-4GB"
+
+  labels = {
+    managedBy = "terraform"
+  }
+
+  taint {
+    effect = "NoExecute"
+    key    = "taintKey"
+    value  = "taintValue"
+  }
+}

@@ -16,12 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	upcloudDatabaseNotFoundErrorCode        string = "SERVICE_NOT_FOUND"
-	upcloudLogicalDatabaseNotFoundErrorCode string = "DB_NOT_FOUND"
-	upcloudDatabaseUserNotFoundErrorCode    string = "USER_NOT_FOUND"
-)
-
 var resourceUpcloudManagedDatabaseModifiableStates = []upcloud.ManagedDatabaseState{
 	upcloud.ManagedDatabaseStateRunning,
 	upcloud.ManagedDatabaseState("rebalancing"),
@@ -99,13 +93,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 	req := request.GetManagedDatabaseRequest{UUID: d.Id()}
 	details, err := client.GetManagedDatabase(ctx, &req)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
-			var diags diag.Diagnostics
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	tflog.Debug(ctx, "managed database read", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})

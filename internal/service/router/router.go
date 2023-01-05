@@ -5,14 +5,11 @@ import (
 	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-const routerNotFoundErrorCode string = "ROUTER_NOT_FOUND"
 
 func ResourceRouter() *schema.Resource {
 	return &schema.Resource{
@@ -89,12 +86,7 @@ func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interf
 
 	router, err := client.GetRouterDetails(ctx, opts)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == routerNotFoundErrorCode {
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	if err := d.Set("name", router.Name); err != nil {

@@ -3,6 +3,7 @@ package loadbalancer
 import (
 	"context"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
@@ -145,7 +146,7 @@ func resourceFrontendRead(ctx context.Context, d *schema.ResourceData, meta inte
 		Name:        name,
 	})
 	if err != nil {
-		return handleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	d.SetId(marshalID(serviceID, fe.Name))

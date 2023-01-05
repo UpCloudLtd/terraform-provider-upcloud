@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
@@ -94,7 +95,7 @@ func resourceManualCertificateBundleRead(ctx context.Context, d *schema.Resource
 		UUID: d.Id(),
 	})
 	if err != nil {
-		return handleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	if diags = setManualCertificateBundleResourceData(d, b); len(diags) > 0 {

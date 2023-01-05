@@ -23,10 +23,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
-const (
-	serverTitleLength       int    = 255
-	serverNotFoundErrorCode string = "SERVER_NOT_FOUND"
-)
+const serverTitleLength int = 255
 
 func ResourceServer() *schema.Resource {
 	return &schema.Resource{
@@ -455,12 +452,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	server, err := client.GetServerDetails(ctx, r)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == serverNotFoundErrorCode {
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("hostname").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("hostname").(string), d, err)
 	}
 	_ = d.Set("hostname", server.Hostname)
 	if server.Title != defaultTitleFromHostname(server.Hostname) {

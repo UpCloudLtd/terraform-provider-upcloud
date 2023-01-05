@@ -11,8 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const serverGroupNotFoundErrorCode = "GROUP_NOT_FOUND"
-
 func ResourceServerGroup() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceServerGroupCreate,
@@ -99,19 +97,7 @@ func resourceServerGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	group, err := svc.GetServerGroup(ctx, &request.GetServerGroupRequest{UUID: d.Id()})
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == serverGroupNotFoundErrorCode {
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
-			d.SetId("")
-			return diags
-		}
-
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  baseErrMsg,
-			Detail:   err.Error(),
-		})
-
-		return diags
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	err = setServerGroupData(group, d)

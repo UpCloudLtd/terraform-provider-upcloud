@@ -17,15 +17,14 @@ import (
 )
 
 const (
-	upcloudObjectStorageNotFoundErrorCode string = "OBJECT_STORAGE_NOT_FOUND"
-	bucketKey                             string = "bucket"
-	accessKeyEnvVarPrefix                 string = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
-	secretKeyEnvVarPrefix                 string = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
-	numRetries                            int    = 5
-	accessKeyMinLength                    int    = 4
-	accessKeyMaxLength                    int    = 255
-	secretKeyMinLength                    int    = 8
-	secretKeyMaxLength                    int    = 255
+	bucketKey             string = "bucket"
+	accessKeyEnvVarPrefix string = "UPCLOUD_OBJECT_STORAGE_ACCESS_KEY_"
+	secretKeyEnvVarPrefix string = "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_"
+	numRetries            int    = 5
+	accessKeyMinLength    int    = 4
+	accessKeyMaxLength    int    = 255
+	secretKeyMinLength    int    = 8
+	secretKeyMaxLength    int    = 255
 )
 
 type objectStorageKeyType string
@@ -187,13 +186,7 @@ func resourceObjectStorageRead(ctx context.Context, d *schema.ResourceData, m in
 		UUID: uuid,
 	})
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudObjectStorageNotFoundErrorCode {
-			var diags diag.Diagnostics
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	return copyObjectStorageDetails(objectDetails, d)

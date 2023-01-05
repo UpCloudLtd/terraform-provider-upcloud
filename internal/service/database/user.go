@@ -211,13 +211,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseNotFoundErrorCode {
-			var diags diag.Diagnostics
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("username").(string), d, err)
 	}
 
 	userDetails, err := client.GetManagedDatabaseUser(ctx, &request.GetManagedDatabaseUserRequest{
@@ -225,13 +219,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		Username:    username,
 	})
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == upcloudDatabaseUserNotFoundErrorCode {
-			var diags diag.Diagnostics
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("username").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("username").(string), d, err)
 	}
 
 	tflog.Info(ctx, "managed database user read", map[string]interface{}{
