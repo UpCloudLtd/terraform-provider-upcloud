@@ -13,7 +13,7 @@ func HandleResourceError(resourceName string, d *schema.ResourceData, err error)
 	var ucErr *upcloud.Error
 	if errors.As(err, &ucErr) && ucErr.Status == http.StatusNotFound {
 		var diags diag.Diagnostics
-		diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(ucErr, d.Get("name").(string)))
+		diags = append(diags, diagBindingRemovedWarningFromUpcloudErr(ucErr, resourceName))
 		d.SetId("")
 		return diags
 	}
