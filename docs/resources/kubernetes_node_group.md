@@ -58,7 +58,7 @@ resource "upcloud_kubernetes_node_group" "group" {
 - `cluster` (String) Cluster ID.
 - `name` (String) The name of the node group. Needs to be unique within a cluster.
 - `node_count` (Number) Amount of nodes to provision in the node group.
-- `plan` (String) The pricing plan used for the node group. Valid values available via `upcloud_kubernetes_plan` datasource field `description`.
+- `plan` (String) The pricing plan used for the node group. You can list available plans with `upctl server plans`
 
 ### Optional
 

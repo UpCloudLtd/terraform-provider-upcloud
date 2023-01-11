@@ -44,7 +44,7 @@ func ResourceNodeGroup() *schema.Resource {
 				ForceNew:         true,
 			},
 			"plan": {
-				Description: "The pricing plan used for the node group. Valid values available via `upcloud_kubernetes_plan` datasource field `description`.",
+				Description: "The pricing plan used for the node group. You can list available plans with `upctl server plans`",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
