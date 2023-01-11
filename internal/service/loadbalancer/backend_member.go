@@ -3,6 +3,7 @@ package loadbalancer
 import (
 	"context"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
@@ -179,7 +180,7 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 		Name:        name,
 	})
 	if err != nil {
-		return handleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	d.SetId(marshalID(serviceID, beName, member.Name))

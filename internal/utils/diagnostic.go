@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
-func DiagWarningFromUpcloudErr(err *upcloud.Error, details string) diag.Diagnostic {
+func diagWarningFromUpcloudErr(err *upcloud.Error, details string) diag.Diagnostic {
 	return diag.Diagnostic{
 		Severity: diag.Warning,
 		Summary:  err.ErrorMessage,
@@ -15,8 +15,22 @@ func DiagWarningFromUpcloudErr(err *upcloud.Error, details string) diag.Diagnost
 	}
 }
 
-func DiagBindingRemovedWarningFromUpcloudErr(err *upcloud.Error, name string) diag.Diagnostic {
-	return DiagWarningFromUpcloudErr(err,
+func diagBindingRemovedWarningFromUpcloudErr(err *upcloud.Error, name string) diag.Diagnostic {
+	return diagWarningFromUpcloudErr(err,
+		fmt.Sprintf("Binding to an existing remote object '%s' will be removed from the state. Next plan will include action to re-create the object if you choose to keep it in config.", name),
+	)
+}
+
+func diagWarningFromUpcloudProblem(err *upcloud.Problem, details string) diag.Diagnostic {
+	return diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  err.Title,
+		Detail:   details,
+	}
+}
+
+func diagBindingRemovedWarningFromUpcloudProblem(err *upcloud.Problem, name string) diag.Diagnostic {
+	return diagWarningFromUpcloudProblem(err,
 		fmt.Sprintf("Binding to an existing remote object '%s' will be removed from the state. Next plan will include action to re-create the object if you choose to keep it in config.", name),
 	)
 }

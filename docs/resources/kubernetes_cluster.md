@@ -29,31 +29,6 @@ resource "upcloud_kubernetes_cluster" "example" {
   name    = "exampleapp"
   network = upcloud_network.example.id
   zone    = "de-fra1"
-
-  # Create a group of worker nodes with common settings
-  node_group {
-    count    = 2
-    name     = "group1"
-    plan     = "2xCPU-4GB" # Use the same plans as for regular servers
-    ssh_keys = ["public_ssh_key"]
-
-    labels = {
-      managedBy = "terraform"
-    }
-
-    taint {
-      effect = "NoExecute"
-      key    = "taintKey"
-      value  = "taintValue"
-    }
-  }
-
-  # Create another node group, only required attributes
-  node_group {
-    count = 2
-    name  = "group2"
-    plan  = "2xCPU-4GB"
-  }
 }
 ```
 
@@ -64,38 +39,13 @@ resource "upcloud_kubernetes_cluster" "example" {
 
 - `name` (String) Cluster name. Needs to be unique within the account.
 - `network` (String) Network ID for the cluster to run in.
-- `node_group` (Block Set, Min: 1) Node groups for workloads. Currently not available in state, although created. (see [below for nested schema](#nestedblock--node_group))
 - `zone` (String) Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
 - `network_cidr` (String) Network CIDR for the given network. Computed automatically.
+- `node_groups` (List of String) Names of the node groups configured to cluster
 - `state` (String) Operational state of the cluster.
-
-<a id="nestedblock--node_group"></a>
-### Nested Schema for `node_group`
-
-Required:
-
-- `name` (String) The name of the node group. Needs to be unique within a cluster.
-
-Optional:
-
-- `count` (Number) Amount of nodes to provision in the node group.
-- `kubelet_args` (Map of String) Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args.
-- `labels` (Map of String) Key-value pairs to classify the node group.
-- `plan` (String) The pricing plan used for the node group. Valid values available via `upcloud_kubernetes_plan` datasource field `description`.
-- `ssh_keys` (Set of String) You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.
-- `taint` (Block Set) Taints for the nodes in this group. (see [below for nested schema](#nestedblock--node_group--taint))
-
-<a id="nestedblock--node_group--taint"></a>
-### Nested Schema for `node_group.taint`
-
-Required:
-
-- `effect` (String) Taint effect.
-- `key` (String) Taint key.
-- `value` (String) Taint value.
 
 

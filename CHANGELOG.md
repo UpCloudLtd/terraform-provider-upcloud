@@ -5,6 +5,15 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- kubernetes: experimental `upcloud_kubernetes_node_group` resource
+
+### Changed
+- update upcloud-go-api to v5.2.1
+
+### Removed
+- kubernetes: experimental `node_group` field from `upcloud_kubernetes_cluster` resource
+
 ## [2.8.0] - 2022-12-21
 
 ### Added

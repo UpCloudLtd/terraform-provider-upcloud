@@ -25,8 +25,9 @@ resource "upcloud_kubernetes_cluster" "main" {
 }
 
 resource "upcloud_kubernetes_node_group" "g1" {
-  cluster    = resource.upcloud_kubernetes_cluster.main.id
-  node_count = 2
+  cluster = resource.upcloud_kubernetes_cluster.main.id
+  # scale node count down
+  node_count = 1
   labels = {
     env       = "dev"
     managedBy = "tf"
@@ -46,8 +47,9 @@ resource "upcloud_kubernetes_node_group" "g1" {
 }
 
 resource "upcloud_kubernetes_node_group" "g2" {
-  cluster    = resource.upcloud_kubernetes_cluster.main.id
-  node_count = 1
+  cluster = resource.upcloud_kubernetes_cluster.main.id
+  # scale node count up
+  node_count = 2
   labels = {
     env       = "qa"
     managedBy = "tf"

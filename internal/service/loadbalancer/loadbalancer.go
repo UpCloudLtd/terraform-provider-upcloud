@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
@@ -247,7 +248,7 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 	lb, err := svc.CreateLoadBalancer(ctx, req)
 	if err != nil {
-		return handleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	d.SetId(lb.UUID)
@@ -265,7 +266,7 @@ func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta 
 	svc := meta.(*service.Service)
 	lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{UUID: d.Id()})
 	if err != nil {
-		return handleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
@@ -290,7 +291,7 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 		ConfiguredStatus: d.Get("configured_status").(string),
 	})
 	if err != nil {
-		return handleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {

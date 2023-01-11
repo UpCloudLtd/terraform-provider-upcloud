@@ -19,8 +19,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 )
 
-const storageNotFoundErrorCode string = "STORAGE_NOT_FOUND"
-
 func ResourceStorage() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Manages UpCloud storage block devices.",
@@ -207,12 +205,7 @@ func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 	storage, err := client.GetStorageDetails(ctx, r)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == storageNotFoundErrorCode {
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("title").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("title").(string), d, err)
 	}
 
 	if err := d.Set("filesystem_autoresize", d.Get("filesystem_autoresize")); err != nil {

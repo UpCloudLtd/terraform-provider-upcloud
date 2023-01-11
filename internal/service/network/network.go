@@ -16,8 +16,6 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 )
 
-const networkNotFoundErrorCode string = "NETWORK_NOT_FOUND"
-
 func ResourceNetwork() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents an SDN private network that cloud servers from the same zone can be attached to.",
@@ -172,13 +170,7 @@ func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	network, err := client.GetNetworkDetails(ctx, &req)
 	if err != nil {
-		if svcErr, ok := err.(*upcloud.Error); ok && svcErr.ErrorCode == networkNotFoundErrorCode {
-			var diags diag.Diagnostics
-			diags = append(diags, utils.DiagBindingRemovedWarningFromUpcloudErr(svcErr, d.Get("name").(string)))
-			d.SetId("")
-			return diags
-		}
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	_ = d.Set("name", network.Name)
