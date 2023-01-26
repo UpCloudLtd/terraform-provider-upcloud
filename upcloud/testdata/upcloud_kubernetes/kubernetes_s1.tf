@@ -20,13 +20,14 @@ resource "upcloud_network" "main" {
 
 resource "upcloud_kubernetes_cluster" "main" {
   name    = var.name
-  network = resource.upcloud_network.main.id
+  network = upcloud_network.main.id
   zone    = var.zone
 }
 
 resource "upcloud_kubernetes_node_group" "g1" {
-  cluster    = resource.upcloud_kubernetes_cluster.main.id
-  node_count = 2
+  cluster       = upcloud_kubernetes_cluster.main.id
+  node_count    = 2
+  anti_affinity = true
   labels = {
     env       = "dev"
     managedBy = "tf"
@@ -46,7 +47,7 @@ resource "upcloud_kubernetes_node_group" "g1" {
 }
 
 resource "upcloud_kubernetes_node_group" "g2" {
-  cluster    = resource.upcloud_kubernetes_cluster.main.id
+  cluster    = upcloud_kubernetes_cluster.main.id
   node_count = 1
   labels = {
     env       = "qa"
@@ -58,5 +59,5 @@ resource "upcloud_kubernetes_node_group" "g2" {
 }
 
 data "upcloud_kubernetes_cluster" "main" {
-  id = resource.upcloud_kubernetes_cluster.main.id
+  id = upcloud_kubernetes_cluster.main.id
 }

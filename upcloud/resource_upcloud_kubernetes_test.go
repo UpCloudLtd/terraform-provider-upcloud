@@ -34,6 +34,8 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(cName, "zone", "de-fra1"),
 					resource.TestCheckResourceAttr(g1Name, "name", "small"),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
+					resource.TestCheckResourceAttr(g1Name, "anti_affinity", "true"),
+					resource.TestCheckResourceAttr(g2Name, "anti_affinity", "false"),
 					resource.TestCheckResourceAttr(g1Name, "node_count", "2"),
 					resource.TestCheckResourceAttr(g2Name, "node_count", "1"),
 					resource.TestCheckResourceAttr(g1Name, "ssh_keys.#", "1"),
