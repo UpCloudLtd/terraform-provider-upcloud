@@ -148,11 +148,6 @@ Optional:
 - `work_mem` (Number) Sets the maximum amount of memory to be used by a query operation (such as a sort or hash table) before writing to temporary disk files, 
 			in MB. Default is 1MB + 0.075% of total RAM (up to 32MB).
 
-Read-Only:
-
-- `additional_backup_regions` (List of String) Additional Cloud Regions for Backup Replication
-- `enable_ipv6` (Boolean) Register AAAA DNS records for the service, and allow IPv6 packets to service ports
-
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`
 

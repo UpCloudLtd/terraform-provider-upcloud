@@ -502,11 +502,6 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 10)),
 		},
-		"enable_ipv6": {
-			Type:        schema.TypeBool,
-			Description: "Register AAAA DNS records for the service, and allow IPv6 packets to service ports",
-			Computed:    true,
-		},
 		"pg_stat_monitor_pgsm_enable_query_plan": {
 			Type:        schema.TypeBool,
 			Description: "Enables or disables query plan monitoring",

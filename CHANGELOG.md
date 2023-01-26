@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Removed
 - kubernetes: experimental `node_group` field from `upcloud_kubernetes_cluster` resource
+- dbaas: properties `additional_backup_regions`, `enable_ipv6` and `recovery_basebackup_name`
 
 ## [2.8.0] - 2022-12-21
 

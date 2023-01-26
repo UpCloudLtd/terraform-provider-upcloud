@@ -124,10 +124,6 @@ Optional:
 - `version` (String) MySQL major version
 - `wait_timeout` (Number) The number of seconds the server waits for activity on a noninteractive connection before closing it.
 
-Read-Only:
-
-- `additional_backup_regions` (List of String) Additional Cloud Regions for Backup Replication
-
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`
 
