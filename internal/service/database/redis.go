@@ -81,17 +81,6 @@ func schemaRedisProperties() map[string]*schema.Schema {
 			Default:     true,
 			Optional:    true,
 		},
-		"recovery_basebackup_name": {
-			Type:        schema.TypeString,
-			Description: "Name of the basebackup to restore in forked service.",
-			Optional:    true,
-			Computed:    true,
-			ValidateDiagFunc: validation.ToDiagFunc(
-				validation.All(
-					validation.StringLenBetween(1, 128),
-					validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9-_:.]+$"), "must match '^[a-zA-Z0-9-_:.]+$' pattern e.g. 'backup-20191112t091354293891z'")),
-			),
-		},
 		"redis_lfu_log_factor": {
 			Type:        schema.TypeInt,
 			Description: "Counter logarithm factor for volatile-lfu and allkeys-lfu maxmemory-policies. Default is 10.",

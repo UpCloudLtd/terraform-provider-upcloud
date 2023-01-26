@@ -71,7 +71,6 @@ Optional:
 - `ip_filter` (List of String) IP filter
 - `migration` (Block List, Max: 1) Migrate data from existing server (see [below for nested schema](#nestedblock--properties--migration))
 - `public_access` (Boolean) Public access allows connections to your Managed Database services via the public internet.
-- `recovery_basebackup_name` (String) Name of the basebackup to restore in forked service.
 - `redis_acl_channels_default` (String) Default ACL for pub/sub channels used when Redis user is created. Determines default pub/sub channels' ACL for new users if ACL is not supplied. When this option is not defined, all_channels is assumed to keep backward compatibility. This option doesn't affect Redis configuration acl-pubsub-default.
 - `redis_io_threads` (Number) Redis IO thread count.
 - `redis_lfu_decay_time` (Number) LFU maxmemory-policy counter decay time in minutes. Default is 1.
@@ -83,10 +82,6 @@ Optional:
 - `redis_pubsub_client_output_buffer_limit` (Number) Pub/sub client output buffer hard limit in MB. Set output buffer limit for pub / sub clients in MB. The value is the hard limit, the soft limit is 1/4 of the hard limit. When setting the limit, be mindful of the available memory in the selected service plan.
 - `redis_ssl` (Boolean) Require SSL to access Redis. Default is `true`.
 - `redis_timeout` (Number) Redis idle connection timeout in seconds. Default is 300.
-
-Read-Only:
-
-- `additional_backup_regions` (List of String) Additional Cloud Regions for Backup Replication
 
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`
