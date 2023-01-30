@@ -352,10 +352,10 @@ func ResourceServer() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"plan": {
-							Description:  "Simple backup plan. Accepted values: dailies, weeklies, monthlies.",
+							Description:  "Simple backup plan. Accepted values: daily, dailies, weeklies, monthlies.",
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"dailies", "weeklies", "monthlies"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"daily", "dailies", "weeklies", "monthlies"}, false),
 						},
 						"time": {
 							Description:  "Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).",

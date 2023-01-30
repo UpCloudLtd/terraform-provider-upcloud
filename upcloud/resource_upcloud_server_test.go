@@ -333,7 +333,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 
 						simple_backup {
 							time = "2300"
-							plan = "dailies"
+							plan = "daily"
 						}
 
 						network_interface {
@@ -344,7 +344,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.#", "0"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
 						"time": "2300",
-						"plan": "dailies",
+						"plan": "daily",
 					}),
 				),
 			},
