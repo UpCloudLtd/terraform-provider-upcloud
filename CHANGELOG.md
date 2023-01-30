@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
+### Added
+- server: support for `daily` simple backup plan.
 
 ## [2.8.1] - 2023-01-26
 
