@@ -51,7 +51,7 @@ func ResourceNodeGroup() *schema.Resource {
 			},
 			"anti_affinity": {
 				Description: `If set to true, nodes in this group will be placed on separate compute hosts.
-				Please note that anti-affinity policy is not fully guaranteed that the nodes will end up on different hardware.`,
+				Please note that anti-affinity policy is considered "best effort" and enabling it does not fully guarantee that the nodes will end up on different hardware.`,
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
