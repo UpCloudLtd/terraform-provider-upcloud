@@ -123,7 +123,7 @@ Optional:
 
 Required:
 
-- `plan` (String) Simple backup plan. Accepted values: dailies, weeklies, monthlies.
+- `plan` (String) Simple backup plan. Accepted values: daily, dailies, weeklies, monthlies.
 - `time` (String) Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).
 
 
