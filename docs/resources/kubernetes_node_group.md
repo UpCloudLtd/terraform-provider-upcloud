@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_node_group Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Kubernetes node group. NOTE: this is an experimental feature in an alpha phase, the resource definition might change in the future.
+  Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.
 ---
 
 # upcloud_kubernetes_node_group (Resource)
 
-Kubernetes node group. NOTE: this is an experimental feature in an alpha phase, the resource definition might change in the future.
+Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.
 
 ## Example Usage
 
@@ -62,6 +62,8 @@ resource "upcloud_kubernetes_node_group" "group" {
 
 ### Optional
 
+- `anti_affinity` (Boolean) If set to true, nodes in this group will be placed on separate compute hosts.
+				Please note that anti-affinity policy is considered "best effort" and enabling it does not fully guarantee that the nodes will end up on different hardware.
 - `kubelet_args` (Block Set) Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args. (see [below for nested schema](#nestedblock--kubelet_args))
 - `labels` (Map of String) Key-value pairs to classify the node group.
 - `ssh_keys` (Set of String) You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.
