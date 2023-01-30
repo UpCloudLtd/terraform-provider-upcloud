@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- kubernetes: anti-affinity option for `upcloud_kubernetes_node_group` resource
+
+### Changed
+- update upcloud-go-api to v5.4.0
+
 ## [2.8.2] - 2023-01-30
 
 ### Added

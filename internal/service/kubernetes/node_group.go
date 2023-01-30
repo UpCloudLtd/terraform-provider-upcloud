@@ -15,7 +15,7 @@ import (
 
 func ResourceNodeGroup() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Kubernetes node group. NOTE: this is an experimental feature in an alpha phase, the resource definition might change in the future.",
+		Description:   "Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.",
 		CreateContext: resourceNodeGroupCreate,
 		ReadContext:   resourceNodeGroupRead,
 		DeleteContext: resourceNodeGroupDelete,
@@ -48,6 +48,14 @@ func ResourceNodeGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
+			},
+			"anti_affinity": {
+				Description: `If set to true, nodes in this group will be placed on separate compute hosts.
+				Please note that anti-affinity policy is considered "best effort" and enabling it does not fully guarantee that the nodes will end up on different hardware.`,
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				ForceNew: true,
 			},
 			"labels": {
 				Description: "Key-value pairs to classify the node group.",
@@ -133,14 +141,15 @@ func resourceNodeGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 	svc := meta.(*service.Service)
 
 	req := request.KubernetesNodeGroup{
-		Count:       d.Get("node_count").(int),
-		Name:        d.Get("name").(string),
-		Plan:        d.Get("plan").(string),
-		Labels:      []upcloud.Label{},
-		SSHKeys:     []string{},
-		Storage:     "",
-		KubeletArgs: []upcloud.KubernetesKubeletArg{},
-		Taints:      []upcloud.KubernetesTaint{},
+		Count:        d.Get("node_count").(int),
+		Name:         d.Get("name").(string),
+		Plan:         d.Get("plan").(string),
+		AntiAffinity: d.Get("anti_affinity").(bool),
+		Labels:       []upcloud.Label{},
+		SSHKeys:      []string{},
+		Storage:      "",
+		KubeletArgs:  []upcloud.KubernetesKubeletArg{},
+		Taints:       []upcloud.KubernetesTaint{},
 	}
 	if v, ok := d.GetOk("labels"); ok {
 		for k, v := range v.(map[string]interface{}) {
@@ -258,6 +267,10 @@ func setNodeGroupResourceData(d *schema.ResourceData, clusterID string, ng *upcl
 	}
 
 	if err := d.Set("ssh_keys", ng.SSHKeys); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("anti_affinity", ng.AntiAffinity); err != nil {
 		return diag.FromErr(err)
 	}
 
