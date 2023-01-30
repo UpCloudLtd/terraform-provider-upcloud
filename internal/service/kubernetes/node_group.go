@@ -15,7 +15,7 @@ import (
 
 func ResourceNodeGroup() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Kubernetes node group. NOTE: this is an experimental feature in an alpha phase, the resource definition might change in the future.",
+		Description:   "Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.",
 		CreateContext: resourceNodeGroupCreate,
 		ReadContext:   resourceNodeGroupRead,
 		DeleteContext: resourceNodeGroupDelete,
