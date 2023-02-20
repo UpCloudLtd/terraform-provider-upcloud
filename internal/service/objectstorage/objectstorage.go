@@ -311,9 +311,9 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 func appendRetryError(title string, wrapper error, err error) error {
 	if wrapper == nil {
 		return fmt.Errorf("%s:\n- %w", title, err)
-	} else {
-		return fmt.Errorf("%s\n- %w", wrapper.Error(), err)
 	}
+
+	return fmt.Errorf("%s\n- %w", wrapper.Error(), err)
 }
 
 func createObjectStorage(ctx context.Context, client *service.Service, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
