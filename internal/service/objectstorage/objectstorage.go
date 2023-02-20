@@ -2,6 +2,7 @@ package objectstorage
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -147,11 +148,7 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	objStorage, err := createObjectStorage(ctx, client, &req)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create object storage",
-			Detail:   err.Error(),
-		})
+		diags = append(diags, diag.FromErr(err)...)
 		return diags
 	}
 
@@ -216,11 +213,7 @@ func resourceObjectStorageUpdate(ctx context.Context, d *schema.ResourceData, m 
 		_, err := modifyObjectStorage(ctx, client, &req)
 		if err != nil {
 			var diags diag.Diagnostics
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to modify object storage",
-				Detail:   err.Error(),
-			})
+			diags = append(diags, diag.FromErr(err)...)
 			return diags
 		}
 	}
@@ -315,8 +308,17 @@ func copyObjectStorageDetails(objectDetails *upcloud.ObjectStorageDetails, d *sc
 	return diag.Diagnostics{}
 }
 
+func appendRetryError(title string, wrapper error, err error) error {
+	if wrapper == nil {
+		return fmt.Errorf("%s:\n- %w", title, err)
+	} else {
+		return fmt.Errorf("%s\n- %w", wrapper.Error(), err)
+	}
+}
+
 func createObjectStorage(ctx context.Context, client *service.Service, req *request.CreateObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
+		allErrors  error
 		err        error
 		objStorage *upcloud.ObjectStorageDetails
 	)
@@ -326,13 +328,15 @@ func createObjectStorage(ctx context.Context, client *service.Service, req *requ
 		if err == nil {
 			break
 		}
+		allErrors = appendRetryError("unable to create object storage", allErrors, err)
 		time.Sleep(time.Second)
 	}
-	return objStorage, err
+	return objStorage, allErrors
 }
 
 func modifyObjectStorage(ctx context.Context, client *service.Service, req *request.ModifyObjectStorageRequest) (*upcloud.ObjectStorageDetails, error) {
 	var (
+		allErrors  error
 		err        error
 		objStorage *upcloud.ObjectStorageDetails
 	)
@@ -341,9 +345,10 @@ func modifyObjectStorage(ctx context.Context, client *service.Service, req *requ
 		if err == nil {
 			break
 		}
+		allErrors = appendRetryError("unable to modify object storage", allErrors, err)
 		time.Sleep(time.Second)
 	}
-	return objStorage, err
+	return objStorage, allErrors
 }
 
 func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, error) {
@@ -352,7 +357,7 @@ func getBuckets(URL, accessKey, secretKey string) ([]map[string]interface{}, err
 		return nil, err
 	}
 
-	// sometimes fails here because the buckets aren't redy yet
+	// sometimes fails here because the buckets aren't ready yet
 	var bucketInfo []minio.BucketInfo
 	for trys := 0; trys < numRetries; trys++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
