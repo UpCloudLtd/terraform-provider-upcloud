@@ -131,7 +131,7 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	for _, v := range k.Clusters {
 		if v.Name == currentContext[1] {
-			err = d.Set("cluster_ca_certificate", v.Cluster.CertificateAuthorityData)
+			err = setB64Decoded(d, "cluster_ca_certificate", v.Cluster.CertificateAuthorityData)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -145,12 +145,12 @@ func dataSourceClusterRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	for _, v := range k.Users {
 		if v.Name == currentContext[0] {
-			err = d.Set("client_certificate", v.User.ClientCertificateData)
+			err = setB64Decoded(d, "client_certificate", v.User.ClientCertificateData)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
-			err = d.Set("client_key", v.User.ClientKeyData)
+			err = setB64Decoded(d, "client_key", v.User.ClientKeyData)
 			if err != nil {
 				return diag.FromErr(err)
 			}
