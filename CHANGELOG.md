@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+- kubernetes: `upcloud_kubernetes_cluster` data source now provides `client_certificate`, `client_key`, and `cluster_ca_certificate` as PEM strings instead of base64 encoded PEM strings
+
 ## [2.8.3] - 2023-01-31
 
 ### Added
