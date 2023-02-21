@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [2.8.4] - 2023-02-21
+
 ### Fixed
 - kubernetes: `upcloud_kubernetes_cluster` data source now provides `client_certificate`, `client_key`, and `cluster_ca_certificate` as PEM strings instead of base64 encoded PEM strings
 
@@ -320,7 +322,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.3...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.4...HEAD
+[2.8.4]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.3...v2.8.4
 [2.8.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.2...v2.8.3
 [2.8.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.1...v2.8.2
 [2.8.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.0...v2.8.1
