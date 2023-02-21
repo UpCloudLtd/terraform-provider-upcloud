@@ -3,15 +3,16 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -463,9 +464,9 @@ func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource
 				UUID: rs.Primary.ID,
 			})
 			if err != nil {
-				svcErr, ok := err.(*upcloud.Error)
+				svcErr, ok := err.(*upcloud.Problem)
 
-				if ok && svcErr.ErrorCode == "404" {
+				if ok && svcErr.Status == http.StatusNotFound {
 					return nil
 				}
 				return err

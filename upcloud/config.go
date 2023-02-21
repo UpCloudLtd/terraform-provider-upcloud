@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -43,9 +43,9 @@ func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
 	}
 
 	if err != nil {
-		svcErr, ok := err.(*upcloud.Error)
+		svcErr, ok := err.(*upcloud.Problem)
 		if ok {
-			return nil, fmt.Errorf("[ERROR] Failed to get account, error was %s: '%s'", svcErr.ErrorCode, svcErr.ErrorMessage)
+			return nil, fmt.Errorf("[ERROR] Failed to get account, error was %s: '%s'", svcErr.ErrorCode(), svcErr.Title)
 		}
 		return nil, err
 	}
