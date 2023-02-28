@@ -22,7 +22,7 @@ const (
 	zoneDescription             = "Zone in which the gateway will be hosted, e.g. `de-fra1`."
 	featuresDescription         = "Features enabled for the gateway."
 	routerDescription           = "Attached Router from where traffic is routed towards the network gateway service."
-	routerIdDescription         = "ID of the router attached to the gateway."
+	routerIDDescription         = "ID of the router attached to the gateway."
 	configuredStatusDescription = "The service configured status indicates the service's current intended status. Managed by the customer."
 	operationalStateDescription = "The service operational state indicates the service's current operational, effective state. Managed by the system."
 )
@@ -70,7 +70,7 @@ func ResourceGateway() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
-							Description: routerIdDescription,
+							Description: routerIDDescription,
 							Type:        schema.TypeString,
 							Required:    true,
 						},
