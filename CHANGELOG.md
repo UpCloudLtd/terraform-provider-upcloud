@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- gateway: new `upcloud_gateway` resource
+
+### Changed
+- update upcloud-go-api to v6.0.0
+
 ## [2.8.4] - 2023-02-21
 
 ### Fixed
