@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [2.9.0] - 2023-03-13
+
 ### Added
 - gateway: new `upcloud_gateway` resource
 
@@ -328,7 +330,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.4...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.4...v2.9.0
 [2.8.4]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.3...v2.8.4
 [2.8.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.2...v2.8.3
 [2.8.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.8.1...v2.8.2
