@@ -23,7 +23,7 @@ func TestAccUpCloudNetworksNoZone(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("", ""),
-				Check:  testAccNetworks("data.upcloud_networks.my_example_networks", "", ""),
+				Check:  testAccNetworks("data.upcloud_networks.my_example_networks", ""),
 			},
 		},
 	})
@@ -38,7 +38,7 @@ func TestAccUpCloudNetworksWithZone(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("fi-hel1", ""),
-				Check:  testAccNetworks("data.upcloud_networks.my_example_networks", "fi-hel1", ""),
+				Check:  testAccNetworks("data.upcloud_networks.my_example_networks", ""),
 			},
 		},
 	})
@@ -55,7 +55,6 @@ func TestAccUpCloudNetworksWithFilter(t *testing.T) {
 				Config: testAccNetworksConfig("", "^Public.*"),
 				Check: testAccNetworks(
 					"data.upcloud_networks.my_example_networks",
-					"",
 					"^Public.*",
 				),
 			},
@@ -82,7 +81,7 @@ func testAccNetworksConfig(zone string, filterName string) string {
 	return s
 }
 
-func testAccNetworks(resourceName string, zone string, filterName string) resource.TestCheckFunc {
+func testAccNetworks(resourceName string, filterName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Check that the expected resource exists
 		rs, ok := s.RootModule().Resources[resourceName]

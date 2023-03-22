@@ -84,15 +84,15 @@ func validateZone(ctx context.Context, service *service.Service, zone string) er
 }
 
 func validateTagsChange(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
-	old, new := d.GetChange("tags")
-	if tagsHasChange(old, new) {
+	oldTags, newTags := d.GetChange("tags")
+	if tagsHasChange(oldTags, newTags) {
 		client := meta.(*service.Service)
 
 		if isSubaccount, err := isProviderAccountSubaccount(ctx, client); err != nil || isSubaccount {
 			if err != nil {
 				return err
 			}
-			return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", old, new)
+			return fmt.Errorf("creating and modifying tags is allowed only by main account. Subaccounts have access only to listing tags and tagged servers they are granted access to (tags change: %v -> %v)", oldTags, newTags)
 		}
 	}
 

@@ -157,11 +157,7 @@ func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) erro
 		return err
 	}
 
-	if err := d.Set("labels", utils.LabelSliceToMap(group.Labels)); err != nil {
-		return err
-	}
-
-	return nil
+	return d.Set("labels", utils.LabelSliceToMap(group.Labels))
 }
 
 func createServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceData) (*request.CreateServerGroupRequest, error) {

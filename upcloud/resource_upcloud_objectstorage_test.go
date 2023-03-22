@@ -95,7 +95,7 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName1),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName1),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceConfig(
@@ -134,7 +134,7 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, objectStorageTestExpectedName2),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceConfig(
@@ -184,7 +184,7 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(expectedUpdatedKey, expectedUpdatedSecret, objectStorageTestExpectedName2),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceDefaultsConfig(
@@ -227,7 +227,7 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
@@ -242,8 +242,8 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "zone", objectStorageTestExpectedZone),
 					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName2),
 				),
 			},
 			{
@@ -262,8 +262,8 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
-					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName2),
 				),
 			},
 			{
@@ -275,10 +275,10 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
-					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName3),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName4),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName2),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName3),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName4),
 				),
 			},
 			{
@@ -290,11 +290,11 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_object_storage.my_storage", "size", expectedSize),
 					verifyObjectStorageExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2),
-					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName1),
-					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName2),
-					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName3),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName4),
-					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, objectStorageTestExpectedName2, expectedBucketName5),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName1),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName2),
+					verifyBucketDoesNotExist(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName3),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName4),
+					verifyBucketExists(objectStorageTestExpectedKey, objectStorageTestExpectedSecret, expectedBucketName5),
 				),
 			},
 		},
@@ -326,7 +326,7 @@ func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
 			os.Setenv(secretKeyEnvVarName, secretKey)
 		},
 		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(accessKey, secretKey, name),
+		CheckDestroy:      verifyObjectStorageDoesNotExist(name),
 		Steps: []resource.TestStep{
 			{
 				// Pass empty strings as access and secret keys to check if those values will be taken from env vars
@@ -446,7 +446,7 @@ func verifyObjectStorageExists(accessKey, secretKey, name string) resource.TestC
 	}
 }
 
-func verifyObjectStorageDoesNotExist(accessKey, secretKey, name string) resource.TestCheckFunc {
+func verifyObjectStorageDoesNotExist(name string) resource.TestCheckFunc {
 	/*
 			The reason of not using doesObjectStorageExists to check the s3 bucket availability is
 			because of a race condition.
@@ -498,9 +498,9 @@ func getMinioConnection(state *terraform.State, accessKey, secretKey string) (*m
 	return objectstorage.GetBucketConnection(resources.Primary.Attributes["url"], accessKey, secretKey)
 }
 
-func verifyBucketExists(accessKey, secretKey, name, bucketName string) resource.TestCheckFunc {
+func verifyBucketExists(accessKey, secretKey, bucketName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		found, err := bucketExists(state, accessKey, secretKey, name, bucketName)
+		found, err := bucketExists(state, accessKey, secretKey, bucketName)
 		if err != nil {
 			return err
 		}
@@ -512,9 +512,9 @@ func verifyBucketExists(accessKey, secretKey, name, bucketName string) resource.
 	}
 }
 
-func verifyBucketDoesNotExist(accessKey, secretKey, name, bucketName string) resource.TestCheckFunc {
+func verifyBucketDoesNotExist(accessKey, secretKey, bucketName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		found, err := bucketExists(state, accessKey, secretKey, name, bucketName)
+		found, err := bucketExists(state, accessKey, secretKey, bucketName)
 		if err != nil {
 			return err
 		}
@@ -526,7 +526,7 @@ func verifyBucketDoesNotExist(accessKey, secretKey, name, bucketName string) res
 	}
 }
 
-func bucketExists(state *terraform.State, accessKey, secretKey, name, bucketName string) (bool, error) {
+func bucketExists(state *terraform.State, accessKey, secretKey, bucketName string) (bool, error) {
 	minio, err := getMinioConnection(state, accessKey, secretKey)
 	if err != nil {
 		return false, err
