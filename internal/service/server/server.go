@@ -183,12 +183,7 @@ func ResourceServer() *schema.Resource {
 					},
 				},
 			},
-			"labels": {
-				Description: "Labels contain key-value pairs to classify the server",
-				Type:        schema.TypeMap,
-				Elem:        schema.TypeString,
-				Optional:    true,
-			},
+			"labels": utils.LabelsSchema("server"),
 			"user_data": {
 				Description: "Defines URL for a server setup script, or the script body itself",
 				Type:        schema.TypeString,
@@ -464,14 +459,8 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
 
-	if len(server.Labels) > 0 {
-		labels := make(map[string]interface{})
-		for _, v := range server.Labels {
-			labels[v.Key] = v.Value
-		}
+	_ = d.Set("labels", utils.LabelsSliceToMap(server.Labels))
 
-		_ = d.Set("labels", labels)
-	}
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
 
@@ -951,15 +940,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func buildLabels(m map[string]interface{}) *upcloud.LabelSlice {
-	var labels upcloud.LabelSlice
-
-	for k, v := range m {
-		labels = append(labels, upcloud.Label{
-			Key:   k,
-			Value: v.(string),
-		})
-	}
-
+	labels := upcloud.LabelSlice(utils.LabelsMapToSlice(m))
 	return &labels
 }
 

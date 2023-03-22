@@ -26,14 +26,7 @@ func ResourceServerGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"labels": {
-				Description: "Labels for your server group",
-				Type:        schema.TypeMap,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Optional: true,
-			},
+			"labels": utils.LabelsSchema("server group"),
 			"members": {
 				Description: "UUIDs of the servers that are members of this group",
 				Type:        schema.TypeSet,
