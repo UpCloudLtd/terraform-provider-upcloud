@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- lbaas: add `labels` support
+- server, server group: add validation for `labels` keys and values
+
 ## [2.9.0] - 2023-03-13
 
 ### Added
