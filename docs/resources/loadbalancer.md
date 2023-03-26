@@ -59,6 +59,7 @@ resource "upcloud_loadbalancer" "lb" {
 ### Optional
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
+- `labels` (Map of String) Key-value pairs to classify the load balancer.
 - `network` (String, Deprecated) Private network UUID where traffic will be routed. Must reside in load balancer zone.
 - `networks` (Block List, Max: 8) Attached Networks from where traffic consumed and routed. Private networks must reside in loadbalancer zone. (see [below for nested schema](#nestedblock--networks))
 
