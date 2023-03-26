@@ -19,6 +19,11 @@ resource "upcloud_loadbalancer" "lb" {
   plan              = "development"
   zone              = var.lb_zone
   network           = resource.upcloud_network.lb_network.id
+
+  labels = {
+    key       = "value"
+    test-step = "2"
+  }
 }
 
 resource "upcloud_loadbalancer_frontend" "lb_fe_1" {

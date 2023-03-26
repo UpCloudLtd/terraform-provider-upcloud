@@ -39,6 +39,9 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttrSet(lbName, "dns_name"),
+					resource.TestCheckResourceAttr(lbName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(lbName, "labels.key", "value"),
+					resource.TestCheckResourceAttr(lbName, "labels.test-step", "1"),
 					resource.TestCheckResourceAttr(dnsName, "name", "lb-resolver-1-test"),
 					resource.TestCheckResourceAttr(dnsName, "nameservers.#", "2"),
 					resource.TestCheckResourceAttr(be1Name, "name", "lb-be-1-test"),
@@ -132,6 +135,9 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
+					resource.TestCheckResourceAttr(lbName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(lbName, "labels.key", "value"),
+					resource.TestCheckResourceAttr(lbName, "labels.test-step", "2"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.src_port.0.method", "equal"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.src_port.0.value", "80"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.use_backend.0.backend_name", "lb-be-1-test-1"),
@@ -162,6 +168,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(lbName, "networks.0.type", "private"),
 					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-2"),
 					resource.TestCheckResourceAttr(lbName, "networks.1.type", "private"),
+					resource.TestCheckResourceAttr(lbName, "labels.%", "0"),
 				),
 			},
 			{

@@ -119,6 +119,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"labels": utils.LabelsSchema("load balancer"),
 		},
 		CustomizeDiff: customdiff.ForceNewIfChange("networks.#", func(ctx context.Context, old, new, meta interface{}) bool {
 			return new.(int) != old.(int)
@@ -245,6 +246,7 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 		Backends:         []request.LoadBalancerBackend{},
 		Resolvers:        []request.LoadBalancerResolver{},
 		Networks:         networks,
+		Labels:           utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
 	}
 	lb, err := svc.CreateLoadBalancer(ctx, req)
 	if err != nil {
@@ -284,12 +286,19 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	lb, err := svc.ModifyLoadBalancer(ctx, &request.ModifyLoadBalancerRequest{
+	req := &request.ModifyLoadBalancerRequest{
 		UUID:             d.Id(),
 		Name:             d.Get("name").(string),
 		Plan:             d.Get("plan").(string),
 		ConfiguredStatus: d.Get("configured_status").(string),
-	})
+	}
+
+	if d.HasChange("labels") {
+		labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
+		req.Labels = &labels
+	}
+
+	lb, err := svc.ModifyLoadBalancer(ctx, req)
 	if err != nil {
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
@@ -367,6 +376,10 @@ func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalance
 	}
 
 	if err := d.Set("dns_name", lb.DNSName); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("labels", utils.LabelsSliceToMap(lb.Labels)); err != nil {
 		return diag.FromErr(err)
 	}
 

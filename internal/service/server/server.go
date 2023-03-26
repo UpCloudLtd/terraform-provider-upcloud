@@ -88,8 +88,8 @@ func ResourceServer() *schema.Resource {
 				// Suppress diff if only order of tags changes, because we cannot really control the order of tags of a server.
 				// This removes some unnecessary change-of-order diffs until Type is changed from TypeList to TypeSet.
 				DiffSuppressFunc: func(key, oldName, newName string, d *schema.ResourceData) bool {
-					old, new := d.GetChange("tags")
-					return !tagsHasChange(old, new)
+					oldTags, newTags := d.GetChange("tags")
+					return !tagsHasChange(oldTags, newTags)
 				},
 			},
 			"host": {
@@ -183,12 +183,7 @@ func ResourceServer() *schema.Resource {
 					},
 				},
 			},
-			"labels": {
-				Description: "Labels contain key-value pairs to classify the server",
-				Type:        schema.TypeMap,
-				Elem:        schema.TypeString,
-				Optional:    true,
-			},
+			"labels": utils.LabelsSchema("server"),
 			"user_data": {
 				Description: "Defines URL for a server setup script, or the script body itself",
 				Type:        schema.TypeString,
@@ -464,14 +459,8 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
 
-	if len(server.Labels) > 0 {
-		labels := make(map[string]interface{})
-		for _, v := range server.Labels {
-			labels[v.Key] = v.Value
-		}
+	_ = d.Set("labels", utils.LabelsSliceToMap(server.Labels))
 
-		_ = d.Set("labels", labels)
-	}
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
 
@@ -878,7 +867,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		r.SimpleBackup = buildSimpleBackupOpts(simpleBackupAttrs)
 	}
 	if login, ok := d.GetOk("login"); ok {
-		loginOpts, deliveryMethod, err := buildLoginOpts(login, meta)
+		loginOpts, deliveryMethod, err := buildLoginOpts(login)
 		if err != nil {
 			return nil, err
 		}
@@ -938,7 +927,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 	}
 
-	networking, err := buildNetworkOpts(d, meta)
+	networking, err := buildNetworkOpts(d)
 	if err != nil {
 		return nil, err
 	}
@@ -951,15 +940,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func buildLabels(m map[string]interface{}) *upcloud.LabelSlice {
-	var labels upcloud.LabelSlice
-
-	for k, v := range m {
-		labels = append(labels, upcloud.Label{
-			Key:   k,
-			Value: v.(string),
-		})
-	}
-
+	labels := upcloud.LabelSlice(utils.LabelsMapToSlice(m))
 	return &labels
 }
 
@@ -973,7 +954,7 @@ func buildSimpleBackupOpts(attrs map[string]interface{}) string {
 	return "no"
 }
 
-func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string, error) {
+func buildLoginOpts(v interface{}) (*request.LoginUser, string, error) {
 	// Construct LoginUser struct from the schema
 	r := &request.LoginUser{}
 	e := v.(*schema.Set).List()[0]
@@ -1005,7 +986,7 @@ func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string
 	return r, deliveryMethod, nil
 }
 
-func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerInterface, error) {
+func buildNetworkOpts(d *schema.ResourceData) ([]request.CreateServerInterface, error) {
 	ifaces := []request.CreateServerInterface{}
 
 	niCount := d.Get("network_interface.#").(int)

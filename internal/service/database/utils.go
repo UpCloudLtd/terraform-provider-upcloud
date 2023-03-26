@@ -62,7 +62,7 @@ func buildManagedDatabaseSubResourceID(serviceID, subResourceID string) string {
 	return fmt.Sprintf("%s/%s", serviceID, subResourceID)
 }
 
-func diffSuppressCreateOnlyProperty(k, old, new string, d *schema.ResourceData) bool {
+func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool {
 	return d.Id() != ""
 }
 
