@@ -46,7 +46,7 @@ resource "upcloud_server_group" "main" {
 				Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
 				policies in server group are not met, you need to manually restart the servers in said group,
 				for example via API, UpCloud Control Panel or upctl (UpCloud CLI)
-- `labels` (Map of String) Labels for your server group
+- `labels` (Map of String) Key-value pairs to classify the server group.
 - `members` (Set of String) UUIDs of the servers that are members of this group
 
 ### Read-Only

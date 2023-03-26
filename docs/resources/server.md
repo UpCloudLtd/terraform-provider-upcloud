@@ -62,7 +62,7 @@ resource "upcloud_server" "example" {
 - `cpu` (Number) The number of CPU for the server
 - `firewall` (Boolean) Are firewall rules active for the server
 - `host` (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
-- `labels` (Map of String) Labels contain key-value pairs to classify the server
+- `labels` (Map of String) Key-value pairs to classify the server.
 - `login` (Block Set, Max: 1) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
 - `mem` (Number) The size of memory for the server (in megabytes)
 - `metadata` (Boolean) Is the metadata service active for the server
