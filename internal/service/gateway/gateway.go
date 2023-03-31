@@ -120,6 +120,11 @@ func resourceGatewayCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	d.SetId(gw.UUID)
 
+	err = waitForGatewayToBeRunning(ctx, svc, gw.UUID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	diags = append(diags, setGatewayResourceData(d, gw)...)
 
 	// No error, log a success message
@@ -209,6 +214,30 @@ func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags 
 	}
 
 	return diags
+}
+
+func waitForGatewayToBeRunning(ctx context.Context, svc *service.Service, id string) error {
+	const maxRetries int = 100
+
+	for i := 0; i <= maxRetries; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			gw, err := svc.GetGateway(ctx, &request.GetGatewayRequest{UUID: id})
+			if err != nil {
+				return err
+			}
+			if gw.OperationalState == upcloud.GatewayOperationalStateRunning {
+				return nil
+			}
+
+			tflog.Info(ctx, "waiting for network gateway to be running", map[string]interface{}{"name": gw.Name, "state": gw.OperationalState})
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("max retries (%d)reached while waiting for network gateway to be running", maxRetries)
 }
 
 func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
