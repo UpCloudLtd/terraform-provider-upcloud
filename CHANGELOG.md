@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- kubernetes: plan field to `upcloud_kubernetes_cluster` resource
+
+### Changed
+- update upcloud-go-api to v6.1.0
+
 ## [2.9.1] - 2023-04-03
 
 ### Added
