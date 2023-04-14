@@ -47,6 +47,10 @@ resource "upcloud_kubernetes_cluster" "example" {
 - `network` (String) Network ID for the cluster to run in.
 - `zone` (String) Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`.
 
+### Optional
+
+- `plan` (String) The pricing plan used for the cluster. Default plan is `development`.
+
 ### Read-Only
 
 - `id` (String) The ID of this resource.

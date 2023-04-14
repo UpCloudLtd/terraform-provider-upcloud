@@ -58,6 +58,13 @@ func ResourceCluster() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"plan": {
+				Description: "The pricing plan used for the cluster. Default plan is `development`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Default:     "development",
+			},
 			"network": {
 				Description: networkDescription,
 				Type:        schema.TypeString,
@@ -93,6 +100,7 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 		Name:    d.Get("name").(string),
 		Network: d.Get("network").(string),
 		Zone:    d.Get("zone").(string),
+		Plan:    d.Get("plan").(string),
 	}
 
 	c, err := svc.CreateKubernetesCluster(ctx, req)
@@ -154,6 +162,10 @@ func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta int
 
 func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster) (diags diag.Diagnostics) {
 	if err := d.Set("name", c.Name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("plan", c.Plan); err != nil {
 		return diag.FromErr(err)
 	}
 
