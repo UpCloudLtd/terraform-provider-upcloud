@@ -54,7 +54,7 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     track_functions                     = "all"
     track_io_timing                     = "on"
     variant                             = "aiven"
-    version                             = "14"
+    version                             = "15"
     wal_sender_timeout                  = 60000
     wal_writer_delay                    = 10
     work_mem                            = 1024

@@ -7,6 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - kubernetes: plan field to `upcloud_kubernetes_cluster` resource
+- dbaas: support for PostgreSQL version 15
 
 ### Changed
 - update upcloud-go-api to v6.1.0

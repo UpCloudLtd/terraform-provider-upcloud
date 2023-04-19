@@ -423,7 +423,7 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Description:      "PostgreSQL major version",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"12", "13", "14"}, false)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"12", "13", "14", "15"}, false)),
 		},
 		"wal_sender_timeout": {
 			Type:        schema.TypeInt,
