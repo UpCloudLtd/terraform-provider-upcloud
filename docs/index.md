@@ -150,6 +150,16 @@ resource "upcloud_server" "example" {
 }
 ```
 
+### Available zones
+
+Zone specific resources typically require a `zone` parameter.
+
+You can list all available UpCloud zones for your account by:
+
+- UpCloud Hub: [check out the server deploy page](https://hub.upcloud.com/deploy)
+- CLI: [upctl zone list](https://upcloudltd.github.io/upcloud-cli/commands_reference/upctl_zone/list/)
+- API: [list available zones API endpoint](https://developers.upcloud.com/1.3/5-zones/#list-available-zones)
+
 ## Known issues
 - `BACKUP_RULE_CONFLICT` when updating server `simple_backup` and storage `backup_rule` in one apply
 
