@@ -49,7 +49,7 @@ func ResourceServer() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, serverTitleLength),
 			},
 			"zone": {
-				Description: "The zone in which the server will be hosted",
+				Description: "The zone in which the server will be hosted, e.g. `de-fra1`. See main provider documentation on how to list all available zones for your account.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

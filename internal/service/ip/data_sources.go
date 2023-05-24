@@ -61,7 +61,7 @@ func DataSourceIPAddresses() *schema.Resource {
 						},
 						"zone": {
 							Type:        schema.TypeString,
-							Description: "Zone of address, required when assigning a detached floating IP address",
+							Description: "Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. See main provider documentation on how to list all available zones for your account.",
 							Computed:    true,
 						},
 					},

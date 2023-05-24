@@ -103,7 +103,7 @@ func ResourceNetwork() *schema.Resource {
 			},
 			"zone": {
 				Type:        schema.TypeString,
-				Description: "The zone the network is in",
+				Description: "The zone the network is in, e.g. `de-fra1`. See main provider documentation on how to list all available zones for your account.",
 				Required:    true,
 				ForceNew:    true,
 			},

@@ -65,7 +65,7 @@ Storage types are: %s`, strings.Join(storageTypes, ", ")),
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 64)),
 			},
 			"zone": {
-				Description: "The zone in which the storage resides",
+				Description: "The zone in which the storage resides, e.g. `de-fra1`. See main provider documentation on how to list all available zones for your account.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
