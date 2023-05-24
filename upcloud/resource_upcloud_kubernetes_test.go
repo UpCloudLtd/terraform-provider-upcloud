@@ -9,7 +9,6 @@ import (
 )
 
 func TestAccUpcloudKubernetes(t *testing.T) {
-
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s2.tf")
 
