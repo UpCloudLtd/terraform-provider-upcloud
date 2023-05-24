@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_node_group Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.
+  This resource represents a node group in a Managed Kubernetes cluster.
 ---
 
 # upcloud_kubernetes_node_group (Resource)
 
-Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.
+This resource represents a node group in a Managed Kubernetes cluster.
 
 ## Example Usage
 
