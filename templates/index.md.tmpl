@@ -111,15 +111,14 @@ resource "upcloud_server" "example" {
 }
 ```
 
-### Available zones
+### Additional tooling
 
-Zone specific resources typically require a `zone` parameter.
+It is recommended to install the [UpCloud CLI client `upctl`](https://github.com/UpCloudLtd/upcloud-cli) to help out with
+accessing information about your account and troubleshooting. For example, typically Terraform resources require parameters
+that can be easily listed with the following commands:
 
-You can list all available UpCloud zones for your account by:
-
-- UpCloud Hub: [check out the server deploy page](https://hub.upcloud.com/deploy)
-- CLI: [upctl zone list](https://upcloudltd.github.io/upcloud-cli/commands_reference/upctl_zone/list/)
-- API: [list available zones API endpoint](https://developers.upcloud.com/1.3/5-zones/#list-available-zones)
+- [upctl server plans](https://upcloudltd.github.io/upcloud-cli/commands_reference/upctl_server/plans/)
+- [upctl zone list](https://upcloudltd.github.io/upcloud-cli/commands_reference/upctl_zone/list/)
 
 ## Known issues
 - `BACKUP_RULE_CONFLICT` when updating server `simple_backup` and storage `backup_rule` in one apply

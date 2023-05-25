@@ -98,7 +98,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"zone": {
-			Description: "Zone where the instance resides, e.g. `de-fra1`. See main provider documentation on how to list all available zones for your account.",
+			Description: "Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list plans`.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},

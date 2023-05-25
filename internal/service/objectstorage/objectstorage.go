@@ -69,7 +69,7 @@ func ResourceObjectStorage() *schema.Resource {
 				ValidateDiagFunc: createKeyValidationFunc("secret_key", secretKeyMinLength, secretKeyMaxLength),
 			},
 			"zone": {
-				Description: "The zone in which the object storage instance will be created, e.g. `de-fra1`. See main provider documentation on how to list all available zones for your account.",
+				Description: "The zone in which the object storage instance will be created, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

@@ -42,7 +42,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Required:    true,
 			},
 			"zone": {
-				Description: "Zone in which the service will be hosted, e.g. `fi-hel1`. See main provider documentation on how to list all available zones for your account.",
+				Description: "Zone in which the service will be hosted, e.g. `fi-hel1`. You can list available zones with `upctl zone list`.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},

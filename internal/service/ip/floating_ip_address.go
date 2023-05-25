@@ -49,7 +49,7 @@ func ResourceFloatingIPAddress() *schema.Resource {
 				ValidateFunc: validation.IsMACAddress,
 			},
 			"zone": {
-				Description: "Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. See main provider documentation on how to list all available zones for your account.",
+				Description: "Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
