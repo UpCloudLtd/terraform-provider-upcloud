@@ -68,7 +68,7 @@ func schemaOpenSearchIndex() *schema.Resource {
 				Computed:    true,
 			},
 			"read_only_allow_delete": {
-				Description: "Indicates whether the index is in a read-only state that permits deletion of the entire index. This attribute can be automaticly set to true in certain scenarios where the node disk space exceeds the flood stage.",
+				Description: "Indicates whether the index is in a read-only state that permits deletion of the entire index. This attribute can be automatically set to true in certain scenarios where the node disk space exceeds the flood stage.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
