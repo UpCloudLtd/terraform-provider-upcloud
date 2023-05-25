@@ -49,7 +49,7 @@ resource "upcloud_kubernetes_cluster" "example" {
 
 ### Optional
 
-- `plan` (String) The pricing plan used for the cluster. Default plan is `development`.
+- `plan` (String) The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.
 
 ### Read-Only
 
