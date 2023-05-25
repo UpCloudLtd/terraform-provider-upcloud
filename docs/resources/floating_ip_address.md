@@ -48,7 +48,7 @@ resource "upcloud_floating_ip_address" "my_new_floating_address" {
 - `access` (String) Is address for utility or public network
 - `family` (String) The address family of new IP address
 - `mac_address` (String) MAC address of server interface to assign address to
-- `zone` (String) Zone of address, required when assigning a detached floating IP address
+- `zone` (String) Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Read-Only
 

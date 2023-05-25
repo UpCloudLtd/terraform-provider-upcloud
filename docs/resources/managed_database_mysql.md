@@ -52,7 +52,7 @@ resource "upcloud_managed_database_mysql" "example_3" {
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
 - `plan` (String) Service plan to use. This determines how much resources the instance will have
-- `zone` (String) Zone where the instance resides
+- `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
 
