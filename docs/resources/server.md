@@ -55,7 +55,7 @@ resource "upcloud_server" "example" {
 
 - `hostname` (String) A valid domain name
 - `network_interface` (Block List, Min: 1) One or more blocks describing the network interfaces of the server. (see [below for nested schema](#nestedblock--network_interface))
-- `zone` (String) The zone in which the server will be hosted
+- `zone` (String) The zone in which the server will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
 
