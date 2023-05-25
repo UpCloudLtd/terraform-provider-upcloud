@@ -44,7 +44,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 		},
 		"node_states": schemaDatabaseNodeStates(),
 		"plan": {
-			Description: "Service plan to use. This determines how much resources the instance will have",
+			Description: "Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},

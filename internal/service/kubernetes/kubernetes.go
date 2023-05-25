@@ -59,7 +59,7 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:    true,
 			},
 			"plan": {
-				Description: "The pricing plan used for the cluster. Default plan is `development`.",
+				Description: "The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
