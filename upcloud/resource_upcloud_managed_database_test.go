@@ -21,6 +21,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	userName1 := "upcloud_managed_database_user.db_user_1"
 	userName2 := "upcloud_managed_database_user.db_user_2"
 	userName3 := "upcloud_managed_database_user.db_user_3"
+	userName4 := "upcloud_managed_database_user.db_user_4"
 	redisName := "upcloud_managed_database_redis.r1"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -69,6 +70,9 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.channels.0", "*"),
 					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.commands.0", "+set"),
 					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.keys.0", "key_*"),
+
+					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.index", ".kibana_1"),
+					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.permission", "admin"),
 
 					resource.TestCheckResourceAttr(redisName, "name", "tf-redis-test-1"),
 					resource.TestCheckResourceAttr(redisName, "plan", "1x1xCPU-2GB"),

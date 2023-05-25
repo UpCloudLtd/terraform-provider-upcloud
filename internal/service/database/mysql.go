@@ -1,11 +1,13 @@
 package database
 
 import (
+	"context"
 	"math"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -13,9 +15,9 @@ import (
 func ResourceMySQL() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents MySQL managed database",
-		CreateContext: resourceDatabaseCreate(upcloud.ManagedDatabaseServiceTypeMySQL),
-		ReadContext:   resourceDatabaseRead,
-		UpdateContext: resourceDatabaseUpdate,
+		CreateContext: resourceMySQLCreate,
+		ReadContext:   resourceMySQLRead,
+		UpdateContext: resourceMySQLUpdate,
 		DeleteContext: resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -25,6 +27,33 @@ func ResourceMySQL() *schema.Resource {
 			schemaMySQLEngine(),
 		),
 	}
+}
+
+func resourceMySQLCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if err := d.Set("type", string(upcloud.ManagedDatabaseServiceTypeMySQL)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	diags := resourceDatabaseCreate(ctx, d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	return resourceMySQLRead(ctx, d, meta)
+}
+
+func resourceMySQLRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceDatabaseRead(ctx, d, meta)
+}
+
+func resourceMySQLUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	diags := resourceDatabaseUpdate(ctx, d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	diags = append(diags, resourceMySQLRead(ctx, d, meta)...)
+	return diags
 }
 
 func schemaMySQLEngine() map[string]*schema.Schema {

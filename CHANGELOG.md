@@ -8,6 +8,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - kubernetes: `private_node_groups` field to `upcloud_kubernetes_cluster` resource
 - server: properties `timezone`, `video_model` and `nic_model`
+- dbaas: `upcloud_managed_database_opensearch` resource
+- dbaas: `opensearch_access_control` block to `upcloud_managed_database_user` resource
+- dbaas: `upcloud_managed_database_opensearch_indices` data source
 
 ## [2.10.0] - 2023-04-26
 
