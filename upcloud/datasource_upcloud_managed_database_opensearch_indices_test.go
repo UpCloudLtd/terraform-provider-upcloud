@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccDataSourceUpcloudManagedDatabaseOpenSearchIndices(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/opensearch_properties_s1.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/data_source_opensearch_indices_s1.tf")
 
 	var providers []*schema.Provider
 	name := "data.upcloud_managed_database_opensearch_indices.opensearch_indices"
@@ -27,7 +27,7 @@ func TestAccDataSourceUpcloudManagedDatabaseOpenSearchIndices(t *testing.T) {
 					resource.TestCheckResourceAttrSet(name, prop("create_time")),
 					resource.TestCheckResourceAttr(name, prop("docs"), "0"),
 					resource.TestCheckResourceAttr(name, prop("health"), "green"),
-					resource.TestCheckResourceAttr(name, prop("index_name"), ".kibana_1"),
+					resource.TestCheckResourceAttr(name, prop("index_name"), ".opensearch-observability"),
 					resource.TestCheckResourceAttr(name, prop("number_of_replicas"), "0"),
 					resource.TestCheckResourceAttr(name, prop("number_of_shards"), "1"),
 					resource.TestCheckResourceAttr(name, prop("read_only_allow_delete"), "false"),

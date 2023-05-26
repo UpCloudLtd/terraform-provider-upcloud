@@ -71,7 +71,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.commands.0", "+set"),
 					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.keys.0", "key_*"),
 
-					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.index", ".kibana_1"),
+					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.index", ".opensearch-observability"),
 					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.permission", "admin"),
 
 					resource.TestCheckResourceAttr(redisName, "name", "tf-redis-test-1"),

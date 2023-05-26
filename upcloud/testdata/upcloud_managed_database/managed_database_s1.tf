@@ -84,7 +84,7 @@ resource "upcloud_managed_database_user" "db_user_4" {
   password = "Superpass123"
   opensearch_access_control {
     rules {
-      index      = ".kibana_1"
+      index      = ".opensearch-observability"
       permission = "admin"
     }
   }
