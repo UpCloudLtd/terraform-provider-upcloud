@@ -38,7 +38,7 @@ func schemaOpenSearchIndex() *schema.Resource {
 		Description: "OpenSearch index",
 		Schema: map[string]*schema.Schema{
 			"create_time": {
-				Description: " Timestamp indicating the creation time of the index.",
+				Description: "Timestamp indicating the creation time of the index.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -58,7 +58,7 @@ func schemaOpenSearchIndex() *schema.Resource {
 				Computed:    true,
 			},
 			"number_of_replicas": {
-				Description: " Number of replicas configured for the index.",
+				Description: "Number of replicas configured for the index.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
@@ -78,7 +78,7 @@ func schemaOpenSearchIndex() *schema.Resource {
 				Computed:    true,
 			},
 			"status": {
-				Description: "tatus of the index e.g. `open` or `closed`.",
+				Description: "Status of the index e.g. `open` or `closed`.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

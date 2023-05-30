@@ -55,8 +55,14 @@ func resourcePostgreSQLUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	client := meta.(*service.Service)
 
-	switch d.HasChange("powered") {
-	case true:
+	if !d.HasChange("powered") {
+		if d.HasChange("properties.0.version") {
+			diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
+			if diags.HasError() {
+				return diags
+			}
+		}
+	} else {
 		switch d.Get("powered").(bool) {
 		// Power off
 		case false:
@@ -81,13 +87,6 @@ func resourcePostgreSQLUpdate(ctx context.Context, d *schema.ResourceData, meta 
 				if diags.HasError() {
 					return diags
 				}
-			}
-		}
-	case false:
-		if d.HasChange("properties.0.version") {
-			diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
-			if diags.HasError() {
-				return diags
 			}
 		}
 	}
