@@ -110,7 +110,7 @@ func dataSourceOpenSearchIndicesRead(ctx context.Context, d *schema.ResourceData
 	return diags
 }
 
-func buildOpenSearchIndices(indices []*upcloud.ManagedDatabaseIndex) []map[string]interface{} {
+func buildOpenSearchIndices(indices []upcloud.ManagedDatabaseIndex) []map[string]interface{} {
 	maps := make([]map[string]interface{}, 0)
 	for _, index := range indices {
 		maps = append(maps, map[string]interface{}{
