@@ -37,7 +37,7 @@ resource "upcloud_kubernetes_cluster" "example" {
   zone    = "de-fra1"
 }
 
-# Kubernetes cluster with private node groups requires network that is routed through NAT gateway.
+# Kubernetes cluster with private node groups requires a network that is routed through NAT gateway.
 resource "upcloud_router" "example2" {
   name = "example2-router"
 }
@@ -85,7 +85,7 @@ resource "upcloud_kubernetes_cluster" "example2" {
 ### Optional
 
 - `plan` (String) The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.
-- `private_node_groups` (Boolean) Enable private node groups. Private node groups requires network that is routed through NAT gateway.
+- `private_node_groups` (Boolean) Enable private node groups. Private node groups requires a network that is routed through NAT gateway.
 
 ### Read-Only
 

@@ -72,7 +72,7 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:    true,
 			},
 			"private_node_groups": {
-				Description: "Enable private node groups. Private node groups requires network that is routed through NAT gateway.",
+				Description: "Enable private node groups. Private node groups requires a network that is routed through NAT gateway.",
 				Type:        schema.TypeBool,
 				Default:     false,
 				Optional:    true,

@@ -22,7 +22,7 @@ resource "upcloud_kubernetes_cluster" "example" {
   zone    = "de-fra1"
 }
 
-# Kubernetes cluster with private node groups requires network that is routed through NAT gateway.
+# Kubernetes cluster with private node groups requires a network that is routed through NAT gateway.
 resource "upcloud_router" "example2" {
   name = "example2-router"
 }
