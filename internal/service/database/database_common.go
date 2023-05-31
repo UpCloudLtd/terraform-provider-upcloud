@@ -44,7 +44,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 		},
 		"node_states": schemaDatabaseNodeStates(),
 		"plan": {
-			Description: "Service plan to use. This determines how much resources the instance will have",
+			Description: "Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},
@@ -98,7 +98,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"zone": {
-			Description: "Zone where the instance resides",
+			Description: "Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},

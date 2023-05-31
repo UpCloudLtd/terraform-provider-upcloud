@@ -93,7 +93,7 @@ func DataSourceNetworks() *schema.Resource {
 						},
 						"zone": {
 							Type:        schema.TypeString,
-							Description: "The zone the network is in",
+							Description: "The zone the network is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 							Computed:    true,
 						},
 						"servers": {

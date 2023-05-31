@@ -53,7 +53,7 @@ resource "upcloud_object_storage" "my_object_storage" {
 				and all dashes (-) should be replaced with underscores (_). For example, object storage named "my-files" would
 				use environment variable named "UPCLOUD_OBJECT_STORAGE_SECRET_KEY_MY_FILES".
 - `size` (Number) The size of the object storage instance in gigabytes
-- `zone` (String) The zone in which the object storage instance will be created
+- `zone` (String) The zone in which the object storage instance will be created, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
 

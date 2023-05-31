@@ -41,7 +41,7 @@ resource "upcloud_router" "example_router" {
 
 - `ip_network` (Block List, Min: 1, Max: 1) A list of IP subnets within the network (see [below for nested schema](#nestedblock--ip_network))
 - `name` (String) A valid name for the network
-- `zone` (String) The zone the network is in
+- `zone` (String) The zone the network is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
 

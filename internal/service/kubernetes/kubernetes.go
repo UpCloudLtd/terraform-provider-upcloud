@@ -29,7 +29,7 @@ const (
 	networkCIDRDescription          = "Network CIDR for the given network. Computed automatically."
 	nodeGroupNamesDescription       = "Names of the node groups configured to cluster"
 	stateDescription                = "Operational state of the cluster."
-	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
+	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`."
 
 	cleanupWaitTimeSeconds = 240
 	maxResourceNameLength  = 63
@@ -59,7 +59,7 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:    true,
 			},
 			"plan": {
-				Description: "The pricing plan used for the cluster. Default plan is `development`.",
+				Description: "The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,

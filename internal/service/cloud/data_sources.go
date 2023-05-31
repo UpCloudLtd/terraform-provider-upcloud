@@ -43,7 +43,7 @@ func DataSourceHosts() *schema.Resource {
 						},
 						"zone": {
 							Type:        schema.TypeString,
-							Description: "The zone the host is in",
+							Description: "The zone the host is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 							Computed:    true,
 						},
 					},
