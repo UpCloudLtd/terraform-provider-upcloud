@@ -16,6 +16,10 @@ resource "upcloud_network" "main" {
     dhcp    = true
     family  = "IPv4"
   }
+  # UpCloud Kubernetes Service will add a router to this network to ensure cluster networking is working as intended.
+  lifecycle {
+    ignore_changes = [router]
+  }
 }
 
 resource "upcloud_kubernetes_cluster" "main" {
