@@ -71,6 +71,13 @@ func ResourceCluster() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"private_node_groups": {
+				Description: "Enable private node groups. Private node groups requires a network that is routed through NAT gateway.",
+				Type:        schema.TypeBool,
+				Default:     false,
+				Optional:    true,
+				ForceNew:    true,
+			},
 			"network_cidr": {
 				Description: networkCIDRDescription,
 				Type:        schema.TypeString,
@@ -97,10 +104,11 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 	svc := meta.(*service.Service)
 
 	req := &request.CreateKubernetesClusterRequest{
-		Name:    d.Get("name").(string),
-		Network: d.Get("network").(string),
-		Zone:    d.Get("zone").(string),
-		Plan:    d.Get("plan").(string),
+		Name:              d.Get("name").(string),
+		Network:           d.Get("network").(string),
+		Zone:              d.Get("zone").(string),
+		Plan:              d.Get("plan").(string),
+		PrivateNodeGroups: d.Get("private_node_groups").(bool),
 	}
 
 	c, err := svc.CreateKubernetesCluster(ctx, req)
@@ -182,6 +190,10 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	}
 
 	if err := d.Set("zone", c.Zone); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("private_node_groups", c.PrivateNodeGroups); err != nil {
 		return diag.FromErr(err)
 	}
 

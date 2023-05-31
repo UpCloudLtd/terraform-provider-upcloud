@@ -21,3 +21,39 @@ resource "upcloud_kubernetes_cluster" "example" {
   network = upcloud_network.example.id
   zone    = "de-fra1"
 }
+
+# Kubernetes cluster with private node groups requires a network that is routed through NAT gateway.
+resource "upcloud_router" "example2" {
+  name = "example2-router"
+}
+
+resource "upcloud_gateway" "example2" {
+  name     = "example2-nat-gateway"
+  zone     = "de-fra1"
+  features = ["nat"]
+
+  router {
+    id = upcloud_router.example2.id
+  }
+}
+
+resource "upcloud_network" "example2" {
+  name = "example2-network"
+  zone = "de-fra1"
+  ip_network {
+    address            = "10.10.0.0/24"
+    dhcp               = true
+    family             = "IPv4"
+    dhcp_default_route = true
+  }
+  router = upcloud_router.example2.id
+}
+
+resource "upcloud_kubernetes_cluster" "example2" {
+  name                = "example2-cluster"
+  network             = upcloud_network.example2.id
+  zone                = "de-fra1"
+  plan                = "production-small"
+  private_node_groups = true
+}
+
