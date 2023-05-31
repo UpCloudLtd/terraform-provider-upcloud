@@ -12,6 +12,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - dbaas: `opensearch_access_control` block to `upcloud_managed_database_user` resource
 - dbaas: `upcloud_managed_database_opensearch_indices` data source
 
+### Changed
+- dbaas: modifying `upcloud_managed_database_mysql` resource version field forces a new resource
+
 ## [2.10.0] - 2023-04-26
 
 ### Added

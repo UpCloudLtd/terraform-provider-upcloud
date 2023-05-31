@@ -253,6 +253,7 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"8"}, false)),
+			ForceNew:         true,
 		},
 		"wait_timeout": {
 			Type:             schema.TypeInt,
