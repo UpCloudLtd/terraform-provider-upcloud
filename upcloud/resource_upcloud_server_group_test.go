@@ -26,14 +26,14 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 					resource.TestCheckResourceAttr(group1, "title", "tf_test_1"),
 					resource.TestCheckResourceAttr(group1, "members.#", "1"),
 					resource.TestCheckResourceAttr(group1, "labels.%", "3"),
-					resource.TestCheckResourceAttr(group1, "anti_affinity", "false"),
+					resource.TestCheckResourceAttr(group1, "anti_affinity_policy", "no"),
 				),
 			},
 			{
 				Config: testDataStep2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(group1, "title", "tf_test_1_updated"),
-					resource.TestCheckResourceAttr(group1, "anti_affinity", "true"),
+					resource.TestCheckResourceAttr(group1, "anti_affinity_policy", "strict"),
 					resource.TestCheckResourceAttr(group1, "members.#", "0"),
 					resource.TestCheckResourceAttr(group1, "labels.%", "2"),
 					resource.TestCheckResourceAttr(group1, "labels.key1", "val1"),
