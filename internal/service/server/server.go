@@ -83,7 +83,6 @@ func ResourceServer() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				ForceNew:    true,
 			},
 			"video_model": {
 				Description: "The model of the server's video interface",
@@ -625,7 +624,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	// Stop the server if the requested changes require it
-	if d.HasChanges("cpu", "mem", "nic_model", "video_model", "template.0.size", "storage_devices", "network_interface") || planHasChange {
+	if d.HasChanges("cpu", "mem", "timezone", "nic_model", "video_model", "template.0.size", "storage_devices", "network_interface") || planHasChange {
 		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: d.Id(),
 		},
@@ -649,6 +648,10 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		r.Title = attr.(string)
 	} else {
 		r.Title = defaultTitleFromHostname(d.Get("hostname").(string))
+	}
+
+	if attr, ok := d.GetOk("timezone"); ok {
+		r.TimeZone = attr.(string)
 	}
 
 	if attr, ok := d.GetOk("video_model"); ok {
