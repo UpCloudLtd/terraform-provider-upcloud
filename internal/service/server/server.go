@@ -78,6 +78,55 @@ func ResourceServer() *schema.Resource {
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
 			},
+			"timezone": {
+				Description: "A timezone identifier, e.g. `Europe/Helsinki`",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"video_model": {
+				Description: "The model of the server's video interface",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+					switch v.(string) {
+					case upcloud.VideoModelCirrus, upcloud.VideoModelVGA:
+						return nil
+					default:
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "'video_model' has incorrect value",
+							Detail: fmt.Sprintf(
+								"'video_model' must be one of %s or %s",
+								upcloud.VideoModelCirrus,
+								upcloud.VideoModelVGA),
+						}}
+					}
+				},
+			},
+			"nic_model": {
+				Description: "The model of the server's network interfaces",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+					switch v.(string) {
+					case upcloud.NICModelE1000, upcloud.NICModelVirtio, upcloud.NICModelRTL8139:
+						return nil
+					default:
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "'nic_model' has incorrect value",
+							Detail: fmt.Sprintf(
+								"'nic_model' must be one of %s, %s or %s",
+								upcloud.NICModelE1000,
+								upcloud.NICModelVirtio,
+								upcloud.NICModelRTL8139),
+						}}
+					}
+				},
+			},
 			"tags": {
 				Description: "The server related tags",
 				Type:        schema.TypeList,
@@ -461,6 +510,9 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 
 	_ = d.Set("labels", utils.LabelsSliceToMap(server.Labels))
 
+	_ = d.Set("nic_model", server.NICModel)
+	_ = d.Set("timezone", server.Timezone)
+	_ = d.Set("video_model", server.VideoModel)
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
 
@@ -572,7 +624,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	// Stop the server if the requested changes require it
-	if d.HasChanges("cpu", "mem", "template.0.size", "storage_devices", "network_interface") || planHasChange {
+	if d.HasChanges("cpu", "mem", "timezone", "nic_model", "video_model", "template.0.size", "storage_devices", "network_interface") || planHasChange {
 		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: d.Id(),
 		},
@@ -596,6 +648,18 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		r.Title = attr.(string)
 	} else {
 		r.Title = defaultTitleFromHostname(d.Get("hostname").(string))
+	}
+
+	if attr, ok := d.GetOk("timezone"); ok {
+		r.TimeZone = attr.(string)
+	}
+
+	if attr, ok := d.GetOk("video_model"); ok {
+		r.VideoModel = attr.(string)
+	}
+
+	if attr, ok := d.GetOk("nic_model"); ok {
+		r.NICModel = attr.(string)
 	}
 
 	r.Metadata = upcloud.FromBool(d.Get("metadata").(bool))
@@ -855,6 +919,15 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 	if attr, ok := d.GetOk("mem"); ok {
 		r.MemoryAmount = attr.(int)
+	}
+	if attr, ok := d.GetOk("timezone"); ok {
+		r.TimeZone = attr.(string)
+	}
+	if attr, ok := d.GetOk("video_model"); ok {
+		r.VideoModel = attr.(string)
+	}
+	if attr, ok := d.GetOk("nic_model"); ok {
+		r.NICModel = attr.(string)
 	}
 	if attr, ok := d.GetOk("user_data"); ok {
 		r.UserData = attr.(string)
