@@ -66,6 +66,7 @@ resource "upcloud_server" "example" {
 - `login` (Block Set, Max: 1) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
 - `mem` (Number) The size of memory for the server (in megabytes)
 - `metadata` (Boolean) Is the metadata service active for the server
+- `nic_model` (String) The model of the server's network interfaces
 - `plan` (String) The pricing plan used for the server. You can list available server plans with `upctl server plans`
 - `simple_backup` (Block Set, Max: 1) Simple backup schedule configuration  
 				The idea behind simple backups is to provide a simplified way of backing up *all* of the storages attached to a given server. 
@@ -79,8 +80,10 @@ resource "upcloud_server" "example" {
 - `storage_devices` (Block Set) A list of storage devices associated with the server (see [below for nested schema](#nestedblock--storage_devices))
 - `tags` (List of String) The server related tags
 - `template` (Block List, Max: 1) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
+- `timezone` (String) A timezone identifier, e.g. `Europe/Helsinki`
 - `title` (String) A short, informational description
 - `user_data` (String) Defines URL for a server setup script, or the script body itself
+- `video_model` (String) The model of the server's video interface
 
 ### Read-Only
 
