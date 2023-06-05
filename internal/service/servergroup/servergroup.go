@@ -177,7 +177,8 @@ func createServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceD
 		Title: d.Get("title").(string),
 	}
 
-	result.AntiAffinityPolicy = d.Get("anti_affinity_policy").(upcloud.ServerGroupAntiAffinityPolicy)
+	aaPolicy := d.Get("anti_affinity_policy").(string)
+	result.AntiAffinityPolicy = upcloud.ServerGroupAntiAffinityPolicy(aaPolicy)
 
 	members, membersWereSet := d.GetOk("members")
 	if membersWereSet {
@@ -208,7 +209,8 @@ func modifyServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceD
 		UUID:  d.Id(),
 	}
 
-	result.AntiAffinityPolicy = d.Get("anti_affinity_policy").(upcloud.ServerGroupAntiAffinityPolicy)
+	aaPolicy := d.Get("anti_affinity_policy").(string)
+	result.AntiAffinityPolicy = upcloud.ServerGroupAntiAffinityPolicy(aaPolicy)
 
 	if d.HasChange("members") {
 		members, err := utils.SetOfStringsToSlice(ctx, d.Get("members"))
