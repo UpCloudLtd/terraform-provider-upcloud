@@ -12,9 +12,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -261,14 +261,14 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 					testAccCheckStorageExists("upcloud_storage.cloned_storage", &storageDetailsClone),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.cloned_storage", "clone.#", "1"),
-					testAccCheckClonedStorageSize("upcloud_storage.cloned_storage", 20, &storageDetailsClone),
+					testAccCheckClonedStorageSize(20, &storageDetailsClone),
 				),
 			},
 		},
 	})
 }
 
-func testAccCheckClonedStorageSize(resourceName string, expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
+func testAccCheckClonedStorageSize(expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Use the API SDK to locate the remote resource.
 		client := testAccProvider.Meta().(*service.Service)

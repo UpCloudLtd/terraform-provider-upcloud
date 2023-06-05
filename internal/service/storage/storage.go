@@ -9,9 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -51,7 +51,7 @@ func ResourceStorage() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(0, 64),
 			},
 			"zone": {
-				Description: "The zone in which the storage will be created",
+				Description: "The zone in which the storage will be created, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

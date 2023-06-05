@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -93,7 +93,7 @@ func DataSourceNetworks() *schema.Resource {
 						},
 						"zone": {
 							Type:        schema.TypeString,
-							Description: "The zone the network is in",
+							Description: "The zone the network is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 							Computed:    true,
 						},
 						"servers": {

@@ -37,8 +37,8 @@ resource "upcloud_managed_database_redis" "example_2" {
 ### Required
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
-- `plan` (String) Service plan to use. This determines how much resources the instance will have
-- `zone` (String) Zone where the instance resides
+- `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.
+- `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
 

@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -65,7 +65,7 @@ Storage types are: %s`, strings.Join(storageTypes, ", ")),
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 64)),
 			},
 			"zone": {
-				Description: "The zone in which the storage resides",
+				Description: "The zone in which the storage resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

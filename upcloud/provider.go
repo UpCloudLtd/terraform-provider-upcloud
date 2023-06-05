@@ -8,14 +8,15 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/cloud"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
@@ -75,6 +76,7 @@ func Provider() *schema.Provider {
 			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
 			"upcloud_tag":                                     tag.ResourceTag(),
 			"upcloud_network":                                 network.ResourceNetwork(),
+			"upcloud_gateway":                                 gateway.ResourceGateway(),
 			"upcloud_floating_ip_address":                     ip.ResourceFloatingIPAddress(),
 			"upcloud_object_storage":                          objectstorage.ResourceObjectStorage(),
 			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
@@ -111,7 +113,7 @@ func Provider() *schema.Provider {
 	}
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	config := Config{

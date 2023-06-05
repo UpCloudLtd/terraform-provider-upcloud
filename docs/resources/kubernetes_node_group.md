@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_node_group Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.
+  This resource represents a node group in a Managed Kubernetes cluster.
 ---
 
 # upcloud_kubernetes_node_group (Resource)
 
-Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.
+This resource represents a node group in a Managed Kubernetes cluster.
 
 ## Example Usage
 
@@ -64,7 +64,7 @@ resource "upcloud_kubernetes_node_group" "group" {
 - `cluster` (String) Cluster ID.
 - `name` (String) The name of the node group. Needs to be unique within a cluster.
 - `node_count` (Number) Amount of nodes to provision in the node group.
-- `plan` (String) The pricing plan used for the node group. You can list available plans with `upctl server plans`
+- `plan` (String) The server plan used for the node group. You can list available plans with `upctl server plans`
 
 ### Optional
 

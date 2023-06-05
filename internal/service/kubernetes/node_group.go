@@ -5,9 +5,9 @@ import (
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -15,7 +15,7 @@ import (
 
 func ResourceNodeGroup() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Kubernetes node group. NOTE: this is an experimental feature in development phase, the resource definition might change in the future.",
+		Description:   "This resource represents a node group in a Managed Kubernetes cluster.",
 		CreateContext: resourceNodeGroupCreate,
 		ReadContext:   resourceNodeGroupRead,
 		DeleteContext: resourceNodeGroupDelete,
@@ -44,7 +44,7 @@ func ResourceNodeGroup() *schema.Resource {
 				ForceNew:         true,
 			},
 			"plan": {
-				Description: "The pricing plan used for the node group. You can list available plans with `upctl server plans`",
+				Description: "The server plan used for the node group. You can list available plans with `upctl server plans`",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

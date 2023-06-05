@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -29,7 +29,7 @@ const (
 	networkCIDRDescription          = "Network CIDR for the given network. Computed automatically."
 	nodeGroupNamesDescription       = "Names of the node groups configured to cluster"
 	stateDescription                = "Operational state of the cluster."
-	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`."
+	zoneDescription                 = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`."
 
 	cleanupWaitTimeSeconds = 240
 	maxResourceNameLength  = 63
@@ -37,7 +37,7 @@ const (
 
 func ResourceCluster() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Kubernetes cluster. NOTE: this is an experimental feature in development phase, the resource definition will change in the future.",
+		Description:   "This resource represents a Managed Kubernetes cluster.",
 		CreateContext: resourceClusterCreate,
 		ReadContext:   resourceClusterRead,
 		DeleteContext: resourceClusterDelete,
@@ -58,10 +58,24 @@ func ResourceCluster() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"plan": {
+				Description: "The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Default:     "development",
+			},
 			"network": {
 				Description: networkDescription,
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
+			},
+			"private_node_groups": {
+				Description: "Enable private node groups. Private node groups requires a network that is routed through NAT gateway.",
+				Type:        schema.TypeBool,
+				Default:     false,
+				Optional:    true,
 				ForceNew:    true,
 			},
 			"network_cidr": {
@@ -90,9 +104,11 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 	svc := meta.(*service.Service)
 
 	req := &request.CreateKubernetesClusterRequest{
-		Name:    d.Get("name").(string),
-		Network: d.Get("network").(string),
-		Zone:    d.Get("zone").(string),
+		Name:              d.Get("name").(string),
+		Network:           d.Get("network").(string),
+		Zone:              d.Get("zone").(string),
+		Plan:              d.Get("plan").(string),
+		PrivateNodeGroups: d.Get("private_node_groups").(bool),
 	}
 
 	c, err := svc.CreateKubernetesCluster(ctx, req)
@@ -157,6 +173,10 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("plan", c.Plan); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set("network", c.Network); err != nil {
 		return diag.FromErr(err)
 	}
@@ -170,6 +190,10 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	}
 
 	if err := d.Set("zone", c.Zone); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("private_node_groups", c.PrivateNodeGroups); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -195,10 +219,6 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id str
 			c, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: id})
 			if err != nil {
 				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
-					return nil
-				}
-
-				if svcErr, ok := err.(*upcloud.Error); ok && svcErr.Status == http.StatusNotFound {
 					return nil
 				}
 

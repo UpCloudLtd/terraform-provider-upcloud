@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -49,7 +49,7 @@ func ResourceServer() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, serverTitleLength),
 			},
 			"zone": {
-				Description: "The zone in which the server will be hosted",
+				Description: "The zone in which the server will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -78,6 +78,55 @@ func ResourceServer() *schema.Resource {
 				Computed:      true,
 				ConflictsWith: []string{"plan"},
 			},
+			"timezone": {
+				Description: "A timezone identifier, e.g. `Europe/Helsinki`",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"video_model": {
+				Description: "The model of the server's video interface",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+					switch v.(string) {
+					case upcloud.VideoModelCirrus, upcloud.VideoModelVGA:
+						return nil
+					default:
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "'video_model' has incorrect value",
+							Detail: fmt.Sprintf(
+								"'video_model' must be one of %s or %s",
+								upcloud.VideoModelCirrus,
+								upcloud.VideoModelVGA),
+						}}
+					}
+				},
+			},
+			"nic_model": {
+				Description: "The model of the server's network interfaces",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+					switch v.(string) {
+					case upcloud.NICModelE1000, upcloud.NICModelVirtio, upcloud.NICModelRTL8139:
+						return nil
+					default:
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "'nic_model' has incorrect value",
+							Detail: fmt.Sprintf(
+								"'nic_model' must be one of %s, %s or %s",
+								upcloud.NICModelE1000,
+								upcloud.NICModelVirtio,
+								upcloud.NICModelRTL8139),
+						}}
+					}
+				},
+			},
 			"tags": {
 				Description: "The server related tags",
 				Type:        schema.TypeList,
@@ -88,8 +137,8 @@ func ResourceServer() *schema.Resource {
 				// Suppress diff if only order of tags changes, because we cannot really control the order of tags of a server.
 				// This removes some unnecessary change-of-order diffs until Type is changed from TypeList to TypeSet.
 				DiffSuppressFunc: func(key, oldName, newName string, d *schema.ResourceData) bool {
-					old, new := d.GetChange("tags")
-					return !tagsHasChange(old, new)
+					oldTags, newTags := d.GetChange("tags")
+					return !tagsHasChange(oldTags, newTags)
 				},
 			},
 			"host": {
@@ -183,12 +232,7 @@ func ResourceServer() *schema.Resource {
 					},
 				},
 			},
-			"labels": {
-				Description: "Labels contain key-value pairs to classify the server",
-				Type:        schema.TypeMap,
-				Elem:        schema.TypeString,
-				Optional:    true,
-			},
+			"labels": utils.LabelsSchema("server"),
 			"user_data": {
 				Description: "Defines URL for a server setup script, or the script body itself",
 				Type:        schema.TypeString,
@@ -464,14 +508,11 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
 
-	if len(server.Labels) > 0 {
-		labels := make(map[string]interface{})
-		for _, v := range server.Labels {
-			labels[v.Key] = v.Value
-		}
+	_ = d.Set("labels", utils.LabelsSliceToMap(server.Labels))
 
-		_ = d.Set("labels", labels)
-	}
+	_ = d.Set("nic_model", server.NICModel)
+	_ = d.Set("timezone", server.Timezone)
+	_ = d.Set("video_model", server.VideoModel)
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
 
@@ -583,7 +624,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	// Stop the server if the requested changes require it
-	if d.HasChanges("cpu", "mem", "template.0.size", "storage_devices", "network_interface") || planHasChange {
+	if d.HasChanges("cpu", "mem", "timezone", "nic_model", "video_model", "template.0.size", "storage_devices", "network_interface") || planHasChange {
 		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: d.Id(),
 		},
@@ -607,6 +648,18 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		r.Title = attr.(string)
 	} else {
 		r.Title = defaultTitleFromHostname(d.Get("hostname").(string))
+	}
+
+	if attr, ok := d.GetOk("timezone"); ok {
+		r.TimeZone = attr.(string)
+	}
+
+	if attr, ok := d.GetOk("video_model"); ok {
+		r.VideoModel = attr.(string)
+	}
+
+	if attr, ok := d.GetOk("nic_model"); ok {
+		r.NICModel = attr.(string)
 	}
 
 	r.Metadata = upcloud.FromBool(d.Get("metadata").(bool))
@@ -867,6 +920,15 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 	if attr, ok := d.GetOk("mem"); ok {
 		r.MemoryAmount = attr.(int)
 	}
+	if attr, ok := d.GetOk("timezone"); ok {
+		r.TimeZone = attr.(string)
+	}
+	if attr, ok := d.GetOk("video_model"); ok {
+		r.VideoModel = attr.(string)
+	}
+	if attr, ok := d.GetOk("nic_model"); ok {
+		r.NICModel = attr.(string)
+	}
 	if attr, ok := d.GetOk("user_data"); ok {
 		r.UserData = attr.(string)
 	}
@@ -878,7 +940,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		r.SimpleBackup = buildSimpleBackupOpts(simpleBackupAttrs)
 	}
 	if login, ok := d.GetOk("login"); ok {
-		loginOpts, deliveryMethod, err := buildLoginOpts(login, meta)
+		loginOpts, deliveryMethod, err := buildLoginOpts(login)
 		if err != nil {
 			return nil, err
 		}
@@ -938,7 +1000,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 	}
 
-	networking, err := buildNetworkOpts(d, meta)
+	networking, err := buildNetworkOpts(d)
 	if err != nil {
 		return nil, err
 	}
@@ -951,15 +1013,7 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func buildLabels(m map[string]interface{}) *upcloud.LabelSlice {
-	var labels upcloud.LabelSlice
-
-	for k, v := range m {
-		labels = append(labels, upcloud.Label{
-			Key:   k,
-			Value: v.(string),
-		})
-	}
-
+	labels := upcloud.LabelSlice(utils.LabelsMapToSlice(m))
 	return &labels
 }
 
@@ -973,7 +1027,7 @@ func buildSimpleBackupOpts(attrs map[string]interface{}) string {
 	return "no"
 }
 
-func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string, error) {
+func buildLoginOpts(v interface{}) (*request.LoginUser, string, error) {
 	// Construct LoginUser struct from the schema
 	r := &request.LoginUser{}
 	e := v.(*schema.Set).List()[0]
@@ -1005,7 +1059,7 @@ func buildLoginOpts(v interface{}, meta interface{}) (*request.LoginUser, string
 	return r, deliveryMethod, nil
 }
 
-func buildNetworkOpts(d *schema.ResourceData, meta interface{}) ([]request.CreateServerInterface, error) {
+func buildNetworkOpts(d *schema.ResourceData) ([]request.CreateServerInterface, error) {
 	ifaces := []request.CreateServerInterface{}
 
 	niCount := d.Get("network_interface.#").(int)

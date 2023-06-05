@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -231,7 +231,7 @@ func getString(m map[string]interface{}, key string) string {
 	return val
 }
 
-func validateHTTPRedirectChange(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func validateHTTPRedirectChange(_ context.Context, d *schema.ResourceDiff, _ interface{}) error {
 	for _, v := range d.Get("actions.0.http_redirect").([]interface{}) {
 		v, ok := v.(map[string]interface{})
 		if !ok {
@@ -250,7 +250,7 @@ func validateHTTPRedirectChange(ctx context.Context, d *schema.ResourceDiff, met
 	return nil
 }
 
-func validateActionsNotEmpty(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func validateActionsNotEmpty(_ context.Context, d *schema.ResourceDiff, _ interface{}) error {
 	actions, ok := d.Get("actions.0").(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("received actions in unknown format")

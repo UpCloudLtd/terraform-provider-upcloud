@@ -111,6 +111,15 @@ resource "upcloud_server" "example" {
 }
 ```
 
+### Additional tooling
+
+It is recommended to install the [UpCloud CLI client `upctl`](https://github.com/UpCloudLtd/upcloud-cli) to help out with
+accessing information about your account and troubleshooting. For example, typically Terraform resources require parameters
+that can be easily listed with commands such as these:
+
+- [upctl server plans](https://upcloudltd.github.io/upcloud-cli/commands_reference/upctl_server/plans/)
+- [upctl zone list](https://upcloudltd.github.io/upcloud-cli/commands_reference/upctl_zone/list/)
+
 ## Known issues
 - `BACKUP_RULE_CONFLICT` when updating server `simple_backup` and storage `backup_rule` in one apply
 

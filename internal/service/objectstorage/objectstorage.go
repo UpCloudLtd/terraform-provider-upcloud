@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -70,7 +70,7 @@ func ResourceObjectStorage() *schema.Resource {
 				ValidateDiagFunc: createKeyValidationFunc("secret_key", secretKeyMinLength, secretKeyMaxLength),
 			},
 			"zone": {
-				Description: "The zone in which the object storage instance will be created",
+				Description: "The zone in which the object storage instance will be created, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

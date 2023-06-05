@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -423,7 +423,7 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Description:      "PostgreSQL major version",
 			Optional:         true,
 			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"12", "13", "14"}, false)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"12", "13", "14", "15"}, false)),
 		},
 		"wal_sender_timeout": {
 			Type:        schema.TypeInt,

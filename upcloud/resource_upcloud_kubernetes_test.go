@@ -1,7 +1,6 @@
 package upcloud
 
 import (
-	"os"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -10,11 +9,6 @@ import (
 )
 
 func TestAccUpcloudKubernetes(t *testing.T) {
-	if os.Getenv("TF_ACC_K8S") == "" {
-		// TODO: remove this check when API is publicly available
-		t.Skip("define TF_ACC_K8S env to run experimental Kubernetes test")
-	}
-
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s2.tf")
 

@@ -110,7 +110,7 @@ resource "upcloud_server" "example_server" {
 
 - `size` (Number) The size of the storage in gigabytes
 - `title` (String) A short, informative description
-- `zone` (String) The zone in which the storage will be created
+- `zone` (String) The zone in which the storage will be created, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
 

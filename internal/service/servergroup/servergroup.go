@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v5/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -26,14 +26,7 @@ func ResourceServerGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"labels": {
-				Description: "Labels for your server group",
-				Type:        schema.TypeMap,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Optional: true,
-			},
+			"labels": utils.LabelsSchema("server group"),
 			"members": {
 				Description: "UUIDs of the servers that are members of this group",
 				Type:        schema.TypeSet,
@@ -164,11 +157,7 @@ func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) erro
 		return err
 	}
 
-	if err := d.Set("labels", utils.LabelSliceToMap(group.Labels)); err != nil {
-		return err
-	}
-
-	return nil
+	return d.Set("labels", utils.LabelSliceToMap(group.Labels))
 }
 
 func createServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceData) (*request.CreateServerGroupRequest, error) {
