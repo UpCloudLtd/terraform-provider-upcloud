@@ -25,7 +25,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test"),
-					resource.TestCheckResourceAttr(cName, "zone", "de-fra1"),
+					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(g1Name, "name", "small"),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
 					resource.TestCheckResourceAttr(g1Name, "anti_affinity", "true"),
