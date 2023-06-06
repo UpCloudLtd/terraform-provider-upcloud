@@ -11,7 +11,7 @@ resource "upcloud_managed_database_redis" "redis_properties" {
     redis_pubsub_client_output_buffer_limit = 128
     redis_ssl                               = false
     redis_lfu_log_factor                    = 11
-    redis_io_threads                        = 2
+    redis_io_threads                        = 1
     redis_maxmemory_policy                  = "allkeys-lru"
     redis_persistence                       = "off"
     redis_timeout                           = 310
