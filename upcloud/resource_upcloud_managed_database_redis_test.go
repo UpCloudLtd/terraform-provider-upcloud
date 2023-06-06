@@ -25,7 +25,7 @@ func TestAccUpcloudManagedDatabaseRedisProperties(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(name, "plan", "1x1xCPU-2GB"),
+					resource.TestCheckResourceAttr(name, "plan", "2x4xCPU-28GB"),
 					resource.TestCheckResourceAttr(name, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(name, prop("public_access"), "false"),
 					resource.TestCheckResourceAttr(name, prop("redis_lfu_decay_time"), "2"),
