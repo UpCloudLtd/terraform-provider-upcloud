@@ -1,5 +1,5 @@
 resource "upcloud_managed_database_redis" "redis_properties" {
-  name = "redis-properties-test"
+  name = "tf-redis-properties-test"
   plan = "1x1xCPU-2GB"
   zone = "fi-hel2"
   properties {
