@@ -25,7 +25,7 @@ func TestAccUpcloudManagedDatabaseRedisProperties(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(name, "plan", "2x4xCPU-28GB"),
+					resource.TestCheckResourceAttr(name, "plan", "1x1xCPU-2GB"),
 					resource.TestCheckResourceAttr(name, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(name, prop("public_access"), "false"),
 					resource.TestCheckResourceAttr(name, prop("redis_lfu_decay_time"), "2"),
@@ -34,7 +34,7 @@ func TestAccUpcloudManagedDatabaseRedisProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("redis_pubsub_client_output_buffer_limit"), "128"),
 					resource.TestCheckResourceAttr(name, prop("redis_ssl"), "false"),
 					resource.TestCheckResourceAttr(name, prop("redis_lfu_log_factor"), "11"),
-					resource.TestCheckResourceAttr(name, prop("redis_io_threads"), "2"),
+					resource.TestCheckResourceAttr(name, prop("redis_io_threads"), "1"),
 					resource.TestCheckResourceAttr(name, prop("redis_maxmemory_policy"), "allkeys-lru"),
 					resource.TestCheckResourceAttr(name, prop("redis_persistence"), "off"),
 					resource.TestCheckResourceAttr(name, prop("redis_timeout"), "310"),
