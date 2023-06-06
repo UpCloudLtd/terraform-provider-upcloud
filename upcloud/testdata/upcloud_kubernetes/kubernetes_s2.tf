@@ -4,7 +4,7 @@ variable "name" {
 }
 
 variable "zone" {
-  default = "de-fra1"
+  default = "fi-hel2"
   type    = string
 }
 
