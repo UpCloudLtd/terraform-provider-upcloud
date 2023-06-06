@@ -1,5 +1,5 @@
 variable "name" {
-  default = "tf-acc-test"
+  default = "tf-acc-test-uks"
   type    = string
 }
 
