@@ -12,7 +12,7 @@ resource "upcloud_network" "main" {
   name = "terraform-provider-upcloud-test"
   zone = var.zone
   ip_network {
-    address = "172.23.6.0/24"
+    address = "172.23.7.0/24"
     dhcp    = true
     family  = "IPv4"
   }
