@@ -79,7 +79,7 @@ func schemaUser() map[string]*schema.Schema {
 		},
 		"pg_access_control": {
 			Description:   "PostgreSQL access control object.",
-			ConflictsWith: []string{"redis_access_control"},
+			ConflictsWith: []string{"redis_access_control", "opensearch_access_control"},
 			Type:          schema.TypeList,
 			Optional:      true,
 			MaxItems:      1,
@@ -94,6 +94,15 @@ func schemaUser() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: schemaRedisUserAccessControl(),
+			},
+		},
+		"opensearch_access_control": {
+			Description: "OpenSearch access control object.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: schemaOpenSearchUserAccessControl(),
 			},
 		},
 	}
@@ -151,6 +160,37 @@ func schemaRedisUserAccessControl() map[string]*schema.Schema {
 	}
 }
 
+func schemaOpenSearchUserAccessControl() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"rules": {
+			Description: "Set user access control rules.",
+			Type:        schema.TypeList,
+			Required:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"index": {
+						Description: "Set index name, pattern or top level API.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"permission": {
+						Description: "Set permission access.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionAdmin),
+							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionDeny),
+							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionRead),
+							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionReadWrite),
+							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionWrite),
+						}, false)),
+					},
+				},
+			},
+		},
+	}
+}
+
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
@@ -190,6 +230,8 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 	case upcloud.ManagedDatabaseServiceTypeRedis:
 		req.RedisAccessControl = redisAccessControlFromResourceData(d)
+	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
+		req.OpenSearchAccessControl = openSearchAccessControlFromResourceData(d)
 	}
 
 	if _, err = client.CreateManagedDatabaseUser(ctx, req); err != nil {
@@ -271,6 +313,12 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	case upcloud.ManagedDatabaseServiceTypeRedis:
 		if d.HasChange("redis_access_control.0") {
 			if _, err := modifyRedisUserAccessControl(ctx, client, d); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
+		if d.HasChange("opensearch_access_control.0") {
+			if _, err := modifyOpenSearchUserAccessControl(ctx, client, d); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -411,4 +459,29 @@ func redisAccessControlFromResourceData(d *schema.ResourceData) *upcloud.Managed
 		}
 	}
 	return acl
+}
+
+func openSearchAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserOpenSearchAccessControl {
+	acl := &upcloud.ManagedDatabaseUserOpenSearchAccessControl{}
+	if v, ok := d.Get("opensearch_access_control.0.rules").([]interface{}); ok {
+		acl.Rules = make([]upcloud.ManagedDatabaseUserOpenSearchAccessControlRule, len(v))
+		for i := range v {
+			if index, ok := d.Get(fmt.Sprintf("opensearch_access_control.0.rules.%d.index", i)).(string); ok {
+				acl.Rules[i].Index = index
+			}
+			if permission, ok := d.Get(fmt.Sprintf("opensearch_access_control.0.rules.%d.permission", i)).(string); ok {
+				acl.Rules[i].Permission = upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermission(permission)
+			}
+		}
+	}
+	return acl
+}
+
+func modifyOpenSearchUserAccessControl(ctx context.Context, svc *service.Service, d *schema.ResourceData) (*upcloud.ManagedDatabaseUser, error) {
+	req := &request.ModifyManagedDatabaseUserAccessControlRequest{
+		ServiceUUID:             d.Get("service").(string),
+		Username:                d.Get("username").(string),
+		OpenSearchAccessControl: openSearchAccessControlFromResourceData(d),
+	}
+	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
 }

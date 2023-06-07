@@ -234,6 +234,7 @@ func schemaDatabaseNodeStates() *schema.Schema {
 					Description: "Role of the node",
 					Type:        schema.TypeString,
 					Computed:    true,
+					Optional:    true,
 				},
 				"state": {
 					Description: "State of the node",

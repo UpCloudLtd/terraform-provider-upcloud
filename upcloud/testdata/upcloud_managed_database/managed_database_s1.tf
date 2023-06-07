@@ -43,6 +43,13 @@ resource "upcloud_managed_database_redis" "r1" {
   zone  = "pl-waw1"
 }
 
+resource "upcloud_managed_database_opensearch" "o1" {
+  name  = "tf-opensearch-test-1"
+  plan  = "1x2xCPU-4GB-80GB-1D"
+  title = "tf-test-opensearch-1"
+  zone  = "pl-waw1"
+}
+
 resource "upcloud_managed_database_user" "db_user_1" {
   service        = upcloud_managed_database_mysql.msql1.id
   username       = "somename"
@@ -68,5 +75,17 @@ resource "upcloud_managed_database_user" "db_user_3" {
     channels   = ["*"]
     commands   = ["+set"]
     keys       = ["key_*"]
+  }
+}
+
+resource "upcloud_managed_database_user" "db_user_4" {
+  service  = upcloud_managed_database_opensearch.o1.id
+  username = "somename"
+  password = "Superpass123"
+  opensearch_access_control {
+    rules {
+      index      = ".opensearch-observability"
+      permission = "admin"
+    }
   }
 }

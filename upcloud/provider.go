@@ -82,6 +82,7 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
 			"upcloud_managed_database_mysql":                  database.ResourceMySQL(),
 			"upcloud_managed_database_redis":                  database.ResourceRedis(),
+			"upcloud_managed_database_opensearch":             database.ResourceOpenSearch(),
 			"upcloud_managed_database_user":                   database.ResourceUser(),
 			"upcloud_managed_database_logical_database":       database.ResourceLogicalDatabase(),
 			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),
@@ -107,6 +108,7 @@ func Provider() *schema.Provider {
 			"upcloud_tags":               tag.DataSourceTags(),
 			"upcloud_storage":            storage.DataSourceStorage(),
 			"upcloud_kubernetes_cluster": kubernetes.DataSourceCluster(),
+			"upcloud_managed_database_opensearch_indices": database.DataSourceOpenSearchIndices(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
