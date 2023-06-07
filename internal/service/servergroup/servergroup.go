@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func ResourceServerGroup() *schema.Resource {
@@ -35,18 +37,28 @@ func ResourceServerGroup() *schema.Resource {
 				},
 				Optional: true,
 			},
-			"anti_affinity": {
-				Description: `Is group an anti-affinity group. Setting this to true will result in all servers in the group being placed on separate compute hosts.
-				NOTE: this is an experimental feature. The anti-affinity policy is "best-effort" and it is not
-				guaranteed that all the servers will end up on a separate compute hosts. You can verify if the
-				anti-affinity policies are met by requesting a server group details from API. For more information
-				please see UpCloud API documentation on server groups
+			"anti_affinity_policy": {
+				Description: `Defines if a server group is an anti-affinity group. Setting this to "strict" or yes" will
+				result in all servers in the group being placed on separate compute hosts. The value can be "strict", "yes" or "no".
+
+				* "strict" refers to strict policy doesn't allow servers in the same server group to be on the same host
+				* "yes" refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed
+				* "no" refers to having no policy and thus no affect server host affinity
+ 				
+				To verify if the anti-affinity policies are met by requesting a server group details from API. For more information
+				please see UpCloud API documentation on server groups.
+
 				Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
 				policies in server group are not met, you need to manually restart the servers in said group,
 				for example via API, UpCloud Control Panel or upctl (UpCloud CLI)`,
-				Type:     schema.TypeBool,
+				Type:     schema.TypeString,
 				Optional: true,
 				Default:  false,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+					string(upcloud.ServerGroupAntiAffinityPolicyBestEffort),
+					string(upcloud.ServerGroupAntiAffinityPolicyOff),
+					string(upcloud.ServerGroupAntiAffinityPolicyStrict),
+				}, false)),
 			},
 		},
 	}
@@ -149,7 +161,7 @@ func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) erro
 		return err
 	}
 
-	if err := d.Set("anti_affinity", group.AntiAffinity.Bool()); err != nil {
+	if err := d.Set("anti_affinity_policy", group.AntiAffinityPolicy); err != nil {
 		return err
 	}
 
@@ -165,11 +177,8 @@ func createServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceD
 		Title: d.Get("title").(string),
 	}
 
-	if d.Get("anti_affinity").(bool) {
-		result.AntiAffinity = upcloud.True
-	} else {
-		result.AntiAffinity = upcloud.False
-	}
+	aaPolicy := d.Get("anti_affinity_policy").(string)
+	result.AntiAffinityPolicy = upcloud.ServerGroupAntiAffinityPolicy(aaPolicy)
 
 	members, membersWereSet := d.GetOk("members")
 	if membersWereSet {
@@ -200,11 +209,8 @@ func modifyServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceD
 		UUID:  d.Id(),
 	}
 
-	if d.Get("anti_affinity").(bool) {
-		result.AntiAffinity = upcloud.True
-	} else {
-		result.AntiAffinity = upcloud.False
-	}
+	aaPolicy := d.Get("anti_affinity_policy").(string)
+	result.AntiAffinityPolicy = upcloud.ServerGroupAntiAffinityPolicy(aaPolicy)
 
 	if d.HasChange("members") {
 		members, err := utils.SetOfStringsToSlice(ctx, d.Get("members"))
