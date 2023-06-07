@@ -38,6 +38,7 @@ resource "upcloud_managed_database_user" "example_user" {
 ### Optional
 
 - `authentication` (String) MySQL only, authentication type.
+- `opensearch_access_control` (Block List, Max: 1) OpenSearch access control object. (see [below for nested schema](#nestedblock--opensearch_access_control))
 - `password` (String, Sensitive) Password for the database user. Defaults to a random value
 - `pg_access_control` (Block List, Max: 1) PostgreSQL access control object. (see [below for nested schema](#nestedblock--pg_access_control))
 - `redis_access_control` (Block List, Max: 1) Redis access control object. (see [below for nested schema](#nestedblock--redis_access_control))
@@ -46,6 +47,23 @@ resource "upcloud_managed_database_user" "example_user" {
 
 - `id` (String) The ID of this resource.
 - `type` (String) Type of the user. Only normal type users can be created
+
+<a id="nestedblock--opensearch_access_control"></a>
+### Nested Schema for `opensearch_access_control`
+
+Required:
+
+- `rules` (Block List, Min: 1) Set user access control rules. (see [below for nested schema](#nestedblock--opensearch_access_control--rules))
+
+<a id="nestedblock--opensearch_access_control--rules"></a>
+### Nested Schema for `opensearch_access_control.rules`
+
+Required:
+
+- `index` (String) Set index name, pattern or top level API.
+- `permission` (String) Set permission access.
+
+
 
 <a id="nestedblock--pg_access_control"></a>
 ### Nested Schema for `pg_access_control`
