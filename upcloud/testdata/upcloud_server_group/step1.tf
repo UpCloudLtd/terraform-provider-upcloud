@@ -14,9 +14,9 @@ resource "upcloud_server" "test" {
 }
 
 resource "upcloud_server_group" "tf_test_1" {
-  title         = "tf_test_1"
-  anti_affinity = false
-  labels = {
+  title                = "tf_test_1"
+  anti_affinity_policy = "no"
+  labels               = {
     "key1" = "val1"
     "key2" = "val2"
     "key3" = "val3"
