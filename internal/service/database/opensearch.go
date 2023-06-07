@@ -44,8 +44,8 @@ func resourceOpenSearchCreate(ctx context.Context, d *schema.ResourceData, meta 
 		client := meta.(*service.Service)
 		aclReq := request.ModifyManagedDatabaseAccessControlRequest{
 			ServiceUUID:         d.Id(),
-			ACLsEnabled:         d.Get("access_control").(bool),
-			ExtendedACLsEnabled: d.Get("extended_access_control").(bool),
+			ACLsEnabled:         upcloud.BoolPtr(d.Get("access_control").(bool)),
+			ExtendedACLsEnabled: upcloud.BoolPtr(d.Get("extended_access_control").(bool)),
 		}
 		_, err := client.ModifyManagedDatabaseAccessControl(ctx, &aclReq)
 		if err != nil {
@@ -83,8 +83,8 @@ func resourceOpenSearchUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		client := meta.(*service.Service)
 		aclReq := request.ModifyManagedDatabaseAccessControlRequest{
 			ServiceUUID:         d.Id(),
-			ACLsEnabled:         d.Get("access_control").(bool),
-			ExtendedACLsEnabled: d.Get("extended_access_control").(bool),
+			ACLsEnabled:         upcloud.BoolPtr(d.Get("access_control").(bool)),
+			ExtendedACLsEnabled: upcloud.BoolPtr(d.Get("extended_access_control").(bool)),
 		}
 		_, err := client.ModifyManagedDatabaseAccessControl(ctx, &aclReq)
 		if err != nil {
