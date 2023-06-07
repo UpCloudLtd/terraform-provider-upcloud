@@ -1,11 +1,14 @@
 package database
 
 import (
+	"context"
 	"math"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -13,9 +16,9 @@ import (
 func ResourcePostgreSQL() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents PostgreSQL managed database",
-		CreateContext: resourceDatabaseCreate(upcloud.ManagedDatabaseServiceTypePostgreSQL),
-		ReadContext:   resourceDatabaseRead,
-		UpdateContext: resourceDatabaseUpdate,
+		CreateContext: resourcePostgreSQLCreate,
+		ReadContext:   resourcePostgreSQLRead,
+		UpdateContext: resourcePostgreSQLUpdate,
 		DeleteContext: resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -25,6 +28,71 @@ func ResourcePostgreSQL() *schema.Resource {
 			schemaPostgreSQLEngine(),
 		),
 	}
+}
+
+func resourcePostgreSQLCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if err := d.Set("type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	diags := resourceDatabaseCreate(ctx, d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	return resourcePostgreSQLRead(ctx, d, meta)
+}
+
+func resourcePostgreSQLRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceDatabaseRead(ctx, d, meta)
+}
+
+func resourcePostgreSQLUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	diags := resourceDatabaseUpdate(ctx, d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	client := meta.(*service.Service)
+
+	if !d.HasChange("powered") {
+		if d.HasChange("properties.0.version") {
+			diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
+			if diags.HasError() {
+				return diags
+			}
+		}
+	} else {
+		switch d.Get("powered").(bool) {
+		// Power off
+		case false:
+			if d.HasChange("properties.0.version") {
+				diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
+				if diags.HasError() {
+					return diags
+				}
+			}
+			diags = append(diags, resourceDatabasePoweredUpdate(ctx, d, meta)...)
+			if diags.HasError() {
+				return diags
+			}
+		// Power on
+		case true:
+			diags = append(diags, resourceDatabasePoweredUpdate(ctx, d, meta)...)
+			if diags.HasError() {
+				return diags
+			}
+			if d.HasChange("properties.0.version") {
+				diags = append(diags, updateDatabaseVersion(ctx, d, client)...)
+				if diags.HasError() {
+					return diags
+				}
+			}
+		}
+	}
+
+	diags = append(diags, resourcePostgreSQLRead(ctx, d, meta)...)
+	return diags
 }
 
 func schemaPostgreSQLEngine() map[string]*schema.Schema {
