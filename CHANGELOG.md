@@ -8,6 +8,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - kubernetes: `private_node_groups` field to `upcloud_kubernetes_cluster` resource
 - server: properties `timezone`, `video_model` and `nic_model`
+- servergroup: `anti_affinity_policy` field to `upcloud_server_group` resource for supporting strict anti-affinity
+
+### Removed
+- servergroup: `anti_affinity` field from `upcloud_server_group` in favor of anti_affinity_policy
 
 ## [2.10.0] - 2023-04-26
 

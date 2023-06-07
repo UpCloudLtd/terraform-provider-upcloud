@@ -14,8 +14,8 @@ description: |-
 
 ```terraform
 resource "upcloud_server_group" "main" {
-  title         = "main_group"
-  anti_affinity = true
+  title                = "main_group"
+  anti_affinity_policy = "yes"
   labels = {
     "key1" = "val1"
     "key2" = "val2"
@@ -38,11 +38,16 @@ resource "upcloud_server_group" "main" {
 
 ### Optional
 
-- `anti_affinity` (Boolean) Is group an anti-affinity group. Setting this to true will result in all servers in the group being placed on separate compute hosts.
-				NOTE: this is an experimental feature. The anti-affinity policy is "best-effort" and it is not
-				guaranteed that all the servers will end up on a separate compute hosts. You can verify if the
-				anti-affinity policies are met by requesting a server group details from API. For more information
-				please see UpCloud API documentation on server groups
+- `anti_affinity_policy` (String) Defines if a server group is an anti-affinity group. Setting this to "strict" or yes" will
+				result in all servers in the group being placed on separate compute hosts. The value can be "strict", "yes" or "no".
+
+				* "strict" refers to strict policy doesn't allow servers in the same server group to be on the same host
+				* "yes" refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed
+				* "no" refers to having no policy and thus no affect server host affinity
+ 				
+				To verify if the anti-affinity policies are met by requesting a server group details from API. For more information
+				please see UpCloud API documentation on server groups.
+
 				Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
 				policies in server group are not met, you need to manually restart the servers in said group,
 				for example via API, UpCloud Control Panel or upctl (UpCloud CLI)
