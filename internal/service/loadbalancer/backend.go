@@ -188,6 +188,7 @@ func setBackendResourceData(d *schema.ResourceData, be *upcloud.LoadBalancerBack
 			"health_check_fall":            be.Properties.HealthCheckFall,
 			"health_check_rise":            be.Properties.HealthCheckRise,
 			"health_check_url":             be.Properties.HealthCheckURL,
+			"health_check_tls_verify":      be.Properties.HealthCheckTLSVerify,
 			"health_check_expected_status": be.Properties.HealthCheckExpectedStatus,
 			"sticky_session_cookie_name":   be.Properties.StickySessionCookieName,
 			"outbound_proxy_protocol":      be.Properties.OutboundProxyProtocol,
@@ -211,6 +212,7 @@ func backendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBala
 		HealthCheckFall:           d.Get("properties.0.health_check_fall").(int),
 		HealthCheckRise:           d.Get("properties.0.health_check_rise").(int),
 		HealthCheckURL:            d.Get("properties.0.health_check_url").(string),
+		HealthCheckTLSVerify:      upcloud.BoolPtr(d.Get("properties.0.health_check_tls_verify").(bool)),
 		HealthCheckExpectedStatus: d.Get("properties.0.health_check_expected_status").(int),
 		StickySessionCookieName:   d.Get("properties.0.sticky_session_cookie_name").(string),
 		OutboundProxyProtocol:     upcloud.LoadBalancerProxyProtocolVersion(d.Get("properties.0.outbound_proxy_protocol").(string)),
@@ -272,6 +274,12 @@ func schemaBackendProperties() map[string]*schema.Schema {
 			Optional:         true,
 			Default:          "/",
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(1, 255)),
+		},
+		"health_check_tls_verify": {
+			Description: "Enables certificate verification with the system CA certificate bundle. Works with https scheme in health_check_url, otherwise ignored.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
 		},
 		"health_check_expected_status": {
 			Description:      "Expected HTTP status code returned by the customer application to mark server as healthy. Ignored for tcp type.",
