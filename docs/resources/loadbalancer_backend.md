@@ -69,6 +69,7 @@ Optional:
 - `health_check_fall` (Number) Sets how many failed health checks are allowed until the backend member is taken off from the rotation.
 - `health_check_interval` (Number) Interval between health checks.
 - `health_check_rise` (Number) Sets how many passing checks there must be before returning the backend member to the rotation.
+- `health_check_tls_verify` (Boolean) Enables certificate verification with the system CA certificate bundle. Works with https scheme in health_check_url, otherwise ignored.
 - `health_check_type` (String) Health check type.
 - `health_check_url` (String) Target path for health check HTTP GET requests. Ignored for tcp type.
 - `outbound_proxy_protocol` (String) Enable outbound proxy protocol by setting the desired version. Empty string disables proxy protocol.
