@@ -49,6 +49,10 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
   loadbalancer  = resource.upcloud_loadbalancer.lb.id
   resolver_name = resource.upcloud_loadbalancer_resolver.lb_dns_1.name
   name          = "lb-be-1-test"
+  properties {
+    health_check_url = "https://10.0.0.10/healthz"
+    health_check_tls_verify = true
+  }
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {

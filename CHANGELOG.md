@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- lbaas: add `health_check_tls_verify` field to backend properties
+
 ## [2.11.0] - 2023-06-07
 
 ### Added
