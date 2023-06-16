@@ -15,13 +15,13 @@ jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
-      - name: "Setup Go"
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.18.x"
-
       - name: "Checkout source code"
         uses: actions/checkout@v3
+
+      - name: "Setup Go"
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
 
       - name: "Run unit tests"
         run: make test
