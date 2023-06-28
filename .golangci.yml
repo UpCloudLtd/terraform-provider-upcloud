@@ -10,7 +10,6 @@ linters:
     - bidichk
     - bodyclose
     - containedctx
-    - deadcode
     # - depguard
     - dogsled
     - errcheck
@@ -31,12 +30,10 @@ linters:
     - revive
     - rowserrcheck
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unused
-    - varcheck
     - wastedassign
     - whitespace
 
