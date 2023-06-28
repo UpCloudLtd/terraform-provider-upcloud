@@ -7,6 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - lbaas: add `health_check_tls_verify` field to backend properties
+- kubernetes: `utility_network_access` field to `upcloud_kubernetes_node_group` resource
 
 ## [2.11.0] - 2023-06-07
 
