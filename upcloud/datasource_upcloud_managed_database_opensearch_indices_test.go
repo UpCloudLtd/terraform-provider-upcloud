@@ -25,7 +25,7 @@ func TestAccDataSourceUpcloudManagedDatabaseOpenSearchIndices(t *testing.T) {
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, prop("create_time")),
-					resource.TestCheckResourceAttr(name, prop("docs"), "0"),
+					resource.TestCheckResourceAttr(name, prop("docs"), "10"),
 					resource.TestCheckResourceAttr(name, prop("health"), "green"),
 					resource.TestCheckResourceAttr(name, prop("index_name"), ".opensearch-observability"),
 					resource.TestCheckResourceAttr(name, prop("number_of_replicas"), "0"),
