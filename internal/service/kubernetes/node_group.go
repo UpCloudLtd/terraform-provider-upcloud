@@ -157,7 +157,7 @@ func resourceNodeGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 		Storage:              "",
 		KubeletArgs:          []upcloud.KubernetesKubeletArg{},
 		Taints:               []upcloud.KubernetesTaint{},
-		UtilityNetworkAccess: d.Get("utility_network_access").(bool),
+		UtilityNetworkAccess: upcloud.BoolPtr(d.Get("utility_network_access").(bool)),
 	}
 	if v, ok := d.GetOk("labels"); ok {
 		for k, v := range v.(map[string]interface{}) {
