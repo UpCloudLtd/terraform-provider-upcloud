@@ -74,6 +74,7 @@ resource "upcloud_kubernetes_node_group" "group" {
 - `labels` (Map of String) Key-value pairs to classify the node group.
 - `ssh_keys` (Set of String) You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.
 - `taint` (Block Set) Taints for the nodes in this group. (see [below for nested schema](#nestedblock--taint))
+- `utility_network_access` (Boolean) If set to false, nodes in this group will not have access to utility network.
 
 ### Read-Only
 
