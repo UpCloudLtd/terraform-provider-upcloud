@@ -62,6 +62,7 @@ resource "upcloud_kubernetes_node_group" "g2" {
   name     = "medium"
   plan     = "2xCPU-4GB"
   ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"]
+  utility_network_access = false
 }
 
 data "upcloud_kubernetes_cluster" "main" {

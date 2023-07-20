@@ -133,6 +133,13 @@ func ResourceNodeGroup() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"utility_network_access": {
+				Description: `If set to false, nodes in this group will not have access to utility network.`,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
+			},
 		},
 	}
 }
@@ -141,15 +148,16 @@ func resourceNodeGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 	svc := meta.(*service.Service)
 
 	req := request.KubernetesNodeGroup{
-		Count:        d.Get("node_count").(int),
-		Name:         d.Get("name").(string),
-		Plan:         d.Get("plan").(string),
-		AntiAffinity: d.Get("anti_affinity").(bool),
-		Labels:       []upcloud.Label{},
-		SSHKeys:      []string{},
-		Storage:      "",
-		KubeletArgs:  []upcloud.KubernetesKubeletArg{},
-		Taints:       []upcloud.KubernetesTaint{},
+		Count:                d.Get("node_count").(int),
+		Name:                 d.Get("name").(string),
+		Plan:                 d.Get("plan").(string),
+		AntiAffinity:         d.Get("anti_affinity").(bool),
+		Labels:               []upcloud.Label{},
+		SSHKeys:              []string{},
+		Storage:              "",
+		KubeletArgs:          []upcloud.KubernetesKubeletArg{},
+		Taints:               []upcloud.KubernetesTaint{},
+		UtilityNetworkAccess: upcloud.BoolPtr(d.Get("utility_network_access").(bool)),
 	}
 	if v, ok := d.GetOk("labels"); ok {
 		for k, v := range v.(map[string]interface{}) {
@@ -212,7 +220,7 @@ func resourceNodeGroupRead(ctx context.Context, d *schema.ResourceData, meta int
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 	d.SetId(marshalID(clusterID, ng.Name))
-	return setNodeGroupResourceData(d, clusterID, ng)
+	return setNodeGroupResourceData(d, clusterID, &ng.KubernetesNodeGroup)
 }
 
 func resourceNodeGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
@@ -302,6 +310,10 @@ func setNodeGroupResourceData(d *schema.ResourceData, clusterID string, ng *upcl
 		})
 	}
 	if err := d.Set("taint", taints); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("utility_network_access", ng.UtilityNetworkAccess); err != nil {
 		return diag.FromErr(err)
 	}
 

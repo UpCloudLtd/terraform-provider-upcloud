@@ -48,6 +48,8 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 						"key":    "taintKey",
 						"value":  "taintValue",
 					}),
+					resource.TestCheckResourceAttr(g1Name, "utility_network_access", "true"),
+					resource.TestCheckResourceAttr(g2Name, "utility_network_access", "false"),
 				),
 			},
 			{
