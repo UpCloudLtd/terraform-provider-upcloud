@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.18
+ARG GO_VERSION=1.20
 FROM golang:$GO_VERSION
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y unzip
@@ -35,6 +35,9 @@ RUN set -x && \
     sha256sum -c <(grep $VAULT_SHA256 $VAULT_SUMFILE) && \
     unzip $VAULT && \
     mv vault /usr/local/bin
+
+# Allow git usage even though the mount path is not owned by current user
+RUN git config --global --add safe.directory /go/src
 
 ADD entrypoint.sh /
 ENV VAULT_ADDR="" VAULT_LOGIN="" VAULT_LOGIN_PASSWORD="" VAULT_SIGNER_PATH=""
