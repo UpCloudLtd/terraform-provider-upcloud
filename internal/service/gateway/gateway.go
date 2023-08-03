@@ -25,6 +25,7 @@ const (
 	routerIDDescription         = "ID of the router attached to the gateway."
 	configuredStatusDescription = "The service configured status indicates the service's current intended status. Managed by the customer."
 	operationalStateDescription = "The service operational state indicates the service's current operational, effective state. Managed by the system."
+	addressesDescription        = "IP addresses assigned to the gateway."
 )
 
 func ResourceGateway() *schema.Resource {
@@ -89,6 +90,25 @@ func ResourceGateway() *schema.Resource {
 				Description: operationalStateDescription,
 				Type:        schema.TypeString,
 				Computed:    true,
+			},
+			"addresses": {
+				Description: addressesDescription,
+				Computed:    true,
+				Type:        schema.TypeSet,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"address": {
+							Type:        schema.TypeString,
+							Description: "IP addresss",
+							Computed:    true,
+						},
+						"name": {
+							Type:        schema.TypeString,
+							Description: "Name of the IP address",
+							Computed:    true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -213,11 +233,23 @@ func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags 
 		return diag.FromErr(err)
 	}
 
+	var addresses []map[string]interface{}
+	for _, address := range gw.Addresses {
+		addresses = append(addresses, map[string]interface{}{
+			"address": address.Address,
+			"name":    address.Name,
+		})
+	}
+
+	if err := d.Set("addresses", addresses); err != nil {
+		return diag.FromErr(err)
+	}
+
 	return diags
 }
 
 func waitForGatewayToBeRunning(ctx context.Context, svc *service.Service, id string) error {
-	const maxRetries int = 100
+	const maxRetries int = 500
 
 	for i := 0; i <= maxRetries; i++ {
 		select {
@@ -241,7 +273,7 @@ func waitForGatewayToBeRunning(ctx context.Context, svc *service.Service, id str
 }
 
 func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
-	const maxRetries int = 100
+	const maxRetries int = 500
 
 	for i := 0; i <= maxRetries; i++ {
 		select {
