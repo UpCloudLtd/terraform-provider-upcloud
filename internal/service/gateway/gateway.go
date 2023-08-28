@@ -26,6 +26,8 @@ const (
 	configuredStatusDescription = "The service configured status indicates the service's current intended status. Managed by the customer."
 	operationalStateDescription = "The service operational state indicates the service's current operational, effective state. Managed by the system."
 	addressesDescription        = "IP addresses assigned to the gateway."
+
+	cleanupWaitTimeSeconds = 15
 )
 
 func ResourceGateway() *schema.Resource {
@@ -200,6 +202,9 @@ func resourceGatewayDelete(ctx context.Context, d *schema.ResourceData, meta int
 
 	// wait before continuing so that router can be deleted if needed
 	diags := diag.FromErr(waitForGatewayToBeDeleted(ctx, svc, d.Id()))
+
+	// Additionally wait some time so that all cleanup operations can finish
+	time.Sleep(time.Second * cleanupWaitTimeSeconds)
 
 	return diags
 }
