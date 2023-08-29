@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- gateway: add read-only `addresses` field
+
 ## [2.12.0] - 2023-07-21
 
 ### Added
