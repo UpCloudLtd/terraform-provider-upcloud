@@ -64,6 +64,7 @@ resource "upcloud_gateway" "this" {
 
 ### Read-Only
 
+- `addresses` (Set of Object) IP addresses assigned to the gateway. (see [below for nested schema](#nestedatt--addresses))
 - `id` (String) The ID of this resource.
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 
@@ -73,5 +74,14 @@ resource "upcloud_gateway" "this" {
 Required:
 
 - `id` (String) ID of the router attached to the gateway.
+
+
+<a id="nestedatt--addresses"></a>
+### Nested Schema for `addresses`
+
+Read-Only:
+
+- `address` (String)
+- `name` (String)
 
 
