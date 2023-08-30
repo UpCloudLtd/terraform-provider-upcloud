@@ -31,9 +31,10 @@ func ResourceNodeGroup() *schema.Resource {
 				ForceNew:    true,
 			},
 			"node_count": {
-				Description: "Amount of nodes to provision in the node group.",
-				Type:        schema.TypeInt,
-				Required:    true,
+				Description:  "Amount of nodes to provision in the node group.",
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(0),
+				Required:     true,
 			},
 			"name": {
 				Description:      "The name of the node group. Needs to be unique within a cluster.",

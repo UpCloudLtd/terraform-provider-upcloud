@@ -8,6 +8,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - gateway: add read-only `addresses` field
 
+### Changed
+- kubernetes: remove node group maximum value validation. The maximum number of nodes (in the cluster) is determined by the cluster plan and the validation is done on the API side.
+
 ## [2.12.0] - 2023-07-21
 
 ### Added
