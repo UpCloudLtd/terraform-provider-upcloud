@@ -17,9 +17,11 @@ resource "upcloud_network" "example" {
 
 # Create a Kubernetes cluster
 resource "upcloud_kubernetes_cluster" "example" {
-  name    = "exampleapp"
-  network = upcloud_network.example.id
-  zone    = "de-fra1"
+  # Allow access the cluster control plane from any external source.
+  control_plane_ip_filter = ["0.0.0.0/0"]
+  name                    = "exampleapp"
+  network                 = upcloud_network.example.id
+  zone                    = "de-fra1"
 }
 
 # Kubernetes cluster with private node groups requires a network that is routed through NAT gateway.

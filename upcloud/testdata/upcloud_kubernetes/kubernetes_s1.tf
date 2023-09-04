@@ -23,16 +23,17 @@ resource "upcloud_network" "main" {
 }
 
 resource "upcloud_kubernetes_cluster" "main" {
-  name    = var.name
-  network = upcloud_network.main.id
-  zone    = var.zone
+  control_plane_ip_filter = ["0.0.0.0/0"]
+  name                    = var.name
+  network                 = upcloud_network.main.id
+  zone                    = var.zone
 }
 
 resource "upcloud_kubernetes_node_group" "g1" {
   cluster       = upcloud_kubernetes_cluster.main.id
   node_count    = 2
   anti_affinity = true
-  labels = {
+  labels        = {
     env       = "dev"
     managedBy = "tf"
   }
@@ -54,13 +55,15 @@ resource "upcloud_kubernetes_node_group" "g1" {
 resource "upcloud_kubernetes_node_group" "g2" {
   cluster    = upcloud_kubernetes_cluster.main.id
   node_count = 1
-  labels = {
+  labels     = {
     env       = "qa"
     managedBy = "tf"
   }
-  name     = "medium"
-  plan     = "2xCPU-4GB"
-  ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"]
+  name                   = "medium"
+  plan                   = "2xCPU-4GB"
+  ssh_keys               = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"
+  ]
   utility_network_access = false
 }
 
