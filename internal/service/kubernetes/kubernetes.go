@@ -252,9 +252,7 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	}
 
 	filters := make([]string, 0)
-	for _, f := range c.ControlPlaneIPFilter {
-		filters = append(filters, f)
-	}
+	filters = append(filters, c.ControlPlaneIPFilter...)
 	if err := d.Set("control_plane_ip_filter", filters); err != nil {
 		return diag.FromErr(err)
 	}
