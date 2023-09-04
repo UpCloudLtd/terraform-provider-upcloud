@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- kubernetes: `control_plane_ip_filter` field to `upcloud_kubernetes_cluster` resource
+
 ## [2.12.0] - 2023-07-21
 
 ### Added
