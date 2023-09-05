@@ -23,7 +23,7 @@ resource "upcloud_network" "main" {
 }
 
 resource "upcloud_kubernetes_cluster" "main" {
-  control_plane_ip_filter = ["0.0.0.0/0"]
+  control_plane_ip_filter = []
   name                    = var.name
   network                 = upcloud_network.main.id
   zone                    = var.zone
