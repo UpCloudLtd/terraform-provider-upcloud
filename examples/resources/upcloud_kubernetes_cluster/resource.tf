@@ -17,7 +17,7 @@ resource "upcloud_network" "example" {
 
 # Create a Kubernetes cluster
 resource "upcloud_kubernetes_cluster" "example" {
-  # Allow access the cluster control plane from any external source.
+  # Allow access to the cluster control plane from any external source.
   control_plane_ip_filter = ["0.0.0.0/0"]
   name                    = "exampleapp"
   network                 = upcloud_network.example.id
