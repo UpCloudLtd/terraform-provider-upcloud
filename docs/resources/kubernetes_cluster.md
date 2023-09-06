@@ -32,9 +32,11 @@ resource "upcloud_network" "example" {
 
 # Create a Kubernetes cluster
 resource "upcloud_kubernetes_cluster" "example" {
-  name    = "exampleapp"
-  network = upcloud_network.example.id
-  zone    = "de-fra1"
+  # Allow access to the cluster control plane from any external source.
+  control_plane_ip_filter = ["0.0.0.0/0"]
+  name                    = "exampleapp"
+  network                 = upcloud_network.example.id
+  zone                    = "de-fra1"
 }
 
 # Kubernetes cluster with private node groups requires a network that is routed through NAT gateway.
@@ -78,6 +80,7 @@ resource "upcloud_kubernetes_cluster" "example2" {
 
 ### Required
 
+- `control_plane_ip_filter` (Set of String) IP addresses or IP ranges in CIDR format which are allowed to access the cluster control plane. To allow access from any source, use `["0.0.0.0/0"]`. To deny access from all sources, use `[]`. Values set here do not restrict access to node groups or exposed Kubernetes services.
 - `name` (String) Cluster name. Needs to be unique within the account.
 - `network` (String) Network ID for the cluster to run in.
 - `zone` (String) Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
