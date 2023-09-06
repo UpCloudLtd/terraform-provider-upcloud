@@ -21,6 +21,7 @@ const (
 	clientCertificateDescription    = "TLS authentication client certificate, encoded (PEM)."
 	clientKeyDescription            = "Key to pair with `client_certificate`, encoded (PEM)."
 	clusterCACertificateDescription = "TLS authentication root certificate bundle, encoded (PEM)."
+	controlPlaneIPFilterDescription = "IP addresses or IP ranges in CIDR format which are allowed to access the cluster control plane. To allow access from any source, use `[\"0.0.0.0/0\"]`. To deny access from all sources, use `[]`. Values set here do not restrict access to node groups or exposed Kubernetes services."
 	hostDescription                 = "Hostname of the cluster API. Defined as URI."
 	idDescription                   = "Cluster ID."
 	kubeconfigDescription           = "Kubernetes config file contents for the cluster."
@@ -40,11 +41,20 @@ func ResourceCluster() *schema.Resource {
 		Description:   "This resource represents a Managed Kubernetes cluster.",
 		CreateContext: resourceClusterCreate,
 		ReadContext:   resourceClusterRead,
+		UpdateContext: resourceClusterUpdate,
 		DeleteContext: resourceClusterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
+			"control_plane_ip_filter": {
+				Description: controlPlaneIPFilterDescription,
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 			"name": {
 				Description:      nameDescription,
 				Type:             schema.TypeString,
@@ -52,30 +62,10 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:         true,
 				ValidateDiagFunc: validateResourceName,
 			},
-			"zone": {
-				Description: zoneDescription,
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"plan": {
-				Description: "The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Default:     "development",
-			},
 			"network": {
 				Description: networkDescription,
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
-			},
-			"private_node_groups": {
-				Description: "Enable private node groups. Private node groups requires a network that is routed through NAT gateway.",
-				Type:        schema.TypeBool,
-				Default:     false,
-				Optional:    true,
 				ForceNew:    true,
 			},
 			"network_cidr": {
@@ -91,10 +81,30 @@ func ResourceCluster() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"plan": {
+				Description: "The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Default:     "development",
+			},
+			"private_node_groups": {
+				Description: "Enable private node groups. Private node groups requires a network that is routed through NAT gateway.",
+				Type:        schema.TypeBool,
+				Default:     false,
+				Optional:    true,
+				ForceNew:    true,
+			},
 			"state": {
 				Description: stateDescription,
 				Type:        schema.TypeString,
 				Computed:    true,
+			},
+			"zone": {
+				Description: zoneDescription,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}
@@ -109,6 +119,12 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 		Zone:              d.Get("zone").(string),
 		Plan:              d.Get("plan").(string),
 		PrivateNodeGroups: d.Get("private_node_groups").(bool),
+	}
+
+	req.ControlPlaneIPFilter = make([]string, 0)
+	filters := d.Get("control_plane_ip_filter")
+	for _, v := range filters.(*schema.Set).List() {
+		req.ControlPlaneIPFilter = append(req.ControlPlaneIPFilter, v.(string))
 	}
 
 	c, err := svc.CreateKubernetesCluster(ctx, req)
@@ -145,6 +161,36 @@ func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	return setClusterResourceData(d, cluster)
+}
+
+func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+	svc := meta.(*service.Service)
+
+	req := &request.ModifyKubernetesClusterRequest{
+		ClusterUUID: d.Id(),
+	}
+
+	req.Cluster.ControlPlaneIPFilter = make([]string, 0)
+	filters := d.Get("control_plane_ip_filter")
+	for _, v := range filters.(*schema.Set).List() {
+		req.Cluster.ControlPlaneIPFilter = append(req.Cluster.ControlPlaneIPFilter, v.(string))
+	}
+
+	c, err := svc.ModifyKubernetesCluster(ctx, req)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	c, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
+		DesiredState: upcloud.KubernetesClusterStateRunning,
+		Timeout:      time.Minute * 20,
+		UUID:         c.UUID,
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return setClusterResourceData(d, c)
 }
 
 func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -202,6 +248,12 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 		groups = append(groups, g.Name)
 	}
 	if err := d.Set("node_groups", groups); err != nil {
+		return diag.FromErr(err)
+	}
+
+	filters := make([]string, 0)
+	filters = append(filters, c.ControlPlaneIPFilter...)
+	if err := d.Set("control_plane_ip_filter", filters); err != nil {
 		return diag.FromErr(err)
 	}
 
