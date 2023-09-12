@@ -407,7 +407,6 @@ func dataSourceSessionsRead(ctx context.Context, d *schema.ResourceData, meta in
 		Offset: offset,
 		Order:  order,
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
