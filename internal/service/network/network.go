@@ -63,6 +63,16 @@ func ResourceNetwork() *schema.Resource {
 								ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address),
 							},
 						},
+						"dhcp_routes": {
+							Type:        schema.TypeSet,
+							Description: "The additional DHCP classless static routes given by DHCP",
+							Computed:    true,
+							Optional:    true,
+							Elem: &schema.Schema{
+								Type:         schema.TypeString,
+								ValidateFunc: validation.IsCIDR,
+							},
+						},
 						"family": {
 							Type:        schema.TypeString,
 							Description: "IP address family",
@@ -148,6 +158,10 @@ func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta int
 			uipn.DHCPDns = append(uipn.DHCPDns, dns.(string))
 		}
 
+		for _, route := range ipnConf["dhcp_routes"].(*schema.Set).List() {
+			uipn.DHCPRoutes = append(uipn.DHCPRoutes, route.(string))
+		}
+
 		req.IPNetworks = append(req.IPNetworks, uipn)
 	}
 
@@ -191,6 +205,7 @@ func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta inter
 			"dhcp":               network.IPNetworks[0].DHCP.Bool(),
 			"dhcp_default_route": network.IPNetworks[0].DHCPDefaultRoute.Bool(),
 			"dhcp_dns":           network.IPNetworks[0].DHCPDns,
+			"dhcp_routes":        network.IPNetworks[0].DHCPRoutes,
 			"family":             network.IPNetworks[0].Family,
 			"gateway":            network.IPNetworks[0].Gateway,
 		}
@@ -233,6 +248,10 @@ func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta int
 
 		for _, dns := range ipnConf["dhcp_dns"].(*schema.Set).List() {
 			uipn.DHCPDns = append(uipn.DHCPDns, dns.(string))
+		}
+
+		for _, route := range ipnConf["dhcp_routes"].(*schema.Set).List() {
+			uipn.DHCPRoutes = append(uipn.DHCPRoutes, route.(string))
 		}
 
 		req.IPNetworks = []upcloud.IPNetwork{uipn}
