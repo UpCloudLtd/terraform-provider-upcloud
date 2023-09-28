@@ -5,10 +5,13 @@ import (
 	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
+	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func ResourceRouter() *schema.Resource {
@@ -42,20 +45,59 @@ func ResourceRouter() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"static_route": {
+				Description: "A collection of static routes for this router",
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Description: "Name or description of the route.",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+						},
+						"nexthop": {
+							Description:  "Next hop address. NOTE: For static route to be active the next hop has to be an address of a reachable running Cloud Server in one of the Private Networks attached to the router.",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address),
+						},
+						"route": {
+							Description:  "Destination prefix of the route.",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.Any(validation.IsCIDR),
+						},
+					},
+				},
+			},
 		},
 	}
 }
 
-func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	client := meta.(*service.Service)
 
-	var diags diag.Diagnostics
-
-	opts := &request.CreateRouterRequest{
+	req := &request.CreateRouterRequest{
 		Name: d.Get("name").(string),
 	}
 
-	router, err := client.CreateRouter(ctx, opts)
+	if v, ok := d.GetOk("static_route"); ok {
+		for _, staticRoute := range v.(*schema.Set).List() {
+			staticRouteData := staticRoute.(map[string]interface{})
+
+			r := upcloud.StaticRoute{
+				Name:    staticRouteData["name"].(string),
+				Nexthop: staticRouteData["nexthop"].(string),
+				Route:   staticRouteData["route"].(string),
+			}
+
+			req.StaticRoutes = append(req.StaticRoutes, r)
+		}
+	}
+
+	router, err := client.CreateRouter(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -70,15 +112,26 @@ func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
+	var staticRoutes []map[string]interface{}
+	for _, staticRoute := range router.StaticRoutes {
+		staticRoutes = append(staticRoutes, map[string]interface{}{
+			"name":    staticRoute.Name,
+			"nexthop": staticRoute.Nexthop,
+			"route":   staticRoute.Route,
+		})
+	}
+
+	if err := d.Set("static_route", staticRoutes); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(router.UUID)
 
 	return diags
 }
 
-func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	client := meta.(*service.Service)
-
-	var diags diag.Diagnostics
 
 	opts := &request.GetRouterDetailsRequest{
 		UUID: d.Id(),
@@ -105,21 +158,50 @@ func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
+	var staticRoutes []map[string]interface{}
+	for _, staticRoute := range router.StaticRoutes {
+		staticRoutes = append(staticRoutes, map[string]interface{}{
+			"name":    staticRoute.Name,
+			"nexthop": staticRoute.Nexthop,
+			"route":   staticRoute.Route,
+		})
+	}
+
+	if err := d.Set("static_route", staticRoutes); err != nil {
+		return diag.FromErr(err)
+	}
+
 	return diags
 }
 
 func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	opts := &request.ModifyRouterRequest{
+	req := &request.ModifyRouterRequest{
 		UUID: d.Id(),
 	}
 
 	if v, ok := d.GetOk("name"); ok {
-		opts.Name = v.(string)
+		req.Name = v.(string)
 	}
 
-	_, err := client.ModifyRouter(ctx, opts)
+	var staticRoutes []upcloud.StaticRoute
+
+	if v, ok := d.GetOk("static_route"); ok {
+		for _, staticRoute := range v.(*schema.Set).List() {
+			staticRouteData := staticRoute.(map[string]interface{})
+
+			staticRoutes = append(staticRoutes, upcloud.StaticRoute{
+				Name:    staticRouteData["name"].(string),
+				Nexthop: staticRouteData["nexthop"].(string),
+				Route:   staticRouteData["route"].(string),
+			})
+		}
+	}
+
+	req.StaticRoutes = &staticRoutes
+
+	_, err := client.ModifyRouter(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -127,9 +209,8 @@ func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	return resourceRouterRead(ctx, d, meta)
 }
 
-func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	client := meta.(*service.Service)
-	var diags diag.Diagnostics
 
 	router, err := client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{
 		UUID: d.Id(),
