@@ -5,8 +5,6 @@ import (
 	"regexp"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -47,17 +45,7 @@ func LabelsSliceToMap(s []upcloud.Label) map[string]string {
 	return labels
 }
 
-func allDiag(validators ...schema.SchemaValidateDiagFunc) schema.SchemaValidateDiagFunc {
-	return func(i interface{}, k cty.Path) diag.Diagnostics {
-		var diags diag.Diagnostics
-		for _, validator := range validators {
-			diags = append(diags, validator(i, k)...)
-		}
-		return diags
-	}
-}
-
-var ValidateLabelsDiagFunc = allDiag(
+var ValidateLabelsDiagFunc = validation.AllDiag(
 	validation.MapKeyLenBetween(2, 32),
 	validation.MapKeyMatch(regexp.MustCompile("^([a-zA-Z0-9])+([a-zA-Z0-9_-])*$"), ""),
 	validation.MapValueLenBetween(0, 255),
