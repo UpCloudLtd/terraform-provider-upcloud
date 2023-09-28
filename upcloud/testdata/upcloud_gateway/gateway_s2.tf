@@ -10,6 +10,10 @@ variable "zone" {
 
 resource "upcloud_router" "this" {
   name = "${var.prefix}router"
+
+  lifecycle {
+    ignore_changes = [static_route]
+  }
 }
 
 resource "upcloud_network" "this" {
