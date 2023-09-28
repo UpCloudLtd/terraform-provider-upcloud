@@ -108,7 +108,10 @@ func Provider() *schema.Provider {
 			"upcloud_tags":               tag.DataSourceTags(),
 			"upcloud_storage":            storage.DataSourceStorage(),
 			"upcloud_kubernetes_cluster": kubernetes.DataSourceCluster(),
-			"upcloud_managed_database_opensearch_indices": database.DataSourceOpenSearchIndices(),
+			"upcloud_managed_database_opensearch_indices":  database.DataSourceOpenSearchIndices(),
+			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
+			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
+			"upcloud_managed_database_redis_sessions":      database.DataSourceSessionsRedis(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
