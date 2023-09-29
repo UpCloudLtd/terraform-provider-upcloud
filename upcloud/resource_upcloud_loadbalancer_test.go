@@ -211,7 +211,7 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 			},
 			{
 				Config:      testDataE3,
-				ExpectError: regexp.MustCompile(`Error: expected .*scheme to be one of \[http https\], got invalid`),
+				ExpectError: regexp.MustCompile(`Error: expected .*scheme to be one of \["http" "https"\], got invalid`),
 				PlanOnly:    true,
 			},
 			{

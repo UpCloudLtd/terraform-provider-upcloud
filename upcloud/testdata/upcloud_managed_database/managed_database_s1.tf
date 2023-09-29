@@ -81,7 +81,7 @@ resource "upcloud_managed_database_user" "db_user_3" {
 resource "upcloud_managed_database_user" "db_user_4" {
   service  = upcloud_managed_database_opensearch.o1.id
   username = "somename"
-  password = "Superpass123"
+  password = "Superpass12345"
   opensearch_access_control {
     rules {
       index      = ".opensearch-observability"

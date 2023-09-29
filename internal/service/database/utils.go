@@ -9,7 +9,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -44,7 +44,7 @@ func resourceUpCloudManagedDatabaseWaitState(
 	for _, targetState := range targetStates {
 		states = append(states, string(targetState))
 	}
-	waiter := resource.StateChangeConf{
+	waiter := retry.StateChangeConf{
 		Delay:      1 * time.Second,
 		Refresh:    refresher,
 		Target:     states,
