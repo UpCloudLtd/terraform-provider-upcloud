@@ -4,7 +4,7 @@
 
 # UpCloud Terraform Provider
 
-This Terraform plugin allows managing different UpCloud products with
+This Terraform plugin allows managing different [UpCloud products](https://upcloud.com/products) with
 terraform.
 
 ## Documentation
