@@ -7,7 +7,7 @@ description: |-
 
 # UpCloud Provider
 
-The UpCloud Terraform Provider enables organisations to control resources provided by the UpCloud platform.
+The UpCloud Terraform Provider enables organisations to control resources provided by the [UpCloud](https://upcloud.com/) platform.
 
 ## Configure provider
 ### Using environment variables
