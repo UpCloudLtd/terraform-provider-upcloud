@@ -60,7 +60,7 @@ func ResourceServerGroup() *schema.Resource {
 				Description: antiAffinityPolicyDescription,
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     false,
+				Default:     "no",
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 					string(upcloud.ServerGroupAntiAffinityPolicyBestEffort),
 					string(upcloud.ServerGroupAntiAffinityPolicyOff),
