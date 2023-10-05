@@ -13,6 +13,25 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	titleDescription   = "Title of your server group"
+	membersDescription = "UUIDs of the servers that are members of this group"
+	// Lines > 1 should have one level of indentation to keep them under the right list item
+	antiAffinityPolicyDescription = `Defines if a server group is an anti-affinity group. Setting this to ` + "`strict` or `yes`" + ` will
+	result in all servers in the group being placed on separate compute hosts. The value can be ` + "`strict`, `yes`, or `no`" + `.
+
+	* ` + "`strict`" + ` policy doesn't allow servers in the same server group to be on the same host
+	* ` + "`yes`" + ` refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed
+	* ` + "`no`" + ` refers to having no policy and thus no effect on server host affinity
+
+	To verify if the anti-affinity policies are met by requesting a server group details from API. For more information
+	please see UpCloud API documentation on server groups.
+
+	Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
+	policies in server group are not met, you need to manually restart the servers in said group,
+	for example via API, UpCloud Control Panel or upctl (UpCloud CLI)`
+)
+
 func ResourceServerGroup() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceServerGroupCreate,
@@ -24,13 +43,13 @@ func ResourceServerGroup() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"title": {
-				Description: "Title of your server group",
+				Description: titleDescription,
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 			"labels": utils.LabelsSchema("server group"),
 			"members": {
-				Description: "UUIDs of the servers that are members of this group",
+				Description: membersDescription,
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -38,22 +57,10 @@ func ResourceServerGroup() *schema.Resource {
 				Optional: true,
 			},
 			"anti_affinity_policy": {
-				Description: `Defines if a server group is an anti-affinity group. Setting this to "strict" or yes" will
-				result in all servers in the group being placed on separate compute hosts. The value can be "strict", "yes" or "no".
-
-				* "strict" refers to strict policy doesn't allow servers in the same server group to be on the same host
-				* "yes" refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed
-				* "no" refers to having no policy and thus no affect server host affinity
- 				
-				To verify if the anti-affinity policies are met by requesting a server group details from API. For more information
-				please see UpCloud API documentation on server groups.
-
-				Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
-				policies in server group are not met, you need to manually restart the servers in said group,
-				for example via API, UpCloud Control Panel or upctl (UpCloud CLI)`,
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  false,
+				Description: antiAffinityPolicyDescription,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     false,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 					string(upcloud.ServerGroupAntiAffinityPolicyBestEffort),
 					string(upcloud.ServerGroupAntiAffinityPolicyOff),
