@@ -14,6 +14,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - kubernetes: remove node group maximum value validation. The maximum number of nodes (in the cluster) is determined by the cluster plan and the validation is done on the API side.
 
 ### Fixed
+- **Breaking**, server: change tags from `List` to `Set`. The list order has already been ignored earlier and API does not support defining the order of tags.
 - servergroup: use valid value as default for `anti_affinity_policy`.
 
 ## [2.12.0] - 2023-07-21
