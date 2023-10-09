@@ -16,10 +16,14 @@ resource "upcloud_server" "test" {
 resource "upcloud_server_group" "tf_test_1" {
   title                = "tf_test_1"
   anti_affinity_policy = "no"
-  labels               = {
+  labels = {
     "key1" = "val1"
     "key2" = "val2"
     "key3" = "val3"
   }
   members = [upcloud_server.test.id]
+}
+
+resource "upcloud_server_group" "tf_test_2" {
+  title = "tf_test_2"
 }
