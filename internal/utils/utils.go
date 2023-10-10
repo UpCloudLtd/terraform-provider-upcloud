@@ -80,7 +80,7 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 // ExpandStrings expands a terraform list to slice of str
 func ExpandStrings(data interface{}) []string {
 	strSlice := []string{}
-	for _, s := range data.([]interface{}) {
+	for _, s := range data.(*schema.Set).List() {
 		strSlice = append(strSlice, s.(string))
 	}
 
