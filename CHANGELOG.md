@@ -6,8 +6,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased]
 
 ### Added
+- **Breaking**, kubernetes: `control_plane_ip_filter` field to `upcloud_kubernetes_cluster` resource. This changes default behavior from _allow access from any IP_ to _block access from all IPs_. To be able to connect to the cluster, define list of allowed IP addresses and/or CIDR blocks or allow access from any IP.
 - gateway: add read-only `addresses` field
-- kubernetes: `control_plane_ip_filter` field to `upcloud_kubernetes_cluster` resource
 - dbaas: `upcloud_managed_database_mysql_sessions`, `upcloud_managed_database_postgresql_sessions` and `upcloud_managed_database_redis_sessions` data sources
 - network: `dhcp_routes` field to `ip_network` block in `upcloud_network` resource
 
