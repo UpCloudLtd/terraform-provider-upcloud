@@ -8,10 +8,9 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccUpCloudNetwork_basic(t *testing.T) {
@@ -27,7 +26,17 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
+				Config: testAccNetworkConfig(
+					netName,
+					"fi-hel1",
+					cidr,
+					gateway,
+					true,
+					false,
+					false,
+					[]string{"10.0.0.2", "10.0.0.3"},
+					[]string{"192.168.0.0/24", "192.168.100.0/32"},
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
@@ -37,6 +46,8 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.address", cidr),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.gateway", gateway),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.family", "IPv4"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_dns.#", "2"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_routes.#", "2"),
 				),
 			},
 		},
@@ -56,7 +67,7 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
+				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false, []string{"10.0.0.2"}, []string{"192.168.0.0/24"}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
@@ -66,10 +77,12 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.address", cidr),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.gateway", gateway),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.family", "IPv4"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_dns.0", "10.0.0.2"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_routes.0", "192.168.0.0/24"),
 				),
 			},
 			{
-				Config: testAccNetworkConfig(netName+"_1", "fi-hel1", cidr, gateway, true, false, false),
+				Config: testAccNetworkConfig(netName+"_1", "fi-hel1", cidr, gateway, true, false, false, []string{"10.0.0.3"}, []string{"192.168.100.0/24"}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName+"_1"),
@@ -79,6 +92,8 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.address", cidr),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.gateway", gateway),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.family", "IPv4"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_dns.0", "10.0.0.3"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_routes.0", "192.168.100.0/24"),
 				),
 			},
 		},
@@ -98,7 +113,7 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true),
+				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true, nil, nil),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
@@ -128,7 +143,7 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false),
+				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false, nil, nil),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
@@ -142,7 +157,7 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true),
+				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true, nil, nil),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
@@ -172,35 +187,18 @@ func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false),
+				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false, nil, nil),
 				ExpectError: regexp.MustCompile(`'family' has incorrect value`),
 			},
 		},
 	})
 }
 
-func testAccNetworkConfig(
-	name string,
-	zone string,
-	address string,
-	gateway string,
-	dhcp bool,
-	dhcpDefaultRoute bool,
-	router bool,
-) string {
-	return testAccNetworkConfigWithFamily(name, zone, address, gateway, "IPv4", dhcp, dhcpDefaultRoute, router)
+func testAccNetworkConfig(name string, zone string, address string, gateway string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string) string {
+	return testAccNetworkConfigWithFamily(name, zone, address, gateway, "IPv4", dhcp, dhcpDefaultRoute, router, dhcpDNS, dhcpRoutes)
 }
 
-func testAccNetworkConfigWithFamily(
-	name string,
-	zone string,
-	address string,
-	gateway string,
-	family string,
-	dhcp bool,
-	dhcpDefaultRoute bool,
-	router bool,
-) string {
+func testAccNetworkConfigWithFamily(name string, zone string, address string, gateway string, family string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string) string {
 	config := strings.Builder{}
 
 	config.WriteString(fmt.Sprintf(`
@@ -220,11 +218,30 @@ func testAccNetworkConfigWithFamily(
 		  address            = "%s"
 		  dhcp               = "%t"
 		  dhcp_default_route = "%t"
-		  family  = "%s"
-		  gateway = "%s"
-		}
+		  family  			 = "%s"
+		  gateway			 = "%s"
+		
+	`,
+		address,
+		dhcp,
+		dhcpDefaultRoute,
+		family,
+		gateway))
+
+	if len(dhcpDNS) > 0 {
+		config.WriteString(fmt.Sprintf(`
+		  dhcp_dns			 = ["%s"]`, strings.Join(dhcpDNS, "\", \"")))
+	}
+
+	if len(dhcpRoutes) > 0 {
+		config.WriteString(fmt.Sprintf(`
+		  dhcp_routes		 = ["%s"]`, strings.Join(dhcpRoutes, "\", \"")))
+	}
+
+	config.WriteString(`
+	    }
 	  }
-	`, address, dhcp, dhcpDefaultRoute, family, gateway))
+	`)
 
 	if router {
 		config.WriteString(fmt.Sprintf(`

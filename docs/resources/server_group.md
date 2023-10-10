@@ -38,19 +38,19 @@ resource "upcloud_server_group" "main" {
 
 ### Optional
 
-- `anti_affinity_policy` (String) Defines if a server group is an anti-affinity group. Setting this to "strict" or yes" will
-				result in all servers in the group being placed on separate compute hosts. The value can be "strict", "yes" or "no".
+- `anti_affinity_policy` (String) Defines if a server group is an anti-affinity group. Setting this to `strict` or `yes` will
+	result in all servers in the group being placed on separate compute hosts. The value can be `strict`, `yes`, or `no`.
 
-				* "strict" refers to strict policy doesn't allow servers in the same server group to be on the same host
-				* "yes" refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed
-				* "no" refers to having no policy and thus no affect server host affinity
- 				
-				To verify if the anti-affinity policies are met by requesting a server group details from API. For more information
-				please see UpCloud API documentation on server groups.
+	* `strict` policy doesn't allow servers in the same server group to be on the same host
+	* `yes` refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed
+	* `no` refers to having no policy and thus no effect on server host affinity
 
-				Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
-				policies in server group are not met, you need to manually restart the servers in said group,
-				for example via API, UpCloud Control Panel or upctl (UpCloud CLI)
+	To verify if the anti-affinity policies are met by requesting a server group details from API. For more information
+	please see UpCloud API documentation on server groups.
+
+	Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
+	policies in server group are not met, you need to manually restart the servers in said group,
+	for example via API, UpCloud Control Panel or upctl (UpCloud CLI)
 - `labels` (Map of String) Key-value pairs to classify the server group.
 - `members` (Set of String) UUIDs of the servers that are members of this group
 

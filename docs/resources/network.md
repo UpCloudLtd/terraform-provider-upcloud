@@ -65,6 +65,7 @@ Optional:
 
 - `dhcp_default_route` (Boolean) Is the gateway the DHCP default route?
 - `dhcp_dns` (Set of String) The DNS servers given by DHCP
+- `dhcp_routes` (Set of String) The additional DHCP classless static routes given by DHCP
 - `gateway` (String) Gateway address given by DHCP
 
 ## Import

@@ -5,13 +5,14 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func DataSourceNetworks() *schema.Resource {
@@ -61,6 +62,16 @@ func DataSourceNetworks() *schema.Resource {
 										Computed:    true,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
+										},
+									},
+									"dhcp_routes": {
+										Type:        schema.TypeSet,
+										Description: "The additional DHCP classless static routes given by DHCP",
+										Computed:    true,
+										Optional:    true,
+										Elem: &schema.Schema{
+											Type:         schema.TypeString,
+											ValidateFunc: validation.IsCIDR,
 										},
 									},
 									"family": {
@@ -181,6 +192,7 @@ func dataSourceNetworksRead(ctx context.Context, d *schema.ResourceData, meta in
 				"dhcp":               fipn.DHCP.Bool(),
 				"dhcp_default_route": fipn.DHCPDefaultRoute.Bool(),
 				"dhcp_dns":           fipn.DHCPDns,
+				"dhcp_routes":        fipn.DHCPRoutes,
 				"family":             fipn.Family,
 				"gateway":            fipn.Gateway,
 			}

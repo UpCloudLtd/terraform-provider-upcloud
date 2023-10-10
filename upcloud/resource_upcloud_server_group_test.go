@@ -15,6 +15,7 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 	var providers []*schema.Provider
 
 	group1 := "upcloud_server_group.tf_test_1"
+	group2 := "upcloud_server_group.tf_test_2"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -27,6 +28,9 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 					resource.TestCheckResourceAttr(group1, "members.#", "1"),
 					resource.TestCheckResourceAttr(group1, "labels.%", "3"),
 					resource.TestCheckResourceAttr(group1, "anti_affinity_policy", "no"),
+					resource.TestCheckResourceAttr(group2, "title", "tf_test_2"),
+					resource.TestCheckResourceAttr(group2, "members.#", "0"),
+					resource.TestCheckResourceAttr(group2, "anti_affinity_policy", "no"),
 				),
 			},
 			{

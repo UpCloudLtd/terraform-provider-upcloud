@@ -61,6 +61,7 @@ Read-Only:
 - `dhcp` (Boolean)
 - `dhcp_default_route` (Boolean)
 - `dhcp_dns` (List of String)
+- `dhcp_routes` (Set of String)
 - `family` (String)
 - `gateway` (String)
 
