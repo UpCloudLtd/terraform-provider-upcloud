@@ -10,6 +10,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - gateway: add read-only `addresses` field
 - dbaas: `upcloud_managed_database_mysql_sessions`, `upcloud_managed_database_postgresql_sessions` and `upcloud_managed_database_redis_sessions` data sources
 - network: `dhcp_routes` field to `ip_network` block in `upcloud_network` resource
+- router: `static_routes` block to `upcloud_router` resource
 
 ### Changed
 - kubernetes: remove node group maximum value validation. The maximum number of nodes (in the cluster) is determined by the cluster plan and the validation is done on the API side.

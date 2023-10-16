@@ -20,16 +20,22 @@ func TestAccUpCloudRouter(t *testing.T) {
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 
+	staticRoutes := []upcloud.StaticRoute{{Name: "my-example-route", Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccRouterConfig(name),
+				Config: testAccRouterConfig(name, staticRoutes),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
 					testAccCheckUpCloudRouterAttributes(&router, name),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.my_example_router", "static_route.*", map[string]string{
+						"name":    "my-example-route",
+						"nexthop": "10.0.0.100",
+						"route":   "0.0.0.0/0",
+					}),
 				),
 			},
 		},
@@ -43,23 +49,36 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 	updateName := fmt.Sprintf("tf-test-update-%s", acctest.RandString(10))
 
+	staticRoutes := []upcloud.StaticRoute{{Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
+	updateStaticRoutes := []upcloud.StaticRoute{{Name: "my-example-route-2", Nexthop: "10.0.0.101", Route: "0.0.0.0/0"}}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		CheckDestroy:      testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccRouterConfig(name),
+				Config: testAccRouterConfig(name, staticRoutes),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
 					testAccCheckUpCloudRouterAttributes(&router, name),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.my_example_router", "static_route.*", map[string]string{
+						"name":    "static-route-0",
+						"nexthop": "10.0.0.100",
+						"route":   "0.0.0.0/0",
+					}),
 				),
 			},
 			{
-				Config: testAccRouterConfig(updateName),
+				Config: testAccRouterConfig(updateName, updateStaticRoutes),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
 					testAccCheckUpCloudRouterAttributes(&router, updateName),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.my_example_router", "static_route.*", map[string]string{
+						"name":    "my-example-route-2",
+						"nexthop": "10.0.0.101",
+						"route":   "0.0.0.0/0",
+					}),
 				),
 			},
 		},
@@ -77,7 +96,7 @@ func TestAccUpCloudRouter_import(t *testing.T) {
 		CheckDestroy:      testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccRouterConfig(name),
+				Config: testAccRouterConfig(name, nil),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
 				),
@@ -373,11 +392,33 @@ func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccRouterConfig(name string) string {
-	return fmt.Sprintf(`
+func testAccRouterConfig(name string, staticRoutes []upcloud.StaticRoute) string {
+	s := fmt.Sprintf(`
 resource "upcloud_router" "my_example_router" {
   name = "%s"
-}`, name)
+`, name)
+
+	if len(staticRoutes) > 0 {
+		for _, staticRoute := range staticRoutes {
+			s = s + fmt.Sprintf(`
+  static_route {
+    nexthop = "%s"
+    route   = "%s"
+`, staticRoute.Nexthop, staticRoute.Route)
+
+			if len(staticRoute.Name) > 0 {
+				s = s + fmt.Sprintf(`
+    name    = "%s"
+`, staticRoute.Name)
+			}
+		}
+		s = s + `
+  }`
+	}
+	s = s + `
+}
+`
+	return s
 }
 
 func testAccNetworkRouterAttached(network *upcloud.Network, router *upcloud.Router) resource.TestCheckFunc {
