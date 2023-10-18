@@ -129,17 +129,11 @@ func ResourceServer() *schema.Resource {
 			},
 			"tags": {
 				Description: "The server related tags",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				// Suppress diff if only order of tags changes, because we cannot really control the order of tags of a server.
-				// This removes some unnecessary change-of-order diffs until Type is changed from TypeList to TypeSet.
-				DiffSuppressFunc: func(key, oldName, newName string, d *schema.ResourceData) bool {
-					oldTags, newTags := d.GetChange("tags")
-					return !tagsHasChange(oldTags, newTags)
-				},
 			},
 			"host": {
 				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",

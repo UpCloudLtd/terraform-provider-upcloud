@@ -1,6 +1,12 @@
 // Create router for the gateway
 resource "upcloud_router" "this" {
   name = "gateway-example-router"
+
+  # UpCloud Network Gateway Service will add a static route to this router to ensure gateway networking is working as intended.
+  # You need to ignore changes to it, otherwise TF will attempt to remove the static routes on subsequent applies
+  lifecycle {
+    ignore_changes = [static_route]
+  }
 }
 
 // Create network for the gateway

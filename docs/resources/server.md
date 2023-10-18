@@ -78,7 +78,7 @@ resource "upcloud_server" "example" {
 				please first remove simple_backup block from a server, run 'terraform apply', 
 				then add backup_rule to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--simple_backup))
 - `storage_devices` (Block Set) A list of storage devices associated with the server (see [below for nested schema](#nestedblock--storage_devices))
-- `tags` (List of String) The server related tags
+- `tags` (Set of String) The server related tags
 - `template` (Block List, Max: 1) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
 - `timezone` (String) A timezone identifier, e.g. `Europe/Helsinki`
 - `title` (String) A short, informational description
