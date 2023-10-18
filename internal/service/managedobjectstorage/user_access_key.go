@@ -189,8 +189,10 @@ func setManagedObjectStorageUserAccessKeyData(d *schema.ResourceData, accessKey 
 	if err := d.Set("updated_at", accessKey.UpdatedAt.String()); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("secret_access_key", accessKey.SecretAccessKey); err != nil {
-		return diag.FromErr(err)
+	if accessKey.SecretAccessKey != nil {
+		if err := d.Set("secret_access_key", accessKey.SecretAccessKey); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return diags
