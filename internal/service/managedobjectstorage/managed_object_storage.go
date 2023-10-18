@@ -50,7 +50,7 @@ func ResourceManagedObjectStorage() *schema.Resource {
 				Type:        schema.TypeSet,
 				Elem:        schemaEndpoint(),
 			},
-			"labels": utils.LabelsSchema("network gateway"),
+			"labels": utils.LabelsSchema("managed object storage"),
 			"network": {
 				Description: "Attached networks from where object storage can be used. Private networks must reside in object storage region.",
 				Optional:    true,
@@ -63,7 +63,7 @@ func ResourceManagedObjectStorage() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"region": {
-				Description: "Region in which the service will be hosted, see `upcloud_object_storage2_regions` data source.",
+				Description: "Region in which the service will be hosted, see `upcloud_managed_object_storage_regions` data source.",
 				Required:    true,
 				Type:        schema.TypeString,
 			},
@@ -73,7 +73,7 @@ func ResourceManagedObjectStorage() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"users": {
-				Description: "List of cloud Users allowed to use object storage. See `upcloud_managed_object_storage_user_access_key` for managing access keys.",
+				Description: "List of UpCloud API users allowed to use object storage. Valid values include current account and it's sub-accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys.",
 				Optional:    true,
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
@@ -86,7 +86,7 @@ func ResourceManagedObjectStorage() *schema.Resource {
 
 func schemaEndpoint() *schema.Resource {
 	return &schema.Resource{
-		Description: "OpenSearch index",
+		Description: "Endpoint",
 		Schema: map[string]*schema.Schema{
 			"domain_name": {
 				Description: "Domain name of the endpoint.",
@@ -104,7 +104,7 @@ func schemaEndpoint() *schema.Resource {
 
 func schemaNetwork() *schema.Resource {
 	return &schema.Resource{
-		Description: "Managed Object Storage network",
+		Description: "Network",
 		Schema: map[string]*schema.Schema{
 			"family": {
 				Description: "Network family. IPv6 currently not supported.",
