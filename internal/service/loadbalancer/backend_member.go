@@ -137,7 +137,7 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 		svc := meta.(*service.Service)
 		var serviceID, beName string
-		if err := unmarshalID(d.Get("backend").(string), &serviceID, &beName); err != nil {
+		if err := utils.UnmarshalID(d.Get("backend").(string), &serviceID, &beName); err != nil {
 			return diag.FromErr(err)
 		}
 		member, err := svc.CreateLoadBalancerBackendMember(ctx, &request.CreateLoadBalancerBackendMemberRequest{
@@ -161,7 +161,7 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 			return diags
 		}
 
-		d.SetId(marshalID(serviceID, beName, member.Name))
+		d.SetId(utils.MarshalID(serviceID, beName, member.Name))
 
 		tflog.Info(ctx, "backend member created", map[string]interface{}{"name": member.Name, "service_uuid": serviceID, "be_name": beName})
 		return diags
@@ -171,7 +171,7 @@ func resourceBackendMemberCreateFunc(memberType upcloud.LoadBalancerBackendMembe
 func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, beName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	member, err := svc.GetLoadBalancerBackendMember(ctx, &request.GetLoadBalancerBackendMemberRequest{
@@ -183,9 +183,9 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(serviceID, beName, member.Name))
+	d.SetId(utils.MarshalID(serviceID, beName, member.Name))
 
-	if err = d.Set("backend", marshalID(serviceID, beName)); err != nil {
+	if err = d.Set("backend", utils.MarshalID(serviceID, beName)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -199,7 +199,7 @@ func resourceBackendMemberRead(ctx context.Context, d *schema.ResourceData, meta
 func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, beName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	member, err := svc.ModifyLoadBalancerBackendMember(ctx, &request.ModifyLoadBalancerBackendMemberRequest{
@@ -219,7 +219,7 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(serviceID, beName, member.Name))
+	d.SetId(utils.MarshalID(serviceID, beName, member.Name))
 
 	if diags = setBackendMemberResourceData(d, member); len(diags) > 0 {
 		return diags
@@ -232,7 +232,7 @@ func resourceBackendMemberUpdate(ctx context.Context, d *schema.ResourceData, me
 func resourceBackendMemberDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, beName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	tflog.Info(ctx, "deleting backend member", map[string]interface{}{"name": name, "service_uuid": serviceID, "be_name": beName})
