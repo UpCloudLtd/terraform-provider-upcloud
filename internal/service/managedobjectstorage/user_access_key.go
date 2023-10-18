@@ -2,9 +2,9 @@ package managedobjectstorage
 
 import (
 	"context"
-	"fmt"
 	"regexp"
-	"strings"
+
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
@@ -97,7 +97,7 @@ func resourceManagedObjectStorageUserAccessKeyCreate(ctx context.Context, d *sch
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(req.ServiceUUID, req.Username, req.Name))
+	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, req.Name))
 
 	return setManagedObjectStorageUserAccessKeyData(d, accessKey)
 }
@@ -106,7 +106,7 @@ func resourceManagedObjectStorageUserAccessKeyRead(ctx context.Context, d *schem
 	svc := meta.(*service.Service)
 
 	var serviceUUID, username, name string
-	if err := unmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -130,7 +130,7 @@ func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *sch
 	svc := meta.(*service.Service)
 
 	var serviceUUID, username, name string
-	if err := unmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -153,7 +153,7 @@ func resourceManagedObjectStorageUserAccessKeyDelete(ctx context.Context, d *sch
 	svc := meta.(*service.Service)
 
 	var serviceUUID, username, name string
-	if err := unmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -196,19 +196,4 @@ func setManagedObjectStorageUserAccessKeyData(d *schema.ResourceData, accessKey 
 	}
 
 	return diags
-}
-
-func marshalID(components ...string) string {
-	return strings.Join(components, "/")
-}
-
-func unmarshalID(id string, components ...*string) error {
-	parts := strings.Split(id, "/")
-	if len(parts) > len(components) {
-		return fmt.Errorf("not enough components (%d) to unmarshal id '%s'", len(components), id)
-	}
-	for i, c := range parts {
-		*components[i] = c
-	}
-	return nil
 }

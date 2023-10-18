@@ -81,7 +81,7 @@ func resourceBackendCreate(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(serviceID, be.Name))
+	d.SetId(utils.MarshalID(serviceID, be.Name))
 
 	if diags = setBackendResourceData(d, be); len(diags) > 0 {
 		return diags
@@ -94,7 +94,7 @@ func resourceBackendCreate(ctx context.Context, d *schema.ResourceData, meta int
 func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, name string
-	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	be, err := svc.GetLoadBalancerBackend(ctx, &request.GetLoadBalancerBackendRequest{
@@ -105,7 +105,7 @@ func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta inter
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(serviceID, be.Name))
+	d.SetId(utils.MarshalID(serviceID, be.Name))
 
 	if err = d.Set("loadbalancer", serviceID); err != nil {
 		return diag.FromErr(err)
@@ -121,7 +121,7 @@ func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta inter
 func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, name string
-	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -138,7 +138,7 @@ func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), be.Name))
+	d.SetId(utils.MarshalID(d.Get("loadbalancer").(string), be.Name))
 
 	if diags = setBackendResourceData(d, be); len(diags) > 0 {
 		return diags
@@ -151,7 +151,7 @@ func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta int
 func resourceBackendDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, name string
-	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	tflog.Info(ctx, "deleting backend", map[string]interface{}{"name": name, "service_uuid": serviceID})
