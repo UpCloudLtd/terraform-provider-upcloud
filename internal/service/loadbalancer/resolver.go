@@ -118,7 +118,7 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(serviceID, rs.Name))
+	d.SetId(utils.MarshalID(serviceID, rs.Name))
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
@@ -131,7 +131,7 @@ func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta in
 func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, name string
-	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	rs, err := svc.GetLoadBalancerResolver(ctx, &request.GetLoadBalancerResolverRequest{
@@ -142,7 +142,7 @@ func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(serviceID, rs.Name))
+	d.SetId(utils.MarshalID(serviceID, rs.Name))
 
 	if err = d.Set("loadbalancer", serviceID); err != nil {
 		return diag.FromErr(err)
@@ -165,7 +165,7 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	var serviceID, name string
-	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	rs, err := svc.ModifyLoadBalancerResolver(ctx, &request.ModifyLoadBalancerResolverRequest{
@@ -185,7 +185,7 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(d.Get("loadbalancer").(string), rs.Name))
+	d.SetId(utils.MarshalID(d.Get("loadbalancer").(string), rs.Name))
 
 	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
 		return diags
@@ -198,7 +198,7 @@ func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta in
 func resourceResolverDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	svc := meta.(*service.Service)
 	var serviceID, name string
-	if err := unmarshalID(d.Id(), &serviceID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
 

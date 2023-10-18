@@ -325,7 +325,7 @@ func resourceLoadBalancerNetworkUpdate(ctx context.Context, d *schema.ResourceDa
 					if id, ok = d.Get(idKey).(string); !ok {
 						return diag.FromErr(fmt.Errorf("unable to determine network ID %s", idKey))
 					}
-					if err := unmarshalID(id, &serviceID, &networkName); err != nil {
+					if err := utils.UnmarshalID(id, &serviceID, &networkName); err != nil {
 						return diag.FromErr(err)
 					}
 					req := &request.ModifyLoadBalancerNetworkRequest{
@@ -462,7 +462,7 @@ func setLoadBalancerNetworkResourceData(d *schema.ResourceData, lb *upcloud.Load
 			"family":   string(net.Family),
 			"network":  net.UUID,
 			"dns_name": net.DNSName,
-			"id":       marshalID(lb.UUID, net.Name),
+			"id":       utils.MarshalID(lb.UUID, net.Name),
 		})
 	}
 	if err := d.Set("networks", networks); err != nil {

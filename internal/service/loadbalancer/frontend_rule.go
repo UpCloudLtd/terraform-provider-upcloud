@@ -85,7 +85,7 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	var serviceID, feName string
-	if err := unmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
+	if err := utils.UnmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -103,7 +103,7 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(serviceID, feName, rule.Name))
+	d.SetId(utils.MarshalID(serviceID, feName, rule.Name))
 
 	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
@@ -116,7 +116,7 @@ func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, met
 func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, feName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	rule, err := svc.GetLoadBalancerFrontendRule(ctx, &request.GetLoadBalancerFrontendRuleRequest{
@@ -128,9 +128,9 @@ func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta 
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
-	d.SetId(marshalID(serviceID, feName, rule.Name))
+	d.SetId(utils.MarshalID(serviceID, feName, rule.Name))
 
-	if err = d.Set("frontend", marshalID(serviceID, feName)); err != nil {
+	if err = d.Set("frontend", utils.MarshalID(serviceID, feName)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -144,7 +144,7 @@ func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta 
 func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, feName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	// name and priority fields doesn't force replacement and can be updated in-place
@@ -162,7 +162,7 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(serviceID, feName, rule.Name))
+	d.SetId(utils.MarshalID(serviceID, feName, rule.Name))
 
 	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
 		return diags
@@ -175,7 +175,7 @@ func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, met
 func resourceFrontendRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
 	var serviceID, feName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 
