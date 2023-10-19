@@ -97,13 +97,6 @@ func schemaEndpoint() *schema.Resource {
 				Description: "Type of the endpoint (`private` / `public`).",
 				Computed:    true,
 				Type:        schema.TypeString,
-				ValidateFunc: validation.StringInSlice(
-					[]string{
-						"private",
-						"public",
-					},
-					false,
-				),
 			},
 		},
 	}
