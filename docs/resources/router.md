@@ -29,11 +29,27 @@ resource "upcloud_router" "my_example_router" {
 
 - `name` (String) Name of the router
 
+### Optional
+
+- `static_route` (Block Set) A collection of static routes for this router (see [below for nested schema](#nestedblock--static_route))
+
 ### Read-Only
 
 - `attached_networks` (List of String) A collection of UUID representing networks attached to this router
 - `id` (String) The ID of this resource.
 - `type` (String) The type of router
+
+<a id="nestedblock--static_route"></a>
+### Nested Schema for `static_route`
+
+Required:
+
+- `nexthop` (String) Next hop address. NOTE: For static route to be active the next hop has to be an address of a reachable running Cloud Server in one of the Private Networks attached to the router.
+- `route` (String) Destination prefix of the route.
+
+Optional:
+
+- `name` (String) Name or description of the route.
 
 ## Import
 
