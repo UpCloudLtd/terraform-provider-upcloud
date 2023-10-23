@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+- managed_object_storage: `managed_object_storage` update to retain service users in all cases
+
 ## [3.0.0] - 2023-10-23
 
 ### Added
