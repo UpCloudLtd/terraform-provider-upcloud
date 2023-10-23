@@ -241,8 +241,8 @@ func resourceManagedObjectStorageUpdate(ctx context.Context, d *schema.ResourceD
 		req.Networks = &networks
 	}
 
-	userReqs := make([]request.ManagedObjectStorageUser, 0)
 	if d.HasChange("users") {
+		userReqs := make([]request.ManagedObjectStorageUser, 0)
 		users := d.Get("users")
 		for _, user := range users.(*schema.Set).List() {
 			r := request.ManagedObjectStorageUser{
@@ -250,9 +250,24 @@ func resourceManagedObjectStorageUpdate(ctx context.Context, d *schema.ResourceD
 			}
 			userReqs = append(userReqs, r)
 		}
+		req.Users = &userReqs
 	}
-	req.Users = &userReqs
 	storage, err := svc.ModifyManagedObjectStorage(ctx, req)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	waitReq := &request.WaitForManagedObjectStorageOperationalStateRequest{
+		DesiredState: upcloud.ManagedObjectStorageOperationalStateRunning,
+		Timeout:      time.Minute * 20,
+		UUID:         storage.UUID,
+	}
+
+	if storage.ConfiguredStatus == upcloud.ManagedObjectStorageConfiguredStatusStopped {
+		waitReq.DesiredState = upcloud.ManagedObjectStorageOperationalStateStopped
+	}
+
+	storage, err = svc.WaitForManagedObjectStorageOperationalState(ctx, waitReq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
