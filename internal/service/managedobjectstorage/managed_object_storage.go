@@ -302,14 +302,21 @@ func networksFromResourceData(d *schema.ResourceData) ([]upcloud.ManagedObjectSt
 				Name:   n["name"].(string),
 				Type:   n["type"].(string),
 				Family: n["family"].(string),
-				UUID:   upcloud.StringPtr(n["uuid"].(string)),
 			}
-			if r.Type == "private" && *r.UUID == "" {
-				return req, fmt.Errorf("private network (#%d) UUID is required", i)
+			uuid := n["uuid"].(string)
+
+			switch r.Type {
+			case "public":
+				if uuid != "" {
+					return req, fmt.Errorf("setting UUID for a public network (#%d) is not supported", i)
+				}
+			case "private":
+				if uuid == "" {
+					return req, fmt.Errorf("private network (#%d) UUID is required", i)
+				}
+				r.UUID = upcloud.StringPtr(uuid)
 			}
-			if r.Type == "public" && *r.UUID != "" {
-				return req, fmt.Errorf("setting UUID for a public network (#%d) is not supported", i)
-			}
+
 			req = append(req, r)
 		}
 	}
