@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [3.0.2] - 2023-10-24
+
 ### Fixed
 - managed_object_storage: `managed_object_storage` resource public network validation
 
@@ -395,7 +397,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.1...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.2...HEAD
+[3.0.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.12.0...v3.0.0
 [2.12.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.11.0...v2.12.0
