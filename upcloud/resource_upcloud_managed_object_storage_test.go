@@ -25,10 +25,10 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "region", "europe-1"),
-					resource.TestCheckResourceAttr(name, "configured_status", "stopped"),
+					resource.TestCheckResourceAttr(name, "configured_status", "started"),
 					resource.TestCheckResourceAttr(name, "labels.%", "2"),
 					resource.TestCheckResourceAttr(name, "labels.test", "objsto2-tf"),
-					resource.TestCheckResourceAttr(name, "network.#", "1"),
+					resource.TestCheckResourceAttr(name, "network.#", "2"),
 				),
 			},
 			{
@@ -37,6 +37,7 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "configured_status", "started"),
 					resource.TestCheckResourceAttr(name, "labels.owned-by", "team-devex"),
+					resource.TestCheckResourceAttr(name, "network.#", "1"),
 				),
 			},
 		},

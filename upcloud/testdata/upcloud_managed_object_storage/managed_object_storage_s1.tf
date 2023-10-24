@@ -33,13 +33,19 @@ resource "upcloud_network" "this" {
 resource "upcloud_managed_object_storage" "this" {
   region = var.region
 
-  configured_status = "stopped"
+  configured_status = "started"
 
   network {
     family = "IPv4"
     name   = "${var.prefix}net"
     type   = "private"
     uuid   = upcloud_network.this.id
+  }
+
+  network {
+    family = "IPv4"
+    name   = "${var.prefix}net2"
+    type   = "public"
   }
 
   labels = {
