@@ -5,15 +5,18 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+- kubernetes: `upcloud_kubernetes_node_group` resource re-creation waits for destruction before creation
+
 ## [3.0.2] - 2023-10-24
 
 ### Fixed
-- managed_object_storage: `managed_object_storage` resource public network validation
+- managed_object_storage: `upcloud_managed_object_storage` resource public network validation
 
 ## [3.0.1] - 2023-10-23
 
 ### Fixed
-- managed_object_storage: `managed_object_storage` update to retain service users in all cases
+- managed_object_storage: `upcloud_managed_object_storage` resource update to retain service users in all cases
 
 ## [3.0.0] - 2023-10-23
 
