@@ -2,12 +2,17 @@ package kubernetes
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -203,6 +208,17 @@ func resourceNodeGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 	d.SetId(marshalID(clusterID, ng.Name))
+
+	ng, err = svc.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
+		Timeout:      time.Minute * 20,
+		ClusterUUID:  clusterID,
+		Name:         ng.Name,
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	return setNodeGroupResourceData(d, clusterID, ng)
 }
 
@@ -242,6 +258,17 @@ func resourceNodeGroupUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	ng, err = svc.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
+		Timeout:      time.Minute * 20,
+		ClusterUUID:  clusterID,
+		Name:         ng.Name,
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	return setNodeGroupResourceData(d, clusterID, ng)
 }
 
@@ -251,10 +278,16 @@ func resourceNodeGroupDelete(ctx context.Context, d *schema.ResourceData, meta i
 	if err := unmarshalID(d.Id(), &clusterID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	return diag.FromErr(svc.DeleteKubernetesNodeGroup(ctx, &request.DeleteKubernetesNodeGroupRequest{
+	err := svc.DeleteKubernetesNodeGroup(ctx, &request.DeleteKubernetesNodeGroupRequest{
 		ClusterUUID: clusterID,
 		Name:        name,
-	}))
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// wait before continuing so that all nodes are destroyed
+	return diag.FromErr(waitForNodeGroupToBeDeleted(ctx, svc, clusterID, name))
 }
 
 func setNodeGroupResourceData(d *schema.ResourceData, clusterID string, ng *upcloud.KubernetesNodeGroup) (diags diag.Diagnostics) {
@@ -318,4 +351,32 @@ func setNodeGroupResourceData(d *schema.ResourceData, clusterID string, ng *upcl
 	}
 
 	return diags
+}
+
+func waitForNodeGroupToBeDeleted(ctx context.Context, svc *service.Service, clusterID, name string) error {
+	const maxRetries int = 100
+
+	for i := 0; i <= maxRetries; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			c, err := svc.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
+				ClusterUUID: clusterID,
+				Name:        name,
+			})
+			if err != nil {
+				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
+					return nil
+				}
+
+				return err
+			}
+
+			tflog.Info(ctx, "waiting for node group to be deleted", map[string]interface{}{"cluster": clusterID, "name": c.Name, "state": c.State})
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("max retries (%d)reached while waiting for node group to be deleted", maxRetries)
 }
