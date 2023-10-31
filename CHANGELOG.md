@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - kubernetes: `upcloud_kubernetes_node_group` resource re-creation waits for destruction before creation
 - managed_object_storage: `upcloud_managed_object_storage` resource network related documentation improved
+- ip: `upcloud_floating_ip_address` resource's `access` field to allow only `public` value
 
 ## [3.0.2] - 2023-10-24
 
