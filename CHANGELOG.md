@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [3.0.3] - 2023-10-31
+
 ### Fixed
 - kubernetes: `upcloud_kubernetes_node_group` resource re-creation waits for destruction before creation
 - managed_object_storage: `upcloud_managed_object_storage` resource network related documentation improved
@@ -402,7 +404,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.2...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.3...HEAD
+[3.0.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.12.0...v3.0.0
