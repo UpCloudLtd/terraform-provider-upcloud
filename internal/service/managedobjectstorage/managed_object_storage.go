@@ -52,7 +52,7 @@ func ResourceManagedObjectStorage() *schema.Resource {
 			},
 			"labels": utils.LabelsSchema("managed object storage"),
 			"network": {
-				Description: "Attached networks from where object storage can be used. Private networks must reside in object storage region.",
+				Description: "Attached networks from where object storage can be used. Private networks must reside in object storage region. To gain access from multiple private networks that might reside in different zones, create the networks and a corresponding router for each network.",
 				Optional:    true,
 				Type:        schema.TypeSet,
 				Elem:        schemaNetwork(),
