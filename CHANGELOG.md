@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Deprecated
+- `upcloud_object_storage`: the target product will reach its end of life by the end of 2024.
+
 ## [3.0.3] - 2023-10-31
 
 ### Fixed
