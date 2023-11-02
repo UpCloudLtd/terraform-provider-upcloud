@@ -26,17 +26,22 @@ const (
 	accessKeyMaxLength    int    = 255
 	secretKeyMinLength    int    = 8
 	secretKeyMaxLength    int    = 255
+
+	deprecationMessage string = "The `upcloud_object_storage` resource manages previous generatation object storage instances that will reach End of Life (EOL) by the end of 2024. For new instances, consider using the new Object Storage product managed with `upcloud_managed_object_storage` resource."
 )
 
 type objectStorageKeyType string
 
 func ResourceObjectStorage() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.",
-		CreateContext: resourceObjectStorageCreate,
-		ReadContext:   resourceObjectStorageRead,
-		UpdateContext: resourceObjectStorageUpdate,
-		DeleteContext: resourceObjectStorageDelete,
+		Description: fmt.Sprintf(`~> NOTE: %s
+
+This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.`, deprecationMessage),
+		DeprecationMessage: deprecationMessage,
+		CreateContext:      resourceObjectStorageCreate,
+		ReadContext:        resourceObjectStorageRead,
+		UpdateContext:      resourceObjectStorageUpdate,
+		DeleteContext:      resourceObjectStorageDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
