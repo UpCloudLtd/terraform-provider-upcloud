@@ -2,7 +2,9 @@ package upcloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
@@ -30,13 +32,17 @@ func (c *Config) Client() (*service.Service, error) {
 func (c *Config) checkLogin(svc *service.Service) (*upcloud.Account, error) {
 	const numRetries = 10
 	var (
-		err error
-		res *upcloud.Account
+		err     error
+		res     *upcloud.Account
+		problem *upcloud.Problem
 	)
 
 	for trys := 0; trys < numRetries; trys++ {
 		res, err = svc.GetAccount(context.Background())
 		if err == nil {
+			break
+		}
+		if errors.As(err, &problem) && problem.Status == http.StatusUnauthorized {
 			break
 		}
 		time.Sleep(time.Millisecond * 100)

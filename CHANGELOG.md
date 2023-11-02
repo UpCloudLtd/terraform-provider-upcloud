@@ -5,11 +5,35 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Deprecated
+- `upcloud_object_storage`: the target product will reach its end of life by the end of 2024.
+
+## [3.0.3] - 2023-10-31
+
+### Fixed
+- kubernetes: `upcloud_kubernetes_node_group` resource re-creation waits for destruction before creation
+- managed_object_storage: `upcloud_managed_object_storage` resource network related documentation improved
+- ip: `upcloud_floating_ip_address` resource's `access` field to allow only `public` value
+
+## [3.0.2] - 2023-10-24
+
+### Fixed
+- managed_object_storage: `upcloud_managed_object_storage` resource public network validation
+
+## [3.0.1] - 2023-10-23
+
+### Fixed
+- managed_object_storage: `upcloud_managed_object_storage` resource update to retain service users in all cases
+
+## [3.0.0] - 2023-10-23
+
 ### Added
 - **Breaking**, kubernetes: `control_plane_ip_filter` field to `upcloud_kubernetes_cluster` resource. This changes default behavior from _allow access from any IP_ to _block access from all IPs_. To be able to connect to the cluster, define list of allowed IP addresses and/or CIDR blocks or allow access from any IP.
 - gateway: add read-only `addresses` field
 - dbaas: `upcloud_managed_database_mysql_sessions`, `upcloud_managed_database_postgresql_sessions` and `upcloud_managed_database_redis_sessions` data sources
 - network: `dhcp_routes` field to `ip_network` block in `upcloud_network` resource
+- router: `static_routes` block to `upcloud_router` resource
+- managed_object_storage: `managed_object_storage` & `managed_object_storage_user_access_key` resources and `managed_object_storage_regions` data source
 
 ### Changed
 - kubernetes: remove node group maximum value validation. The maximum number of nodes (in the cluster) is determined by the cluster plan and the validation is done on the API side.
@@ -383,7 +407,11 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.12.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.3...HEAD
+[3.0.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.2...v3.0.3
+[3.0.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.1...v3.0.2
+[3.0.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.0.0...v3.0.1
+[3.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.12.0...v3.0.0
 [2.12.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.11.0...v2.12.0
 [2.11.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v2.9.1...v2.10.0

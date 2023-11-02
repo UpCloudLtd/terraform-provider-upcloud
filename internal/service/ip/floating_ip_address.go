@@ -29,11 +29,11 @@ func ResourceFloatingIPAddress() *schema.Resource {
 				Computed:    true,
 			},
 			"access": {
-				Description:  "Is address for utility or public network",
+				Description:  "Network access for the floating IP address. Supported value: `public`",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "public",
-				ValidateFunc: validation.StringInSlice([]string{"utility", "public"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"public"}, false),
 			},
 			"family": {
 				Description:  "The address family of new IP address",
