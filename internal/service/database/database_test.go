@@ -20,6 +20,12 @@ func TestIsManagedDatabaseFullyCreated(t *testing.T) {
 		Backups: make([]upcloud.ManagedDatabaseBackup, 0),
 		State:   upcloud.ManagedDatabaseStatePoweroff,
 		Users:   make([]upcloud.ManagedDatabaseUser, 0),
+		NodeStates: []upcloud.ManagedDatabaseNodeState{
+			{
+				Role:  upcloud.ManagedDatabaseNodeRoleMaster,
+				State: "running",
+			},
+		},
 	}
 	if isManagedDatabaseFullyCreated(db) {
 		t.Errorf("isManagedDatabaseFullyCreated failed want false got true %+v", db)
