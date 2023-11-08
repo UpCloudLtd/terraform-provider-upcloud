@@ -1,7 +1,7 @@
 resource "upcloud_server_group" "main" {
   title                = "main_group"
   anti_affinity_policy = "yes"
-  labels               = {
+  labels = {
     "key1" = "val1"
     "key2" = "val2"
     "key3" = "val3"

@@ -106,6 +106,13 @@ func ResourceCluster() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"version": {
+				Description: "Kubernetes version ID, e.g. `1.26`. You can list available version IDs with `upctl kubernetes versions`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -119,6 +126,7 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 		Zone:              d.Get("zone").(string),
 		Plan:              d.Get("plan").(string),
 		PrivateNodeGroups: d.Get("private_node_groups").(bool),
+		Version:           d.Get("version").(string),
 	}
 
 	req.ControlPlaneIPFilter = make([]string, 0)
@@ -254,6 +262,10 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	filters := make([]string, 0)
 	filters = append(filters, c.ControlPlaneIPFilter...)
 	if err := d.Set("control_plane_ip_filter", filters); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("version", c.Version); err != nil {
 		return diag.FromErr(err)
 	}
 
