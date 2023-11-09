@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- kubernetes: `version` field to `upcloud_kubernetes_cluster` resource
+
 ### Deprecated
 - `upcloud_object_storage`: the target product will reach its end of life by the end of 2024.
 
