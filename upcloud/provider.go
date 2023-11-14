@@ -67,6 +67,12 @@ func Provider() *schema.Provider {
 				Default:     4,
 				Description: "Maximum number of retries",
 			},
+			"api_timeout_max_sec": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     120,
+				Description: "Maximum timeout from upcloud api",
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -124,13 +130,12 @@ func Provider() *schema.Provider {
 
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	
+
 	apiTimeoutMaxSec := time.Duration(d.Get("api_timeout_max_sec").(int)) * time.Second
-	
+
 	config := Config{
 		Username: d.Get("username").(string),
 		Password: d.Get("password").(string),
-		apiTimeoutMaxSec,
 	}
 
 	httpClient := retryablehttp.NewClient()
@@ -153,7 +158,8 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	return service, diags
 }
 
-func newUpCloudServiceConnection(username, password string, httpClient *http.Client) *service.Service {
+func newUpCloudServiceConnection(username, password string, httpClient *http.Client, apiTimeout time.Duration) *service.Service {
+
 	providerClient := client.New(
 		username,
 		password,

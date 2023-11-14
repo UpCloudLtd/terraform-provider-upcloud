@@ -54,7 +54,9 @@ func init() {
 
 			client := retryablehttp.NewClient()
 
-			service := newUpCloudServiceConnection(username, password, client.HTTPClient)
+			apiTimeoutMaxSec := 120 * time.Second
+
+			service := newUpCloudServiceConnection(username, password, client.HTTPClient, apiTimeoutMaxSec)
 
 			objectStorages, err := service.GetObjectStorages(context.Background())
 			if err != nil {
