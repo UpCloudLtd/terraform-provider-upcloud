@@ -32,6 +32,8 @@ import (
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
+const upcloudAPITimeout time.Duration = time.Second * 120
+
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -64,12 +66,6 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				Default:     4,
 				Description: "Maximum number of retries",
-			},
-			"api_timeout_max_sec": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     120,
-				Description: "Maximum time wait upcloud api",
 			},
 		},
 
@@ -129,10 +125,13 @@ func Provider() *schema.Provider {
 
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
-
+	
+	apiTimeoutMaxSec := time.Duration(d.Get("api_timeout_max_sec").(int)) * time.Second
+	
 	config := Config{
 		Username: d.Get("username").(string),
 		Password: d.Get("password").(string),
+		apiTimeoutMaxSec,
 	}
 
 	httpClient := retryablehttp.NewClient()
@@ -144,6 +143,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		d.Get("username").(string),
 		d.Get("password").(string),
 		httpClient.HTTPClient,
+		apiTimeoutMaxSec,
 	)
 
 	_, err := config.checkLogin(service)
@@ -159,7 +159,7 @@ func newUpCloudServiceConnection(username, password string, httpClient *http.Cli
 		username,
 		password,
 		client.WithHTTPClient(httpClient),
-		client.WithTimeout(api_timeout_max_sec),
+		client.WithTimeout(apiTimeout),
 	)
 
 	providerClient.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
