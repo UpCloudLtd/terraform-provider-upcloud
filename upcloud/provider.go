@@ -131,7 +131,7 @@ func Provider() *schema.Provider {
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	apiTimeoutMaxSec := time.Duration(d.Get("api_timeout_max_sec").(int)) * time.Second
+	requestTimeout := time.Duration(d.Get("request_timeout_sec").(int)) * time.Second
 
 	config := Config{
 		Username: d.Get("username").(string),
