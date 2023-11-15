@@ -67,7 +67,7 @@ func Provider() *schema.Provider {
 				Default:     4,
 				Description: "Maximum number of retries",
 			},
-			"api_timeout_max_sec": {
+			"request_timeout_sec": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     120,
