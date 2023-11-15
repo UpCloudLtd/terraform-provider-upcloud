@@ -71,7 +71,7 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     120,
-				Description: "Maximum timeout from upcloud api",
+				Description: "The duration (in seconds) that the provider waits for a HTTP request to towards UpCloud API to complete. Defaults to 120 seconds",
 			},
 		},
 
