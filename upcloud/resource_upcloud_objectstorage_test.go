@@ -54,7 +54,7 @@ func init() {
 
 			client := retryablehttp.NewClient()
 
-			apiTimeoutMaxSec := 120 * time.Second
+			requestTimeout := 120 * time.Second
 
 			service := newUpCloudServiceConnection(username, password, client.HTTPClient, apiTimeoutMaxSec)
 
