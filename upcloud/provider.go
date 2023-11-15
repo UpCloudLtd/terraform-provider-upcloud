@@ -158,7 +158,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	return service, diags
 }
 
-func newUpCloudServiceConnection(username, password string, httpClient *http.Client, apiTimeout time.Duration) *service.Service {
+func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration) *service.Service {
 
 	providerClient := client.New(
 		username,
