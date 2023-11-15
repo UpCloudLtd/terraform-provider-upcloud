@@ -148,7 +148,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		d.Get("username").(string),
 		d.Get("password").(string),
 		httpClient.HTTPClient,
-		apiTimeoutMaxSec,
+		requestTimeout,
 	)
 
 	_, err := config.checkLogin(service)
