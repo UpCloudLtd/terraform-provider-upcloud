@@ -164,7 +164,7 @@ func newUpCloudServiceConnection(username, password string, httpClient *http.Cli
 		username,
 		password,
 		client.WithHTTPClient(httpClient),
-		client.WithTimeout(apiTimeout),
+		client.WithTimeout(requestTimeout),
 	)
 
 	providerClient.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
