@@ -56,7 +56,7 @@ func init() {
 
 			requestTimeout := 120 * time.Second
 
-			service := newUpCloudServiceConnection(username, password, client.HTTPClient, apiTimeoutMaxSec)
+			service := newUpCloudServiceConnection(username, password, client.HTTPClient, requestTimeout)
 
 			objectStorages, err := service.GetObjectStorages(context.Background())
 			if err != nil {
