@@ -32,8 +32,6 @@ import (
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
-const upcloudAPITimeout time.Duration = time.Second * 120
-
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -159,7 +157,6 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 }
 
 func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration) *service.Service {
-
 	providerClient := client.New(
 		username,
 		password,
