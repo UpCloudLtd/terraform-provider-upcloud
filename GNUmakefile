@@ -70,5 +70,6 @@ install-tools:
 docs: install-tools
 	terraform fmt -recursive examples/
 	$(TOOLS_DIR)/tfplugindocs
+	./scripts/group-docs.sh
 
 .PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_12 install-tools docs
