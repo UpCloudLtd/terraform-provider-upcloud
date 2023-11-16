@@ -27,14 +27,14 @@ const (
 	secretKeyMinLength    int    = 8
 	secretKeyMaxLength    int    = 255
 
-	deprecationMessage string = "The `upcloud_object_storage` resource manages previous generatation object storage instances that will reach End of Life (EOL) by the end of 2024. For new instances, consider using the new Object Storage product managed with `upcloud_managed_object_storage` resource."
+	deprecationMessage string = "The `upcloud_object_storage` resource manages previous generatation object storage instances that will reach end of life (EOL) by the end of 2024. For new instances, consider using the new Object Storage product managed with `upcloud_managed_object_storage` resource."
 )
 
 type objectStorageKeyType string
 
 func ResourceObjectStorage() *schema.Resource {
 	return &schema.Resource{
-		Description: fmt.Sprintf(`~> NOTE: %s
+		Description: fmt.Sprintf(`~> %s
 
 This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.`, deprecationMessage),
 		DeprecationMessage: deprecationMessage,
