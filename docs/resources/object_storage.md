@@ -3,13 +3,13 @@
 page_title: "upcloud_object_storage Resource - terraform-provider-upcloud"
 subcategory: ""
 description: |-
-  ~> NOTE: The upcloud_object_storage resource manages previous generatation object storage instances that will reach End of Life (EOL) by the end of 2024. For new instances, consider using the new Object Storage product managed with upcloud_managed_object_storage resource.
+  ~> The upcloud_object_storage resource manages previous generatation object storage instances that will reach end of life (EOL) by the end of 2024. For new instances, consider using the new Object Storage product managed with upcloud_managed_object_storage resource.
   This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.
 ---
 
 # upcloud_object_storage (Resource)
 
-~> NOTE: The `upcloud_object_storage` resource manages previous generatation object storage instances that will reach End of Life (EOL) by the end of 2024. For new instances, consider using the new Object Storage product managed with `upcloud_managed_object_storage` resource.
+~> The `upcloud_object_storage` resource manages previous generatation object storage instances that will reach end of life (EOL) by the end of 2024. For new instances, consider using the new Object Storage product managed with `upcloud_managed_object_storage` resource.
 
 This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.
 
