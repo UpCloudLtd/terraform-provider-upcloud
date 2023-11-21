@@ -27,10 +27,10 @@ resource "upcloud_loadbalancer" "lb" {
 }
 
 resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
-  name         = "lb-fe-1-test"
-  mode         = "http"
-  port         = 8080
+  loadbalancer         = resource.upcloud_loadbalancer.lb.id
+  name                 = "lb-fe-1-test"
+  mode                 = "http"
+  port                 = 8080
   # change(indirect): backend lb_be_1 name
   default_backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
   properties {
@@ -40,7 +40,7 @@ resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
 }
 
 resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
+  loadbalancer  = resource.upcloud_loadbalancer.lb.id
   # change: name lb-resolver-1-test to lb-resolver-1-test-1
   name          = "lb-resolver-1-test-1"
   cache_invalid = 10
@@ -52,11 +52,11 @@ resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
 }
 
 resource "upcloud_loadbalancer_backend" "lb_be_1" {
-  loadbalancer = resource.upcloud_loadbalancer.lb.id
+  loadbalancer  = resource.upcloud_loadbalancer.lb.id
   # change(indirect): resolver name changed
   resolver_name = resource.upcloud_loadbalancer_resolver.lb_dns_1.name
   # change: name lb-be-1-test to lb-be-1-test-1
-  name = "lb-be-1-test-1"
+  name          = "lb-be-1-test-1"
   properties {
     timeout_server          = 20
     timeout_tunnel          = 4000
@@ -89,10 +89,10 @@ resource "upcloud_loadbalancer_backend" "lb_be_2" {
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_2_sm_1" {
-  backend = resource.upcloud_loadbalancer_backend.lb_be_2.id
-  name    = "lb-be-2-sm-1-test"
-  ip      = "10.0.0.10"
-  port    = 8000
+  backend      = resource.upcloud_loadbalancer_backend.lb_be_2.id
+  name         = "lb-be-2-sm-1-test"
+  ip           = "10.0.0.10"
+  port         = 8000
   # set weight to zero
   weight       = 0
   max_sessions = 0
@@ -120,7 +120,7 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
 }
 
 resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
-  name = "lb-cb-d1-test"
+  name      = "lb-cb-d1-test"
   hostnames = [
     "example.com",
   ]
@@ -136,5 +136,11 @@ resource "upcloud_loadbalancer_manual_certificate_bundle" "lb_cb_m1" {
 resource "upcloud_loadbalancer_frontend_tls_config" "lb_fe_1_tls1" {
   frontend           = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
   name               = "lb-fe-1-tls1-test"
+  certificate_bundle = resource.upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1.id
+}
+
+resource "upcloud_loadbalancer_backend_tls_config" "lb_be_1_tls1" {
+  backend            = resource.upcloud_loadbalancer_backend.lb_be_1.id
+  name               = "lb-be-1-tls1-test"
   certificate_bundle = resource.upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1.id
 }

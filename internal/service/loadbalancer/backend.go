@@ -60,6 +60,14 @@ func ResourceBackend() *schema.Resource {
 					Schema: schemaBackendProperties(),
 				},
 			},
+			"tls_configs": {
+				Description: "Set of TLS config names",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -74,6 +82,7 @@ func resourceBackendCreate(ctx context.Context, d *schema.ResourceData, meta int
 			Name:       d.Get("name").(string),
 			Resolver:   d.Get("resolver_name").(string),
 			Members:    []request.LoadBalancerBackendMember{},
+			TLSConfigs: []request.LoadBalancerBackendTLSConfig{},
 			Properties: backendPropertiesFromResourceData(d),
 		},
 	})
@@ -179,6 +188,16 @@ func setBackendResourceData(d *schema.ResourceData, be *upcloud.LoadBalancerBack
 		return diag.FromErr(err)
 	}
 
+	var tlsConfigs []string
+
+	for _, t := range be.TLSConfigs {
+		tlsConfigs = append(tlsConfigs, t.Name)
+	}
+
+	if err := d.Set("tls_configs", tlsConfigs); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if be.Properties != nil {
 		props := []map[string]interface{}{{
 			"timeout_server":               be.Properties.TimeoutServer,
@@ -192,6 +211,10 @@ func setBackendResourceData(d *schema.ResourceData, be *upcloud.LoadBalancerBack
 			"health_check_expected_status": be.Properties.HealthCheckExpectedStatus,
 			"sticky_session_cookie_name":   be.Properties.StickySessionCookieName,
 			"outbound_proxy_protocol":      be.Properties.OutboundProxyProtocol,
+			"tls_enabled":                  be.Properties.TLSEnabled,
+			"tls_verify":                   be.Properties.TLSVerify,
+			"tls_use_system_ca":            be.Properties.TLSUseSystemCA,
+			"http2_enabled":                be.Properties.HTTP2Enabled,
 		}}
 		if err := d.Set("properties", props); err != nil {
 			return diag.FromErr(err)
@@ -216,6 +239,10 @@ func backendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBala
 		HealthCheckExpectedStatus: d.Get("properties.0.health_check_expected_status").(int),
 		StickySessionCookieName:   d.Get("properties.0.sticky_session_cookie_name").(string),
 		OutboundProxyProtocol:     upcloud.LoadBalancerProxyProtocolVersion(d.Get("properties.0.outbound_proxy_protocol").(string)),
+		TLSEnabled:                upcloud.BoolPtr(d.Get("properties.0.tls_enabled").(bool)),
+		TLSVerify:                 upcloud.BoolPtr(d.Get("properties.0.tls_verify").(bool)),
+		TLSUseSystemCA:            upcloud.BoolPtr(d.Get("properties.0.tls_use_system_ca").(bool)),
+		HTTP2Enabled:              upcloud.BoolPtr(d.Get("properties.0.http2_enabled").(bool)),
 	}
 }
 
@@ -305,6 +332,38 @@ func schemaBackendProperties() map[string]*schema.Schema {
 					string(upcloud.LoadBalancerProxyProtocolVersion2),
 				}, false),
 			),
+		},
+		"tls_configs": {
+			Description: "Set of TLS config names",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"tls_enabled": {
+			Description: "Enables TLS connection from the load balancer to backend servers.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"tls_verify": {
+			Description: "Enables backend servers certificate verification. Please make sure that TLS config with the certificate bundle of type authority attached to the backend or tls_use_system_ca enabled. Note: tls_verify has preference over health_check_tls_verify when tls_enabled in true.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"tls_use_system_ca": {
+			Description: "If enabled, then the system CA certificate bundle will be used for the certificate verification.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"http2_enabled": {
+			Description: "Allow HTTP/2 connections to backend members by utilizing ALPN extension of TLS protocol, therefore it can only be enabled when tls_enabled is set to true. Note: members should support HTTP/2 for this setting to work.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
 		},
 	}
 }
