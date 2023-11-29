@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - managed_database_mysql: Add `service_log` property
 - managed_database_postgresql: Add `service_log` property
 - managed_database_redis: Add `service_log` property
+- provider: `request_timeout_sec` field to `upcloud` provider for managing the duration (in seconds) that the provider waits for an HTTP request towards UpCloud API to complete. Defaults to 120 seconds.
 
 ## [3.1.1] - 2023-11-21
 
