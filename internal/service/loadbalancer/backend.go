@@ -348,7 +348,7 @@ func schemaBackendProperties() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"tls_verify": {
-			Description: "Enables backend servers certificate verification. Please make sure that TLS config with the certificate bundle of type authority attached to the backend or tls_use_system_ca enabled. Note: tls_verify has preference over health_check_tls_verify when tls_enabled in true.",
+			Description: "Enables backend servers certificate verification. Please make sure that TLS config with the certificate bundle of type authority attached to the backend or `tls_use_system_ca` enabled. Note: `tls_verify` has preference over `health_check_tls_verify` when `tls_enabled` in true.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
