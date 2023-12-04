@@ -46,13 +46,13 @@ func ResourceBackendTLSConfig() *schema.Resource {
 
 func resourceBackendTLSConfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
-	var serviceID, feName string
-	if err := unmarshalID(d.Get("backend").(string), &serviceID, &feName); err != nil {
+	var serviceID, beName string
+	if err := unmarshalID(d.Get("backend").(string), &serviceID, &beName); err != nil {
 		return diag.FromErr(err)
 	}
 	t, err := svc.CreateLoadBalancerBackendTLSConfig(ctx, &request.CreateLoadBalancerBackendTLSConfigRequest{
 		ServiceUUID: serviceID,
-		BackendName: feName,
+		BackendName: beName,
 		Config: request.LoadBalancerBackendTLSConfig{
 			Name:                  d.Get("name").(string),
 			CertificateBundleUUID: d.Get("certificate_bundle").(string),
@@ -62,32 +62,32 @@ func resourceBackendTLSConfigCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(serviceID, feName, t.Name))
+	d.SetId(marshalID(serviceID, beName, t.Name))
 
 	if diags = setBackendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "backend TLS config created", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "fe_name": feName})
+	tflog.Info(ctx, "backend TLS config created", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "be_name": beName})
 	return diags
 }
 
 func resourceBackendTLSConfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+	var serviceID, beName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	t, err := svc.GetLoadBalancerBackendTLSConfig(ctx, &request.GetLoadBalancerBackendTLSConfigRequest{
 		ServiceUUID: serviceID,
-		BackendName: feName,
+		BackendName: beName,
 		Name:        name,
 	})
 	if err != nil {
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
-	if err = d.Set("backend", marshalID(serviceID, feName)); err != nil {
+	if err = d.Set("backend", marshalID(serviceID, beName)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -100,13 +100,13 @@ func resourceBackendTLSConfigRead(ctx context.Context, d *schema.ResourceData, m
 
 func resourceBackendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+	var serviceID, beName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
 	t, err := svc.ModifyLoadBalancerBackendTLSConfig(ctx, &request.ModifyLoadBalancerBackendTLSConfigRequest{
 		ServiceUUID: serviceID,
-		BackendName: feName,
+		BackendName: beName,
 		Name:        name,
 		Config: request.LoadBalancerBackendTLSConfig{
 			Name:                  d.Get("name").(string),
@@ -117,26 +117,26 @@ func resourceBackendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	d.SetId(marshalID(serviceID, feName, t.Name))
+	d.SetId(marshalID(serviceID, beName, t.Name))
 
 	if diags = setBackendTLSConfigResourceData(d, t); len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "backend TLS config updated", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "fe_name": feName})
+	tflog.Info(ctx, "backend TLS config updated", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "be_name": beName})
 	return diags
 }
 
 func resourceBackendTLSConfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := unmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
+	var serviceID, beName, name string
+	if err := unmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	tflog.Info(ctx, "deleting backend TLS config", map[string]interface{}{"name": name, "service_uuid": serviceID, "fe_name": feName})
+	tflog.Info(ctx, "deleting backend TLS config", map[string]interface{}{"name": name, "service_uuid": serviceID, "be_name": beName})
 	return diag.FromErr(svc.DeleteLoadBalancerBackendTLSConfig(ctx, &request.DeleteLoadBalancerBackendTLSConfigRequest{
 		ServiceUUID: serviceID,
-		BackendName: feName,
+		BackendName: beName,
 		Name:        name,
 	}))
 }
