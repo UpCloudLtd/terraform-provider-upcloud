@@ -3,12 +3,12 @@
 page_title: "upcloud_server Resource - terraform-provider-upcloud"
 subcategory: Servers
 description: |-
-  The UpCloud server resource allows the creation, update and deletion of a server.
+  The UpCloud server resource allows the creation, update and deletion of a cloud server https://upcloud.com/products/cloud-servers.
 ---
 
 # upcloud_server (Resource)
 
-The UpCloud server resource allows the creation, update and deletion of a server.
+The UpCloud server resource allows the creation, update and deletion of a [cloud server](https://upcloud.com/products/cloud-servers).
 
 ## Example Usage
 

@@ -16,6 +16,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func serviceDescription(dbType string) string {
+	return fmt.Sprintf("This resource represents %s managed database. See UpCloud [Managed Databases](https://upcloud.com/products/managed-databases) product page for more details about the service.", dbType)
+}
+
 var resourceUpcloudManagedDatabaseModifiableStates = []upcloud.ManagedDatabaseState{
 	upcloud.ManagedDatabaseStateRunning,
 	upcloud.ManagedDatabaseState("rebalancing"),

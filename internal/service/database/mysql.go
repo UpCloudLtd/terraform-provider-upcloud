@@ -14,7 +14,7 @@ import (
 
 func ResourceMySQL() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents MySQL managed database",
+		Description:   serviceDescription("MySQL"),
 		CreateContext: resourceMySQLCreate,
 		ReadContext:   resourceMySQLRead,
 		UpdateContext: resourceMySQLUpdate,

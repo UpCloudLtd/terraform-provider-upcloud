@@ -14,7 +14,7 @@ import (
 
 func ResourceOpenSearch() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents OpenSearch managed database",
+		Description:   serviceDescription("OpenSearch"),
 		CreateContext: resourceOpenSearchCreate,
 		ReadContext:   resourceOpenSearchRead,
 		UpdateContext: resourceOpenSearchUpdate,

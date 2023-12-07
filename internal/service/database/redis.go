@@ -13,7 +13,7 @@ import (
 
 func ResourceRedis() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents Redis managed database",
+		Description:   serviceDescription("Redis"),
 		CreateContext: resourceRedisCreate,
 		ReadContext:   resourceRedisRead,
 		UpdateContext: resourceRedisUpdate,

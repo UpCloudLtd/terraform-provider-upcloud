@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_cluster Resource - terraform-provider-upcloud"
 subcategory: Kubernetes
 description: |-
-  This resource represents a Managed Kubernetes cluster.
+  This resource represents a Managed Kubernetes https://upcloud.com/products/managed-kubernetes cluster.
 ---
 
 # upcloud_kubernetes_cluster (Resource)
 
-This resource represents a Managed Kubernetes cluster.
+This resource represents a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster.
 
 ## Example Usage
 

@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_mysql Resource - terraform-provider-upcloud"
 subcategory: Databases
 description: |-
-  This resource represents MySQL managed database
+  This resource represents MySQL managed database. See UpCloud Managed Databases https://upcloud.com/products/managed-databases product page for more details about the service.
 ---
 
 # upcloud_managed_database_mysql (Resource)
 
-This resource represents MySQL managed database
+This resource represents MySQL managed database. See UpCloud [Managed Databases](https://upcloud.com/products/managed-databases) product page for more details about the service.
 
 ## Example Usage
 

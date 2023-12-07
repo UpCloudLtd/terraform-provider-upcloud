@@ -21,7 +21,7 @@ import (
 
 func ResourceStorage() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Manages UpCloud storage block devices.",
+		Description:   "Manages UpCloud [Block Storage](https://upcloud.com/products/block-storage) devices.",
 		CreateContext: resourceStorageCreate,
 		ReadContext:   resourceStorageRead,
 		UpdateContext: resourceStorageUpdate,

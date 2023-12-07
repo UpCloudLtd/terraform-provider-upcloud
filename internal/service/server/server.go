@@ -27,7 +27,7 @@ const serverTitleLength int = 255
 
 func ResourceServer() *schema.Resource {
 	return &schema.Resource{
-		Description:   "The UpCloud server resource allows the creation, update and deletion of a server.",
+		Description:   "The UpCloud server resource allows the creation, update and deletion of a [cloud server](https://upcloud.com/products/cloud-servers).",
 		CreateContext: resourceServerCreate,
 		ReadContext:   resourceServerRead,
 		UpdateContext: resourceServerUpdate,
