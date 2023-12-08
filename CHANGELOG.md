@@ -10,6 +10,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - load_balancer: `upcloud_loadbalancer_backend_tls_config` resource for backend TLS config management
 - load_balancer: fields `tls_enabled`, `tls_verify` & `tls_use_system_ca` to `upcloud_loadbalancer_backend` resource's `properties`
 - load_balancer: `http2_enabled` to `upcloud_loadbalancer_backend` resource's `properties` for enabling HTTP/2 backend support
+- managed_database_mysql: Add `service_log` property
+- managed_database_postgresql: Add `service_log` and `pg_qualstats` properties
+- managed_database_redis: Add `service_log` property
 
 ## [3.1.1] - 2023-11-21
 

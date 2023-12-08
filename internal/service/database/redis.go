@@ -158,5 +158,11 @@ func schemaRedisProperties() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"allchannels", "resetchannels"}, false)),
 		},
+		"service_log": {
+			Type:        schema.TypeBool,
+			Description: "Store logs for the service so that they are available in the HTTP API and console.",
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
