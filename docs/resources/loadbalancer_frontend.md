@@ -98,6 +98,7 @@ Required:
 
 Optional:
 
+- `http2_enabled` (Boolean) Enable or disable HTTP/2 support.
 - `inbound_proxy_protocol` (Boolean) Enable or disable inbound proxy protocol support.
 - `timeout_client` (Number) Client request timeout in seconds.
 
