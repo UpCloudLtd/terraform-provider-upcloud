@@ -50,8 +50,12 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
   resolver_name = resource.upcloud_loadbalancer_resolver.lb_dns_1.name
   name          = "lb-be-1-test"
   properties {
-    health_check_url = "https://10.0.0.10/healthz"
+    health_check_url        = "https://10.0.0.10/healthz"
     health_check_tls_verify = true
+    tls_enabled             = true
+    tls_verify              = true
+    tls_use_system_ca       = true
+    http2_enabled           = true
   }
 }
 
@@ -177,7 +181,7 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
 }
 
 resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
-  name = "lb-cb-d1-test"
+  name      = "lb-cb-d1-test"
   hostnames = [
     "example.com",
   ]
@@ -193,5 +197,11 @@ resource "upcloud_loadbalancer_manual_certificate_bundle" "lb_cb_m1" {
 resource "upcloud_loadbalancer_frontend_tls_config" "lb_fe_1_tls1" {
   frontend           = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
   name               = "lb-fe-1-tls1-test"
+  certificate_bundle = resource.upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1.id
+}
+
+resource "upcloud_loadbalancer_backend_tls_config" "lb_be_1_tls1" {
+  backend            = resource.upcloud_loadbalancer_backend.lb_be_1.id
+  name               = "lb-be-1-tls1-test"
   certificate_bundle = resource.upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1.id
 }

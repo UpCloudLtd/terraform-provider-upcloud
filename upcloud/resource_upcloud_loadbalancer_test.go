@@ -22,6 +22,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	be2Name := "upcloud_loadbalancer_backend.lb_be_2"
 	be1sm1Name := "upcloud_loadbalancer_static_backend_member.lb_be_1_sm_1"
 	be1dm1Name := "upcloud_loadbalancer_dynamic_backend_member.lb_be_1_dm_1"
+	be1TLS1Name := "upcloud_loadbalancer_backend_tls_config.lb_be_1_tls1"
 	be2sm1Name := "upcloud_loadbalancer_static_backend_member.lb_be_2_sm_1"
 	fe1Name := "upcloud_loadbalancer_frontend.lb_fe_1"
 	fe1Rule1Name := "upcloud_loadbalancer_frontend_rule.lb_fe_1_r1"
@@ -54,6 +55,10 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_rise", "3"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_url", "https://10.0.0.10/healthz"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_tls_verify", "true"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.tls_enabled", "true"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.tls_verify", "true"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.tls_use_system_ca", "true"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.http2_enabled", "true"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_expected_status", "200"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),
@@ -72,6 +77,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be2sm1Name, "name", "lb-be-2-sm-1-test"),
 					resource.TestCheckResourceAttr(be2sm1Name, "enabled", "true"),
 					resource.TestCheckResourceAttr(be2sm1Name, "weight", "1"),
+					resource.TestCheckResourceAttr(be1TLS1Name, "name", "lb-be-1-tls1-test"),
 					resource.TestCheckResourceAttr(fe1Name, "name", "lb-fe-1-test"),
 					resource.TestCheckResourceAttr(fe1Name, "port", "8080"),
 					resource.TestCheckResourceAttr(fe1Name, "mode", "http"),

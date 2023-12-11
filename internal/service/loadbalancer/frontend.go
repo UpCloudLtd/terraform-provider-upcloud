@@ -245,6 +245,7 @@ func setFrontendResourceData(d *schema.ResourceData, fe *upcloud.LoadBalancerFro
 		props := []map[string]interface{}{{
 			"timeout_client":         fe.Properties.TimeoutClient,
 			"inbound_proxy_protocol": fe.Properties.InboundProxyProtocol,
+			"http2_enabled":          fe.Properties.HTTP2Enabled,
 		}}
 		if err := d.Set("properties", props); err != nil {
 			return diag.FromErr(err)
@@ -261,6 +262,7 @@ func frontendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBal
 	return &upcloud.LoadBalancerFrontendProperties{
 		TimeoutClient:        d.Get("properties.0.timeout_client").(int),
 		InboundProxyProtocol: d.Get("properties.0.inbound_proxy_protocol").(bool),
+		HTTP2Enabled:         upcloud.BoolPtr(d.Get("properties.0.http2_enabled").(bool)),
 	}
 }
 
@@ -275,6 +277,12 @@ func schemaFrontendProperties() map[string]*schema.Schema {
 		},
 		"inbound_proxy_protocol": {
 			Description: "Enable or disable inbound proxy protocol support.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"http2_enabled": {
+			Description: "Enable or disable HTTP/2 support.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,

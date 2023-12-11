@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- load_balancer: `upcloud_loadbalancer_backend_tls_config` resource for backend TLS config management
+- load_balancer: fields `tls_enabled`, `tls_verify` & `tls_use_system_ca` to `upcloud_loadbalancer_backend` resource's `properties`
+- load_balancer: `http2_enabled` to `upcloud_loadbalancer_backend` resource's `properties` for enabling HTTP/2 backend support
+
 ## [3.1.1] - 2023-11-21
 
 ### Changed
