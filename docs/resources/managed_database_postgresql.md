@@ -119,6 +119,7 @@ Optional:
 - `migration` (Block List, Max: 1) Migrate data from existing server (see [below for nested schema](#nestedblock--properties--migration))
 - `pg_partman_bgw_interval` (Number) Sets the time interval to run pg_partman's scheduled tasks.
 - `pg_partman_bgw_role` (String) Controls which role to use for pg_partman's scheduled background tasks.
+- `pg_qualstats` (Block List, Max: 1) System-wide settings for the pg_qualstats extension (see [below for nested schema](#nestedblock--properties--pg_qualstats))
 - `pg_read_replica` (Boolean, Deprecated) Should the service which is being forked be a read replica (deprecated, use read_replica service integration instead).
 - `pg_service_to_fork_from` (String) Name of the PG Service from which to fork (deprecated, use service_to_fork_from). This has effect only when a new service is being created.
 - `pg_stat_monitor_enable` (Boolean) Enable the pg_stat_monitor extension. Enabling this extension will cause the cluster to be restarted.When this extension is enabled, pg_stat_statements results for utility commands are unreliable
@@ -130,6 +131,7 @@ Optional:
 - `pgbouncer` (Block List, Max: 1) PGBouncer connection pooling settings (see [below for nested schema](#nestedblock--properties--pgbouncer))
 - `pglookout` (Block List, Max: 1) PGLookout settings (see [below for nested schema](#nestedblock--properties--pglookout))
 - `public_access` (Boolean) Public access allows connections to your Managed Database services via the public internet.
+- `service_log` (Boolean) Store logs for the service so that they are available in the HTTP API and console.
 - `shared_buffers_percentage` (Number) Percentage of total RAM that the database server uses for shared memory buffers. 
 				Valid range is 20-60 (float), which corresponds to 20% - 60%. This setting adjusts the `shared_buffers` configuration value.
 - `synchronous_replication` (String) Synchronous replication type. Note that the service plan also needs to support synchronous replication.
@@ -160,6 +162,18 @@ Optional:
 - `port` (Number) Port number of the server where to migrate data from
 - `ssl` (Boolean) The server where to migrate data from is secured with SSL
 - `username` (String) User name for authentication with the server where to migrate data from
+
+
+<a id="nestedblock--properties--pg_qualstats"></a>
+### Nested Schema for `properties.pg_qualstats`
+
+Optional:
+
+- `enabled` (Boolean) Enable / Disable pg_qualstats.
+- `min_err_estimate_num` (Number) Error estimation num threshold to save quals.
+- `min_err_estimate_ratio` (Number) Error estimation ratio threshold to save quals.
+- `track_constants` (Boolean) Enable / Disable pg_qualstats constants tracking.
+- `track_pg_catalog` (Boolean) Track quals on system catalogs too.
 
 
 <a id="nestedblock--properties--pgbouncer"></a>
