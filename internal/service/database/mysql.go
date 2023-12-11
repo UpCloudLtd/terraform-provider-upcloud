@@ -304,5 +304,11 @@ func schemaMySQLProperties() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 64)),
 		},
+		"service_log": {
+			Type:        schema.TypeBool,
+			Description: "Store logs for the service so that they are available in the HTTP API and console.",
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }

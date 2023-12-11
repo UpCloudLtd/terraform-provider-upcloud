@@ -40,6 +40,7 @@ func TestAccUpcloudManagedDatabaseRedisProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("redis_timeout"), "310"),
 					resource.TestCheckResourceAttr(name, prop("redis_acl_channels_default"), "allchannels"),
 					resource.TestCheckResourceAttr(name, prop("automatic_utility_network_ip_filter"), "false"),
+					resource.TestCheckResourceAttr(name, prop("service_log"), "true"),
 				),
 			},
 			{

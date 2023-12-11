@@ -36,5 +36,6 @@ resource "upcloud_managed_database_mysql" "mysql_properties" {
     tmp_table_size                      = 1048576
     version                             = "8"
     wait_timeout                        = 1
+    service_log                         = true
   }
 }

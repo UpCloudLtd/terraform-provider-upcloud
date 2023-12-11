@@ -16,5 +16,6 @@ resource "upcloud_managed_database_redis" "redis_properties" {
     redis_persistence                       = "off"
     redis_timeout                           = 310
     redis_acl_channels_default              = "allchannels"
+    service_log                             = true
   }
 }

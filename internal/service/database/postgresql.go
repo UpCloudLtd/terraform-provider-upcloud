@@ -589,6 +589,53 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"service_log": {
+			Type:        schema.TypeBool,
+			Description: "Store logs for the service so that they are available in the HTTP API and console.",
+			Optional:    true,
+			Computed:    true,
+		},
+		"pg_qualstats": {
+			Description: "System-wide settings for the pg_qualstats extension",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"enabled": {
+						Type:        schema.TypeBool,
+						Description: `Enable / Disable pg_qualstats.`,
+						Optional:    true,
+						Computed:    true,
+					},
+					"min_err_estimate_num": {
+						Type:        schema.TypeInt,
+						Description: `Error estimation num threshold to save quals.`,
+						Optional:    true,
+						Computed:    true,
+					},
+					"min_err_estimate_ratio": {
+						Type:        schema.TypeInt,
+						Description: `Error estimation ratio threshold to save quals.`,
+						Optional:    true,
+						Computed:    true,
+					},
+					"track_constants": {
+						Type:        schema.TypeBool,
+						Description: `Enable / Disable pg_qualstats constants tracking.`,
+						Optional:    true,
+						Computed:    true,
+					},
+					"track_pg_catalog": {
+						Type:        schema.TypeBool,
+						Description: `Track quals on system catalogs too.`,
+						Optional:    true,
+						Computed:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
