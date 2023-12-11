@@ -59,6 +59,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 - `id` (String) The ID of this resource.
 - `members` (List of String) Backend members receive traffic dispatched from the frontends
+- `tls_configs` (List of String) Set of TLS config names
 
 <a id="nestedblock--properties"></a>
 ### Nested Schema for `properties`
@@ -72,9 +73,17 @@ Optional:
 - `health_check_tls_verify` (Boolean) Enables certificate verification with the system CA certificate bundle. Works with https scheme in health_check_url, otherwise ignored.
 - `health_check_type` (String) Health check type.
 - `health_check_url` (String) Target path for health check HTTP GET requests. Ignored for tcp type.
+- `http2_enabled` (Boolean) Allow HTTP/2 connections to backend members by utilizing ALPN extension of TLS protocol, therefore it can only be enabled when tls_enabled is set to true. Note: members should support HTTP/2 for this setting to work.
 - `outbound_proxy_protocol` (String) Enable outbound proxy protocol by setting the desired version. Empty string disables proxy protocol.
 - `sticky_session_cookie_name` (String) Sets sticky session cookie name. Empty string disables sticky session.
 - `timeout_server` (Number) Backend server timeout in seconds.
 - `timeout_tunnel` (Number) Maximum inactivity time on the client and server side for tunnels in seconds.
+- `tls_enabled` (Boolean) Enables TLS connection from the load balancer to backend servers.
+- `tls_use_system_ca` (Boolean) If enabled, then the system CA certificate bundle will be used for the certificate verification.
+- `tls_verify` (Boolean) Enables backend servers certificate verification. Please make sure that TLS config with the certificate bundle of type authority attached to the backend or `tls_use_system_ca` enabled. Note: `tls_verify` has preference over `health_check_tls_verify` when `tls_enabled` in true.
+
+Read-Only:
+
+- `tls_configs` (List of String) Set of TLS config names
 
 
