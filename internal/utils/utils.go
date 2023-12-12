@@ -168,6 +168,16 @@ func StorageAddressFormat(address string) string {
 	return ""
 }
 
+// StorageAddressPositionFormat takes the address in any format and extracts the bus
+// position only
+func StorageAddressPositionFormat(address string) string {
+	if ret := strings.SplitN(address, ":", 2); len(ret) > 0 {
+		return ret[1]
+	}
+
+	return ""
+}
+
 func EnvKeyExists(keyPrefix string) bool {
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, keyPrefix) {

@@ -245,17 +245,23 @@ func ResourceServer() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"storage": {
-							Description: "A valid storage UUID",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
 						"address": {
-							Description:  "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
+							Description:  "The device address the storage will be attached to (`scsi`|`virtio`|`ide`). Leave `address_position` field empty to auto-select next available address from that bus.",
 							Type:         schema.TypeString,
 							Computed:     true,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"scsi", "virtio", "ide"}, false),
+						},
+						"address_position": {
+							Description: "The device position in the given bus (defined via field `address`). For example `0:0`, or `0`. Leave empty to auto-select next available address in the given bus.",
+							Type:        schema.TypeString,
+							Computed:    true,
+							Optional:    true,
+						},
+						"storage": {
+							Description: "A valid storage UUID",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 						"type": {
 							Description:  "The device type the storage will be attached as",
@@ -267,10 +273,10 @@ func ResourceServer() *schema.Resource {
 					},
 				},
 				Set: func(v interface{}) int {
-					// compute a consistent hash for this TypeSet, mendatory
+					// compute a consistent hash for this TypeSet, mandatory
 					m := v.(map[string]interface{})
 					return schema.HashString(
-						fmt.Sprintf("%s-%s", m["storage"].(string), m["address"].(string)),
+						fmt.Sprintf("%s-%s-%s", m["storage"].(string), m["address"].(string), m["address_position"].(string)),
 					)
 				},
 			},
@@ -288,7 +294,13 @@ func ResourceServer() *schema.Resource {
 							Computed:    true,
 						},
 						"address": {
-							Description: "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
+							Description: "The device address the storage will be attached to (`scsi`|`virtio`|`ide`). Leave `address_position` field empty to auto-select next available address from that bus.",
+							Type:        schema.TypeString,
+							Computed:    true,
+							Optional:    true,
+						},
+						"address_position": {
+							Description: "The device position in the given bus (defined via field `address`). For example `0:0`, or `0`. Leave empty to auto-select next available address in the given bus.",
 							Type:        schema.TypeString,
 							Computed:    true,
 							Optional:    true,
@@ -404,6 +416,12 @@ func ResourceServer() *schema.Resource {
 					},
 				},
 			},
+			"boot_order": {
+				Description: "The boot device order, `cdrom`|`disk`|`network` or comma separated combination of those values. Defaults to `disk`",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+			},
 		},
 		CustomizeDiff: customdiff.Sequence(
 			// Validate tags here, because in-schema validation is only available for primitive types
@@ -509,6 +527,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("video_model", server.VideoModel)
 	_ = d.Set("metadata", server.Metadata.Bool())
 	_ = d.Set("plan", server.Plan)
+	_ = d.Set("boot_order", server.BootOrder)
 
 	// XXX: server.Tags returns an empty slice rather than nil when it's empty
 	if len(server.Tags) > 0 {
@@ -566,12 +585,13 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		// the template is managed within the server
 		if serverStorage.UUID == d.Get("template.0.id") {
 			_ = d.Set("template", []map[string]interface{}{{
-				"address": utils.StorageAddressFormat(serverStorage.Address),
-				"id":      serverStorage.UUID,
-				"size":    serverStorage.Size,
-				"title":   serverStorage.Title,
-				"storage": d.Get("template.0.storage"),
-				"tier":    serverStorage.Tier,
+				"address":          utils.StorageAddressFormat(serverStorage.Address),
+				"address_position": utils.StorageAddressPositionFormat(serverStorage.Address),
+				"id":               serverStorage.UUID,
+				"size":             serverStorage.Size,
+				"title":            serverStorage.Title,
+				"storage":          d.Get("template.0.storage"),
+				"tier":             serverStorage.Tier,
 				// NOTE: backupRule cannot be derived from server.storageDevices payload, will not sync if changed elsewhere
 				"backup_rule": d.Get("template.0.backup_rule"),
 				// Those fields are not set anywhere in the API, they are just for internal TF use
@@ -580,9 +600,10 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 			}})
 		} else {
 			storageDevices = append(storageDevices, map[string]interface{}{
-				"address": utils.StorageAddressFormat(serverStorage.Address),
-				"storage": serverStorage.UUID,
-				"type":    serverStorage.Type,
+				"address":          utils.StorageAddressFormat(serverStorage.Address),
+				"address_position": utils.StorageAddressPositionFormat(serverStorage.Address),
+				"storage":          serverStorage.UUID,
+				"type":             serverStorage.Type,
 			})
 		}
 	}
@@ -664,7 +685,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		r.Firewall = "off"
 	}
 
-	if d.HasChange(("simple_backup")) {
+	if d.HasChange("simple_backup") {
 		if sb, ok := d.GetOk("simple_backup"); ok {
 			// Special handling for a situation where user adds simple backup rule for the server
 			// and removes backup_rule from a template with one apply. This needs to be done
@@ -767,16 +788,29 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	// should reattach if address changed
-	if d.HasChange("template.0.address") {
-		o, n := d.GetChange("template.0.address")
+	if d.HasChange("template.0.address") || d.HasChange("template.0.address_position") {
+		oldAddress, newAddress := d.GetChange("template.0.address")
+		oldPosition, newPosition := d.GetChange("template.0.address_position")
+
+		detachAddress := utils.StorageAddressFormat(oldAddress.(string))
+		if oldPosition.(string) != "" {
+			detachAddress = fmt.Sprintf(":%s", oldPosition.(string))
+		}
+
 		if _, err := client.DetachStorage(ctx, &request.DetachStorageRequest{
 			ServerUUID: d.Id(),
-			Address:    utils.StorageAddressFormat(o.(string)),
+			Address:    detachAddress,
 		}); err != nil {
 			return diag.FromErr(err)
 		}
+
+		attachAddress := utils.StorageAddressFormat(newAddress.(string))
+		if newPosition.(string) != "" {
+			attachAddress = fmt.Sprintf(":%s", newPosition.(string))
+		}
+
 		if _, err := client.AttachStorage(ctx, &request.AttachStorageRequest{
-			Address:     utils.StorageAddressFormat(n.(string)),
+			Address:     attachAddress,
 			ServerUUID:  d.Id(),
 			StorageUUID: d.Get("template.0.id").(string),
 		}); err != nil {
@@ -816,9 +850,14 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		// attach the storages that are new or have changed
 		for _, rawStorageDevice := range n.(*schema.Set).Difference(o.(*schema.Set)).List() {
 			storageDevice := rawStorageDevice.(map[string]interface{})
+			address := storageDevice["address"].(string)
+			position := storageDevice["address_position"].(string)
+			if position != "" {
+				address += fmt.Sprintf(":%s", position)
+			}
 			if _, err := client.AttachStorage(ctx, &request.AttachStorageRequest{
 				ServerUUID:  d.Id(),
-				Address:     utils.StorageAddressFormat(storageDevice["address"].(string)),
+				Address:     address,
 				StorageUUID: storageDevice["storage"].(string),
 				Type:        storageDevice["type"].(string),
 			}); err != nil {
@@ -929,6 +968,9 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 	if attr, ok := d.GetOk("plan"); ok {
 		r.Plan = attr.(string)
 	}
+	if attr, ok := d.GetOk("boot_order"); ok {
+		r.BootOrder = attr.(string)
+	}
 	if attr, ok := d.GetOk("simple_backup"); ok {
 		simpleBackupAttrs := attr.(*schema.Set).List()[0].(map[string]interface{})
 		r.SimpleBackup = buildSimpleBackupOpts(simpleBackupAttrs)
@@ -949,9 +991,14 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		if template["title"].(string) == "" {
 			template["title"] = fmt.Sprintf("terraform-%s-disk", r.Hostname)
 		}
+		address := template["address"].(string)
+		position := template["address_position"].(string)
+		if position != "" {
+			address += fmt.Sprintf(":%s", position)
+		}
 		serverStorageDevice := request.CreateServerStorageDevice{
 			Action:  "clone",
-			Address: template["address"].(string),
+			Address: address,
 			Size:    template["size"].(int),
 			Storage: template["storage"].(string),
 			Title:   template["title"].(string),
@@ -985,9 +1032,14 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		storageDevices := storageDevices.(*schema.Set)
 		for _, storageDevice := range storageDevices.List() {
 			storageDevice := storageDevice.(map[string]interface{})
+			address := storageDevice["address"].(string)
+			position := storageDevice["address_position"].(string)
+			if position != "" {
+				address += fmt.Sprintf(":%s", position)
+			}
 			r.StorageDevices = append(r.StorageDevices, request.CreateServerStorageDevice{
 				Action:  "attach",
-				Address: storageDevice["address"].(string),
+				Address: address,
 				Type:    storageDevice["type"].(string),
 				Storage: storageDevice["storage"].(string),
 			})
@@ -1012,9 +1064,9 @@ func buildLabels(m map[string]interface{}) *upcloud.LabelSlice {
 }
 
 func buildSimpleBackupOpts(attrs map[string]interface{}) string {
-	if time, ok := attrs["time"]; ok {
+	if backupTime, ok := attrs["time"]; ok {
 		if plan, ok := attrs["plan"]; ok {
-			return fmt.Sprintf("%s,%s", time, plan)
+			return fmt.Sprintf("%s,%s", backupTime, plan)
 		}
 	}
 
