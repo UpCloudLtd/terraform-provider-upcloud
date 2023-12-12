@@ -31,8 +31,8 @@ resource "upcloud_network" "this" {
 }
 
 resource "upcloud_managed_object_storage" "this" {
-  region = var.region
-
+  # No name given
+  region            = var.region
   configured_status = "started"
 
   network {
@@ -52,4 +52,12 @@ resource "upcloud_managed_object_storage" "this" {
     test     = "objsto2-tf"
     owned-by = "team-services"
   }
+}
+
+resource "upcloud_managed_object_storage" "named" {
+  name              = "tf-acc-test-objstov2-named"
+  region            = var.region
+  configured_status = "started"
+
+  # No networks or labels
 }

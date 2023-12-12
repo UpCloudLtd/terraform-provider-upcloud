@@ -15,7 +15,8 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_s2.tf")
 
 	var providers []*schema.Provider
-	name := "upcloud_managed_object_storage.this"
+	noName := "upcloud_managed_object_storage.this"
+	named := "upcloud_managed_object_storage.named"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -24,20 +25,22 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(name, "region", "europe-1"),
-					resource.TestCheckResourceAttr(name, "configured_status", "started"),
-					resource.TestCheckResourceAttr(name, "labels.%", "2"),
-					resource.TestCheckResourceAttr(name, "labels.test", "objsto2-tf"),
-					resource.TestCheckResourceAttr(name, "network.#", "2"),
+					resource.TestCheckResourceAttr(named, "name", "tf-acc-test-objstov2-named"),
+					resource.TestCheckResourceAttr(noName, "region", "europe-1"),
+					resource.TestCheckResourceAttr(noName, "configured_status", "started"),
+					resource.TestCheckResourceAttr(noName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(noName, "labels.test", "objsto2-tf"),
+					resource.TestCheckResourceAttr(noName, "network.#", "2"),
 				),
 			},
 			{
 				Config:            testDataS2,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(name, "configured_status", "started"),
-					resource.TestCheckResourceAttr(name, "labels.owned-by", "team-devex"),
-					resource.TestCheckResourceAttr(name, "network.#", "1"),
+					resource.TestCheckResourceAttr(named, "name", "tf-acc-test-objstov2-renamed"),
+					resource.TestCheckResourceAttr(noName, "configured_status", "started"),
+					resource.TestCheckResourceAttr(noName, "labels.owned-by", "team-devex"),
+					resource.TestCheckResourceAttr(noName, "network.#", "1"),
 				),
 			},
 		},

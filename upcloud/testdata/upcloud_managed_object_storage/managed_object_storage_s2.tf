@@ -47,3 +47,11 @@ resource "upcloud_managed_object_storage" "this" {
     owned-by = "team-devex"
   }
 }
+
+resource "upcloud_managed_object_storage" "named" {
+  name              = "tf-acc-test-objstov2-renamed"
+  region            = var.region
+  configured_status = "started"
+
+  # No networks or labels
+}
