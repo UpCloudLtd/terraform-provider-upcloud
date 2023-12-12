@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- managed_object_storage: support for `name` property
+
+### Fixed
+
+- managed_object_storage: support for not configuring `labels`
+
 ## [3.2.0] - 2023-12-19
 
 ### Added
