@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - managed_database_mysql: Add `service_log` property
 - managed_database_postgresql: Add `service_log` property
 - managed_database_redis: Add `service_log` property
+- server: Add `address_position` field to `storage_devices` and `template`
 
 ## [3.1.1] - 2023-11-21
 
@@ -364,7 +365,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Missing documentation server resource [#89](https://github.com/UpCloudLtd/terraform-provider-upcloud/issues/89)
 - Missing documentation for zone datasource [#120](https://github.com/UpCloudLtd/terraform-provider-upcloud/issues/120)
-- New [examples](../blob/master/examples) of using the provider
+- New [examples](https://github.com/UpCloudLtd/terraform-provider-upcloud/tree/main/examples/) of using the provider
 - Updated workflow to run acceptance tests when opening pull request / pushing to master
 - Add user-agent header to the requests
 - Can now explicitly set IP address for network interfaces (requires special priviledes for your UpCloud account)
