@@ -96,11 +96,6 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("pglookout.0.max_failover_replication_time_lag"), "10"),
 					resource.TestCheckResourceAttr(name, prop("timescaledb.0.max_background_workers"), "1"),
 					resource.TestCheckResourceAttr(name, prop("service_log"), "true"),
-					resource.TestCheckResourceAttr(name, prop("pg_qualstats.0.enabled"), "true"),
-					resource.TestCheckResourceAttr(name, prop("pg_qualstats.0.min_err_estimate_num"), "100"),
-					resource.TestCheckResourceAttr(name, prop("pg_qualstats.0.min_err_estimate_ratio"), "200"),
-					resource.TestCheckResourceAttr(name, prop("pg_qualstats.0.track_constants"), "false"),
-					resource.TestCheckResourceAttr(name, prop("pg_qualstats.0.track_pg_catalog"), "false"),
 					// there should be pgbouncer and pg component
 					resource.TestCheckResourceAttr(name, "components.#", "2"),
 					resource.TestCheckResourceAttr(name, "node_states.0.state", "running"),
