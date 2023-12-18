@@ -202,7 +202,7 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 			continue
 		}
 		switch field {
-		case "migration", "pglookout", "timescaledb", "pgbouncer", "pg_qualstats":
+		case "migration", "pglookout", "timescaledb", "pgbouncer":
 			// convert resource data list of objects into API objects
 			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
 				r[upcloud.ManagedDatabasePropertyKey(field)] = listValue[0]
@@ -221,7 +221,7 @@ func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase, d *
 			continue
 		}
 		switch key {
-		case "migration", "pglookout", "timescaledb", "pgbouncer", "pg_qualstats":
+		case "migration", "pglookout", "timescaledb", "pgbouncer":
 			// convert API objects into list of objects
 			if m, ok := iv.(map[string]interface{}); ok {
 				props[string(key)] = []map[string]interface{}{m}

@@ -83,13 +83,5 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     }
 
     service_log = true
-
-    pg_qualstats {
-      enabled                = true
-      min_err_estimate_num   = 100
-      min_err_estimate_ratio = 200
-      track_constants        = false
-      track_pg_catalog       = false
-    }
   }
 }
