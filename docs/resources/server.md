@@ -59,6 +59,7 @@ resource "upcloud_server" "example" {
 
 ### Optional
 
+- `boot_order` (String) The boot device order, `cdrom`|`disk`|`network` or comma separated combination of those values. Defaults to `disk`
 - `cpu` (Number) The number of CPU for the server
 - `firewall` (Boolean) Are firewall rules active for the server
 - `host` (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
@@ -139,7 +140,8 @@ Required:
 
 Optional:
 
-- `address` (String) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
+- `address` (String) The device address the storage will be attached to (`scsi`|`virtio`|`ide`). Leave `address_position` field empty to auto-select next available address from that bus.
+- `address_position` (String) The device position in the given bus (defined via field `address`). For example `0:0`, or `0`. Leave empty to auto-select next available address in the given bus.
 - `type` (String) The device type the storage will be attached as
 
 
@@ -152,7 +154,8 @@ Required:
 
 Optional:
 
-- `address` (String) The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.
+- `address` (String) The device address the storage will be attached to (`scsi`|`virtio`|`ide`). Leave `address_position` field empty to auto-select next available address from that bus.
+- `address_position` (String) The device position in the given bus (defined via field `address`). For example `0:0`, or `0`. Leave empty to auto-select next available address in the given bus.
 - `backup_rule` (Block List, Max: 1) The criteria to backup the storage  
 		Please keep in mind that it's not possible to have a server with backup_rule attached to a server with simple_backup specified.
 		Such configurations will throw errors during execution.  
