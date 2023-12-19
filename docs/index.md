@@ -55,6 +55,7 @@ provider "upcloud" {
 ### Optional
 
 - `password` (String) Password for UpCloud API user. Can also be configured using the `UPCLOUD_PASSWORD` environment variable.
+- `request_timeout_sec` (Number) The duration (in seconds) that the provider waits for an HTTP request towards UpCloud API to complete. Defaults to 120 seconds
 - `retry_max` (Number) Maximum number of retries
 - `retry_wait_max_sec` (Number) Maximum time to wait between retries
 - `retry_wait_min_sec` (Number) Minimum time to wait between retries
