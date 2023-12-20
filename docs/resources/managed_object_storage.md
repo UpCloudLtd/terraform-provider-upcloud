@@ -57,6 +57,7 @@ resource "upcloud_managed_object_storage" "this" {
 ### Required
 
 - `configured_status` (String) Service status managed by the end user.
+- `name` (String) Name of the Managed Object Storage service. Must be unique within account.
 - `region` (String) Region in which the service will be hosted, see `upcloud_managed_object_storage_regions` data source.
 
 ### Optional
