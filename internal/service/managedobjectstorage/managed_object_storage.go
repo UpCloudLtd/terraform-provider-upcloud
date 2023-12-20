@@ -51,6 +51,11 @@ func ResourceManagedObjectStorage() *schema.Resource {
 				Elem:        schemaEndpoint(),
 			},
 			"labels": utils.LabelsSchema("managed object storage"),
+			"name": {
+				Description: "Name of the Managed Object Storage service. Must be unique within account.",
+				Required:    true,
+				Type:        schema.TypeString,
+			},
 			"network": {
 				Description: "Attached networks from where object storage can be used. Private networks must reside in object storage region. To gain access from multiple private networks that might reside in different zones, create the networks and a corresponding router for each network.",
 				Optional:    true,
@@ -160,6 +165,8 @@ func resourceManagedObjectStorageCreate(ctx context.Context, d *schema.ResourceD
 		req.Labels = utils.LabelsMapToSlice(v.(map[string]interface{}))
 	}
 
+	req.Name = d.Get("name").(string)
+
 	networks, err := networksFromResourceData(d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -230,6 +237,11 @@ func resourceManagedObjectStorageUpdate(ctx context.Context, d *schema.ResourceD
 	if d.HasChange("labels") {
 		labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
 		req.Labels = &labels
+	}
+
+	if d.HasChange("name") {
+		name := d.Get("name").(string)
+		req.Name = &name
 	}
 
 	if d.HasChange("network") {
@@ -341,6 +353,10 @@ func setManagedObjectStorageData(d *schema.ResourceData, storage *upcloud.Manage
 		})
 	}
 	if err := d.Set("endpoint", endpoints); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("name", storage.Name); err != nil {
 		return diag.FromErr(err)
 	}
 

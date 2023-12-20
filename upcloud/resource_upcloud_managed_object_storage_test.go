@@ -15,7 +15,8 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_s2.tf")
 
 	var providers []*schema.Provider
-	name := "upcloud_managed_object_storage.this"
+	this := "upcloud_managed_object_storage.this"
+	minimal := "upcloud_managed_object_storage.minimal"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -24,20 +25,23 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(name, "region", "europe-1"),
-					resource.TestCheckResourceAttr(name, "configured_status", "started"),
-					resource.TestCheckResourceAttr(name, "labels.%", "2"),
-					resource.TestCheckResourceAttr(name, "labels.test", "objsto2-tf"),
-					resource.TestCheckResourceAttr(name, "network.#", "2"),
+					resource.TestCheckResourceAttr(minimal, "name", "tf-acc-test-objstov2-minimal"),
+					resource.TestCheckResourceAttr(this, "name", "tf-acc-test-objstov2-complex"),
+					resource.TestCheckResourceAttr(this, "region", "europe-1"),
+					resource.TestCheckResourceAttr(this, "configured_status", "started"),
+					resource.TestCheckResourceAttr(this, "labels.%", "2"),
+					resource.TestCheckResourceAttr(this, "labels.test", "objsto2-tf"),
+					resource.TestCheckResourceAttr(this, "network.#", "2"),
 				),
 			},
 			{
 				Config:            testDataS2,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(name, "configured_status", "started"),
-					resource.TestCheckResourceAttr(name, "labels.owned-by", "team-devex"),
-					resource.TestCheckResourceAttr(name, "network.#", "1"),
+					resource.TestCheckResourceAttr(minimal, "name", "tf-acc-test-objstov2-renamed"),
+					resource.TestCheckResourceAttr(this, "configured_status", "started"),
+					resource.TestCheckResourceAttr(this, "labels.owned-by", "team-devex"),
+					resource.TestCheckResourceAttr(this, "network.#", "1"),
 				),
 			},
 		},
