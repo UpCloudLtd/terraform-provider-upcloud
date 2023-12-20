@@ -15,8 +15,8 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_s2.tf")
 
 	var providers []*schema.Provider
-	noName := "upcloud_managed_object_storage.this"
-	named := "upcloud_managed_object_storage.named"
+	this := "upcloud_managed_object_storage.this"
+	minimal := "upcloud_managed_object_storage.minimal"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -25,22 +25,23 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(named, "name", "tf-acc-test-objstov2-named"),
-					resource.TestCheckResourceAttr(noName, "region", "europe-1"),
-					resource.TestCheckResourceAttr(noName, "configured_status", "started"),
-					resource.TestCheckResourceAttr(noName, "labels.%", "2"),
-					resource.TestCheckResourceAttr(noName, "labels.test", "objsto2-tf"),
-					resource.TestCheckResourceAttr(noName, "network.#", "2"),
+					resource.TestCheckResourceAttr(minimal, "name", "tf-acc-test-objstov2-minimal"),
+					resource.TestCheckResourceAttr(this, "name", "tf-acc-test-objstov2-complex"),
+					resource.TestCheckResourceAttr(this, "region", "europe-1"),
+					resource.TestCheckResourceAttr(this, "configured_status", "started"),
+					resource.TestCheckResourceAttr(this, "labels.%", "2"),
+					resource.TestCheckResourceAttr(this, "labels.test", "objsto2-tf"),
+					resource.TestCheckResourceAttr(this, "network.#", "2"),
 				),
 			},
 			{
 				Config:            testDataS2,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(named, "name", "tf-acc-test-objstov2-renamed"),
-					resource.TestCheckResourceAttr(noName, "configured_status", "started"),
-					resource.TestCheckResourceAttr(noName, "labels.owned-by", "team-devex"),
-					resource.TestCheckResourceAttr(noName, "network.#", "1"),
+					resource.TestCheckResourceAttr(minimal, "name", "tf-acc-test-objstov2-renamed"),
+					resource.TestCheckResourceAttr(this, "configured_status", "started"),
+					resource.TestCheckResourceAttr(this, "labels.owned-by", "team-devex"),
+					resource.TestCheckResourceAttr(this, "network.#", "1"),
 				),
 			},
 		},

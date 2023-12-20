@@ -52,8 +52,8 @@ func ResourceManagedObjectStorage() *schema.Resource {
 			},
 			"labels": utils.LabelsSchema("managed object storage"),
 			"name": {
-				Description: "Name of the Managed Object Storage service.",
-				Optional:    true,
+				Description: "Name of the Managed Object Storage service. Must be unique within account.",
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			"network": {

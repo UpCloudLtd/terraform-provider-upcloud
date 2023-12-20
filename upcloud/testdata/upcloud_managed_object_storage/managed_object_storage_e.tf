@@ -14,6 +14,7 @@ variable "region" {
 }
 
 resource "upcloud_managed_object_storage" "this" {
+  name              = "tf-acc-test-objstov2-errors"
   region            = var.region
   configured_status = "started"
 

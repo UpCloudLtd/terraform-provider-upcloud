@@ -7,7 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
-- managed_object_storage: support for `name` property
+- managed_object_storage: add required `name` property
 
 ### Fixed
 
