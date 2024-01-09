@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- docs: add links to related UpCloud product documentation and tutorials.
+
 ## [3.3.0] - 2023-12-20
 
 ### Added
