@@ -15,7 +15,7 @@ import (
 
 func ResourcePostgreSQL() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents PostgreSQL managed database",
+		Description:   serviceDescription("PostgreSQL"),
 		CreateContext: resourcePostgreSQLCreate,
 		ReadContext:   resourcePostgreSQLRead,
 		UpdateContext: resourcePostgreSQLUpdate,

@@ -21,7 +21,7 @@ import (
 
 func ResourceLoadBalancer() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents load balancer service",
+		Description:   "This resource represents [Managed Load Balancer](https://upcloud.com/products/managed-load-balancer) service.",
 		CreateContext: resourceLoadBalancerCreate,
 		ReadContext:   resourceLoadBalancerRead,
 		UpdateContext: resourceLoadBalancerUpdate,
@@ -37,7 +37,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				ValidateDiagFunc: validateNameDiagFunc,
 			},
 			"plan": {
-				Description: "Plan which the service will have. You can list available loadbalancer plans with `upctl loadbalancer plans`",
+				Description: "Plan which the service will have. You can list available load balancer plans with `upctl loadbalancer plans`",
 				Type:        schema.TypeString,
 				Required:    true,
 			},

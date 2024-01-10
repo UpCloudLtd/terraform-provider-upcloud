@@ -3,12 +3,12 @@
 page_title: "upcloud_loadbalancer Resource - terraform-provider-upcloud"
 subcategory: Load Balancer
 description: |-
-  This resource represents load balancer service
+  This resource represents Managed Load Balancer https://upcloud.com/products/managed-load-balancer service.
 ---
 
 # upcloud_loadbalancer (Resource)
 
-This resource represents load balancer service
+This resource represents [Managed Load Balancer](https://upcloud.com/products/managed-load-balancer) service.
 
 ## Example Usage
 
@@ -53,7 +53,7 @@ resource "upcloud_loadbalancer" "lb" {
 ### Required
 
 - `name` (String) The name of the service must be unique within customer account.
-- `plan` (String) Plan which the service will have. You can list available loadbalancer plans with `upctl loadbalancer plans`
+- `plan` (String) Plan which the service will have. You can list available load balancer plans with `upctl loadbalancer plans`
 - `zone` (String) Zone in which the service will be hosted, e.g. `fi-hel1`. You can list available zones with `upctl zone list`.
 
 ### Optional

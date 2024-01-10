@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_opensearch Resource - terraform-provider-upcloud"
 subcategory: Databases
 description: |-
-  This resource represents OpenSearch managed database
+  This resource represents OpenSearch managed database. See UpCloud Managed Databases https://upcloud.com/products/managed-databases product page for more details about the service.
 ---
 
 # upcloud_managed_database_opensearch (Resource)
 
-This resource represents OpenSearch managed database
+This resource represents OpenSearch managed database. See UpCloud [Managed Databases](https://upcloud.com/products/managed-databases) product page for more details about the service.
 
 ## Example Usage
 

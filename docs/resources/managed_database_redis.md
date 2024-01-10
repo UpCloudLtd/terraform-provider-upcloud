@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_redis Resource - terraform-provider-upcloud"
 subcategory: Databases
 description: |-
-  This resource represents Redis managed database
+  This resource represents Redis managed database. See UpCloud Managed Databases https://upcloud.com/products/managed-databases product page for more details about the service.
 ---
 
 # upcloud_managed_database_redis (Resource)
 
-This resource represents Redis managed database
+This resource represents Redis managed database. See UpCloud [Managed Databases](https://upcloud.com/products/managed-databases) product page for more details about the service.
 
 ## Example Usage
 

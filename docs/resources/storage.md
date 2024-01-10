@@ -3,12 +3,12 @@
 page_title: "upcloud_storage Resource - terraform-provider-upcloud"
 subcategory: Storage
 description: |-
-  Manages UpCloud storage block devices.
+  Manages UpCloud Block Storage https://upcloud.com/products/block-storage devices.
 ---
 
 # upcloud_storage (Resource)
 
-Manages UpCloud storage block devices.
+Manages UpCloud [Block Storage](https://upcloud.com/products/block-storage) devices.
 
 ## Example Usage
 
