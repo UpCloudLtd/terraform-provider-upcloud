@@ -9,6 +9,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - docs: add links to related UpCloud product documentation and tutorials.
 
+### Fixed
+
+- docs: update provider version to `~> 3.0`
+- docs: in `upcloud_kubernetes_node_group` example, fix references and add missing required parameters
+
 ## [3.3.0] - 2023-12-20
 
 ### Added

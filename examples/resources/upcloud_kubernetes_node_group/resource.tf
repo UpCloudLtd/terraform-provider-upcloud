@@ -17,14 +17,16 @@ resource "upcloud_network" "example" {
 
 # Create a Kubernetes cluster
 resource "upcloud_kubernetes_cluster" "example" {
-  name    = "exampleapp"
-  network = upcloud_network.example.id
-  zone    = "de-fra1"
+  # Allow access to the cluster control plane from any external source.
+  control_plane_ip_filter = ["0.0.0.0/0"]
+  name                    = "exampleapp"
+  network                 = upcloud_network.example.id
+  zone                    = "de-fra1"
 }
 
 # Create a Kubernetes cluster node group
 resource "upcloud_kubernetes_node_group" "group" {
-  cluster    = resource.upcloud_kubernetes_cluster.main.id
+  cluster    = resource.upcloud_kubernetes_cluster.example.id
   node_count = 2
   name       = "medium"
   plan       = "2xCPU-4GB"
