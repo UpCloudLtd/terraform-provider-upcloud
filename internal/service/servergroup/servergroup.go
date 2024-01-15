@@ -15,7 +15,7 @@ import (
 
 const (
 	titleDescription   = "Title of your server group"
-	membersDescription = "UUIDs of the servers that are members of this group"
+	membersDescription = "UUIDs of the servers that are members of this group" // TODO(#469): add warning about server.server_group
 	// Lines > 1 should have one level of indentation to keep them under the right list item
 	antiAffinityPolicyDescription = `Defines if a server group is an anti-affinity group. Setting this to ` + "`strict` or `yes`" + ` will
 	result in all servers in the group being placed on separate compute hosts. The value can be ` + "`strict`, `yes`, or `no`" + `.
@@ -55,6 +55,7 @@ func ResourceServerGroup() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
+				Computed: true,
 			},
 			"anti_affinity_policy": {
 				Description: antiAffinityPolicyDescription,

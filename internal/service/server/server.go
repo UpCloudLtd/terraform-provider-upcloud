@@ -54,6 +54,12 @@ func ResourceServer() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"server_group": {
+				Type:        schema.TypeString,
+				Description: "The UUID of a server group to attach this server to.", // TODO(#469): warning about upcloud_server_group.members
+				Optional:    true,
+				ForceNew:    true, // TODO(#469): add modify logic
+			},
 			"firewall": {
 				Description: "Are firewall rules active for the server",
 				Type:        schema.TypeBool,
@@ -517,6 +523,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		_ = d.Set("title", nil)
 	}
 	_ = d.Set("zone", server.Zone)
+	_ = d.Set("server_group", server.ServerGroup)
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
 
@@ -930,6 +937,9 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		Hostname: d.Get("hostname").(string),
 	}
 
+	if attr, ok := d.GetOk("server_group"); ok {
+		r.ServerGroup = attr.(string)
+	}
 	if attr, ok := d.GetOk("firewall"); ok {
 		if attr.(bool) {
 			r.Firewall = "on"
