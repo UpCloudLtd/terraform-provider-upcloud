@@ -56,9 +56,8 @@ func ResourceServer() *schema.Resource {
 			},
 			"server_group": {
 				Type:        schema.TypeString,
-				Description: "The UUID of a server group to attach this server to.", // TODO(#469): warning about upcloud_server_group.members
+				Description: "The UUID of a server group to attach this server to. Note that the server can also be attached to a server group via the `members` property of `upcloud_server_group`. Only one of the these should be defined at a time. This value is only updated if it has been set to non-zero value.",
 				Optional:    true,
-				ForceNew:    true, // TODO(#469): add modify logic
 			},
 			"firewall": {
 				Description: "Are firewall rules active for the server",
@@ -523,7 +522,6 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		_ = d.Set("title", nil)
 	}
 	_ = d.Set("zone", server.Zone)
-	_ = d.Set("server_group", server.ServerGroup)
 	_ = d.Set("cpu", server.CoreNumber)
 	_ = d.Set("mem", server.MemoryAmount)
 
@@ -539,6 +537,10 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	// XXX: server.Tags returns an empty slice rather than nil when it's empty
 	if len(server.Tags) > 0 {
 		_ = d.Set("tags", server.Tags)
+	}
+
+	if _, ok := d.GetOk("server_group"); ok {
+		_ = d.Set("server_group", server.ServerGroup)
 	}
 
 	if server.Firewall == "on" {
@@ -740,6 +742,20 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if _, err := client.ModifyServer(ctx, r); err != nil {
 		return diag.FromErr(err)
+	}
+
+	if d.HasChange("server_group") {
+		oldGroup, newGroup := d.GetChange("server_group")
+
+		err = removeServerFromGroup(ctx, client, d.Id(), oldGroup.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		err = addServerToGroup(ctx, client, d.Id(), newGroup.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if d.HasChange("tags") {
