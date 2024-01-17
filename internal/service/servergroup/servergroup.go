@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	titleDescription   = "Title of your server group"
-	membersDescription = "UUIDs of the servers that are members of this group" // TODO(#469): add warning about server.server_group
+	titleDescription        = "Title of your server group"
+	membersDescription      = "UUIDs of the servers that are members of this group" // TODO(#469): add warning about server.server_group
+	trackMembersDescription = "Controls if members of the server group are being tracked in this resource. Set to `false` when using `server_group` property of `upcloud_server` to attach servers to the server group to avoid delayed state updates."
 	// Lines > 1 should have one level of indentation to keep them under the right list item
 	antiAffinityPolicyDescription = `Defines if a server group is an anti-affinity group. Setting this to ` + "`strict` or `yes`" + ` will
 	result in all servers in the group being placed on separate compute hosts. The value can be ` + "`strict`, `yes`, or `no`" + `.
@@ -55,6 +56,13 @@ func ResourceServerGroup() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
+			},
+			"track_members": {
+				Description: trackMembersDescription,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				// TODO CustomizeDiff to validate when track_members == false members must be empty
 			},
 			"anti_affinity_policy": {
 				Description: antiAffinityPolicyDescription,
@@ -172,8 +180,10 @@ func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) erro
 		return err
 	}
 
-	if err := d.Set("members", group.Members); err != nil {
-		return err
+	if d.Get("track_members").(bool) {
+		if err := d.Set("members", group.Members); err != nil {
+			return err
+		}
 	}
 
 	return d.Set("labels", utils.LabelSliceToMap(group.Labels))
