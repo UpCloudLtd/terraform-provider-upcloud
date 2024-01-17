@@ -55,7 +55,6 @@ func ResourceServerGroup() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				Computed: true,
 			},
 			"anti_affinity_policy": {
 				Description: antiAffinityPolicyDescription,
