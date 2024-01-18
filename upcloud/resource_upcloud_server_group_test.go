@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -42,6 +43,24 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 					resource.TestCheckResourceAttr(group1, "labels.%", "2"),
 					resource.TestCheckResourceAttr(group1, "labels.key1", "val1"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudServerGroup_TrackMembersValidation(t *testing.T) {
+	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/errors.tf")
+
+	var providers []*schema.Provider
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config:      testDataE,
+				ExpectError: regexp.MustCompile("track_members can not be set to false when members set is not empty"),
+				PlanOnly:    true,
 			},
 		},
 	})

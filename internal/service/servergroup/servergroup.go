@@ -9,6 +9,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -62,7 +63,6 @@ func ResourceServerGroup() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				// TODO CustomizeDiff to validate when track_members == false members must be empty
 			},
 			"anti_affinity_policy": {
 				Description: antiAffinityPolicyDescription,
@@ -76,6 +76,9 @@ func ResourceServerGroup() *schema.Resource {
 				}, false)),
 			},
 		},
+		CustomizeDiff: customdiff.Sequence(
+			validateTrackMembers,
+		),
 	}
 }
 
