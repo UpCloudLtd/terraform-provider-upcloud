@@ -16,7 +16,7 @@ import (
 
 const (
 	titleDescription        = "Title of your server group"
-	membersDescription      = "UUIDs of the servers that are members of this group" // TODO(#469): add warning about server.server_group
+	membersDescription      = "UUIDs of the servers that are members of this group. Servers can also be attached to the server group via `server_group` property of `upcloud_server`. See also `track_members` property."
 	trackMembersDescription = "Controls if members of the server group are being tracked in this resource. Set to `false` when using `server_group` property of `upcloud_server` to attach servers to the server group to avoid delayed state updates."
 	// Lines > 1 should have one level of indentation to keep them under the right list item
 	antiAffinityPolicyDescription = `Defines if a server group is an anti-affinity group. Setting this to ` + "`strict` or `yes`" + ` will
