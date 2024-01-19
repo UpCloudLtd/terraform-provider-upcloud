@@ -1,6 +1,7 @@
 package upcloud
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -9,9 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func TestAccUpCloudServerGroup(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/step1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/step2.tf")
+func TestAccUpCloudServerGroup_ServerGroupMembers(t *testing.T) {
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_group_members_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_group_members_s2.tf")
 
 	var providers []*schema.Provider
 
@@ -42,6 +43,36 @@ func TestAccUpCloudServerGroup(t *testing.T) {
 					resource.TestCheckResourceAttr(group1, "members.#", "0"),
 					resource.TestCheckResourceAttr(group1, "labels.%", "2"),
 					resource.TestCheckResourceAttr(group1, "labels.key1", "val1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_server_group_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_server_group_s2.tf")
+
+	var providers []*schema.Provider
+
+	server := func(i int) string { return fmt.Sprintf("upcloud_server.test_%d", i) }
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: testDataStep1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr(server(1), "server_group"),
+					resource.TestCheckResourceAttrSet(server(2), "server_group"),
+				),
+			},
+			{
+				Config: testDataStep2,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(server(1), "server_group"),
+					resource.TestCheckNoResourceAttr(server(2), "server_group"),
 				),
 			},
 		},
