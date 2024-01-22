@@ -57,6 +57,7 @@ func ResourceServer() *schema.Resource {
 			"server_group": {
 				Type:        schema.TypeString,
 				Description: "The UUID of a server group to attach this server to. Note that the server can also be attached to a server group via the `members` property of `upcloud_server_group`. Only one of the these should be defined at a time. This value is only updated if it has been set to non-zero value.",
+				Default:     "",
 				Optional:    true,
 			},
 			"firewall": {
@@ -539,6 +540,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		_ = d.Set("tags", server.Tags)
 	}
 
+	// Only track server_group when it has been configured to avoid changes when server is attached to group via upcloud_server_group.members.
 	if _, ok := d.GetOk("server_group"); ok {
 		_ = d.Set("server_group", server.ServerGroup)
 	}

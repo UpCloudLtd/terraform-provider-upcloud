@@ -10,7 +10,7 @@ variable "zone" {
 
 resource "upcloud_server" "test_1" {
   zone         = var.zone
-  hostname     = "${var.prefix}-vm-1"
+  hostname     = "${var.prefix}vm-1"
   plan         = "1xCPU-1GB"
   server_group = upcloud_server_group.test.id
 
@@ -26,7 +26,7 @@ resource "upcloud_server" "test_1" {
 
 resource "upcloud_server" "test_2" {
   zone     = var.zone
-  hostname = "${var.prefix}-vm-2"
+  hostname = "${var.prefix}vm-2"
   plan     = "1xCPU-1GB"
 
   template {
@@ -40,7 +40,7 @@ resource "upcloud_server" "test_2" {
 }
 
 resource "upcloud_server_group" "test" {
-  title                = "${var.prefix}-vmgroup"
+  title                = "${var.prefix}vmgroup"
   anti_affinity_policy = "no"
   track_members        = false
 }
