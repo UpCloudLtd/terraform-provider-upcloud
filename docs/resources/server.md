@@ -69,6 +69,7 @@ resource "upcloud_server" "example" {
 - `metadata` (Boolean) Is the metadata service active for the server
 - `nic_model` (String) The model of the server's network interfaces
 - `plan` (String) The pricing plan used for the server. You can list available server plans with `upctl server plans`
+- `server_group` (String) The UUID of a server group to attach this server to. Note that the server can also be attached to a server group via the `members` property of `upcloud_server_group`. Only one of the these should be defined at a time. This value is only updated if it has been set to non-zero value.
 - `simple_backup` (Block Set, Max: 1) Simple backup schedule configuration  
 				The idea behind simple backups is to provide a simplified way of backing up *all* of the storages attached to a given server. 
 				This means you cannot have simple backup set for a server, and then some individual backup_rules on the storages attached to said server. 
