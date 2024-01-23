@@ -142,6 +142,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 						]
 
 						template {
+								encrypt = true
 								storage = "01000000-0000-4000-8000-000020050100"
 								size = 10
 						}
@@ -151,6 +152,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 						}
 					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.encrypt", "true"),
 					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "zone"),
 					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "hostname"),
 					resource.TestCheckResourceAttr(

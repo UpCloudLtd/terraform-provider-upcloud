@@ -58,6 +58,7 @@ func ResizeStoragePartitionAndFs(ctx context.Context, client *service.Service, U
 func cloneStorage(
 	ctx context.Context,
 	client *service.Service,
+	encrypted bool,
 	size int,
 	tier string,
 	title string,
@@ -65,9 +66,10 @@ func cloneStorage(
 	d *schema.ResourceData,
 ) diag.Diagnostics {
 	cloneStorageRequest := request.CloneStorageRequest{
-		Zone:  zone,
-		Tier:  tier,
-		Title: title,
+		Encrypted: upcloud.FromBool(encrypted),
+		Zone:      zone,
+		Tier:      tier,
+		Title:     title,
 	}
 
 	if v, ok := d.GetOk("clone"); ok {
@@ -130,6 +132,7 @@ func cloneStorage(
 func createStorage(
 	ctx context.Context,
 	client *service.Service,
+	encrypted bool,
 	size int,
 	tier string,
 	title string,
@@ -139,10 +142,11 @@ func createStorage(
 	var diags diag.Diagnostics
 
 	createStorageRequest := request.CreateStorageRequest{
-		Size:  size,
-		Tier:  tier,
-		Title: title,
-		Zone:  zone,
+		Encrypted: upcloud.FromBool(encrypted),
+		Size:      size,
+		Tier:      tier,
+		Title:     title,
+		Zone:      zone,
 	}
 
 	var importReq *request.CreateStorageImportRequest

@@ -36,6 +36,12 @@ func ResourceStorage() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.IntBetween(10, 4096),
 			},
+			"encrypt": {
+				Description: "Sets if the storage is encrypted at rest",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    true,
+			},
 			"tier": {
 				Description:  "The storage tier to use",
 				Type:         schema.TypeString,
@@ -157,6 +163,7 @@ func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta int
 	var size int
 	var tier, title, zone string
 
+	encrypt := d.Get("encrypt").(bool)
 	if v, ok := d.GetOk("size"); ok {
 		size = v.(int)
 	}
@@ -174,9 +181,9 @@ func resourceStorageCreate(ctx context.Context, d *schema.ResourceData, meta int
 		// There is not 'clone' block so do the
 		// create storage logic including importing
 		// external data.
-		diags = createStorage(ctx, client, size, tier, title, zone, d)
+		diags = createStorage(ctx, client, encrypt, size, tier, title, zone, d)
 	} else {
-		diags = cloneStorage(ctx, client, size, tier, title, zone, d)
+		diags = cloneStorage(ctx, client, encrypt, size, tier, title, zone, d)
 	}
 	if diags.HasError() {
 		return diags
@@ -213,6 +220,10 @@ func resourceStorageRead(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	if err := d.Set("delete_autoresize_backup", d.Get("delete_autoresize_backup")); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("encrypt", storage.Encrypted.Bool()); err != nil {
 		return diag.FromErr(err)
 	}
 

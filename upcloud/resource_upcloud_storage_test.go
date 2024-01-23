@@ -39,10 +39,11 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 			{
 				Config: `
 					resource "upcloud_storage" "my_storage" {
-						size  = 10
-						tier  = "maxiops"
-						title = "My_data"
-						zone  = "pl-waw1"
+						encrypt = true
+						size    = 10
+						tier    = "maxiops"
+						title   = "My_data"
+						zone    = "pl-waw1"
 						filesystem_autoresize = false
 						delete_autoresize_backup = false
 
@@ -54,6 +55,8 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "encrypt", "true"),
 					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "size"),
 					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "tier"),
 					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "title"),
@@ -85,10 +88,11 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 			{
 				Config: `
 					resource "upcloud_storage" "my_storage" {
-						size  = 15
-						tier  = "maxiops"
-						title = "My_data_updated"
-						zone  = "pl-waw1"
+						encrypt = true
+						size    = 15
+						tier    = "maxiops"
+						title   = "My_data_updated"
+						zone    = "pl-waw1"
 						filesystem_autoresize = true
 						delete_autoresize_backup = true
 
@@ -100,6 +104,8 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.my_storage", "encrypt", "true"),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.my_storage", "size", "15"),
 					resource.TestCheckResourceAttr(
