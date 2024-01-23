@@ -181,7 +181,7 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
 }
 
 resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
-  name      = "lb-cb-d1-test"
+  name = "lb-cb-d1-test"
   hostnames = [
     "example.com",
   ]

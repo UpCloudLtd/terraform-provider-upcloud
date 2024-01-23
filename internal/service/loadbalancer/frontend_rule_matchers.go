@@ -160,6 +160,16 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 	}
 }
 
+func inverseSchema() *schema.Schema {
+	return &schema.Schema{
+		Description: "Sets if the condition should be inverted. Works similar to logical NOT operator.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		ForceNew:    true,
+		Default:     false,
+	}
+}
+
 func frontendRuleMatcherBackendSchema() map[string]*schema.Schema {
 	methods := []string{
 		string(upcloud.LoadBalancerIntegerMatcherMethodEqual),
@@ -191,6 +201,7 @@ func frontendRuleMatcherBackendSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(1, 255)),
 		},
+		"inverse": inverseSchema(),
 	}
 }
 
@@ -235,6 +246,7 @@ func frontendRuleMatcherStringWithArgumentSchema() map[string]*schema.Schema {
 			Default:     false,
 			ForceNew:    true,
 		},
+		"inverse": inverseSchema(),
 	}
 }
 
@@ -272,6 +284,7 @@ func frontendRuleMatcherStringSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Default:     false,
 		},
+		"inverse": inverseSchema(),
 	}
 }
 
@@ -296,6 +309,7 @@ func frontendRuleMatcherHTTPMethodSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(methods, false)),
 		},
+		"inverse": inverseSchema(),
 	}
 }
 
@@ -308,6 +322,7 @@ func frontendRuleMatcherHostSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(1, 255)),
 		},
+		"inverse": inverseSchema(),
 	}
 }
 
@@ -334,6 +349,7 @@ func frontendRuleMatcherIntegerSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"inverse": inverseSchema(),
 	}
 }
 
@@ -351,6 +367,7 @@ func frontendRuleMatcherRangeSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"inverse": inverseSchema(),
 	}
 }
 
@@ -362,7 +379,19 @@ func frontendRuleMatcherIPSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"inverse": inverseSchema(),
 	}
+}
+
+func appendMatcher(
+	matchers []upcloud.LoadBalancerMatcher,
+	newMatcher upcloud.LoadBalancerMatcher,
+	inverse interface{},
+) []upcloud.LoadBalancerMatcher {
+	if inverse.(bool) {
+		return append(matchers, request.NewLoadBalancerInverseMatcher(newMatcher))
+	}
+	return append(matchers, newMatcher)
 }
 
 func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.LoadBalancerMatcher, error) {
@@ -372,117 +401,117 @@ func loadBalancerMatchersFromResourceData(d *schema.ResourceData) ([]upcloud.Loa
 	}
 	for _, v := range d.Get("matchers.0.src_port").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerSrcPortMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerSrcPortMatcher(
 			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
 			v["value"].(int),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.src_port_range").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerSrcPortRangeMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerSrcPortRangeMatcher(
 			v["range_start"].(int),
 			v["range_end"].(int),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.src_ip").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerSrcIPMatcher(v["value"].(string)))
+		m = appendMatcher(m, request.NewLoadBalancerSrcIPMatcher(v["value"].(string)), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.body_size").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerBodySizeMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerBodySizeMatcher(
 			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
 			v["value"].(int),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.body_size_range").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerBodySizeRangeMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerBodySizeRangeMatcher(
 			v["range_start"].(int),
 			v["range_end"].(int),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.path").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerPathMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerPathMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["value"].(string),
 			upcloud.BoolPtr(v["ignore_case"].(bool)),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.url").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerURLMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerURLMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["value"].(string),
 			upcloud.BoolPtr(v["ignore_case"].(bool)),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.url_query").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerURLQueryMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerURLQueryMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["value"].(string),
 			upcloud.BoolPtr(v["ignore_case"].(bool)),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.host").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerHostMatcher(v["value"].(string)))
+		m = appendMatcher(m, request.NewLoadBalancerHostMatcher(v["value"].(string)), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.http_method").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerHTTPMethodMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerHTTPMethodMatcher(
 			upcloud.LoadBalancerHTTPMatcherMethod(v["value"].(string)),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.cookie").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerCookieMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerCookieMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["name"].(string),
 			v["value"].(string),
 			upcloud.BoolPtr(v["ignore_case"].(bool)),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.header").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerHeaderMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerHeaderMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["name"].(string),
 			v["value"].(string),
 			upcloud.BoolPtr(v["ignore_case"].(bool)),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.url_param").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerURLParamMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerURLParamMatcher(
 			upcloud.LoadBalancerStringMatcherMethod(v["method"].(string)),
 			v["name"].(string),
 			v["value"].(string),
 			upcloud.BoolPtr(v["ignore_case"].(bool)),
-		))
+		), v["inverse"])
 	}
 
 	for _, v := range d.Get("matchers.0.num_members_up").([]interface{}) {
 		v := v.(map[string]interface{})
-		m = append(m, request.NewLoadBalancerNumMembersUpMatcher(
+		m = appendMatcher(m, request.NewLoadBalancerNumMembersUpMatcher(
 			upcloud.LoadBalancerIntegerMatcherMethod(v["method"].(string)),
 			v["value"].(int),
 			v["backend_name"].(string),
-		))
+		), v["inverse"])
 	}
 
 	return m, nil
@@ -500,7 +529,8 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 		switch m.Type {
 		case upcloud.LoadBalancerMatcherTypeSrcIP:
 			v = map[string]interface{}{
-				"value": m.SrcIP.Value,
+				"value":   m.SrcIP.Value,
+				"inverse": m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeSrcPort:
 			if m.SrcPort.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
@@ -509,11 +539,13 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				v = map[string]interface{}{
 					"range_start": m.SrcPort.RangeStart,
 					"range_end":   m.SrcPort.RangeEnd,
+					"inverse":     m.Inverse,
 				}
 			} else {
 				v = map[string]interface{}{
-					"method": m.SrcPort.Method,
-					"value":  m.SrcPort.Value,
+					"method":  m.SrcPort.Method,
+					"value":   m.SrcPort.Value,
+					"inverse": m.Inverse,
 				}
 			}
 		case upcloud.LoadBalancerMatcherTypeBodySize:
@@ -523,11 +555,13 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				v = map[string]interface{}{
 					"range_start": m.BodySize.RangeStart,
 					"range_end":   m.BodySize.RangeEnd,
+					"inverse":     m.Inverse,
 				}
 			} else {
 				v = map[string]interface{}{
-					"method": m.BodySize.Method,
-					"value":  m.BodySize.Value,
+					"method":  m.BodySize.Method,
+					"value":   m.BodySize.Value,
+					"inverse": m.Inverse,
 				}
 			}
 		case upcloud.LoadBalancerMatcherTypePath:
@@ -535,12 +569,14 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				"value":       m.Path.Value,
 				"ignore_case": m.Path.IgnoreCase,
 				"method":      m.Path.Method,
+				"inverse":     m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeURL:
 			v = map[string]interface{}{
 				"value":       m.URL.Value,
 				"ignore_case": m.URL.IgnoreCase,
 				"method":      m.URL.Method,
+				"inverse":     m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeURLParam:
 			v = map[string]interface{}{
@@ -548,20 +584,24 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				"ignore_case": m.URLParam.IgnoreCase,
 				"name":        m.URLParam.Name,
 				"method":      m.URLParam.Method,
+				"inverse":     m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeURLQuery:
 			v = map[string]interface{}{
 				"value":       m.URLQuery.Value,
 				"ignore_case": m.URLQuery.IgnoreCase,
 				"method":      m.URLQuery.Method,
+				"inverse":     m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeHost:
 			v = map[string]interface{}{
-				"value": m.Host.Value,
+				"value":   m.Host.Value,
+				"inverse": m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeHTTPMethod:
 			v = map[string]interface{}{
-				"value": m.HTTPMethod.Value,
+				"value":   m.HTTPMethod.Value,
+				"inverse": m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeCookie:
 			v = map[string]interface{}{
@@ -569,6 +609,7 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				"name":        m.Cookie.Name,
 				"method":      m.Cookie.Method,
 				"ignore_case": m.Cookie.IgnoreCase,
+				"inverse":     m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeHeader:
 			v = map[string]interface{}{
@@ -576,12 +617,14 @@ func setFrontendRuleMatchersResourceData(d *schema.ResourceData, rule *upcloud.L
 				"name":        m.Header.Name,
 				"method":      m.Header.Method,
 				"ignore_case": m.Header.IgnoreCase,
+				"inverse":     m.Inverse,
 			}
 		case upcloud.LoadBalancerMatcherTypeNumMembersUp:
 			v = map[string]interface{}{
 				"value":        m.NumMembersUp.Value,
 				"method":       m.NumMembersUp.Method,
 				"backend_name": m.NumMembersUp.Backend,
+				"inverse":      m.Inverse,
 			}
 		default:
 			return fmt.Errorf("received unsupported matcher type '%s' %+v", m.Type, m)
