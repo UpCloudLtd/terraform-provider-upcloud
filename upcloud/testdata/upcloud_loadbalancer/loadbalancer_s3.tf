@@ -71,6 +71,108 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
   }
 }
 
+resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
+  frontend = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
+  name     = "lb-fe-1-r1-test"
+  priority = 10
+
+  matchers {
+    src_port {
+      method  = "equal"
+      value   = 80
+      inverse = true
+    }
+    src_port_range {
+      range_start = 100
+      range_end   = 1000
+      inverse     = true
+    }
+    src_ip {
+      value   = "192.168.0.0/24"
+      inverse = true
+    }
+    body_size {
+      method  = "equal"
+      value   = 8000
+      inverse = true
+    }
+    body_size_range {
+      range_start = 1000
+      range_end   = 1001
+      inverse     = true
+    }
+    path {
+      method      = "starts"
+      value       = "/application"
+      ignore_case = true
+      inverse     = true
+    }
+    url {
+      method      = "starts"
+      value       = "/application"
+      ignore_case = true
+      inverse     = true
+    }
+    url_query {
+      method  = "starts"
+      value   = "type=app"
+      inverse = true
+    }
+    host {
+      value   = "example.com"
+      inverse = true
+    }
+    http_method {
+      value   = "PATCH"
+      inverse = true
+    }
+    cookie {
+      method  = "exact"
+      name    = "x-session-id"
+      value   = "123456"
+      inverse = true
+    }
+    header {
+      method      = "exact"
+      name        = "status"
+      value       = "active"
+      ignore_case = true
+      inverse     = true
+    }
+    url_param {
+      method      = "exact"
+      name        = "status"
+      value       = "active"
+      ignore_case = true
+      inverse     = true
+    }
+    num_members_up {
+      method       = "less"
+      value        = 1
+      backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+      inverse      = true
+    }
+  }
+  actions {
+    use_backend {
+      backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+    }
+    http_redirect {
+      location = "/app"
+    }
+    http_redirect {
+      scheme = "https"
+    }
+    http_return {
+      content_type = "text/plain"
+      payload      = base64encode("Resource not found!")
+      status       = "404"
+    }
+    tcp_reject {}
+    set_forwarded_headers {}
+  }
+}
+
 resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
   loadbalancer  = resource.upcloud_loadbalancer.lb.id
   name          = "lb-resolver-1-test-1"
