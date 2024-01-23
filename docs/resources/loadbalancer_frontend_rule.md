@@ -169,6 +169,10 @@ Required:
 - `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
 - `value` (Number) Integer value.
 
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+
 
 <a id="nestedblock--matchers--body_size_range"></a>
 ### Nested Schema for `matchers.body_size_range`
@@ -177,6 +181,10 @@ Required:
 
 - `range_end` (Number) Integer value.
 - `range_start` (Number) Integer value.
+
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 
 
 <a id="nestedblock--matchers--cookie"></a>
@@ -190,6 +198,7 @@ Required:
 Optional:
 
 - `ignore_case` (Boolean) Ignore case, default `false`.
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -204,6 +213,7 @@ Required:
 Optional:
 
 - `ignore_case` (Boolean) Ignore case, default `false`.
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -214,6 +224,10 @@ Required:
 
 - `value` (String) String value.
 
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+
 
 <a id="nestedblock--matchers--http_method"></a>
 ### Nested Schema for `matchers.http_method`
@@ -221,6 +235,10 @@ Required:
 Required:
 
 - `value` (String) String value (`GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT`, `OPTIONS`, `TRACE`).
+
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 
 
 <a id="nestedblock--matchers--num_members_up"></a>
@@ -231,6 +249,10 @@ Required:
 - `backend_name` (String) The name of the `backend` which members will be monitored.
 - `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
 - `value` (Number) Integer value.
+
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 
 
 <a id="nestedblock--matchers--path"></a>
@@ -243,6 +265,7 @@ Required:
 Optional:
 
 - `ignore_case` (Boolean) Ignore case, default `false`.
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -253,6 +276,10 @@ Required:
 
 - `value` (String) IP address. CIDR masks are supported, e.g. `192.168.0.0/24`.
 
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+
 
 <a id="nestedblock--matchers--src_port"></a>
 ### Nested Schema for `matchers.src_port`
@@ -262,6 +289,10 @@ Required:
 - `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
 - `value` (Number) Integer value.
 
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+
 
 <a id="nestedblock--matchers--src_port_range"></a>
 ### Nested Schema for `matchers.src_port_range`
@@ -270,6 +301,10 @@ Required:
 
 - `range_end` (Number) Integer value.
 - `range_start` (Number) Integer value.
+
+Optional:
+
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 
 
 <a id="nestedblock--matchers--url"></a>
@@ -282,6 +317,7 @@ Required:
 Optional:
 
 - `ignore_case` (Boolean) Ignore case, default `false`.
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -296,6 +332,7 @@ Required:
 Optional:
 
 - `ignore_case` (Boolean) Ignore case, default `false`.
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -309,6 +346,7 @@ Required:
 Optional:
 
 - `ignore_case` (Boolean) Ignore case, default `false`.
+- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
 - `value` (String) String value.
 
 
