@@ -54,6 +54,12 @@ func ResourceServer() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"server_group": {
+				Type:        schema.TypeString,
+				Description: "The UUID of a server group to attach this server to. Note that the server can also be attached to a server group via the `members` property of `upcloud_server_group`. Only one of the these should be defined at a time. This value is only updated if it has been set to non-zero value.",
+				Default:     "",
+				Optional:    true,
+			},
 			"firewall": {
 				Description: "Are firewall rules active for the server",
 				Type:        schema.TypeBool,
@@ -534,6 +540,11 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		_ = d.Set("tags", server.Tags)
 	}
 
+	// Only track server_group when it has been configured to avoid changes when server is attached to group via upcloud_server_group.members.
+	if _, ok := d.GetOk("server_group"); ok {
+		_ = d.Set("server_group", server.ServerGroup)
+	}
+
 	if server.Firewall == "on" {
 		_ = d.Set("firewall", true)
 	} else {
@@ -735,6 +746,20 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
+	if d.HasChange("server_group") {
+		oldGroup, newGroup := d.GetChange("server_group")
+
+		err = removeServerFromGroup(ctx, client, d.Id(), oldGroup.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		err = addServerToGroup(ctx, client, d.Id(), newGroup.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	if d.HasChange("tags") {
 		oldTags, newTags := d.GetChange("tags")
 		if err := updateTags(
@@ -930,6 +955,9 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 		Hostname: d.Get("hostname").(string),
 	}
 
+	if attr, ok := d.GetOk("server_group"); ok {
+		r.ServerGroup = attr.(string)
+	}
 	if attr, ok := d.GetOk("firewall"); ok {
 		if attr.(bool) {
 			r.Firewall = "on"

@@ -9,13 +9,15 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
-	titleDescription   = "Title of your server group"
-	membersDescription = "UUIDs of the servers that are members of this group"
+	titleDescription        = "Title of your server group"
+	membersDescription      = "UUIDs of the servers that are members of this group. Servers can also be attached to the server group via `server_group` property of `upcloud_server`. See also `track_members` property."
+	trackMembersDescription = "Controls if members of the server group are being tracked in this resource. Set to `false` when using `server_group` property of `upcloud_server` to attach servers to the server group to avoid delayed state updates."
 	// Lines > 1 should have one level of indentation to keep them under the right list item
 	antiAffinityPolicyDescription = `Defines if a server group is an anti-affinity group. Setting this to ` + "`strict` or `yes`" + ` will
 	result in all servers in the group being placed on separate compute hosts. The value can be ` + "`strict`, `yes`, or `no`" + `.
@@ -56,6 +58,12 @@ func ResourceServerGroup() *schema.Resource {
 				},
 				Optional: true,
 			},
+			"track_members": {
+				Description: trackMembersDescription,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
 			"anti_affinity_policy": {
 				Description: antiAffinityPolicyDescription,
 				Type:        schema.TypeString,
@@ -68,6 +76,9 @@ func ResourceServerGroup() *schema.Resource {
 				}, false)),
 			},
 		},
+		CustomizeDiff: customdiff.Sequence(
+			validateTrackMembers,
+		),
 	}
 }
 
@@ -172,8 +183,10 @@ func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) erro
 		return err
 	}
 
-	if err := d.Set("members", group.Members); err != nil {
-		return err
+	if d.Get("track_members").(bool) {
+		if err := d.Set("members", group.Members); err != nil {
+			return err
+		}
 	}
 
 	return d.Set("labels", utils.LabelSliceToMap(group.Labels))
