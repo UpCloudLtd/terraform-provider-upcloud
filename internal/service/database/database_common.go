@@ -118,6 +118,7 @@ func schemaRDBMSDatabaseCommonProperties() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			Sensitive:        true,
+			ForceNew:         true,
 			DiffSuppressFunc: diffSuppressCreateOnlyProperty,
 		},
 		"admin_username": {
@@ -125,6 +126,7 @@ func schemaRDBMSDatabaseCommonProperties() map[string]*schema.Schema {
 			Description:      "Custom username for admin user. This must be set only when a new service is being created.",
 			Optional:         true,
 			Computed:         true,
+			ForceNew:         true,
 			DiffSuppressFunc: diffSuppressCreateOnlyProperty,
 		},
 		"backup_hour": {

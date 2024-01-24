@@ -13,6 +13,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_loadbalancer_frontend_rule: add `inverse` option to rule matchers.
 - storage: Add support for encryption.
 
+### Fixed
+
+- upcloud_managed_database_mysql: changing property `admin_password` or `admin_username` forces resource re-creation
+- upcloud_managed_database_postgresql: changing property `admin_password` or `admin_username` forces resource re-creation
+
 ## [3.3.1] - 2024-01-10
 
 ### Added

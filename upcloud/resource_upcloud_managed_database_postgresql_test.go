@@ -105,6 +105,8 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, prop("admin_username"), "demoadmin"),
+					resource.TestCheckResourceAttr(name, prop("admin_password"), "2VCNXEV6SVfpr3"),
 					resource.TestCheckResourceAttr(name, prop("pg_stat_monitor_pgsm_max_buckets"), "10"),
 					resource.TestCheckResourceAttr(name, prop("pg_stat_monitor_pgsm_enable_query_plan"), "true"),
 					resource.TestCheckResourceAttr(name, prop("log_temp_files"), "16"),

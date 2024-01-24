@@ -71,6 +71,8 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, prop("admin_username"), "demoadmin"),
+					resource.TestCheckResourceAttr(name, prop("admin_password"), "2VCNXEV6SVfpr3X1"),
 					resource.TestCheckResourceAttr(name, prop("innodb_read_io_threads"), "10"),
 					resource.TestCheckResourceAttr(name, prop("innodb_flush_neighbors"), "0"),
 					resource.TestCheckResourceAttr(name, prop("innodb_change_buffer_max_size"), "26"),
