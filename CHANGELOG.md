@@ -9,6 +9,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - server: Add `server_group` field to allow configuring anti-affinity group when creating the server.
 - upcloud_loadbalancer_frontend_rule: add `inverse` option to rule matchers.
+- storage: Add support for encryption.
 
 ## [3.3.1] - 2024-01-10
 

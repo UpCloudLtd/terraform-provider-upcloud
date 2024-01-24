@@ -311,6 +311,12 @@ func ResourceServer() *schema.Resource {
 							Computed:    true,
 							Optional:    true,
 						},
+						"encrypt": {
+							Description: "Sets if the storage is encrypted at rest",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							ForceNew:    true,
+						},
 						"size": {
 							Description:  "The size of the storage in gigabytes",
 							Type:         schema.TypeInt,
@@ -599,6 +605,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 				"address":          utils.StorageAddressFormat(serverStorage.Address),
 				"address_position": utils.StorageAddressPositionFormat(serverStorage.Address),
 				"id":               serverStorage.UUID,
+				"encrypt":          serverStorage.Encrypted.Bool(),
 				"size":             serverStorage.Size,
 				"title":            serverStorage.Title,
 				"storage":          d.Get("template.0.storage"),
@@ -1025,11 +1032,12 @@ func buildServerOpts(ctx context.Context, d *schema.ResourceData, meta interface
 			address += fmt.Sprintf(":%s", position)
 		}
 		serverStorageDevice := request.CreateServerStorageDevice{
-			Action:  "clone",
-			Address: address,
-			Size:    template["size"].(int),
-			Storage: template["storage"].(string),
-			Title:   template["title"].(string),
+			Action:    "clone",
+			Address:   address,
+			Encrypted: upcloud.FromBool(template["encrypt"].(bool)),
+			Size:      template["size"].(int),
+			Storage:   template["storage"].(string),
+			Title:     template["title"].(string),
 		}
 		if attr, ok := d.GetOk("template.0.backup_rule.0"); ok {
 			serverStorageDevice.BackupRule = storage.BackupRule(attr.(map[string]interface{}))
