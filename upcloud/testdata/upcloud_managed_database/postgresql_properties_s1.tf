@@ -62,7 +62,6 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     pg_partman_bgw_interval             = 3600
     pg_partman_bgw_role                 = "upadmin"
     pg_stat_statements_track            = "all"
-    pg_read_replica                     = false
     pgbouncer {
       autodb_idle_timeout       = 1
       autodb_max_db_connections = 1

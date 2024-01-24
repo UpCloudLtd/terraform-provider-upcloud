@@ -83,7 +83,6 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("pg_partman_bgw_interval"), "3600"),
 					resource.TestCheckResourceAttr(name, prop("pg_partman_bgw_role"), "upadmin"),
 					resource.TestCheckResourceAttr(name, prop("pg_stat_statements_track"), "all"),
-					resource.TestCheckResourceAttr(name, prop("pg_read_replica"), "false"),
 					resource.TestCheckResourceAttr(name, prop("pgbouncer.0.autodb_idle_timeout"), "1"),
 					resource.TestCheckResourceAttr(name, prop("pgbouncer.0.autodb_max_db_connections"), "1"),
 					resource.TestCheckResourceAttr(name, prop("pgbouncer.0.autodb_pool_mode"), "session"),

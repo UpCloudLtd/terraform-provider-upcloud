@@ -19,6 +19,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_loadbalancer_frontend_rule: add `inverse` option to rule matchers.
 - storage: Add support for encryption.
 
+### Removed
+
+- upcloud_managed_database_postgresql:  `pg_read_replica`
+
 ## [3.3.1] - 2024-01-10
 
 ### Added
