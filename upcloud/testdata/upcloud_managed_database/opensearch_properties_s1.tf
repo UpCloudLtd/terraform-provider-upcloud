@@ -1,7 +1,8 @@
 resource "upcloud_managed_database_opensearch" "opensearch_properties" {
-  name = "opensearch-properties-test-1"
-  plan = "1x2xCPU-4GB-80GB-1D"
-  zone = "fi-hel2"
+  name  = "opensearch-properties-test-1"
+  title = "opensearch-properties-test-1"
+  plan  = "1x2xCPU-4GB-80GB-1D"
+  zone  = "fi-hel2"
   properties {
     automatic_utility_network_ip_filter = false
     public_access                       = false

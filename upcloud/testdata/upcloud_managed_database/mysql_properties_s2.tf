@@ -1,7 +1,8 @@
 resource "upcloud_managed_database_mysql" "mysql_properties" {
-  name = "mysql-properties-test"
-  plan = "1x1xCPU-2GB-25GB"
-  zone = "fi-hel2"
+  name  = "mysql-properties-test"
+  title = "mysql-properties-test"
+  plan  = "1x1xCPU-2GB-25GB"
+  zone  = "fi-hel2"
   properties {
     innodb_read_io_threads        = 10
     innodb_flush_neighbors        = 0
