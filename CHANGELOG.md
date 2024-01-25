@@ -20,7 +20,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_database resources: `title` field is required
+- **Breaking**, upcloud_managed_database resources: `title` field is required
 
 ## [3.3.1] - 2024-01-10
 
