@@ -202,7 +202,10 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 		//
 		// This might need more thinking, but for now, exclude field from the request if
 		// it's not boolean, has type's "zero" value and value hasn't changed.
-		if _, isBool := value.(bool); !isBool && !isNotZero && !d.HasChange(key) {
+		_, isBool := value.(bool)
+		hasChange := d.HasChange(key)
+
+		if !isBool && !isNotZero && !hasChange {
 			continue
 		}
 		switch field {
@@ -210,6 +213,10 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 			// convert resource data list of objects into API objects
 			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
 				r[upcloud.ManagedDatabasePropertyKey(field)] = listValue[0]
+			}
+		case "admin_password", "admin_username":
+			if !hasChange {
+				continue
 			}
 		default:
 			r[upcloud.ManagedDatabasePropertyKey(field)] = value
