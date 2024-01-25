@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
@@ -501,7 +500,6 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	_, err = client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 		UUID:         serverDetails.UUID,
 		DesiredState: upcloud.ServerStateStarted,
-		Timeout:      time.Minute * 25,
 	})
 
 	if err != nil {

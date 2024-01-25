@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
@@ -80,7 +79,6 @@ func cloneStorage(
 	originalStorageDevice, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         cloneStorageRequest.UUID,
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -98,7 +96,6 @@ func cloneStorage(
 	storage, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         storage.UUID,
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -117,7 +114,6 @@ func cloneStorage(
 		_, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 			UUID:         storage.UUID,
 			DesiredState: upcloud.StorageStateOnline,
-			Timeout:      15 * time.Minute,
 		})
 		if err != nil {
 			return diag.FromErr(err)
@@ -175,7 +171,6 @@ func createStorage(
 	_, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         storage.UUID,
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -190,7 +185,6 @@ func createStorage(
 
 		_, err = client.WaitForStorageImportCompletion(ctx, &request.WaitForStorageImportCompletionRequest{
 			StorageUUID: storage.UUID,
-			Timeout:     15 * time.Minute,
 		})
 		if err != nil {
 			return diagAndTidy(ctx, client, storage.UUID, err)
@@ -201,7 +195,6 @@ func createStorage(
 		_, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 			UUID:         storage.UUID,
 			DesiredState: upcloud.StorageStateSyncing,
-			Timeout:      15 * time.Minute,
 		})
 		if err != nil {
 			return diagAndTidy(ctx, client, storage.UUID, err)
@@ -234,7 +227,6 @@ func diagAndTidy(ctx context.Context, client *service.Service, storageUUID strin
 	_, waitErr := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         storageUUID,
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if waitErr != nil {
 		return diag.Errorf("wait for storage after import error: %s", waitErr.Error())

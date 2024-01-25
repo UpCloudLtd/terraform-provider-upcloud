@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
@@ -191,7 +190,6 @@ func resourceFirewallRulesCreate(ctx context.Context, d *schema.ResourceData, me
 	if _, err := client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 		UUID:           opts.ServerUUID,
 		UndesiredState: upcloud.ServerStateMaintenance,
-		Timeout:        time.Minute * 5,
 	}); err != nil {
 		return diag.FromErr(err)
 	}
@@ -317,7 +315,6 @@ func resourceFirewallRulesDelete(ctx context.Context, d *schema.ResourceData, me
 	if _, err := client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 		UUID:           opts.ServerUUID,
 		UndesiredState: upcloud.ServerStateMaintenance,
-		Timeout:        time.Minute * 5,
 	}); err != nil {
 		return diag.FromErr(err)
 	}

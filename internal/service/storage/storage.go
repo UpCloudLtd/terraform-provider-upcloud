@@ -306,7 +306,6 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -390,7 +389,6 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)

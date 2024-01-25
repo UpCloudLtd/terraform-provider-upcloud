@@ -37,7 +37,6 @@ func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequ
 		_, err = client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 			UUID:         stopRequest.UUID,
 			DesiredState: upcloud.ServerStateStopped,
-			Timeout:      time.Minute * 5,
 		})
 		if err != nil {
 			return err
@@ -65,7 +64,6 @@ func VerifyServerStarted(ctx context.Context, startRequest request.StartServerRe
 		_, err = client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 			UUID:         startRequest.UUID,
 			DesiredState: upcloud.ServerStateStarted,
-			Timeout:      time.Minute * 5,
 		})
 		if err != nil {
 			return err

@@ -144,7 +144,6 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	c, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
 		DesiredState: upcloud.KubernetesClusterStateRunning,
-		Timeout:      time.Minute * 20,
 		UUID:         c.UUID,
 	})
 	if err != nil {
@@ -191,7 +190,6 @@ func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta int
 
 	c, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
 		DesiredState: upcloud.KubernetesClusterStateRunning,
-		Timeout:      time.Minute * 20,
 		UUID:         c.UUID,
 	})
 	if err != nil {
