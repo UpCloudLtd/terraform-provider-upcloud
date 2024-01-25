@@ -28,9 +28,10 @@ resource "upcloud_managed_database_logical_database" "example_db" {
 
 # MySQL managed database with additional logical database: example2_db 
 resource "upcloud_managed_database_mysql" "example" {
-  name = "mymysql"
-  plan = "1x1xCPU-2GB-25GB"
-  zone = "fi-hel1"
+  name  = "mysql"
+  plan  = "1x1xCPU-2GB-25GB"
+  title = "mysql"
+  zone  = "fi-hel1"
 }
 
 resource "upcloud_managed_database_logical_database" "example2_db" {

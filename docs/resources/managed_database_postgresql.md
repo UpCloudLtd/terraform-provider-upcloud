@@ -42,6 +42,7 @@ resource "upcloud_managed_database_postgresql" "example_2" {
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
 - `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.
+- `title` (String) Title of a managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
@@ -50,7 +51,6 @@ resource "upcloud_managed_database_postgresql" "example_2" {
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service
 - `properties` (Block List, Max: 1) Database Engine properties for PostgreSQL (see [below for nested schema](#nestedblock--properties))
-- `title` (String) Title of a managed database instance
 
 ### Read-Only
 

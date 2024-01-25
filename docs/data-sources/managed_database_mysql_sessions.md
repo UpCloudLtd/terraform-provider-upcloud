@@ -17,9 +17,10 @@ Current sessions of a MySQL managed database
 
 # Create a Managed MySQL resource
 resource "upcloud_managed_database_mysql" "example" {
-  name = "mysql-example1"
-  plan = "1x1xCPU-2GB-25GB"
-  zone = "fi-hel1"
+  name  = "mysql-example1"
+  title = "mysql-example1"
+  plan  = "1x1xCPU-2GB-25GB"
+  zone  = "fi-hel1"
 }
 
 # Read the active sessions of the newly created service

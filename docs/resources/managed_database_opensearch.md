@@ -15,14 +15,16 @@ This resource represents OpenSearch managed database. See UpCloud [Managed Datab
 ```terraform
 # Minimal config
 resource "upcloud_managed_database_opensearch" "example_1" {
-  name = "opensearch-1"
-  plan = "1x2xCPU-4GB-80GB-1D"
-  zone = "fi-hel2"
+  name  = "opensearch-1"
+  title = "opensearch-1-example-1"
+  plan  = "1x2xCPU-4GB-80GB-1D"
+  zone  = "fi-hel2"
 }
 
 # Service with custom properties and access control
 resource "upcloud_managed_database_opensearch" "example_2" {
   name                    = "opensearch-2"
+  title                   = "opensearch-2-example-2"
   plan                    = "1x2xCPU-4GB-80GB-1D"
   zone                    = "fi-hel1"
   access_control          = true
@@ -40,6 +42,7 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
 - `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.
+- `title` (String) Title of a managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
@@ -50,7 +53,6 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service
 - `properties` (Block List, Max: 1) Database Engine properties for OpenSearch (see [below for nested schema](#nestedblock--properties))
-- `title` (String) Title of a managed database instance
 
 ### Read-Only
 

@@ -17,9 +17,10 @@ OpenSearch indices
 
 # Create a Managed OpenSearch resource
 resource "upcloud_managed_database_opensearch" "example" {
-  name = "opensearch-example"
-  plan = "1x2xCPU-4GB-80GB-1D"
-  zone = "fi-hel1"
+  name  = "opensearch-example"
+  title = "opensearch-example"
+  plan  = "1x2xCPU-4GB-80GB-1D"
+  zone  = "fi-hel1"
   properties {
     automatic_utility_network_ip_filter = false
     public_access                       = false

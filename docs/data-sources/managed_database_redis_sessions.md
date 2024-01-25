@@ -17,9 +17,10 @@ Current sessions of a Redis managed database
 
 # Create a Managed Redis resource
 resource "upcloud_managed_database_redis" "example" {
-  name = "example"
-  plan = "1x1xCPU-2GB"
-  zone = "fi-hel2"
+  name  = "example"
+  title = "example"
+  plan  = "1x1xCPU-2GB"
+  zone  = "fi-hel2"
 }
 
 # Read the active sessions of the newly created service
