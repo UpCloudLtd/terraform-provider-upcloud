@@ -15,14 +15,16 @@ This resource represents MySQL managed database. See UpCloud [Managed Databases]
 ```terraform
 # Minimal config
 resource "upcloud_managed_database_mysql" "example_1" {
-  name = "mysql-1"
-  plan = "1x1xCPU-2GB-25GB"
-  zone = "fi-hel1"
+  name  = "mysql-1"
+  title = "mysql-1-example-1"
+  plan  = "1x1xCPU-2GB-25GB"
+  zone  = "fi-hel1"
 }
 
 # Shutdown instance after creation
 resource "upcloud_managed_database_mysql" "example_2" {
   name    = "mysql-2"
+  title   = "mysql-2-example-2"
   plan    = "1x1xCPU-2GB-25GB"
   zone    = "fi-hel1"
   powered = false
@@ -31,9 +33,10 @@ resource "upcloud_managed_database_mysql" "example_2" {
 # Service with custom properties
 # Note that this basically sets strict mode off which is not normally recommended
 resource "upcloud_managed_database_mysql" "example_3" {
-  name = "mysql-3"
-  plan = "1x1xCPU-2GB-25GB"
-  zone = "fi-hel1"
+  name  = "mysql-3"
+  title = "mysql-3-example-3"
+  plan  = "1x1xCPU-2GB-25GB"
+  zone  = "fi-hel1"
   properties {
     sql_mode           = "NO_ENGINE_SUBSTITUTION"
     wait_timeout       = 300
@@ -52,6 +55,7 @@ resource "upcloud_managed_database_mysql" "example_3" {
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
 - `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.
+- `title` (String) Title of a managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
@@ -60,7 +64,6 @@ resource "upcloud_managed_database_mysql" "example_3" {
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service
 - `properties` (Block List, Max: 1) Database Engine properties for MySQL (see [below for nested schema](#nestedblock--properties))
-- `title` (String) Title of a managed database instance
 
 ### Read-Only
 

@@ -15,16 +15,18 @@ This resource represents Redis managed database. See UpCloud [Managed Databases]
 ```terraform
 # Minimal config
 resource "upcloud_managed_database_redis" "example_1" {
-  name = "redis-1"
-  plan = "1x1xCPU-2GB"
-  zone = "fi-hel2"
+  name  = "redis-1"
+  title = "redis-1-example-2"
+  plan  = "1x1xCPU-2GB"
+  zone  = "fi-hel2"
 }
 
 # Service with custom properties
 resource "upcloud_managed_database_redis" "example_2" {
-  name = "redis-2"
-  plan = "1x1xCPU-2GB"
-  zone = "fi-hel1"
+  name  = "redis-2"
+  title = "redis-2-example-2"
+  plan  = "1x1xCPU-2GB"
+  zone  = "fi-hel1"
   properties {
     public_access = false
   }
@@ -38,6 +40,7 @@ resource "upcloud_managed_database_redis" "example_2" {
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
 - `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.
+- `title` (String) Title of a managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
@@ -46,7 +49,6 @@ resource "upcloud_managed_database_redis" "example_2" {
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service
 - `properties` (Block List, Max: 1) Database Engine properties for Redis (see [below for nested schema](#nestedblock--properties))
-- `title` (String) Title of a managed database instance
 
 ### Read-Only
 
