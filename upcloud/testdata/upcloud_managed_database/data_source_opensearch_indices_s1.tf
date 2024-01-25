@@ -1,7 +1,8 @@
 resource "upcloud_managed_database_opensearch" "opensearch_indices" {
-  name = "opensearch-indices-test-1"
-  plan = "1x2xCPU-4GB-80GB-1D"
-  zone = "fi-hel2"
+  name  = "opensearch-indices-test-1"
+  title = "opensearch-indices-test-1"
+  plan  = "1x2xCPU-4GB-80GB-1D"
+  zone  = "fi-hel2"
   properties {
     automatic_utility_network_ip_filter = false
     public_access                       = false

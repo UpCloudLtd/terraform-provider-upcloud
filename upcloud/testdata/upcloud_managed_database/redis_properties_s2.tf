@@ -1,7 +1,8 @@
 resource "upcloud_managed_database_redis" "redis_properties" {
-  name = "tf-redis-properties-test"
-  plan = "1x1xCPU-2GB"
-  zone = "fi-hel2"
+  name  = "tf-redis-properties-test"
+  title = "tf-redis-properties-test"
+  plan  = "1x1xCPU-2GB"
+  zone  = "fi-hel2"
   properties {
     automatic_utility_network_ip_filter     = true
     public_access                           = true

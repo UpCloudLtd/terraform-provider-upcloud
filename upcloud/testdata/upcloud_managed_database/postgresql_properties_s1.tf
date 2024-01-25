@@ -1,7 +1,8 @@
 resource "upcloud_managed_database_postgresql" "postgresql_properties" {
-  name = "postgresql-properties-test"
-  plan = "1x1xCPU-2GB-25GB"
-  zone = "fi-hel1"
+  name  = "postgresql-properties-test"
+  title = "postgresql-properties-test"
+  plan  = "1x1xCPU-2GB-25GB"
+  zone  = "fi-hel1"
   properties {
     timezone                            = "Europe/Helsinki"
     admin_username                      = "demoadmin"

@@ -1,7 +1,8 @@
 resource "upcloud_managed_database_mysql" "mysql_properties" {
-  name = "mysql-properties-test"
-  plan = "1x1xCPU-2GB-25GB"
-  zone = "fi-hel2"
+  name  = "mysql-properties-test"
+  title = "mysql-properties-test"
+  plan  = "1x1xCPU-2GB-25GB"
+  zone  = "fi-hel2"
   properties {
     admin_username                      = "demoadmin"
     admin_password                      = "2VCNXEV6SVfpr3X1"

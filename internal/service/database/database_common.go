@@ -89,7 +89,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 		"title": {
 			Description:  "Title of a managed database instance",
 			Type:         schema.TypeString,
-			Optional:     true,
+			Required:     true,
 			ValidateFunc: validation.StringLenBetween(0, 255),
 		},
 		"type": {
