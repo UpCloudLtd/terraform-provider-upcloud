@@ -1,4 +1,5 @@
 resource "upcloud_managed_object_storage" "this" {
+  name              = "example"
   region            = "europe-1"
   configured_status = "started"
   users             = ["example"]
