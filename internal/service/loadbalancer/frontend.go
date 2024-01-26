@@ -261,7 +261,7 @@ func frontendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBal
 	}
 	return &upcloud.LoadBalancerFrontendProperties{
 		TimeoutClient:        d.Get("properties.0.timeout_client").(int),
-		InboundProxyProtocol: d.Get("properties.0.inbound_proxy_protocol").(bool),
+		InboundProxyProtocol: upcloud.BoolPtr(d.Get("properties.0.inbound_proxy_protocol").(bool)),
 		HTTP2Enabled:         upcloud.BoolPtr(d.Get("properties.0.http2_enabled").(bool)),
 	}
 }

@@ -225,7 +225,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
 		if v, ok := d.Get("pg_access_control.0.allow_replication").(bool); ok {
 			req.PGAccessControl = &upcloud.ManagedDatabaseUserPGAccessControl{
-				AllowReplication: v,
+				AllowReplication: &v,
 			}
 		}
 	case upcloud.ManagedDatabaseServiceTypeRedis:
@@ -399,10 +399,10 @@ func copyUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedD
 	if details.RedisAccessControl != nil {
 		if err := d.Set("redis_access_control", []map[string][]string{
 			{
-				"categories": details.RedisAccessControl.Categories,
-				"channels":   details.RedisAccessControl.Channels,
-				"commands":   details.RedisAccessControl.Commands,
-				"keys":       details.RedisAccessControl.Keys,
+				"categories": *details.RedisAccessControl.Categories,
+				"channels":   *details.RedisAccessControl.Channels,
+				"commands":   *details.RedisAccessControl.Commands,
+				"keys":       *details.RedisAccessControl.Keys,
 			},
 		}); err != nil {
 			return diag.FromErr(err)
@@ -417,7 +417,7 @@ func modifyPostgreSQLUserAccessControl(ctx context.Context, svc *service.Service
 		ServiceUUID: d.Get("service").(string),
 		Username:    d.Get("username").(string),
 		PGAccessControl: &upcloud.ManagedDatabaseUserPGAccessControl{
-			AllowReplication: d.Get("pg_access_control.0.allow_replication").(bool),
+			AllowReplication: upcloud.BoolPtr(d.Get("pg_access_control.0.allow_replication").(bool)),
 		},
 	}
 	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
@@ -435,28 +435,32 @@ func modifyRedisUserAccessControl(ctx context.Context, svc *service.Service, d *
 func redisAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserRedisAccessControl {
 	acl := &upcloud.ManagedDatabaseUserRedisAccessControl{}
 	if v, ok := d.Get("redis_access_control.0.categories").([]interface{}); ok {
-		acl.Categories = make([]string, len(v))
+		categories := make([]string, len(v))
 		for i := range v {
-			acl.Categories[i] = v[i].(string)
+			categories[i] = v[i].(string)
 		}
+		acl.Categories = &categories
 	}
 	if v, ok := d.Get("redis_access_control.0.channels").([]interface{}); ok {
-		acl.Channels = make([]string, len(v))
+		channels := make([]string, len(v))
 		for i := range v {
-			acl.Channels[i] = v[i].(string)
+			channels[i] = v[i].(string)
 		}
+		acl.Channels = &channels
 	}
 	if v, ok := d.Get("redis_access_control.0.commands").([]interface{}); ok {
-		acl.Commands = make([]string, len(v))
+		commands := make([]string, len(v))
 		for i := range v {
-			acl.Commands[i] = v[i].(string)
+			commands[i] = v[i].(string)
 		}
+		acl.Commands = &commands
 	}
 	if v, ok := d.Get("redis_access_control.0.keys").([]interface{}); ok {
-		acl.Keys = make([]string, len(v))
+		keys := make([]string, len(v))
 		for i := range v {
-			acl.Keys[i] = v[i].(string)
+			keys[i] = v[i].(string)
 		}
+		acl.Keys = &keys
 	}
 	return acl
 }
@@ -464,15 +468,16 @@ func redisAccessControlFromResourceData(d *schema.ResourceData) *upcloud.Managed
 func openSearchAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserOpenSearchAccessControl {
 	acl := &upcloud.ManagedDatabaseUserOpenSearchAccessControl{}
 	if v, ok := d.Get("opensearch_access_control.0.rules").([]interface{}); ok {
-		acl.Rules = make([]upcloud.ManagedDatabaseUserOpenSearchAccessControlRule, len(v))
+		rules := make([]upcloud.ManagedDatabaseUserOpenSearchAccessControlRule, len(v))
 		for i := range v {
 			if index, ok := d.Get(fmt.Sprintf("opensearch_access_control.0.rules.%d.index", i)).(string); ok {
-				acl.Rules[i].Index = index
+				rules[i].Index = index
 			}
 			if permission, ok := d.Get(fmt.Sprintf("opensearch_access_control.0.rules.%d.permission", i)).(string); ok {
-				acl.Rules[i].Permission = upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermission(permission)
+				rules[i].Permission = upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermission(permission)
 			}
 		}
+		acl.Rules = &rules
 	}
 	return acl
 }

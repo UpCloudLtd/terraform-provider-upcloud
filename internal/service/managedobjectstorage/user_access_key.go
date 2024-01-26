@@ -89,7 +89,7 @@ func resourceManagedObjectStorageUserAccessKeyCreate(ctx context.Context, d *sch
 		Username:    d.Get("username").(string),
 		ServiceUUID: d.Get("service_uuid").(string),
 		Name:        d.Get("name").(string),
-		Enabled:     d.Get("enabled").(bool),
+		Enabled:     upcloud.BoolPtr(d.Get("enabled").(bool)),
 	}
 
 	accessKey, err := svc.CreateManagedObjectStorageUserAccessKey(ctx, req)
@@ -135,7 +135,7 @@ func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *sch
 	}
 
 	req := &request.ModifyManagedObjectStorageUserAccessKeyRequest{
-		Enabled:     d.Get("enabled").(bool),
+		Enabled:     upcloud.BoolPtr(d.Get("enabled").(bool)),
 		ServiceUUID: serviceUUID,
 		Username:    username,
 		Name:        name,

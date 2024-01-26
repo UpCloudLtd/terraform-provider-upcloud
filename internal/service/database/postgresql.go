@@ -397,21 +397,6 @@ func schemaPostgreSQLProperties() map[string]*schema.Schema {
 			ValidateDiagFunc: validation.ToDiagFunc(
 				validation.StringMatch(regexp.MustCompile("^[_A-Za-z0-9][-._A-Za-z0-9]{0,63}$"), "must match '^[_A-Za-z0-9][-._A-Za-z0-9]{0,63}$' pattern e.g. 'myrolename'")),
 		},
-		"pg_read_replica": {
-			Deprecated:  "Use read_replica service integration instead",
-			Type:        schema.TypeBool,
-			Description: "Should the service which is being forked be a read replica (deprecated, use read_replica service integration instead).",
-			Optional:    true,
-			Computed:    true,
-		},
-		"pg_service_to_fork_from": {
-			Type:             schema.TypeString,
-			Description:      "Name of the PG Service from which to fork (deprecated, use service_to_fork_from). This has effect only when a new service is being created.",
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressCreateOnlyProperty,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(1, 64)),
-		},
 		"pg_stat_statements_track": {
 			Type: schema.TypeString,
 			Description: `Controls which statements are counted. 
