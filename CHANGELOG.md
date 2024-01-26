@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [4.0.0] - 2024-01-26
+
 ### Added
 - upcloud_managed_database_redis: `redis_version` property
 
@@ -473,7 +475,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.4.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.4.0...v4.0.0
 [3.4.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.3.1...v3.4.0
 [3.3.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.2.0...v3.3.0
