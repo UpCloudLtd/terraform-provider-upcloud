@@ -164,5 +164,11 @@ func schemaRedisProperties() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"redis_version": {
+			Type:        schema.TypeString,
+			Description: "Redis major version.",
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }

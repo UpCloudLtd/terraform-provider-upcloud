@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- upcloud_managed_database_redis: `redis_version` property
+
 ### Changed
 
 - **Breaking**, upcloud_managed_database_mysql: changing property `admin_password` or `admin_username` forces resource re-creation
