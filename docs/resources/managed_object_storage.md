@@ -33,6 +33,7 @@ resource "upcloud_network" "this" {
 }
 
 resource "upcloud_managed_object_storage" "this" {
+  name              = "example"
   region            = "europe-1"
   configured_status = "started"
 
@@ -64,7 +65,7 @@ resource "upcloud_managed_object_storage" "this" {
 
 - `labels` (Map of String) Key-value pairs to classify the managed object storage.
 - `network` (Block Set) Attached networks from where object storage can be used. Private networks must reside in object storage region. To gain access from multiple private networks that might reside in different zones, create the networks and a corresponding router for each network. (see [below for nested schema](#nestedblock--network))
-- `users` (Set of String) List of UpCloud API users allowed to use object storage. Valid values include current account and it's sub-accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys.
+- `users` (Set of String) List of custom usernames for accessing the object storage. No relation to UpCloud API accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys.
 
 ### Read-Only
 
