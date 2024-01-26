@@ -72,7 +72,7 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("max_worker_processes"), "8"),
 					resource.TestCheckResourceAttr(name, prop("public_access"), "false"),
 					resource.TestCheckResourceAttr(name, prop("shared_buffers_percentage"), "20"),
-					resource.TestCheckResourceAttr(name, prop("synchronous_replication"), "off"),
+					resource.TestCheckResourceAttr(name, prop("synchronous_replication"), ""),
 					resource.TestCheckResourceAttr(name, prop("temp_file_limit"), "1"),
 					resource.TestCheckResourceAttr(name, prop("track_activity_query_size"), "1024"),
 					resource.TestCheckResourceAttr(name, prop("track_commit_timestamp"), "on"),

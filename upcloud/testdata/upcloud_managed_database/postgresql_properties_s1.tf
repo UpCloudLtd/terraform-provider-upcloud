@@ -48,13 +48,11 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     max_worker_processes                = 8
     public_access                       = false
     shared_buffers_percentage           = 20
-    synchronous_replication             = "off"
     temp_file_limit                     = 1
     track_activity_query_size           = 1024
     track_commit_timestamp              = "on"
     track_functions                     = "all"
     track_io_timing                     = "on"
-    variant                             = "aiven"
     version                             = "15"
     wal_sender_timeout                  = 60000
     wal_writer_delay                    = 10
