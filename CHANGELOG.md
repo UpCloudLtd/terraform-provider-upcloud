@@ -17,6 +17,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 - **Breaking**, upcloud_managed_database_postgresql: `pg_read_replica` property
+- **Breaking**, upcloud_managed_database_postgresql: `pg_service_to_fork_from` property
 
 ## [3.4.0] - 2024-01-25
 
