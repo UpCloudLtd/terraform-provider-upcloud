@@ -78,7 +78,7 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("track_commit_timestamp"), "on"),
 					resource.TestCheckResourceAttr(name, prop("track_functions"), "all"),
 					resource.TestCheckResourceAttr(name, prop("track_io_timing"), "on"),
-					resource.TestCheckResourceAttr(name, prop("variant"), "aiven"),
+					resource.TestCheckResourceAttr(name, prop("variant"), ""),
 					resource.TestCheckResourceAttr(name, prop("version"), "15"),
 					resource.TestCheckResourceAttr(name, prop("pg_partman_bgw_interval"), "3600"),
 					resource.TestCheckResourceAttr(name, prop("pg_partman_bgw_role"), "upadmin"),
