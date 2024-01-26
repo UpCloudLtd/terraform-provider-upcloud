@@ -78,7 +78,7 @@ func ResourceManagedObjectStorage() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"users": {
-				Description: "List of UpCloud API users allowed to use object storage. Valid values include current account and it's sub-accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys.",
+				Description: "List of custom usernames for accessing the object storage. No relation to UpCloud API accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys.",
 				Optional:    true,
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
