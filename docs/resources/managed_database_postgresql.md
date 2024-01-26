@@ -119,8 +119,6 @@ Optional:
 - `migration` (Block List, Max: 1) Migrate data from existing server (see [below for nested schema](#nestedblock--properties--migration))
 - `pg_partman_bgw_interval` (Number) Sets the time interval to run pg_partman's scheduled tasks.
 - `pg_partman_bgw_role` (String) Controls which role to use for pg_partman's scheduled background tasks.
-- `pg_read_replica` (Boolean, Deprecated) Should the service which is being forked be a read replica (deprecated, use read_replica service integration instead).
-- `pg_service_to_fork_from` (String) Name of the PG Service from which to fork (deprecated, use service_to_fork_from). This has effect only when a new service is being created.
 - `pg_stat_monitor_enable` (Boolean) Enable the pg_stat_monitor extension. Enabling this extension will cause the cluster to be restarted.When this extension is enabled, pg_stat_statements results for utility commands are unreliable
 - `pg_stat_monitor_pgsm_enable_query_plan` (Boolean) Enables or disables query plan monitoring
 - `pg_stat_monitor_pgsm_max_buckets` (Number) Sets the maximum number of buckets

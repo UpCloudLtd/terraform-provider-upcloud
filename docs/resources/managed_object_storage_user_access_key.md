@@ -14,6 +14,7 @@ This resource represents an UpCloud Managed Object Storage user access key.
 
 ```terraform
 resource "upcloud_managed_object_storage" "this" {
+  name              = "example"
   region            = "europe-1"
   configured_status = "started"
   users             = ["example"]
