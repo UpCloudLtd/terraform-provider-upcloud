@@ -259,7 +259,7 @@ func ResourceServer() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"scsi", "virtio", "ide"}, false),
 						},
 						"address_position": {
-							Description: "The device position in the given bus (defined via field `address`). For example `0:0`, or `0`. Leave empty to auto-select next available address in the given bus.",
+							Description: "The device position in the given bus (defined via field `address`). Valid values for address `virtio` are `0-15` (`0`, for example). Valid values for `scsi` or `ide` are `0-1:0-1` (`0:0`, for example). Leave empty to auto-select next available address in the given bus.",
 							Type:        schema.TypeString,
 							Computed:    true,
 							Optional:    true,
