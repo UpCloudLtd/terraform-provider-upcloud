@@ -39,6 +39,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
+					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "sunday"),
+					resource.TestCheckResourceAttr(lbName, "maintenance_time", "20:01:01Z"),
 					resource.TestCheckResourceAttrSet(lbName, "dns_name"),
 					resource.TestCheckResourceAttr(lbName, "labels.%", "2"),
 					resource.TestCheckResourceAttr(lbName, "labels.key", "value"),
@@ -142,6 +144,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(lbName, "plan", "development"),
+					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "monday"),
+					resource.TestCheckResourceAttr(lbName, "maintenance_time", "00:01:01Z"),
 					resource.TestCheckResourceAttr(lbName, "labels.%", "2"),
 					resource.TestCheckResourceAttr(lbName, "labels.key", "value"),
 					resource.TestCheckResourceAttr(lbName, "labels.test-step", "2"),
