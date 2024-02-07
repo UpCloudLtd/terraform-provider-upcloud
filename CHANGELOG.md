@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- docs: update provider version to `~> 4.0`
+
 ## [4.0.0] - 2024-01-26
 
 ### Added
