@@ -17,7 +17,7 @@ terraform {
   required_providers {
     upcloud = {
       source  = "UpCloudLtd/upcloud"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
   }
 }
@@ -38,7 +38,7 @@ terraform {
   required_providers {
     upcloud = {
       source  = "UpCloudLtd/upcloud"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
   }
 }
@@ -98,7 +98,7 @@ terraform {
   required_providers {
     upcloud = {
       source = "UpCloudLtd/upcloud"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
   }
 }
