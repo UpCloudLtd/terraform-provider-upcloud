@@ -28,9 +28,9 @@ func TestAccDataSourceUpcloudManagedDatabaseOpenSearchIndices(t *testing.T) {
 					resource.TestCheckResourceAttrSet(name, prop("create_time")),
 					resource.TestCheckResourceAttrSet(name, prop("docs")),
 					resource.TestCheckResourceAttrSet(name, prop("size")),
-					// Check rest of the fields from ".opensearch-observability" index
+					// Check rest of the fields from ".opendistro_security" index
 					resource.TestCheckTypeSetElemNestedAttrs(name, "indices.*", map[string]string{
-						"index_name":             ".opensearch-observability",
+						"index_name":             ".opendistro_security",
 						"health":                 "green",
 						"number_of_replicas":     "0",
 						"number_of_shards":       "1",
