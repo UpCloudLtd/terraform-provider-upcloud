@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 

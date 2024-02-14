@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
