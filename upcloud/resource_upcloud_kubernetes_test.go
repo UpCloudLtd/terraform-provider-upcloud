@@ -67,3 +67,45 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 		},
 	})
 }
+
+func TestAccUpcloudKubernetes_labels(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s3.tf")
+
+	var providers []*schema.Provider
+	cluster := "upcloud_kubernetes_cluster.main"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories(&providers),
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckTypeSetElemAttr(cluster, "control_plane_ip_filter.*", "0.0.0.0/0"),
+					resource.TestCheckResourceAttr(cluster, "name", "tf-acc-test-k8s-labels-cluster"),
+					resource.TestCheckResourceAttr(cluster, "zone", "de-fra1"),
+					resource.TestCheckResourceAttr(cluster, "labels.%", "1"),
+					resource.TestCheckResourceAttr(cluster, "labels.test", "terraform-provider-acceptance-test"),
+				),
+			},
+			{
+				Config: testDataS2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(cluster, "name", "tf-acc-test-k8s-labels-cluster"),
+					resource.TestCheckResourceAttr(cluster, "labels.%", "2"),
+					resource.TestCheckResourceAttr(cluster, "labels.test", "terraform-provider-acceptance-test"),
+					resource.TestCheckResourceAttr(cluster, "labels.managed-by", "terraform"),
+				),
+			},
+			{
+				Config: testDataS3,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(cluster, "name", "tf-acc-test-k8s-labels-cluster"),
+					resource.TestCheckResourceAttr(cluster, "labels.%", "0"),
+				),
+			},
+		},
+	})
+}

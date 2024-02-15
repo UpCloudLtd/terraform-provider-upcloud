@@ -382,6 +382,10 @@ func setManagedObjectStorageData(d *schema.ResourceData, storage *upcloud.Manage
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("labels", utils.LabelSliceToMap(storage.Labels)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	users := make([]interface{}, 0)
 	for _, user := range storage.Users {
 		users = append(users, user.Username)

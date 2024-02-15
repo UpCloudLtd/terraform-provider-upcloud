@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer: `maintenance_dow` and `maintenance_time` for managing maintenance windows settings
+- upcloud_kubernetes_cluster: support for labels
+
 ### Fixed
 
 - docs: update provider version to `~> 4.0`
