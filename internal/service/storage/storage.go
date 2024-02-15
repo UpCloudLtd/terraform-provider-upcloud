@@ -9,9 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -306,7 +306,6 @@ func resourceStorageUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -390,7 +389,6 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         d.Id(),
 		DesiredState: upcloud.StorageStateOnline,
-		Timeout:      15 * time.Minute,
 	})
 	if err != nil {
 		return diag.FromErr(err)

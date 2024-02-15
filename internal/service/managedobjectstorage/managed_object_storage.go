@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -194,7 +193,6 @@ func resourceManagedObjectStorageCreate(ctx context.Context, d *schema.ResourceD
 
 	waitReq := &request.WaitForManagedObjectStorageOperationalStateRequest{
 		DesiredState: upcloud.ManagedObjectStorageOperationalStateRunning,
-		Timeout:      time.Minute * 20,
 		UUID:         storage.UUID,
 	}
 
@@ -271,7 +269,6 @@ func resourceManagedObjectStorageUpdate(ctx context.Context, d *schema.ResourceD
 
 	waitReq := &request.WaitForManagedObjectStorageOperationalStateRequest{
 		DesiredState: upcloud.ManagedObjectStorageOperationalStateRunning,
-		Timeout:      time.Minute * 20,
 		UUID:         storage.UUID,
 	}
 
@@ -295,8 +292,7 @@ func resourceManagedObjectStorageDelete(ctx context.Context, d *schema.ResourceD
 	}
 
 	err = svc.WaitForManagedObjectStorageDeletion(ctx, &request.WaitForManagedObjectStorageDeletionRequest{
-		Timeout: time.Minute * 20,
-		UUID:    d.Id(),
+		UUID: d.Id(),
 	})
 	if err != nil {
 		return diag.FromErr(err)

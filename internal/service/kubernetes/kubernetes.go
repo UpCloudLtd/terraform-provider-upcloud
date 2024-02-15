@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v6/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -144,7 +144,6 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	c, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
 		DesiredState: upcloud.KubernetesClusterStateRunning,
-		Timeout:      time.Minute * 20,
 		UUID:         c.UUID,
 	})
 	if err != nil {
@@ -178,11 +177,12 @@ func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		ClusterUUID: d.Id(),
 	}
 
-	req.Cluster.ControlPlaneIPFilter = make([]string, 0)
+	ipFilter := make([]string, 0)
 	filters := d.Get("control_plane_ip_filter")
 	for _, v := range filters.(*schema.Set).List() {
-		req.Cluster.ControlPlaneIPFilter = append(req.Cluster.ControlPlaneIPFilter, v.(string))
+		ipFilter = append(ipFilter, v.(string))
 	}
+	req.Cluster.ControlPlaneIPFilter = &ipFilter
 
 	c, err := svc.ModifyKubernetesCluster(ctx, req)
 	if err != nil {
@@ -191,7 +191,6 @@ func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta int
 
 	c, err = svc.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
 		DesiredState: upcloud.KubernetesClusterStateRunning,
-		Timeout:      time.Minute * 20,
 		UUID:         c.UUID,
 	})
 	if err != nil {
