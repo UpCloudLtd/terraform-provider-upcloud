@@ -113,6 +113,7 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:    true,
 				Computed:    true,
 			},
+			"labels": utils.LabelsSchema("cluster"),
 		},
 	}
 }
@@ -127,6 +128,10 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 		Plan:              d.Get("plan").(string),
 		PrivateNodeGroups: d.Get("private_node_groups").(bool),
 		Version:           d.Get("version").(string),
+	}
+
+	if v, ok := d.GetOk("labels"); ok {
+		req.Labels = utils.LabelsMapToSlice(v.(map[string]interface{}))
 	}
 
 	req.ControlPlaneIPFilter = make([]string, 0)
@@ -175,6 +180,11 @@ func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta int
 
 	req := &request.ModifyKubernetesClusterRequest{
 		ClusterUUID: d.Id(),
+	}
+
+	if d.HasChange("labels") {
+		labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
+		req.Cluster.Labels = &labels
 	}
 
 	ipFilter := make([]string, 0)
@@ -247,6 +257,10 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	}
 
 	if err := d.Set("private_node_groups", c.PrivateNodeGroups); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("labels", utils.LabelSliceToMap(c.Labels)); err != nil {
 		return diag.FromErr(err)
 	}
 
