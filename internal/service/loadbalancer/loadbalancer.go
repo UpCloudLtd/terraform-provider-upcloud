@@ -120,6 +120,16 @@ func ResourceLoadBalancer() *schema.Resource {
 				Computed:    true,
 			},
 			"labels": utils.LabelsSchema("load balancer"),
+			"maintenance_dow": {
+				Description: "The day of the week on which maintenance will be performed. If not provided, we will randomly select a weekend day. Valid values `monday|tuesday|wednesday|thursday|friday|saturday|sunday`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"maintenance_time": {
+				Description: "The time at which the maintenance will begin in UTC. A 2-hour timeframe has been allocated for maintenance. During this period, the multi-node production plans will not experience any downtime, while the one-node plans will have a downtime of 1-2 minutes. If not provided, we will randomly select an off-peak time. Needs to be a valid time format in UTC HH:MM:SSZ, for example `20:01:01Z`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 		CustomizeDiff: customdiff.ForceNewIfChange("networks.#", func(ctx context.Context, old, new, meta interface{}) bool {
 			return new.(int) != old.(int)
@@ -247,6 +257,8 @@ func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, met
 		Resolvers:        []request.LoadBalancerResolver{},
 		Networks:         networks,
 		Labels:           utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
+		MaintenanceDOW:   upcloud.LoadBalancerMaintenanceDOW(d.Get("maintenance_dow").(string)),
+		MaintenanceTime:  d.Get("maintenance_time").(string),
 	}
 	lb, err := svc.CreateLoadBalancer(ctx, req)
 	if err != nil {
@@ -296,6 +308,13 @@ func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, met
 	if d.HasChange("labels") {
 		labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
 		req.Labels = &labels
+	}
+
+	if d.HasChange("maintenance_dow") {
+		req.MaintenanceDOW = upcloud.LoadBalancerMaintenanceDOW(d.Get("maintenance_dow").(string))
+	}
+	if d.HasChange("maintenance_time") {
+		req.MaintenanceTime = d.Get("maintenance_time").(string)
 	}
 
 	lb, err := svc.ModifyLoadBalancer(ctx, req)
@@ -380,6 +399,14 @@ func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalance
 	}
 
 	if err := d.Set("labels", utils.LabelsSliceToMap(lb.Labels)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("maintenance_dow", lb.MaintenanceDOW); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("maintenance_time", lb.MaintenanceTime); err != nil {
 		return diag.FromErr(err)
 	}
 

@@ -18,6 +18,8 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
+  maintenance_dow   = "monday"
+  maintenance_time  = "00:01:01Z"
   network           = resource.upcloud_network.lb_network.id
 
   labels = {

@@ -18,7 +18,9 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
-  network           = resource.upcloud_network.lb_network.id
+  maintenance_dow   = "sunday"
+  maintenance_time  = "20:01:01Z"
+  network = resource.upcloud_network.lb_network.id
 
   labels = {
     key       = "value"
@@ -181,7 +183,7 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
 }
 
 resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
-  name = "lb-cb-d1-test"
+  name      = "lb-cb-d1-test"
   hostnames = [
     "example.com",
   ]
