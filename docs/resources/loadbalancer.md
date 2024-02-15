@@ -60,6 +60,8 @@ resource "upcloud_loadbalancer" "lb" {
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
 - `labels` (Map of String) Key-value pairs to classify the load balancer.
+- `maintenance_dow` (String) The day of the week on which maintenance will be performed. If not provided, we will randomly select a weekend day. Valid values `monday|tuesday|wednesday|thursday|friday|saturday|sunday`.
+- `maintenance_time` (String) The time at which the maintenance will begin in UTC. A 2-hour timeframe has been allocated for maintenance. During this period, the multi-node production plans will not experience any downtime, while the one-node plans will have a downtime of 1-2 minutes. If not provided, we will randomly select an off-peak time. Needs to be a valid time format in UTC HH:MM:SSZ, for example `20:01:01Z`.
 - `network` (String, Deprecated) Private network UUID where traffic will be routed. Must reside in load balancer zone.
 - `networks` (Block List, Max: 8) Attached Networks from where traffic consumed and routed. Private networks must reside in loadbalancer zone. (see [below for nested schema](#nestedblock--networks))
 
