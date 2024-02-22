@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -34,5 +34,4 @@ func WaitForResourceToBeDeleted(ctx context.Context, svc *service.Service, getDe
 	}
 
 	return fmt.Errorf("max retries (%d)reached while waiting for resource to be deleted", maxRetries)
-
 }

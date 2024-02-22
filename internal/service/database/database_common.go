@@ -2,9 +2,11 @@ package database
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,6 +44,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 				return nil
 			},
 		},
+		"network":     schemaDatabaseNetwork(),
 		"node_states": schemaDatabaseNodeStates(),
 		"plan": {
 			Description: "Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.",
@@ -218,6 +221,74 @@ func schemaDatabaseComponents() *schema.Schema {
 			},
 		},
 	}
+}
+
+func schemaDatabaseNetwork() *schema.Schema {
+	return &schema.Schema{
+		Description: "Private networks attached to the managed database",
+		Type:        schema.TypeSet,
+		Optional:    true,
+		MaxItems:    8,
+		MinItems:    1,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"name": {
+					Description: "The name of the network. Must be unique within the service.",
+					Type:        schema.TypeString,
+					Required:    true,
+					ValidateDiagFunc: validation.ToDiagFunc(validation.All(
+						validation.StringLenBetween(0, 65),
+						validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), ""),
+					)),
+				},
+				"type": {
+					Description: "The type of the network. Must be private.",
+					Type:        schema.TypeString,
+					Required:    true,
+					ValidateDiagFunc: validation.ToDiagFunc(
+						validation.StringInSlice([]string{
+							string(upcloud.LoadBalancerNetworkTypePrivate),
+						}, false),
+					),
+				},
+				"family": {
+					Description: "Network family. Currently only `IPv4` is supported.",
+					Type:        schema.TypeString,
+					Required:    true,
+					ValidateDiagFunc: validation.ToDiagFunc(
+						validation.StringInSlice([]string{
+							string(upcloud.LoadBalancerAddressFamilyIPv4),
+						}, false),
+					),
+				},
+				"uuid": {
+					Description: "Private network UUID. Must reside in the same zone as the database.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+			},
+		},
+	}
+}
+
+func networksFromResourceData(d *schema.ResourceData) []upcloud.ManagedDatabaseNetwork {
+	req := make([]upcloud.ManagedDatabaseNetwork, 0)
+	if networks, ok := d.GetOk("network"); ok {
+		for _, network := range networks.(*schema.Set).List() {
+			n := network.(map[string]interface{})
+			uuid := n["uuid"].(string)
+			r := upcloud.ManagedDatabaseNetwork{
+				Name:   n["name"].(string),
+				Type:   n["type"].(string),
+				Family: n["family"].(string),
+				UUID:   &uuid,
+			}
+
+			req = append(req, r)
+		}
+	}
+
+	return req
 }
 
 func schemaDatabaseNodeStates() *schema.Schema {
