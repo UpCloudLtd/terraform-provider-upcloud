@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"regexp"
 	"time"
 
@@ -277,29 +276,14 @@ func waitForGatewayToBeRunning(ctx context.Context, svc *service.Service, id str
 	return nil, fmt.Errorf("max retries (%d)reached while waiting for network gateway to be running", maxRetries)
 }
 
+func getGatewayDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	gw, err := svc.GetGateway(ctx, &request.GetGatewayRequest{UUID: id[0]})
+
+	return map[string]interface{}{"resource": "gateway", "name": gw.Name, "state": gw.OperationalState}, err
+}
+
 func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
-	const maxRetries int = 500
-
-	for i := 0; i <= maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			c, err := svc.GetGateway(ctx, &request.GetGatewayRequest{UUID: id})
-			if err != nil {
-				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
-					return nil
-				}
-
-				return err
-			}
-
-			tflog.Info(ctx, "waiting for network gateway to be deleted", map[string]interface{}{"name": c.Name, "state": c.OperationalState})
-		}
-		time.Sleep(5 * time.Second)
-	}
-
-	return fmt.Errorf("max retries (%d)reached while waiting for network gateway to be deleted", maxRetries)
+	return utils.WaitForResourceToBeDeleted(ctx, svc, getGatewayDeleted, id)
 }
 
 var validateName = validation.ToDiagFunc(validation.All(

@@ -2,17 +2,13 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"regexp"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -351,30 +347,15 @@ func setNodeGroupResourceData(d *schema.ResourceData, clusterID string, ng *upcl
 	return diags
 }
 
+func getNodeGroupDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	c, err := svc.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
+		ClusterUUID: id[0],
+		Name:        id[1],
+	})
+
+	return map[string]interface{}{"resource": "node-group", "name": c.Name, "state": c.State}, err
+}
+
 func waitForNodeGroupToBeDeleted(ctx context.Context, svc *service.Service, clusterID, name string) error {
-	const maxRetries int = 100
-
-	for i := 0; i <= maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			c, err := svc.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
-				ClusterUUID: clusterID,
-				Name:        name,
-			})
-			if err != nil {
-				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
-					return nil
-				}
-
-				return err
-			}
-
-			tflog.Info(ctx, "waiting for node group to be deleted", map[string]interface{}{"cluster": clusterID, "name": c.Name, "state": c.State})
-		}
-		time.Sleep(5 * time.Second)
-	}
-
-	return fmt.Errorf("max retries (%d)reached while waiting for node group to be deleted", maxRetries)
+	return utils.WaitForResourceToBeDeleted(ctx, svc, getNodeGroupDeleted, clusterID, name)
 }

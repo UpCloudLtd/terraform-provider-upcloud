@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"regexp"
 	"time"
 
@@ -285,29 +284,14 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	return diags
 }
 
+func getClusterDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	c, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: id[0]})
+
+	return map[string]interface{}{"resource": "cluster", "name": c.Name, "state": c.State}, err
+}
+
 func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
-	const maxRetries int = 100
-
-	for i := 0; i <= maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			c, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: id})
-			if err != nil {
-				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
-					return nil
-				}
-
-				return err
-			}
-
-			tflog.Info(ctx, "waiting for cluster to be deleted", map[string]interface{}{"name": c.Name, "state": c.State})
-		}
-		time.Sleep(5 * time.Second)
-	}
-
-	return fmt.Errorf("max retries (%d)reached while waiting for cluster to be deleted", maxRetries)
+	return utils.WaitForResourceToBeDeleted(ctx, svc, getClusterDeleted, id)
 }
 
 var validateResourceName = validation.ToDiagFunc(func(i interface{}, s string) (warns []string, errs []error) {
