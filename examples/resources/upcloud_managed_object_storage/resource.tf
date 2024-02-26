@@ -29,8 +29,6 @@ resource "upcloud_managed_object_storage" "this" {
     uuid   = upcloud_network.this.id
   }
 
-  users = ["example"]
-
   labels = {
     managed-by = "terraform"
   }

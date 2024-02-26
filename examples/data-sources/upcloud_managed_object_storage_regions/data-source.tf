@@ -1,1 +1,1 @@
-data "upcloud_Managed_object_storage" "this" {}
+data "upcloud_Managed_object_storage_regions" "this" {}

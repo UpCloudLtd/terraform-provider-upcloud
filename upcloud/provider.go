@@ -91,7 +91,10 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_user":                   database.ResourceUser(),
 			"upcloud_managed_database_logical_database":       database.ResourceLogicalDatabase(),
 			"upcloud_managed_object_storage":                  managedobjectstorage.ResourceManagedObjectStorage(),
+			"upcloud_managed_object_storage_policy":           managedobjectstorage.ResourceManagedObjectStoragePolicy(),
+			"upcloud_managed_object_storage_user":             managedobjectstorage.ResourceManagedObjectStorageUser(),
 			"upcloud_managed_object_storage_user_access_key":  managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
+			"upcloud_managed_object_storage_user_policy":      managedobjectstorage.ResourceManagedObjectStorageUserPolicy(),
 			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),
 			"upcloud_loadbalancer_resolver":                   loadbalancer.ResourceResolver(),
 			"upcloud_loadbalancer_backend":                    loadbalancer.ResourceBackend(),
@@ -121,6 +124,7 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
 			"upcloud_managed_database_redis_sessions":      database.DataSourceSessionsRedis(),
 			"upcloud_managed_object_storage_regions":       managedobjectstorage.DataSourceManagedObjectStorageRegions(),
+			"upcloud_managed_object_storage_policies":      managedobjectstorage.DataSourceManagedObjectStoragePolicies(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

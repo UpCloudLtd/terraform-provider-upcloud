@@ -5,6 +5,23 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_object_storage: `upcloud_managed_storage_policy` resource for setting up policies
+- upcloud_managed_object_storage: `upcloud_managed_storage_policies` data source for policies
+- upcloud_managed_object_storage: `upcloud_managed_storage_user` resource for user management
+- upcloud_managed_object_storage: `upcloud_managed_storage_user_policy` resource for attaching policies to users
+- upcloud_managed_object_storage: `iam_url` property to `upcloud_managed_storage.endpoint`
+- upcloud_managed_object_storage: `sts_url` property to `upcloud_managed_storage.endpoint`
+- upcloud_managed_object_storage: `status` property to `upcloud_managed_storage_user_access_key`
+
+### Removed
+
+- **Breaking**, upcloud_managed_object_storage: `users` property from `upcloud_managed_storage` resource
+- **Breaking**, upcloud_managed_object_storage: `enabled` property from `upcloud_managed_storage_user_access_key` resource
+- **Breaking**, upcloud_managed_object_storage: `name` property from `upcloud_managed_storage_user_access_key` resource
+- **Breaking**, upcloud_managed_object_storage: `updated_at` property from `upcloud_managed_storage_user_access_key` resource
+
 ## [4.1.0] - 2024-02-16
 
 ### Added

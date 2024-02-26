@@ -2,7 +2,6 @@ package managedobjectstorage
 
 import (
 	"context"
-	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
@@ -35,25 +34,10 @@ func ResourceManagedObjectStorageUserAccessKey() *schema.Resource {
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
-			"enabled": {
-				Description: "Enabled or not.",
-				Required:    true,
-				Type:        schema.TypeBool,
-			},
 			"last_used_at": {
 				Description: "Last used.",
 				Computed:    true,
 				Type:        schema.TypeString,
-			},
-			"name": {
-				Description: "Access key name. Must be unique within the user.",
-				Required:    true,
-				ForceNew:    true,
-				Type:        schema.TypeString,
-				ValidateFunc: validation.All(
-					validation.StringLenBetween(1, 64),
-					validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9_-]+$`), ""),
-				),
 			},
 			"secret_access_key": {
 				Description: "Secret access key.",
@@ -67,10 +51,12 @@ func ResourceManagedObjectStorageUserAccessKey() *schema.Resource {
 				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
-			"updated_at": {
-				Description: "Update time.",
-				Computed:    true,
-				Type:        schema.TypeString,
+			"status": {
+				Description:  "Status of the key. Valid values: `Active`|`Inactive`",
+				Required:     false,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{string(upcloud.ManagedObjectStorageUserAccessKeyStatusActive), string(upcloud.ManagedObjectStorageUserAccessKeyStatusInactive)}, false),
 			},
 			"username": {
 				Description: "Username.",
@@ -88,8 +74,6 @@ func resourceManagedObjectStorageUserAccessKeyCreate(ctx context.Context, d *sch
 	req := &request.CreateManagedObjectStorageUserAccessKeyRequest{
 		Username:    d.Get("username").(string),
 		ServiceUUID: d.Get("service_uuid").(string),
-		Name:        d.Get("name").(string),
-		Enabled:     upcloud.BoolPtr(d.Get("enabled").(bool)),
 	}
 
 	accessKey, err := svc.CreateManagedObjectStorageUserAccessKey(ctx, req)
@@ -97,7 +81,19 @@ func resourceManagedObjectStorageUserAccessKeyCreate(ctx context.Context, d *sch
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, req.Name))
+	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, accessKey.AccessKeyId))
+
+	if status, ok := d.GetOk("status"); ok {
+		accessKey, err = svc.ModifyManagedObjectStorageUserAccessKey(ctx, &request.ModifyManagedObjectStorageUserAccessKeyRequest{
+			Username:    d.Get("username").(string),
+			ServiceUUID: d.Get("service_uuid").(string),
+			AccessKeyId: accessKey.AccessKeyId,
+			Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(status.(string)),
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	return setManagedObjectStorageUserAccessKeyData(d, accessKey)
 }
@@ -113,7 +109,7 @@ func resourceManagedObjectStorageUserAccessKeyRead(ctx context.Context, d *schem
 	accessKey, err := svc.GetManagedObjectStorageUserAccessKey(ctx, &request.GetManagedObjectStorageUserAccessKeyRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		Name:        name,
+		AccessKeyId: d.Id(),
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -123,7 +119,7 @@ func resourceManagedObjectStorageUserAccessKeyRead(ctx context.Context, d *schem
 }
 
 func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	if !d.HasChange("enabled") {
+	if !d.HasChange("status") {
 		return nil
 	}
 
@@ -135,10 +131,10 @@ func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *sch
 	}
 
 	req := &request.ModifyManagedObjectStorageUserAccessKeyRequest{
-		Enabled:     upcloud.BoolPtr(d.Get("enabled").(bool)),
+		Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(d.Get("status").(string)),
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		Name:        name,
+		AccessKeyId: name,
 	}
 
 	accessKey, err := svc.ModifyManagedObjectStorageUserAccessKey(ctx, req)
@@ -160,7 +156,7 @@ func resourceManagedObjectStorageUserAccessKeyDelete(ctx context.Context, d *sch
 	req := &request.DeleteManagedObjectStorageUserAccessKeyRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		Name:        name,
+		AccessKeyId: name,
 	}
 
 	if err := svc.DeleteManagedObjectStorageUserAccessKey(ctx, req); err != nil {
@@ -177,16 +173,10 @@ func setManagedObjectStorageUserAccessKeyData(d *schema.ResourceData, accessKey 
 	if err := d.Set("created_at", accessKey.CreatedAt.String()); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("enabled", accessKey.Enabled); err != nil {
+	if err := d.Set("status", accessKey.Status); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("last_used_at", accessKey.LastUsedAt.String()); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("name", accessKey.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("updated_at", accessKey.UpdatedAt.String()); err != nil {
 		return diag.FromErr(err)
 	}
 	if accessKey.SecretAccessKey != nil {
