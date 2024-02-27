@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -12,9 +11,7 @@ import (
 )
 
 func WaitForResourceToBeDeleted(ctx context.Context, svc *service.Service, getDetails func(context.Context, *service.Service, ...string) (map[string]interface{}, error), id ...string) error {
-	const maxRetries int = 500
-
-	for i := 0; i <= maxRetries; i++ {
+	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -32,6 +29,4 @@ func WaitForResourceToBeDeleted(ctx context.Context, svc *service.Service, getDe
 		}
 		time.Sleep(5 * time.Second)
 	}
-
-	return fmt.Errorf("max retries (%d)reached while waiting for resource to be deleted", maxRetries)
 }

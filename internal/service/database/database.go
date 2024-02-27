@@ -346,9 +346,8 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 }
 
 func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Service, db *upcloud.ManagedDatabase) error {
-	const maxRetries int = 100
 	var err error
-	for i := 0; i <= maxRetries; i++ {
+	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -362,7 +361,6 @@ func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Servic
 		}
 		time.Sleep(5 * time.Second)
 	}
-	return errors.New("max retries reached while waiting for managed database instance to be created")
 }
 
 func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
