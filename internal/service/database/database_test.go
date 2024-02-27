@@ -18,7 +18,7 @@ import (
 func TestIsManagedDatabaseFullyCreated(t *testing.T) {
 	db := &upcloud.ManagedDatabase{
 		Backups: make([]upcloud.ManagedDatabaseBackup, 0),
-		State:   upcloud.ManagedDatabaseStatePoweroff,
+		State:   upcloud.ManagedDatabaseStateStopped,
 		Users:   make([]upcloud.ManagedDatabaseUser, 0),
 	}
 	if isManagedDatabaseFullyCreated(db) {
