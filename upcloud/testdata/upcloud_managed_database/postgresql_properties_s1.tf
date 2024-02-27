@@ -25,7 +25,7 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     bgwriter_lru_multiplier             = 9.2
     deadlock_timeout                    = 501
     default_toast_compression           = "lz4"
-    idle_in_transaction_session_timeout = 1
+    idle_in_transaction_session_timeout = 1000
     ip_filter                           = ["127.0.0.1", "127.0.0.2"]
     jit                                 = true
     log_autovacuum_min_duration         = 1
@@ -61,13 +61,13 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     pg_partman_bgw_role                 = "upadmin"
     pg_stat_statements_track            = "all"
     pgbouncer {
-      autodb_idle_timeout       = 1
-      autodb_max_db_connections = 1
+      autodb_idle_timeout       = 10
+      autodb_max_db_connections = 5
       autodb_pool_mode          = "session"
       autodb_pool_size          = 1
       ignore_startup_parameters = ["search_path"]
       min_pool_size             = 1
-      server_idle_timeout       = 1
+      server_idle_timeout       = 10
       server_lifetime           = 60
       server_reset_query_always = false
     }
