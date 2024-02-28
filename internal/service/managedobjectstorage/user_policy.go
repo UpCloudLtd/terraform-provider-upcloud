@@ -5,7 +5,6 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -22,15 +21,10 @@ func ResourceManagedObjectStorageUserPolicy() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
-			"arn": {
-				Description: "Policy ARN.",
-				Computed:    true,
-				Type:        schema.TypeString,
-			},
 			"name": {
 				Description: "Policy name.",
 				Required:    true,
-				Computed:    true,
+				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
 			"service_uuid": {
@@ -58,14 +52,14 @@ func resourceManagedObjectStorageUserPolicyCreate(ctx context.Context, d *schema
 		Name:        d.Get("name").(string),
 	}
 
-	userPolicy, err := svc.AttachManagedObjectStorageUserPolicy(ctx, req)
+	err := svc.AttachManagedObjectStorageUserPolicy(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, userPolicy.Name))
+	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, req.Name))
 
-	return setManagedObjectStorageUserPolicyData(d, userPolicy)
+	return nil
 }
 
 func resourceManagedObjectStorageUserPolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -86,7 +80,9 @@ func resourceManagedObjectStorageUserPolicyRead(ctx context.Context, d *schema.R
 
 	for _, policy := range policies {
 		if policy.Name == name {
-			return setManagedObjectStorageUserPolicyData(d, &policy)
+			if err = d.Set("name", policy.Name); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -112,15 +108,4 @@ func resourceManagedObjectStorageUserPolicyDelete(ctx context.Context, d *schema
 	}
 
 	return nil
-}
-
-func setManagedObjectStorageUserPolicyData(d *schema.ResourceData, userPolicy *upcloud.ManagedObjectStorageUserPolicy) (diags diag.Diagnostics) {
-	if err := d.Set("arn", userPolicy.Arn); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("name", userPolicy.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
 }
