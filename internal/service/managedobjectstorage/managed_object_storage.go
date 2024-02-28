@@ -325,8 +325,8 @@ func setManagedObjectStorageData(d *schema.ResourceData, storage *upcloud.Manage
 	for _, endpoint := range storage.Endpoints {
 		endpoints = append(endpoints, map[string]interface{}{
 			"domain_name": endpoint.DomainName,
-			"iam_url":     endpoint.IamUrl,
-			"sts_url":     endpoint.StsUrl,
+			"iam_url":     endpoint.IAMURL,
+			"sts_url":     endpoint.STSURL,
 			"type":        endpoint.Type,
 		})
 	}

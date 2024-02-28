@@ -27,7 +27,7 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(policy, "name", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(user, "name", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(userPolicy, "username", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(userPolicy, "name", "tf-acc-test-objstov2-user"),
 				),
@@ -38,7 +38,7 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(policy, "name", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(user, "name", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-user"),
 				),
 			},
 		},

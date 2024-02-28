@@ -144,7 +144,7 @@ func resourceManagedObjectStoragePolicyDelete(ctx context.Context, d *schema.Res
 }
 
 func setManagedObjectStoragePolicyData(d *schema.ResourceData, policy *upcloud.ManagedObjectStoragePolicy) (diags diag.Diagnostics) {
-	if err := d.Set("arn", policy.Arn); err != nil {
+	if err := d.Set("arn", policy.ARN); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("attachment_count", policy.AttachmentCount); err != nil {
@@ -153,7 +153,7 @@ func setManagedObjectStoragePolicyData(d *schema.ResourceData, policy *upcloud.M
 	if err := d.Set("created_at", policy.CreatedAt.String()); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("default_version_id", policy.DefaultVersionId); err != nil {
+	if err := d.Set("default_version_id", policy.DefaultVersionID); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("system", policy.System); err != nil {

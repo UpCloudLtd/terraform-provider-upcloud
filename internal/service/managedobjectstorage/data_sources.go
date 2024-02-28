@@ -121,10 +121,10 @@ func setManagedObjectStoragePoliciesData(d *schema.ResourceData, policies []upcl
 	policyMaps := make([]map[string]interface{}, 0)
 	for _, policy := range policies {
 		policyMaps = append(policyMaps, map[string]interface{}{
-			"arn":                policy.Arn,
+			"arn":                policy.ARN,
 			"attachment_count":   policy.AttachmentCount,
 			"created_at":         policy.CreatedAt.String(),
-			"default_version_id": policy.DefaultVersionId,
+			"default_version_id": policy.DefaultVersionID,
 			"description":        policy.Description,
 			"document":           policy.Document,
 			"name":               policy.Name,

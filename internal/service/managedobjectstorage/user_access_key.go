@@ -80,13 +80,13 @@ func resourceManagedObjectStorageUserAccessKeyCreate(ctx context.Context, d *sch
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, accessKey.AccessKeyId))
+	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, accessKey.AccessKeyID))
 
 	if status, ok := d.GetOk("status"); ok {
 		accessKey, err = svc.ModifyManagedObjectStorageUserAccessKey(ctx, &request.ModifyManagedObjectStorageUserAccessKeyRequest{
 			Username:    d.Get("username").(string),
 			ServiceUUID: d.Get("service_uuid").(string),
-			AccessKeyId: accessKey.AccessKeyId,
+			AccessKeyID: accessKey.AccessKeyID,
 			Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(status.(string)),
 		})
 		if err != nil {
@@ -100,15 +100,15 @@ func resourceManagedObjectStorageUserAccessKeyCreate(ctx context.Context, d *sch
 func resourceManagedObjectStorageUserAccessKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	svc := meta.(*service.Service)
 
-	var serviceUUID, username, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
+	var serviceUUID, username, id string
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &id); err != nil {
 		return diag.FromErr(err)
 	}
 
 	accessKey, err := svc.GetManagedObjectStorageUserAccessKey(ctx, &request.GetManagedObjectStorageUserAccessKeyRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		AccessKeyId: d.Id(),
+		AccessKeyID: d.Id(),
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -133,7 +133,7 @@ func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *sch
 		Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(d.Get("status").(string)),
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		AccessKeyId: name,
+		AccessKeyID: name,
 	}
 
 	accessKey, err := svc.ModifyManagedObjectStorageUserAccessKey(ctx, req)
@@ -147,15 +147,15 @@ func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *sch
 func resourceManagedObjectStorageUserAccessKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	svc := meta.(*service.Service)
 
-	var serviceUUID, username, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
+	var serviceUUID, username, id string
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &id); err != nil {
 		return diag.FromErr(err)
 	}
 
 	req := &request.DeleteManagedObjectStorageUserAccessKeyRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		AccessKeyId: name,
+		AccessKeyID: id,
 	}
 
 	if err := svc.DeleteManagedObjectStorageUserAccessKey(ctx, req); err != nil {
@@ -166,7 +166,7 @@ func resourceManagedObjectStorageUserAccessKeyDelete(ctx context.Context, d *sch
 }
 
 func setManagedObjectStorageUserAccessKeyData(d *schema.ResourceData, accessKey *upcloud.ManagedObjectStorageUserAccessKey) (diags diag.Diagnostics) {
-	if err := d.Set("access_key_id", accessKey.AccessKeyId); err != nil {
+	if err := d.Set("access_key_id", accessKey.AccessKeyID); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("created_at", accessKey.CreatedAt.String()); err != nil {
