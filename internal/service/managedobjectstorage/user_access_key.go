@@ -53,8 +53,7 @@ func ResourceManagedObjectStorageUserAccessKey() *schema.Resource {
 			},
 			"status": {
 				Description:  "Status of the key. Valid values: `Active`|`Inactive`",
-				Required:     false,
-				Computed:     true,
+				Optional:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{string(upcloud.ManagedObjectStorageUserAccessKeyStatusActive), string(upcloud.ManagedObjectStorageUserAccessKeyStatusInactive)}, false),
 			},
