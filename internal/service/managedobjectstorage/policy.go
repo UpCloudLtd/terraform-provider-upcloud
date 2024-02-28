@@ -65,6 +65,12 @@ func schemaPolicy() map[string]*schema.Schema {
 			ForceNew:    true,
 			Type:        schema.TypeString,
 		},
+		"service_uuid": {
+			Description: "Managed Object Storage service UUID.",
+			Required:    true,
+			ForceNew:    true,
+			Type:        schema.TypeString,
+		},
 		"system": {
 			Description: "Defines whether the policy was set up by the system.",
 			Computed:    true,
