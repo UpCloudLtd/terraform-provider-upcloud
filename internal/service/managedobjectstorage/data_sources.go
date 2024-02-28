@@ -129,7 +129,7 @@ func setManagedObjectStoragePoliciesData(d *schema.ResourceData, policies []upcl
 			"document":           policy.Document,
 			"name":               policy.Name,
 			"system":             policy.System,
-			"updated_at":         policy.UpdatedAt,
+			"updated_at":         policy.UpdatedAt.String(),
 		})
 	}
 	if err := d.Set("policies", policyMaps); err != nil {
