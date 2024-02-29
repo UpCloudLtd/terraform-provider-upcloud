@@ -53,7 +53,7 @@ func ResourceManagedObjectStorageUserAccessKey() *schema.Resource {
 			},
 			"status": {
 				Description:  "Status of the key. Valid values: `Active`|`Inactive`",
-				Optional:     true,
+				Required:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{string(upcloud.ManagedObjectStorageUserAccessKeyStatusActive), string(upcloud.ManagedObjectStorageUserAccessKeyStatusInactive)}, false),
 			},
@@ -82,12 +82,13 @@ func resourceManagedObjectStorageUserAccessKeyCreate(ctx context.Context, d *sch
 
 	d.SetId(utils.MarshalID(req.ServiceUUID, req.Username, accessKey.AccessKeyID))
 
-	if status, ok := d.GetOk("status"); ok {
+	status := upcloud.ManagedObjectStorageUserAccessKeyStatus(d.Get("status").(string))
+	if status != accessKey.Status {
 		accessKey, err = svc.ModifyManagedObjectStorageUserAccessKey(ctx, &request.ModifyManagedObjectStorageUserAccessKeyRequest{
 			Username:    d.Get("username").(string),
 			ServiceUUID: d.Get("service_uuid").(string),
 			AccessKeyID: accessKey.AccessKeyID,
-			Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(status.(string)),
+			Status:      status,
 		})
 		if err != nil {
 			return diag.FromErr(err)

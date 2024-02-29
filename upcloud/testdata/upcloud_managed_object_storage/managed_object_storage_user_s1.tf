@@ -26,6 +26,12 @@ resource "upcloud_managed_object_storage_user" "user" {
   service_uuid = upcloud_managed_object_storage.user.id
 }
 
+resource "upcloud_managed_object_storage_user_access_key" "user" {
+  username     = upcloud_managed_object_storage_user.user.username
+  service_uuid = upcloud_managed_object_storage.user.id
+  status       = "Active"
+}
+
 resource "upcloud_managed_object_storage_user_policy" "user" {
   name         = upcloud_managed_object_storage_policy.user.name
   username     = upcloud_managed_object_storage_user.user.username

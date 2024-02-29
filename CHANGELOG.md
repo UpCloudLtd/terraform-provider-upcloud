@@ -13,7 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_managed_object_storage: `upcloud_managed_storage_user_policy` resource for attaching policies to users
 - upcloud_managed_object_storage: `iam_url` property to `upcloud_managed_storage.endpoint`
 - upcloud_managed_object_storage: `sts_url` property to `upcloud_managed_storage.endpoint`
-- upcloud_managed_object_storage: `status` property to `upcloud_managed_storage_user_access_key`
+- upcloud_managed_object_storage: required `status` property to `upcloud_managed_storage_user_access_key`
 
 ### Removed
 

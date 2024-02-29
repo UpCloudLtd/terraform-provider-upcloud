@@ -16,6 +16,7 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 	storage := "upcloud_managed_object_storage.user"
 	policy := "upcloud_managed_object_storage_policy.user"
 	user := "upcloud_managed_object_storage_user.user"
+	userAccessKey := "upcloud_managed_object_storage_user_access_key.user"
 	userPolicy := "upcloud_managed_object_storage_user_policy.user"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -28,6 +29,8 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(policy, "name", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(userAccessKey, "username", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(userAccessKey, "status", "Active"),
 					resource.TestCheckResourceAttr(userPolicy, "username", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(userPolicy, "name", "tf-acc-test-objstov2-user"),
 				),
@@ -39,6 +42,8 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(policy, "name", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(userAccessKey, "username", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(userAccessKey, "status", "Inactive"),
 				),
 			},
 		},
