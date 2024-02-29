@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.0.0] - 2024-02-29
+
 ### Added
 
 - upcloud_managed_object_storage: `upcloud_managed_storage_policy` resource for setting up policies
@@ -411,7 +413,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Support for UpCloud ObjectStorage S3 compatible storage.
 - Add host field to the server resource
-- server: add tags attribute support (#150) 
+- server: add tags attribute support (#150)
 - chore: Add more examples
 
 ### Fixed
@@ -419,8 +421,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - Server not started after updating storage device
 - router: fix creation of attachedNetworks for routers #144
 - chore: fix example in upcloud_tag #125
-- server: prevent some attribute update from restarting (#146) 
-- router: allow detaching router and deleting attached routers (#151) 
+- server: prevent some attribute update from restarting (#146)
+- router: allow detaching router and deleting attached routers (#151)
 - storage: check size before cloning a device (#152)
 - storage: fix address formating (#153)
 
@@ -503,7 +505,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v4.1.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v4.1.0...v5.0.0
 [4.1.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.4.0...v4.0.0
 [3.4.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v3.3.1...v3.4.0
