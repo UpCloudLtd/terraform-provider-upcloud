@@ -17,14 +17,17 @@ resource "upcloud_managed_object_storage" "this" {
   name              = "example"
   region            = "europe-1"
   configured_status = "started"
-  users             = ["example"]
+}
+
+resource "upcloud_managed_object_storage_user" "this" {
+  username     = "example"
+  service_uuid = upcloud_managed_object_storage.this.id
 }
 
 resource "upcloud_managed_object_storage_user_access_key" "this" {
-  name         = "accesskey"
-  enabled      = true
-  username     = "example"
+  username     = upcloud_managed_object_storage_user.this.username
   service_uuid = upcloud_managed_object_storage.this.id
+  status       = "Active"
 }
 ```
 
@@ -33,9 +36,8 @@ resource "upcloud_managed_object_storage_user_access_key" "this" {
 
 ### Required
 
-- `enabled` (Boolean) Enabled or not.
-- `name` (String) Access key name. Must be unique within the user.
 - `service_uuid` (String) Managed Object Storage service UUID.
+- `status` (String) Status of the key. Valid values: `Active`|`Inactive`
 - `username` (String) Username.
 
 ### Read-Only
@@ -45,6 +47,5 @@ resource "upcloud_managed_object_storage_user_access_key" "this" {
 - `id` (String) The ID of this resource.
 - `last_used_at` (String) Last used.
 - `secret_access_key` (String, Sensitive) Secret access key.
-- `updated_at` (String) Update time.
 
 
