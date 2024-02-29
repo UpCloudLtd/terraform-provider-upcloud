@@ -106,7 +106,7 @@ func resourceManagedObjectStorageUserDelete(ctx context.Context, d *schema.Resou
 }
 
 func setManagedObjectStorageUserData(d *schema.ResourceData, user *upcloud.ManagedObjectStorageUser) (diags diag.Diagnostics) {
-	if err := d.Set("arn", user.Arn); err != nil {
+	if err := d.Set("arn", user.ARN); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("created_at", user.CreatedAt.String()); err != nil {

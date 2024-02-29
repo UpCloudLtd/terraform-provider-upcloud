@@ -108,7 +108,7 @@ func resourceManagedObjectStorageUserAccessKeyRead(ctx context.Context, d *schem
 	accessKey, err := svc.GetManagedObjectStorageUserAccessKey(ctx, &request.GetManagedObjectStorageUserAccessKeyRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		AccessKeyID: d.Id(),
+		AccessKeyID: id,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -124,8 +124,8 @@ func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *sch
 
 	svc := meta.(*service.Service)
 
-	var serviceUUID, username, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
+	var serviceUUID, username, id string
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &id); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -133,7 +133,7 @@ func resourceManagedObjectStorageUserAccessKeyUpdate(ctx context.Context, d *sch
 		Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(d.Get("status").(string)),
 		ServiceUUID: serviceUUID,
 		Username:    username,
-		AccessKeyID: name,
+		AccessKeyID: id,
 	}
 
 	accessKey, err := svc.ModifyManagedObjectStorageUserAccessKey(ctx, req)
