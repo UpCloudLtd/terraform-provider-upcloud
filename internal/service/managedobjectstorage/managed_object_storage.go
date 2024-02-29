@@ -7,9 +7,9 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -76,14 +76,6 @@ func ResourceManagedObjectStorage() *schema.Resource {
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
-			"users": {
-				Description: "List of custom usernames for accessing the object storage. No relation to UpCloud API accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys.",
-				Optional:    true,
-				Type:        schema.TypeSet,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
 		},
 	}
 }
@@ -94,6 +86,16 @@ func schemaEndpoint() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"domain_name": {
 				Description: "Domain name of the endpoint.",
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
+			"iam_url": {
+				Description: "URL for IAM.",
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
+			"sts_url": {
+				Description: "URL for STS.",
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
@@ -173,17 +175,6 @@ func resourceManagedObjectStorageCreate(ctx context.Context, d *schema.ResourceD
 
 	req.Networks = networks
 
-	userReqs := make([]request.ManagedObjectStorageUser, 0)
-	users, ok := d.GetOk("users")
-	if ok {
-		for _, user := range users.(*schema.Set).List() {
-			userReqs = append(req.Users, request.ManagedObjectStorageUser{
-				Username: user.(string),
-			})
-		}
-	}
-	req.Users = userReqs
-
 	storage, err := svc.CreateManagedObjectStorage(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
@@ -251,17 +242,6 @@ func resourceManagedObjectStorageUpdate(ctx context.Context, d *schema.ResourceD
 		req.Networks = &networks
 	}
 
-	if d.HasChange("users") {
-		userReqs := make([]request.ManagedObjectStorageUser, 0)
-		users := d.Get("users")
-		for _, user := range users.(*schema.Set).List() {
-			r := request.ManagedObjectStorageUser{
-				Username: user.(string),
-			}
-			userReqs = append(userReqs, r)
-		}
-		req.Users = &userReqs
-	}
 	storage, err := svc.ModifyManagedObjectStorage(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
@@ -345,6 +325,8 @@ func setManagedObjectStorageData(d *schema.ResourceData, storage *upcloud.Manage
 	for _, endpoint := range storage.Endpoints {
 		endpoints = append(endpoints, map[string]interface{}{
 			"domain_name": endpoint.DomainName,
+			"iam_url":     endpoint.IAMURL,
+			"sts_url":     endpoint.STSURL,
 			"type":        endpoint.Type,
 		})
 	}
@@ -383,14 +365,6 @@ func setManagedObjectStorageData(d *schema.ResourceData, storage *upcloud.Manage
 	}
 
 	if err := d.Set("labels", utils.LabelSliceToMap(storage.Labels)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	users := make([]interface{}, 0)
-	for _, user := range storage.Users {
-		users = append(users, user.Username)
-	}
-	if err := d.Set("users", users); err != nil {
 		return diag.FromErr(err)
 	}
 

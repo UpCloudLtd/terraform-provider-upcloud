@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 
 	"github.com/stretchr/testify/assert"
 )

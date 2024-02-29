@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 )
 
 func addServerToGroup(ctx context.Context, service *service.Service, serverUUID, groupUUID string) error {

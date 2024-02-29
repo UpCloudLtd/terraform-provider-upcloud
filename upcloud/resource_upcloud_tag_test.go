@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v7/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
