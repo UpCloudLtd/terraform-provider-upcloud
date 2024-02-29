@@ -44,8 +44,6 @@ resource "upcloud_managed_object_storage" "this" {
     uuid   = upcloud_network.this.id
   }
 
-  users = ["example"]
-
   labels = {
     managed-by = "terraform"
   }
@@ -65,7 +63,6 @@ resource "upcloud_managed_object_storage" "this" {
 
 - `labels` (Map of String) Key-value pairs to classify the managed object storage.
 - `network` (Block Set) Attached networks from where object storage can be used. Private networks must reside in object storage region. To gain access from multiple private networks that might reside in different zones, create the networks and a corresponding router for each network. (see [below for nested schema](#nestedblock--network))
-- `users` (Set of String) List of custom usernames for accessing the object storage. No relation to UpCloud API accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys.
 
 ### Read-Only
 
@@ -95,6 +92,8 @@ Optional:
 Read-Only:
 
 - `domain_name` (String)
+- `iam_url` (String)
+- `sts_url` (String)
 - `type` (String)
 
 
