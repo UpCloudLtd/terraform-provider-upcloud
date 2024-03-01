@@ -39,6 +39,7 @@
     "loadbalancer.md": "Load Balancer",
     "loadbalancer_backend.md": "Load Balancer",
     "loadbalancer_dynamic_backend_member.md": "Load Balancer",
+    "loadbalancer_backend_tls_config.md": "Load Balancer",
     "loadbalancer_dynamic_certificate_bundle.md": "Load Balancer",
     "loadbalancer_frontend.md": "Load Balancer",
     "loadbalancer_frontend_rule.md": "Load Balancer",
