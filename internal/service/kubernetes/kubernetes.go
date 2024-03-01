@@ -107,7 +107,7 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:    true,
 			},
 			"version": {
-				Description: "Kubernetes version ID, e.g. `1.26`. You can list available version IDs with `upctl kubernetes versions`.",
+				Description: "Kubernetes version ID, e.g. `1.27`. You can list available version IDs with `upctl kubernetes versions`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
