@@ -69,12 +69,20 @@ func resourceManagedObjectStorageUserCreate(ctx context.Context, d *schema.Resou
 func resourceManagedObjectStorageUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	svc := meta.(*service.Service)
 
-	var serviceUUID, username, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username, &name); err != nil {
+	var serviceUUID, username string
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &username); err != nil {
 		return diag.FromErr(err)
 	}
 
-	accessKey, err := svc.GetManagedObjectStorageUser(ctx, &request.GetManagedObjectStorageUserRequest{
+	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing user.
+	if _, ok := d.GetOk("service_uuid"); !ok {
+		err := d.Set("service_uuid", serviceUUID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	user, err := svc.GetManagedObjectStorageUser(ctx, &request.GetManagedObjectStorageUserRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,
 	})
@@ -82,7 +90,7 @@ func resourceManagedObjectStorageUserRead(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	return setManagedObjectStorageUserData(d, accessKey)
+	return setManagedObjectStorageUserData(d, user)
 }
 
 func resourceManagedObjectStorageUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
