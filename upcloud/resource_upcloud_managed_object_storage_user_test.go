@@ -54,10 +54,11 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config:            testDataS1,
-				ResourceName:      userAccessKey,
-				ImportState:       true,
-				ImportStateVerify: true,
+				Config:                  testDataS1,
+				ResourceName:            userAccessKey,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"secret_access_key"}, // only provided on creation, not available on subsequent requests like import
 			},
 			{
 				Config: testDataS2,

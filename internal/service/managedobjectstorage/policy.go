@@ -112,6 +112,14 @@ func resourceManagedObjectStoragePolicyRead(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
+	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing policy.
+	if _, ok := d.GetOk("service_uuid"); !ok {
+		err := d.Set("service_uuid", serviceUUID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	policy, err := svc.GetManagedObjectStoragePolicy(ctx, &request.GetManagedObjectStoragePolicyRequest{
 		ServiceUUID: serviceUUID,
 		Name:        name,
@@ -154,6 +162,15 @@ func setManagedObjectStoragePolicyData(d *schema.ResourceData, policy *upcloud.M
 		return diag.FromErr(err)
 	}
 	if err := d.Set("default_version_id", policy.DefaultVersionID); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("description", policy.Description); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("document", policy.Document); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("name", policy.Name); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("system", policy.System); err != nil {
