@@ -1,11 +1,39 @@
+variable "prefix" {
+  default = "tf-acc-test-db-"
+  type    = string
+}
+
+variable "zone" {
+  default = "pl-waw1"
+  type    = string
+}
+
+resource "upcloud_router" "this" {
+  name = "${var.prefix}router"
+}
+
+resource "upcloud_network" "this" {
+  name = "${var.prefix}net"
+  zone = var.zone
+
+  ip_network {
+    address = "172.18.101.0/24"
+    dhcp    = false
+    family  = "IPv4"
+  }
+
+  router = upcloud_router.this.id
+}
+
 resource "upcloud_managed_database_postgresql" "pg1" {
-  name                    = "tf-pg-test-1"
+  name                    = "${var.prefix}pg-1"
   plan                    = "1x1xCPU-2GB-25GB"
-  title                   = "tf-test-updated-pg-1"
-  zone                    = "pl-waw1"
+  title                   = "${var.prefix}pg-1-updated"
+  zone                    = var.zone
   maintenance_window_time = "11:00:00"
   maintenance_window_dow  = "thursday"
   powered                 = false
+
   properties {
     ip_filter = []
     version   = 14
@@ -13,33 +41,59 @@ resource "upcloud_managed_database_postgresql" "pg1" {
 }
 
 resource "upcloud_managed_database_postgresql" "pg2" {
-  name    = "tf-pg-test-2"
+  name    = "${var.prefix}pg-2"
   plan    = "1x1xCPU-2GB-25GB"
-  title   = "tf-test-updated-pg-2"
-  zone    = "pl-waw1"
+  title   = "${var.prefix}pg-2-updated"
+  zone    = var.zone
   powered = true
+
   properties {
     version = 14
+  }
+
+  // No change in network
+  network {
+    family = "IPv4"
+    name   = "${var.prefix}net"
+    type   = "private"
+    uuid   = upcloud_network.this.id
   }
 }
 
 resource "upcloud_managed_database_mysql" "msql1" {
-  name  = "tf-mysql-test-1"
+  name  = "${var.prefix}mysql-1"
   plan  = "1x1xCPU-2GB-25GB"
-  title = "tf-test-updated-msql-1"
-  zone  = "pl-waw1"
+  title = "${var.prefix}mysql-1-updated"
+  zone  = var.zone
+
+  // Attach network in modify
+  network {
+    family = "IPv4"
+    name   = "${var.prefix}net"
+    type   = "private"
+    uuid   = upcloud_network.this.id
+  }
 }
 
 resource "upcloud_managed_database_logical_database" "logical_db_1" {
   service = upcloud_managed_database_mysql.msql1.id
-  name    = "tf-test-updated-logical-db-1"
+  name    = "${var.prefix}logical-db-1-updated"
 }
 
 resource "upcloud_managed_database_redis" "r1" {
-  name  = "tf-redis-test-1"
+  name  = "${var.prefix}redis-1"
   plan  = "1x1xCPU-2GB"
-  title = "tf-test-redis-title-1"
-  zone  = "pl-waw1"
+  title = "${var.prefix}redis-1-updated"
+  zone  = var.zone
+
+  // No change in network
+  network {
+    family = "IPv4"
+    name   = "${var.prefix}net"
+    type   = "private"
+    uuid   = upcloud_network.this.id
+  }
+
 }
 
 resource "upcloud_managed_database_user" "db_user_1" {
