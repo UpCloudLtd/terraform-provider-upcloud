@@ -38,13 +38,11 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	tflog.Info(ctx, "managed database created", map[string]interface{}{"uuid": details.UUID, "name": d.Get("name")})
 
-	if err = waitManagedDatabaseFullyCreated(ctx, client, details); err != nil {
+	if _, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: details.UUID, DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
 		return append(
 			resourceDatabaseRead(ctx, d, meta),
-			diag.Diagnostic{
-				Severity: diag.Warning,
-				Summary:  err.Error(),
-			})
+			diag.FromErr(err)[0],
+		)
 	}
 
 	if !d.Get("powered").(bool) {
@@ -343,24 +341,6 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 	}
 
 	return d.Set("primary_database", details.ServiceURIParams.DatabaseName)
-}
-
-func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Service, db *upcloud.ManagedDatabase) error {
-	var err error
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			if db, err = client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: db.UUID}); err != nil {
-				return err
-			}
-			if isManagedDatabaseFullyCreated(db) {
-				return nil
-			}
-		}
-		time.Sleep(5 * time.Second)
-	}
 }
 
 func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {

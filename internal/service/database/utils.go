@@ -74,7 +74,3 @@ func splitManagedDatabaseSubResourceID(packed string) (serviceID string, subReso
 	}
 	return serviceID, subResourceID
 }
-
-func isManagedDatabaseFullyCreated(db *upcloud.ManagedDatabase) bool {
-	return db.State == upcloud.ManagedDatabaseStateRunning && len(db.Backups) > 0 && len(db.Users) > 0
-}
