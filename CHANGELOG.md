@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_object_storage: set `service_uuid` on import based on the given id
+
 ## [5.0.1] - 2024-03-01
 
 ### Fixed
