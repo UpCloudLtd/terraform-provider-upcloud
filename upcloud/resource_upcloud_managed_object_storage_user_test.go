@@ -36,8 +36,31 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 				),
 			},
 			{
-				Config:            testDataS2,
+				Config:            testDataS1,
+				ResourceName:      user,
+				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      userPolicy,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      policy,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      userAccessKey,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-user"),
 					resource.TestCheckResourceAttr(policy, "name", "tf-acc-test-objstov2-user"),
