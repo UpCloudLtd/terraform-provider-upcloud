@@ -70,6 +70,22 @@ func resourceManagedObjectStorageUserPolicyRead(ctx context.Context, d *schema.R
 		return diag.FromErr(err)
 	}
 
+	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing user policy attachment.
+	if _, ok := d.GetOk("service_uuid"); !ok {
+		err := d.Set("service_uuid", serviceUUID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// If username is not set already set it based on the Id. This is the case for example when importing existing user policy attachment.
+	if _, ok := d.GetOk("username"); !ok {
+		err := d.Set("username", username)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	policies, err := svc.GetManagedObjectStorageUserPolicies(ctx, &request.GetManagedObjectStorageUserPoliciesRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,

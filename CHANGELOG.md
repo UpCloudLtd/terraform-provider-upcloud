@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_object_storage: fix import of `user*` and `policy` resources
+
 ## [5.0.2] - 2024-03-04
 
 ### Fixed

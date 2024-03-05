@@ -19,7 +19,7 @@ resource "upcloud_router" "this" {
 
 resource "upcloud_network" "this" {
   name = "${var.prefix}net"
-  zone = "fi-hel1"
+  zone = var.zone
 
   ip_network {
     address = "172.18.1.0/24"

@@ -106,6 +106,22 @@ func resourceManagedObjectStorageUserAccessKeyRead(ctx context.Context, d *schem
 		return diag.FromErr(err)
 	}
 
+	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing user access key.
+	if _, ok := d.GetOk("service_uuid"); !ok {
+		err := d.Set("service_uuid", serviceUUID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// If username is not set already set it based on the Id. This is the case for example when importing existing user access key.
+	if _, ok := d.GetOk("username"); !ok {
+		err := d.Set("username", username)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	accessKey, err := svc.GetManagedObjectStorageUserAccessKey(ctx, &request.GetManagedObjectStorageUserAccessKeyRequest{
 		ServiceUUID: serviceUUID,
 		Username:    username,
