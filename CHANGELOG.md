@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.0.3] - 2024-03-05
+
 ### Fixed
 
 - upcloud_managed_object_storage: fix import of `user*` and `policy` resources
@@ -521,7 +523,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.0.2...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.0.3...HEAD
+[5.0.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.0.2...v5.0.3
 [5.0.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v4.1.0...v5.0.0
