@@ -22,22 +22,7 @@ func ResourceUser() *schema.Resource {
 		UpdateContext: resourceUserUpdate,
 		DeleteContext: resourceUserDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				var serviceID, user string
-				if err := utils.UnmarshalID(data.Id(), &serviceID, &user); err != nil {
-					return nil, err
-				}
-				if serviceID == "" || user == "" {
-					return nil, fmt.Errorf("invalid import id. Format: <managedDatabaseUUID>/<username>")
-				}
-				if err := data.Set("service", serviceID); err != nil {
-					return nil, err
-				}
-				if err := data.Set("username", user); err != nil {
-					return nil, err
-				}
-				return []*schema.ResourceData{data}, nil
-			},
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: schemaUser(),
 	}
@@ -73,8 +58,8 @@ func schemaUser() map[string]*schema.Schema {
 		"authentication": {
 			Description: "MySQL only, authentication type.",
 			Type:        schema.TypeString,
-			Default:     upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password,
-			Optional:    true,
+			// caching_sha2_password is used by default, but that can not be set via Default field as that would set the value also for non MySQL users.
+			Optional: true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 				string(upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password),
 				string(upcloud.ManagedDatabaseUserAuthenticationMySQLNativePassword),
@@ -224,6 +209,8 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	case upcloud.ManagedDatabaseServiceTypeMySQL:
 		if val, ok := d.Get("authentication").(string); ok && val != "" {
 			req.Authentication = upcloud.ManagedDatabaseUserAuthenticationType(val)
+		} else {
+			req.Authentication = upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password
 		}
 	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
 		if v, ok := d.Get("pg_access_control.0.allow_replication").(bool); ok {
@@ -260,6 +247,14 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return utils.HandleResourceError(d.Get("username").(string), d, err)
+	}
+
+	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing user.
+	if _, ok := d.GetOk("service"); !ok {
+		err := d.Set("service", serviceID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	userDetails, err := client.GetManagedDatabaseUser(ctx, &request.GetManagedDatabaseUserRequest{
@@ -415,6 +410,24 @@ func copyUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedD
 				"channels":   *details.RedisAccessControl.Channels,
 				"commands":   *details.RedisAccessControl.Commands,
 				"keys":       *details.RedisAccessControl.Keys,
+			},
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if details.OpenSearchAccessControl != nil {
+		rules := make([]map[string]interface{}, 0)
+		for _, rule := range *details.OpenSearchAccessControl.Rules {
+			rules = append(rules, map[string]interface{}{
+				"index":      rule.Index,
+				"permission": string(rule.Permission),
+			})
+		}
+
+		if err := d.Set("opensearch_access_control", []map[string]interface{}{
+			{
+				"rules": rules,
 			},
 		}); err != nil {
 			return diag.FromErr(err)

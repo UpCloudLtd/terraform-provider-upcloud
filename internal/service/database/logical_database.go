@@ -22,22 +22,7 @@ func ResourceLogicalDatabase() *schema.Resource {
 		ReadContext:   resourceLogicalDatabaseRead,
 		DeleteContext: resourceLogicalDatabaseDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				var serviceID, name string
-				if err := utils.UnmarshalID(data.Id(), &serviceID, &name); err != nil {
-					return nil, err
-				}
-				if serviceID == "" || name == "" {
-					return nil, fmt.Errorf("invalid import id. Format: <managedDatabaseUUID>/<logicalDatabaseName>")
-				}
-				if err := data.Set("service", serviceID); err != nil {
-					return nil, err
-				}
-				if err := data.Set("name", name); err != nil {
-					return nil, err
-				}
-				return []*schema.ResourceData{data}, nil
-			},
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: schemaLogicalDatabase(),
 	}
@@ -126,6 +111,14 @@ func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, me
 	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
+	}
+
+	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing user.
+	if _, ok := d.GetOk("service"); !ok {
+		err := d.Set("service", serviceID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	ldbs, err := client.GetManagedDatabaseLogicalDatabases(ctx, &request.GetManagedDatabaseLogicalDatabasesRequest{
