@@ -264,7 +264,7 @@ func schemaDatabaseNetwork() *schema.Schema {
 				"uuid": {
 					Description: "Private network UUID. Must reside in the same zone as the database.",
 					Type:        schema.TypeString,
-					Optional:    true,
+					Required:    true,
 				},
 			},
 		},
