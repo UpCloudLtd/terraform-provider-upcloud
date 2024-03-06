@@ -23,7 +23,10 @@ func ResourceUser() *schema.Resource {
 		DeleteContext: resourceUserDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				serviceID, user := splitManagedDatabaseSubResourceID(data.Id())
+				var serviceID, user string
+				if err := utils.UnmarshalID(data.Id(), &serviceID, &user); err != nil {
+					return nil, err
+				}
 				if serviceID == "" || user == "" {
 					return nil, fmt.Errorf("invalid import id. Format: <managedDatabaseUUID>/<username>")
 				}
@@ -237,7 +240,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if _, err = client.CreateManagedDatabaseUser(ctx, req); err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(buildManagedDatabaseSubResourceID(serviceID, d.Get("username").(string)))
+	d.SetId(utils.MarshalID(serviceID, d.Get("username").(string)))
 
 	tflog.Info(ctx, "managed database user created", map[string]interface{}{
 		"service_name": serviceDetails.Name, "username": d.Get("username").(string), "service_uuid": serviceID,
@@ -249,7 +252,10 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	serviceID, username := splitManagedDatabaseSubResourceID(d.Id())
+	var serviceID, username string
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &username); err != nil {
+		return diag.FromErr(err)
+	}
 
 	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
@@ -282,7 +288,10 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(fmt.Errorf("cannot modify a user while managed database %v (%v) is powered off", serviceDetails.Name, serviceID))
 	}
 
-	serviceID, username := splitManagedDatabaseSubResourceID(d.Id())
+	var username string
+	if utils.UnmarshalID(d.Id(), &serviceID, &username) != nil {
+		return diag.FromErr(err)
+	}
 	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
 		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
 	if err != nil {
@@ -350,7 +359,10 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(fmt.Errorf("cannot delete a user while managed database %v (%v) is powered off", serviceDetails.Name, serviceID))
 	}
 
-	serviceID, username := splitManagedDatabaseSubResourceID(d.Id())
+	var username string
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &username); err != nil {
+		return diag.FromErr(err)
+	}
 	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
 		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
 	if err != nil {
