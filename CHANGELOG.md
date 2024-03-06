@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_managed_database: support for attaching private networks
 
+### Fixed
+
+- upcloud_managed_database: set all relevant fields when importing `logical_database` and `user` resources
+
 ## [5.0.3] - 2024-03-05
 
 ### Fixed
