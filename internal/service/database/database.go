@@ -38,13 +38,11 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	tflog.Info(ctx, "managed database created", map[string]interface{}{"uuid": details.UUID, "name": d.Get("name")})
 
-	if err = waitManagedDatabaseFullyCreated(ctx, client, details); err != nil {
+	if _, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: details.UUID, DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
 		return append(
 			resourceDatabaseRead(ctx, d, meta),
-			diag.Diagnostic{
-				Severity: diag.Warning,
-				Summary:  err.Error(),
-			})
+			diag.FromErr(err)[0],
+		)
 	}
 
 	if !d.Get("powered").(bool) {
@@ -100,7 +98,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	diags := diag.Diagnostics{}
 
 	if d.HasChanges("plan", "title", "zone",
-		"maintenance_window_dow", "maintenance_window_time", "properties.0") {
+		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network") {
 		req := request.ModifyManagedDatabaseRequest{UUID: d.Id()}
 		req.Plan = d.Get("plan").(string)
 		req.Title = d.Get("title").(string)
@@ -116,6 +114,11 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 			// Always delete version if it exists; versions are updated via separate endpoint
 			delete(props, "version")
 			req.Properties = props
+		}
+
+		if d.HasChange("network") {
+			networks := networksFromResourceData(d)
+			req.Networks = &networks
 		}
 
 		_, err := client.ModifyManagedDatabase(ctx, &req)
@@ -162,6 +165,12 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 	if err := client.DeleteManagedDatabase(ctx, &req); err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Wait until database is deleted to be able to delete attached networks (if needed)
+	if err := waitForDatabaseToBeDeleted(ctx, client, d.Id()); err != nil {
+		return diag.FromErr(err)
+	}
+
 	tflog.Info(ctx, "managed database deleted", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 
 	return nil
@@ -174,6 +183,10 @@ func buildManagedDatabaseRequestFromResourceData(d *schema.ResourceData) request
 		Title:          d.Get("title").(string),
 		Type:           upcloud.ManagedDatabaseServiceType(d.Get("type").(string)),
 		Zone:           d.Get("zone").(string),
+	}
+
+	if d.HasChange("network") {
+		req.Networks = networksFromResourceData(d)
 	}
 
 	if d.HasChange("properties.0") {
@@ -245,7 +258,7 @@ func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase, d *
 }
 
 func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, details *upcloud.ManagedDatabase) error {
-	var nodeStates, components []map[string]interface{}
+	var components, networks, nodeStates []map[string]interface{}
 	var err error
 
 	for _, comp := range details.Components {
@@ -255,6 +268,15 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 			"port":      comp.Port,
 			"route":     comp.Route,
 			"usage":     comp.Usage,
+		})
+	}
+
+	for _, network := range details.Networks {
+		networks = append(networks, map[string]interface{}{
+			"family": network.Family,
+			"name":   network.Name,
+			"type":   network.Type,
+			"uuid":   network.UUID,
 		})
 	}
 
@@ -279,6 +301,9 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 		return err
 	}
 	if err = d.Set("maintenance_window_time", details.Maintenance.Time); err != nil {
+		return err
+	}
+	if err = d.Set("network", networks); err != nil {
 		return err
 	}
 	if err = d.Set("node_states", nodeStates); err != nil {
@@ -318,24 +343,14 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 	return d.Set("primary_database", details.ServiceURIParams.DatabaseName)
 }
 
-func waitManagedDatabaseFullyCreated(ctx context.Context, client *service.Service, db *upcloud.ManagedDatabase) error {
-	const maxRetries int = 100
-	var err error
-	for i := 0; i <= maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			if db, err = client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: db.UUID}); err != nil {
-				return err
-			}
-			if isManagedDatabaseFullyCreated(db) {
-				return nil
-			}
-		}
-		time.Sleep(5 * time.Second)
-	}
-	return errors.New("max retries reached while waiting for managed database instance to be created")
+func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id[0]})
+
+	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, err
+}
+
+func waitForDatabaseToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
+	return utils.WaitForResourceToBeDeleted(ctx, svc, getDatabaseDeleted, id)
 }
 
 func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {

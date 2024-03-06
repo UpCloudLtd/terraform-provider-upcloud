@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_database: support for attaching private networks
+
 ## [5.0.3] - 2024-03-05
 
 ### Fixed

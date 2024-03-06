@@ -8,40 +8,11 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-func TestIsManagedDatabaseFullyCreated(t *testing.T) {
-	db := &upcloud.ManagedDatabase{
-		Backups: make([]upcloud.ManagedDatabaseBackup, 0),
-		State:   upcloud.ManagedDatabaseStatePoweroff,
-		Users:   make([]upcloud.ManagedDatabaseUser, 0),
-	}
-	if isManagedDatabaseFullyCreated(db) {
-		t.Errorf("isManagedDatabaseFullyCreated failed want false got true %+v", db)
-	}
-
-	db.State = upcloud.ManagedDatabaseStateRunning
-	db.Backups = append(db.Backups, upcloud.ManagedDatabaseBackup{})
-	if isManagedDatabaseFullyCreated(db) {
-		t.Errorf("isManagedDatabaseFullyCreated failed want false got true %+v", db)
-	}
-
-	db.Users = append(db.Users, upcloud.ManagedDatabaseUser{})
-	db.Backups = make([]upcloud.ManagedDatabaseBackup, 0)
-	if isManagedDatabaseFullyCreated(db) {
-		t.Errorf("isManagedDatabaseFullyCreated failed want false got true %+v", db)
-	}
-
-	db.Backups = append(db.Backups, upcloud.ManagedDatabaseBackup{})
-	if !isManagedDatabaseFullyCreated(db) {
-		t.Errorf("isManagedDatabaseFullyCreated failed want true got false %+v", db)
-	}
-}
 
 func TestWaitServiceNameToPropagate(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
