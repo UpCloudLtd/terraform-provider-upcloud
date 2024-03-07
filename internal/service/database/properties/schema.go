@@ -69,7 +69,7 @@ func getSchema(prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, err
 		s.DiffSuppressFunc = diffSuppressCreateOnlyProperty
 	}
 
-	validations := []schema.SchemaValidateFunc{}
+	validations := []schema.SchemaValidateFunc{} //nolint:staticcheck // Most of the validators still use the deprecated function signature.
 
 	switch getType(prop.Type) {
 	case "string":
