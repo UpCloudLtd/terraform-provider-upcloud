@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"testing"
 	"time"
@@ -64,19 +63,15 @@ func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
 		t.Error(err)
 	}
 	// check fields that are not in schema
-	for key, prop := range dbt.Properties {
+	for key := range dbt.Properties {
 		if _, ok := s[key]; !ok {
-			js, err := json.MarshalIndent(&prop, " ", " ")
-			if err != nil {
-				js = []byte{}
-			}
-			t.Errorf("%s property '%s' is not defined in schema\n%s", dbType, key, string(js))
+			t.Errorf("%s property '%s' is not defined in schema. Run `make generate` to update properties.", dbType, key)
 		}
 	}
 	// check removed fields from schema
 	for key := range s {
 		if _, ok := dbt.Properties[key]; !ok {
-			t.Errorf("%s schema field '%s' is no longer supported", dbType, key)
+			t.Errorf("%s schema field '%s' is no longer supported. Run `make generate` to update properties.", dbType, key)
 		}
 	}
 }

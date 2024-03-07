@@ -45,7 +45,7 @@ func getPropertiesMap(dbType upcloud.ManagedDatabaseServiceType) (map[string]upc
 		return nil, err
 	}
 
-	err = json.Unmarshal([]byte(data), &properties)
+	err = json.Unmarshal(data, &properties)
 	if err != nil {
 		return nil, err
 	}

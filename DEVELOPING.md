@@ -56,7 +56,16 @@ terraform {
 
 ## Update database properties
 
-Set your credentials to `UPCLOUD_USERNAME` and `UPCLOUD_PASSWORD` environment variables and run `make generate` to update database properties schemas.
+Prerequisites:
+
+- Set your credentials to `UPCLOUD_USERNAME` and `UPCLOUD_PASSWORD` environment variables.
+- Ensure you have `jq` and `upctl` installed.
+
+Run `make generate` to update database properties schemas.
+
+```sh
+make generate
+```
 
 ## Testing
 
