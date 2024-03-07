@@ -38,6 +38,24 @@ func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool
 	return d.Id() != ""
 }
 
+func stringSlice(val interface{}) ([]string, bool) {
+	if strs, ok := val.([]string); ok {
+		return strs, true
+	}
+	if ifaces, ok := val.([]interface{}); ok {
+		strs := make([]string, 0)
+		for _, iface := range ifaces {
+			str, ok := iface.(string)
+			if !ok {
+				return nil, false
+			}
+			strs = append(strs, str)
+		}
+		return strs, true
+	}
+	return nil, false
+}
+
 func getSchema(prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, error) {
 	s := schema.Schema{
 		Description: getDescription(prop),
@@ -59,7 +77,10 @@ func getSchema(prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, err
 		if prop.MaxLength != 0 {
 			validations = append(validations, validation.StringLenBetween(prop.MinLength, prop.MaxLength))
 		}
-		// TODO: Check if prop.Pattern and prop.Enum could be validated as well.
+		if enum, ok := stringSlice(prop.Enum); ok {
+			validations = append(validations, validation.StringInSlice(enum, false))
+		}
+		// TODO: Check if prop.Pattern could be validated as well.
 	case "integer":
 		s.Type = schema.TypeInt
 
