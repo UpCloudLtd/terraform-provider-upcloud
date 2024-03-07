@@ -54,6 +54,10 @@ terraform {
 }
 ```
 
+## Update database properties
+
+Set your credentials to `UPCLOUD_USERNAME` and `UPCLOUD_PASSWORD` environment variables and run `make generate` to update database properties schemas.
+
 ## Testing
 
 To lint the providers source-code, run `golangci-lint run`. See [golangci-lint docs](https://golangci-lint.run/usage/install/) for installation instructions.
