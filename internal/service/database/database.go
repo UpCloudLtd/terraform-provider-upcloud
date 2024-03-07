@@ -76,7 +76,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	tflog.Debug(ctx, "managed database read", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
-	if d.Get("type").(string) == string(upcloud.ManagedDatabaseServiceTypePostgreSQL) {
+	if details.Type == upcloud.ManagedDatabaseServiceTypePostgreSQL {
 		if err := d.Set("sslmode", details.ServiceURIParams.SSLMode); err != nil {
 			return diag.FromErr(err)
 		}
@@ -86,7 +86,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 	if len(details.Properties) > 0 {
-		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(details, d)}); err != nil {
+		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(details)}); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -238,20 +238,17 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 	return r
 }
 
-func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase, d *schema.ResourceData) map[string]interface{} {
-	props := d.Get("properties.0").(map[string]interface{})
-	for key, iv := range db.Properties {
-		if _, ok := props[string(key)]; !ok {
-			continue
-		}
+func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase) map[string]interface{} {
+	props := make(map[string]interface{})
+	for key, value := range db.Properties {
 		switch key {
 		case "migration", "pglookout", "timescaledb", "pgbouncer":
 			// convert API objects into list of objects
-			if m, ok := iv.(map[string]interface{}); ok {
+			if m, ok := value.(map[string]interface{}); ok {
 				props[string(key)] = []map[string]interface{}{m}
 			}
 		default:
-			props[string(key)] = iv
+			props[string(key)] = value
 		}
 	}
 	return props
@@ -331,6 +328,9 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 		return err
 	}
 	if err = d.Set("title", details.Title); err != nil {
+		return err
+	}
+	if err = d.Set("type", string(details.Type)); err != nil {
 		return err
 	}
 	if err = d.Set("zone", details.Zone); err != nil {
