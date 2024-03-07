@@ -1,13 +1,28 @@
 package properties
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 )
 
-func getPropertiesData(dbType upcloud.ManagedDatabaseServiceType) (string, error) {
+//go:generate sh generate_types_data.sh
+
+//go:embed mysql_properties.json
+var mysqlPropertiesJSON []byte
+
+//go:embed opensearch_properties.json
+var opensearchPropertiesJSON []byte
+
+//go:embed pg_properties.json
+var pgPropertiesJSON []byte
+
+//go:embed redis_properties.json
+var redisPropertiesJSON []byte
+
+func getPropertiesData(dbType upcloud.ManagedDatabaseServiceType) ([]byte, error) {
 	switch dbType {
 	case upcloud.ManagedDatabaseServiceTypeMySQL:
 		return mysqlPropertiesJSON, nil
@@ -18,7 +33,7 @@ func getPropertiesData(dbType upcloud.ManagedDatabaseServiceType) (string, error
 	case upcloud.ManagedDatabaseServiceTypeRedis:
 		return redisPropertiesJSON, nil
 	default:
-		return "", fmt.Errorf(`unknown database type "%s"`, dbType)
+		return nil, fmt.Errorf(`unknown database type "%s"`, dbType)
 	}
 }
 

@@ -11,20 +11,8 @@ fi
 upctl database types -o json | jq -cM > $tmpfile
 types=$(cat $tmpfile | jq -r 'keys | .[]')
 
-output=""
 for type in $types; do
-    output="${output}const ${type}PropertiesJSON = \`$(cat $tmpfile | jq .$type.properties -cM | sed 's/`/` + \"`\" + `/g')\`
-"
+    cat $tmpfile | jq .$type.properties -cM > ${type}_properties.json
 done
-
-cat << EOF > $target
-//go:build !codeanalysis
-// +build !codeanalysis
-
-//nolint:all // Automatically generated with ./generate_types_data.sh
-package properties
-
-$output
-EOF
 
 rm -f $tmpfile
