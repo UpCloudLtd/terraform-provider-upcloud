@@ -49,6 +49,7 @@ resource "upcloud_managed_database_postgresql" "example_2" {
 
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
+- `network` (Block Set, Max: 8) Private networks attached to the managed database (see [below for nested schema](#nestedblock--network))
 - `powered` (Boolean) The administrative power state of the service
 - `properties` (Block List, Max: 1) Database Engine properties for PostgreSQL (see [below for nested schema](#nestedblock--properties))
 
@@ -66,6 +67,17 @@ resource "upcloud_managed_database_postgresql" "example_2" {
 - `sslmode` (String) SSL Connection Mode for PostgreSQL
 - `state` (String) State of the service
 - `type` (String) Type of the service
+
+<a id="nestedblock--network"></a>
+### Nested Schema for `network`
+
+Required:
+
+- `family` (String) Network family. Currently only `IPv4` is supported.
+- `name` (String) The name of the network. Must be unique within the service.
+- `type` (String) The type of the network. Must be private.
+- `uuid` (String) Private network UUID. Must reside in the same zone as the database.
+
 
 <a id="nestedblock--properties"></a>
 ### Nested Schema for `properties`
