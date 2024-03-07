@@ -2,6 +2,7 @@ package properties
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -80,7 +81,11 @@ func getSchema(prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, err
 		if enum, ok := stringSlice(prop.Enum); ok {
 			validations = append(validations, validation.StringInSlice(enum, false))
 		}
-		// TODO: Check if prop.Pattern could be validated as well.
+		if prop.Pattern != "" {
+			if re, err := regexp.Compile(prop.Pattern); err == nil {
+				validations = append(validations, validation.StringMatch(re, fmt.Sprintf(`Must match "%s" pattern.`, prop.Pattern)))
+			}
+		}
 	case "integer":
 		s.Type = schema.TypeInt
 
