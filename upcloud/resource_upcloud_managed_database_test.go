@@ -29,6 +29,15 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	userName4 := "upcloud_managed_database_user.db_user_4"
 	redisName := "upcloud_managed_database_redis.r1"
 
+	verifyImportStep := func(name string) resource.TestStep {
+		return resource.TestStep{
+			Config:            testDataS1,
+			ResourceName:      name,
+			ImportState:       true,
+			ImportStateVerify: true,
+		}
+	}
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
@@ -90,6 +99,11 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(redisName, "network.#", "1"),
 				),
 			},
+			verifyImportStep(lgDBName),
+			verifyImportStep(userName1),
+			verifyImportStep(userName2),
+			verifyImportStep(userName3),
+			verifyImportStep(userName4),
 			{
 				Config: testDataS2,
 				Check: resource.ComposeAggregateTestCheckFunc(

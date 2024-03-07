@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -58,19 +56,6 @@ func resourceUpCloudManagedDatabaseWaitState(
 	return res.(*upcloud.ManagedDatabase), nil
 }
 
-func buildManagedDatabaseSubResourceID(serviceID, subResourceID string) string {
-	return fmt.Sprintf("%s/%s", serviceID, subResourceID)
-}
-
 func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool {
 	return d.Id() != ""
-}
-
-func splitManagedDatabaseSubResourceID(packed string) (serviceID string, subResourceID string) {
-	parts := strings.SplitN(packed, "/", 2)
-	serviceID = parts[0]
-	if len(parts) > 1 {
-		subResourceID = parts[1]
-	}
-	return serviceID, subResourceID
 }

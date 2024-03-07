@@ -22,19 +22,7 @@ func ResourceLogicalDatabase() *schema.Resource {
 		ReadContext:   resourceLogicalDatabaseRead,
 		DeleteContext: resourceLogicalDatabaseDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				serviceID, name := splitManagedDatabaseSubResourceID(data.Id())
-				if serviceID == "" || name == "" {
-					return nil, fmt.Errorf("invalid import id. Format: <managedDatabaseUUID>/<logicalDatabaseName>")
-				}
-				if err := data.Set("service", serviceID); err != nil {
-					return nil, err
-				}
-				if err := data.Set("name", name); err != nil {
-					return nil, err
-				}
-				return []*schema.ResourceData{data}, nil
-			},
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: schemaLogicalDatabase(),
 	}
@@ -103,7 +91,8 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(buildManagedDatabaseSubResourceID(serviceID, d.Get("name").(string)))
+	d.SetId(utils.MarshalID(serviceID, d.Get("name").(string)))
+
 	tflog.Info(ctx, "managed database logical database created", map[string]interface{}{
 		"service_name": serviceDetails.Name, "name": d.Get("name").(string), "service_uuid": serviceID,
 	})
@@ -114,11 +103,22 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 
-	serviceID, name := splitManagedDatabaseSubResourceID(d.Id())
+	var serviceID, name string
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 
 	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
 	if err != nil {
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
+	}
+
+	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing user.
+	if _, ok := d.GetOk("service"); !ok {
+		err := d.Set("service", serviceID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	ldbs, err := client.GetManagedDatabaseLogicalDatabases(ctx, &request.GetManagedDatabaseLogicalDatabasesRequest{
@@ -156,7 +156,10 @@ func resourceLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(fmt.Errorf("cannot delete a logical database while managed database %v (%v) is powered off", serviceDetails.Name, serviceID))
 	}
 
-	serviceID, name := splitManagedDatabaseSubResourceID(d.Id())
+	var name string
+	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
+		return diag.FromErr(err)
+	}
 	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
 		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
 	if err != nil {
