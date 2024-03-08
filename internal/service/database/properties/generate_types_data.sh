@@ -1,6 +1,5 @@
 #!/bin/bash
 
-target=typesdata.gen.go
 tmpfile=tmp_typesdata.json
 
 if [ -z "$UPCLOUD_USERNAME" ] || [ -z "$UPCLOUD_PASSWORD" ]; then

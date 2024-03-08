@@ -20,7 +20,29 @@ func ensureDot(text string) string {
 	return strings.TrimSpace(text) + "."
 }
 
-func getDescription(prop upcloud.ManagedDatabaseServiceProperty) string {
+func titleSimilarToKey(key, title string) bool {
+	if title == key {
+		return true
+	}
+
+	// E.g. title = "pg_stat_statements.track" and key = "pg_stat_statements_track"
+	if strings.ReplaceAll(title, ".", "_") == key {
+		return true
+	}
+
+	// E.g. title == "timescaledb.max_background_workers" and key = "max_background_workers"
+	if _, childTitle, ok := strings.Cut(title, "."); ok && childTitle == key {
+		return true
+	}
+
+	return false
+}
+
+func getDescription(key string, prop upcloud.ManagedDatabaseServiceProperty) string {
+	if titleSimilarToKey(key, prop.Title) {
+		return ensureDot(prop.Description)
+	}
+
 	return strings.TrimSpace(ensureDot(prop.Title) + " " + ensureDot(prop.Description))
 }
 
@@ -57,9 +79,9 @@ func stringSlice(val interface{}) ([]string, bool) {
 	return nil, false
 }
 
-func getSchema(prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, error) {
+func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, error) {
 	s := schema.Schema{
-		Description: getDescription(prop),
+		Description: getDescription(key, prop),
 		Optional:    true,
 		Computed:    true,
 	}
@@ -136,7 +158,7 @@ func getSchema(prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, err
 func getSchemaMap(props map[string]upcloud.ManagedDatabaseServiceProperty) (map[string]*schema.Schema, error) {
 	sMap := make(map[string]*schema.Schema)
 	for key, prop := range props {
-		s, err := getSchema(prop)
+		s, err := getSchema(key, prop)
 		if err != nil {
 			return nil, err
 		}
