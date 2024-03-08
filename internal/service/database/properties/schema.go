@@ -90,11 +90,16 @@ func getKeyDiffSuppressFunc(key string) schema.SchemaDiffSuppressFunc {
 	}
 }
 
+func isSensitive(key string) bool {
+	return strings.Contains(key, "password")
+}
+
 func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, error) {
 	s := schema.Schema{
 		Description: getDescription(key, prop),
 		Optional:    true,
 		Computed:    true,
+		Sensitive:   isSensitive(key),
 	}
 
 	if prop.CreateOnly {
