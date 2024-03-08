@@ -86,7 +86,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 	if len(details.Properties) > 0 {
-		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(details)}); err != nil {
+		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(d, details)}); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -238,8 +238,9 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 	return r
 }
 
-func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase) map[string]interface{} {
-	props := make(map[string]interface{})
+func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcloud.ManagedDatabase) map[string]interface{} {
+	props := d.Get("properties.0").(map[string]interface{})
+
 	for key, value := range db.Properties {
 		switch key {
 		case "migration", "pglookout", "timescaledb", "pgbouncer":
