@@ -25,6 +25,7 @@ const (
 	configuredStatusDescription = "The service configured status indicates the service's current intended status. Managed by the customer."
 	operationalStateDescription = "The service operational state indicates the service's current operational, effective state. Managed by the system."
 	addressesDescription        = "IP addresses assigned to the gateway."
+	planDescription             = "Gateway pricing plan."
 
 	cleanupWaitTimeSeconds = 15
 )
@@ -92,7 +93,14 @@ func ResourceGateway() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"plan": {
+				Description: planDescription,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			"addresses": {
+				Deprecated:  "",
 				Description: addressesDescription,
 				Computed:    true,
 				Type:        schema.TypeSet,
@@ -291,6 +299,9 @@ var validateName = validation.ToDiagFunc(validation.All(
 	validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), ""),
 ))
 
-var validateFeaturesElen = validation.ToDiagFunc(validation.StringInSlice([]string{string(upcloud.GatewayFeatureNAT)}, false))
+var validateFeaturesElen = validation.ToDiagFunc(validation.StringInSlice([]string{
+	string(upcloud.GatewayFeatureNAT),
+	string(upcloud.GatewayFeatureVPN),
+}, false))
 
 var validateConfiguredStatus = validation.ToDiagFunc(validation.StringInSlice([]string{string(upcloud.GatewayConfiguredStatusStarted), string(upcloud.GatewayConfiguredStatusStopped)}, false))

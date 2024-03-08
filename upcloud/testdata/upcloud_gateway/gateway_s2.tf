@@ -32,6 +32,7 @@ resource "upcloud_network" "this" {
 resource "upcloud_gateway" "this" {
   name              = "${var.prefix}gw-renamed"
   zone              = var.zone
+  plan              = "advanced"
   features          = ["nat"]
   configured_status = "stopped"
 

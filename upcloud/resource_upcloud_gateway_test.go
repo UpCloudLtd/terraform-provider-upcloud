@@ -26,6 +26,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "name", "tf-acc-test-net-gateway-gw"),
 					resource.TestCheckResourceAttr(name, "zone", "pl-waw1"),
+					resource.TestCheckResourceAttr(name, "plan", "advanced"),
 					resource.TestCheckResourceAttr(name, "features.0", "nat"),
 					resource.TestCheckResourceAttr(name, "configured_status", "started"),
 					resource.TestCheckResourceAttr(name, "labels.%", "2"),
