@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_managed_database: update properties for each database type to match upstream.
+
+### Fixed
+
+- upcloud_managed_database: set all fields when importing database resources
+
 ## [5.1.0] - 2024-03-07
 
 ### Added
