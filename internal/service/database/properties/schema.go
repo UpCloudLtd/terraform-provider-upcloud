@@ -79,6 +79,17 @@ func stringSlice(val interface{}) ([]string, bool) {
 	return nil, false
 }
 
+func getKeyDiffSuppressFunc(key string) schema.SchemaDiffSuppressFunc {
+	switch key {
+	case "ip_filter":
+		return func(k, old, new string, d *schema.ResourceData) bool {
+			return strings.TrimSuffix(old, "/32") == strings.TrimSuffix(new, "/32")
+		}
+	default:
+		return nil
+	}
+}
+
 func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, error) {
 	s := schema.Schema{
 		Description: getDescription(key, prop),
@@ -144,6 +155,10 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema
 		s.Elem = &schema.Resource{Schema: nested}
 	default:
 		return nil, fmt.Errorf(`unknown property value type "%s"`, prop.Type)
+	}
+
+	if f := getKeyDiffSuppressFunc(key); f != nil {
+		s.DiffSuppressFunc = f
 	}
 
 	if len(validations) > 0 {
