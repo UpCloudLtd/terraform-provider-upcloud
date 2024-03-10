@@ -198,19 +198,18 @@ func getSchemaMap(props map[string]upcloud.ManagedDatabaseServiceProperty) (map[
 	return sMap, nil
 }
 
-func panicMessage(dbType upcloud.ManagedDatabaseServiceType, step string) string {
-	return fmt.Sprintf("Could not generate %s properties %s. This is a bug in the provider. Please create an issue in https://github.com/UpCloudLtd/terraform-provider-upcloud/issues.", dbType, step)
+func panicMessage(dbType upcloud.ManagedDatabaseServiceType, step string, err error) string {
+	return fmt.Sprintf(`Could not generate %s properties %s. This is a bug in the provider. Please create an issue in https://github.com/UpCloudLtd/terraform-provider-upcloud/issues.
+
+Error: %s`, dbType, step, err.Error())
 }
 
 func GetSchemaMap(dbType upcloud.ManagedDatabaseServiceType) map[string]*schema.Schema {
-	p, err := getPropertiesMap(dbType)
-	if err != nil {
-		panic(panicMessage(dbType, "map"))
-	}
+	p := GetProperties(dbType)
 
 	s, err := getSchemaMap(p)
 	if err != nil {
-		panic(panicMessage(dbType, "schema"))
+		panic(panicMessage(dbType, "schema", err))
 	}
 	return s
 }

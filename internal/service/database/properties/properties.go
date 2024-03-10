@@ -3,7 +3,7 @@ package properties
 import (
 	_ "embed"
 	"encoding/json"
-	"fmt"
+	"sync"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 )
@@ -22,33 +22,55 @@ var pgPropertiesJSON []byte
 //go:embed redis_properties.json
 var redisPropertiesJSON []byte
 
-func getPropertiesData(dbType upcloud.ManagedDatabaseServiceType) ([]byte, error) {
-	switch dbType {
-	case upcloud.ManagedDatabaseServiceTypeMySQL:
-		return mysqlPropertiesJSON, nil
-	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
-		return opensearchPropertiesJSON, nil
-	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
-		return pgPropertiesJSON, nil
-	case upcloud.ManagedDatabaseServiceTypeRedis:
-		return redisPropertiesJSON, nil
-	default:
-		return nil, fmt.Errorf(`unknown database type "%s"`, dbType)
+var (
+	onceParseProperties sync.Once
+	propertiesByType    map[upcloud.ManagedDatabaseServiceType]map[string]upcloud.ManagedDatabaseServiceProperty
+)
+
+func getTypes() []upcloud.ManagedDatabaseServiceType {
+	return []upcloud.ManagedDatabaseServiceType{
+		upcloud.ManagedDatabaseServiceTypeMySQL,
+		upcloud.ManagedDatabaseServiceTypeOpenSearch,
+		upcloud.ManagedDatabaseServiceTypePostgreSQL,
+		upcloud.ManagedDatabaseServiceTypeRedis,
 	}
 }
 
-func getPropertiesMap(dbType upcloud.ManagedDatabaseServiceType) (map[string]upcloud.ManagedDatabaseServiceProperty, error) {
-	var properties map[string]upcloud.ManagedDatabaseServiceProperty
+func getPropertiesData(dbType upcloud.ManagedDatabaseServiceType) []byte {
+	switch dbType {
+	case upcloud.ManagedDatabaseServiceTypeMySQL:
+		return mysqlPropertiesJSON
+	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
+		return opensearchPropertiesJSON
+	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
+		return pgPropertiesJSON
+	case upcloud.ManagedDatabaseServiceTypeRedis:
+		return redisPropertiesJSON
+	default:
+		return nil
+	}
+}
 
-	data, err := getPropertiesData(dbType)
-	if err != nil {
-		return nil, err
+func parsePropertiesMap() {
+	// This Function needs some extra logic because the JSON produced by upctl is not compatible with JSON provided by API because of the missing zone layer from ".pg.service_plans[].zones"
+	propsMap := make(map[upcloud.ManagedDatabaseServiceType]map[string]upcloud.ManagedDatabaseServiceProperty)
+	for _, dbType := range getTypes() {
+		var props map[string]upcloud.ManagedDatabaseServiceProperty
+		data := getPropertiesData(dbType)
+
+		err := json.Unmarshal(data, &props)
+		if err != nil {
+			panic(panicMessage(dbType, "map", err))
+		}
+
+		propsMap[dbType] = props
 	}
 
-	err = json.Unmarshal(data, &properties)
-	if err != nil {
-		return nil, err
-	}
+	propertiesByType = propsMap
+}
 
-	return properties, nil
+func GetProperties(dbType upcloud.ManagedDatabaseServiceType) map[string]upcloud.ManagedDatabaseServiceProperty {
+	onceParseProperties.Do(parsePropertiesMap)
+
+	return propertiesByType[dbType]
 }
