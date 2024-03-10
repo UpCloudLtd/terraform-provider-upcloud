@@ -133,6 +133,7 @@ Optional:
 - `pg_stat_monitor_pgsm_enable_query_plan` (Boolean) Enables or disables query plan monitoring.
 - `pg_stat_monitor_pgsm_max_buckets` (Number) Sets the maximum number of buckets.
 - `pg_stat_statements_track` (String) Controls which statements are counted. Specify top to track top-level statements (those issued directly by clients), all to also track nested statements (such as statements invoked within functions), or none to disable statement statistics collection. The default value is top.
+- `pgaudit` (Block List, Max: 1) PGAudit settings. System-wide settings for the pgaudit extension. (see [below for nested schema](#nestedblock--properties--pgaudit))
 - `pgbouncer` (Block List, Max: 1) PGBouncer connection pooling settings. System-wide settings for pgbouncer. (see [below for nested schema](#nestedblock--properties--pgbouncer))
 - `pglookout` (Block List, Max: 1) PGLookout settings. System-wide settings for pglookout. (see [below for nested schema](#nestedblock--properties--pglookout))
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
@@ -165,6 +166,27 @@ Optional:
 - `port` (Number) Port number of the server where to migrate data from.
 - `ssl` (Boolean) The server where to migrate data from is secured with SSL.
 - `username` (String) User name for authentication with the server where to migrate data from.
+
+
+<a id="nestedblock--properties--pgaudit"></a>
+### Nested Schema for `properties.pgaudit`
+
+Optional:
+
+- `feature_enabled` (Boolean) Enable pgaudit extension. Enable pgaudit extension. When enabled, pgaudit extension will be automatically installed.Otherwise, extension will be uninstalled but auditing configurations will be preserved.
+- `log` (List of String) Specifies which classes of statements will be logged by session audit logging.
+- `log_catalog` (Boolean) Specifies that session logging should be enabled in the casewhere all relations in a statement are in pg_catalog.
+- `log_client` (Boolean) Specifies whether log messages will be visible to a client process such as psql.
+- `log_level` (String) Specifies the log level that will be used for log entries.
+- `log_max_string_length` (Number) Crop parameters representation and whole statements if they exceed this threshold. A (default) value of -1 disable the truncation.
+- `log_nested_statements` (Boolean) This GUC allows to turn off logging nested statements, that is, statements that are executed as part of another ExecutorRun.
+- `log_parameter` (Boolean) Specifies that audit logging should include the parameters that were passed with the statement.
+- `log_parameter_max_size` (Number) Specifies that parameter values longer than this setting (in bytes) should not be logged, but replaced with <long param suppressed>.
+- `log_relation` (Boolean) Specifies whether session audit logging should create a separate log entry for each relation (TABLE, VIEW, etc.) referenced in a SELECT or DML statement.
+- `log_rows` (Boolean) Specifies that audit logging should include the rows retrieved or affected by a statement. When enabled the rows field will be included after the parameter field.
+- `log_statement` (Boolean) Specifies whether logging will include the statement text and parameters (if enabled).
+- `log_statement_once` (Boolean) Specifies whether logging will include the statement text and parameters with the first log entry for a statement/substatement combination or with every entry.
+- `role` (String) Specifies the master role to use for object audit logging.
 
 
 <a id="nestedblock--properties--pgbouncer"></a>
