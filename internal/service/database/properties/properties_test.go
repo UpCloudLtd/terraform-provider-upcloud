@@ -3,8 +3,18 @@ package properties
 import (
 	"testing"
 
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/stretchr/testify/assert"
 )
+
+func getTypes() []upcloud.ManagedDatabaseServiceType {
+	return []upcloud.ManagedDatabaseServiceType{
+		upcloud.ManagedDatabaseServiceTypeMySQL,
+		upcloud.ManagedDatabaseServiceTypeOpenSearch,
+		upcloud.ManagedDatabaseServiceTypePostgreSQL,
+		upcloud.ManagedDatabaseServiceTypeRedis,
+	}
+}
 
 func TestGetPropertiesMap(t *testing.T) {
 	dbTypes := getTypes()
