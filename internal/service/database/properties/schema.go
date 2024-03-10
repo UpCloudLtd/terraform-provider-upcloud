@@ -113,18 +113,26 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema
 	switch getType(prop.Type) {
 	case "string":
 		s.Type = schema.TypeString
+		var hasEnum, patternMatchesEmpty bool
 
 		if prop.MaxLength != 0 {
 			validations = append(validations, validation.StringLenBetween(prop.MinLength, prop.MaxLength))
 		}
-		if enum, ok := stringSlice(prop.Enum); ok {
+		if enum, hasEnum := stringSlice(prop.Enum); hasEnum {
 			validations = append(validations, validation.StringInSlice(enum, false))
 		}
 		if prop.Pattern != "" {
 			if re, err := regexp.Compile(prop.Pattern); err == nil {
+				patternMatchesEmpty = re.Match([]byte{})
 				validations = append(validations, validation.StringMatch(re, fmt.Sprintf(`Must match "%s" pattern.`, prop.Pattern)))
 			}
 		}
+
+		// If empty string is valid value, `Computed = true` will block user from clearing the property value
+		if prop.MinLength == 0 && !hasEnum && patternMatchesEmpty {
+			s.Computed = false
+		}
+
 	case "integer":
 		s.Type = schema.TypeInt
 
