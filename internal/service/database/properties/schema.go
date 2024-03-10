@@ -62,6 +62,14 @@ func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool
 	return d.Id() != ""
 }
 
+func booleanDefault(val interface{}) (bool, bool) {
+	if b, ok := val.(bool); ok {
+		return b, true
+	}
+
+	return false, false
+}
+
 func stringSlice(val interface{}) ([]string, bool) {
 	if strs, ok := val.([]string); ok {
 		return strs, true
@@ -155,6 +163,11 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema
 		}
 	case "boolean":
 		s.Type = schema.TypeBool
+
+		if boolDefault, ok := booleanDefault(prop.Default); ok {
+			s.Computed = false
+			s.Default = boolDefault
+		}
 	case "array":
 		s.Type = schema.TypeList
 		s.Elem = &schema.Schema{
