@@ -148,7 +148,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema
 			validations = append(validations, validation.IntAtLeast(int(*prop.Minimum)))
 		}
 		if prop.Maximum != nil {
-			if *prop.Maximum <= float64(math.MaxInt) {
+			if *prop.Maximum < float64(math.MaxInt) {
 				validations = append(validations, validation.IntAtMost(int(*prop.Maximum)))
 			}
 		}
