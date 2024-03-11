@@ -171,7 +171,7 @@ func testAccCheckFirewallRulesExists(resourceName string, firewallRules *upcloud
 }
 
 func testAccCheckUpCloudFirewallRuleAttributes(firewallRules *upcloud.FirewallRules, index int, action, comment, family, icmpType, protocol, direction, destinationAddressStart, destinationAddressEnd, destinationPortStart, destinationPortEnd, sourceAddressStart, sourceAddressEnd, sourcePortStart, sourcePortEnd string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(_ *terraform.State) error {
 		firewallRule := firewallRules.FirewallRules[index]
 
 		if firewallRule.Action != action {

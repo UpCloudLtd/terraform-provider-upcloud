@@ -35,7 +35,6 @@ func ResizeStoragePartitionAndFs(ctx context.Context, client *service.Service, U
 		err = client.DeleteStorage(ctx, &request.DeleteStorageRequest{
 			UUID: backup.UUID,
 		})
-
 		if err != nil {
 			summary := fmt.Sprintf(
 				"Failed to delete the backup of storage %s(%s) after the partition and filesystem resize; you will need to delete the backup manually",

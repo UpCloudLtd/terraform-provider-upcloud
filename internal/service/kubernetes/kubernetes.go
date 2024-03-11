@@ -294,7 +294,7 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id str
 	return utils.WaitForResourceToBeDeleted(ctx, svc, getClusterDeleted, id)
 }
 
-var validateResourceName = validation.ToDiagFunc(func(i interface{}, s string) (warns []string, errs []error) {
+var validateResourceName = validation.ToDiagFunc(func(i interface{}, _ string) (warns []string, errs []error) {
 	val, ok := i.(string)
 	if !ok {
 		errs = append(errs, fmt.Errorf("provided value is not a string"))

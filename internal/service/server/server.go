@@ -501,7 +501,6 @@ func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		UUID:         serverDetails.UUID,
 		DesiredState: upcloud.ServerStateStarted,
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

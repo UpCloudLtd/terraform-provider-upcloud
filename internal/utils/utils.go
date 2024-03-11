@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func FilterZoneIds(vs []upcloud.Zone, f func(upcloud.Zone) bool) []string {
+func FilterZoneIDs(vs []upcloud.Zone, f func(upcloud.Zone) bool) []string {
 	vsf := make([]string, 0)
 	for _, v := range vs {
 		if f(v) {

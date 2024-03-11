@@ -167,7 +167,6 @@ func resourceObjectStorageCreate(ctx context.Context, d *schema.ResourceData, m 
 			details := bucketDetails.(map[string]interface{})
 
 			err = conn.MakeBucket(ctx, details["name"].(string), minio.MakeBucketOptions{})
-
 			if err != nil {
 				return diag.FromErr(err)
 			}

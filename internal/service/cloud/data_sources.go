@@ -182,7 +182,7 @@ func dataSourceZonesRead(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.FromErr(fmt.Errorf("error getting filter_type: %s", err))
 	}
 
-	zoneIds := utils.FilterZoneIds(zones.Zones, func(zone upcloud.Zone) bool {
+	zoneIDs := utils.FilterZoneIDs(zones.Zones, func(zone upcloud.Zone) bool {
 		switch filterType {
 		case privateFilter:
 			return zone.Public != upcloud.True
@@ -193,7 +193,7 @@ func dataSourceZonesRead(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 	})
 
-	if err := d.Set("zone_ids", zoneIds); err != nil {
+	if err := d.Set("zone_ids", zoneIDs); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting zone_ids: %s", err))
 	}
 	d.SetId(time.Now().UTC().String())

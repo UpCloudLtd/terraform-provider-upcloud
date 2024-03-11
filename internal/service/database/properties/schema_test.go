@@ -1,7 +1,6 @@
 package properties
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -31,16 +30,16 @@ func TestGetSchema(t *testing.T) {
 
 	dbTypes := getTypes()
 	for _, dbType := range dbTypes {
-		var schema map[string]*schema.Schema
+		var dbSchema map[string]*schema.Schema
 		t.Run(string(dbType), func(t *testing.T) {
 			assert.NotPanics(t, func() {
-				schema = GetSchemaMap(dbType)
+				dbSchema = GetSchemaMap(dbType)
 			})
 
 			for _, test := range tests {
 				if test.db == dbType {
-					t.Run(fmt.Sprintf("%s", test.key), func(t *testing.T) {
-						s := schema[test.key]
+					t.Run(test.key, func(t *testing.T) {
+						s := dbSchema[test.key]
 
 						assert.Equal(t, test.computed, s.Computed)
 						if test.defaultf != nil {

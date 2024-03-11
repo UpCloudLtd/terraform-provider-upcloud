@@ -36,7 +36,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Computed:     true,
 			Optional:     true,
 			RequiredWith: []string{"maintenance_window_dow"},
-			ValidateDiagFunc: func(i interface{}, path cty.Path) diag.Diagnostics {
+			ValidateDiagFunc: func(i interface{}, _ cty.Path) diag.Diagnostics {
 				if _, err := time.Parse("15:04:05", i.(string)); err != nil {
 					return diag.FromErr(fmt.Errorf("maintenance_window_time format must be HH:MM:SS"))
 				}

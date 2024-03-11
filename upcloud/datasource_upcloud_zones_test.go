@@ -109,20 +109,20 @@ func testAccDataSourceUpCloudZonesCheck(resourceName string, expectedResources i
 			return fmt.Errorf("root module has no resource called %s", resourceName)
 		}
 
-		zoneIds, zoneIdsOk := rs.Primary.Attributes["zone_ids.#"]
+		zoneIDs, zoneIDsOk := rs.Primary.Attributes["zone_ids.#"]
 
-		if !zoneIdsOk {
+		if !zoneIDsOk {
 			return fmt.Errorf("zone_ids attribute is missing")
 		}
 
-		zoneIdsQuantity, err := strconv.Atoi(zoneIds)
+		zoneIDsQuantity, err := strconv.Atoi(zoneIDs)
 		if err != nil {
-			return fmt.Errorf("error parsing names (%s) into integer: %s", zoneIds, err)
+			return fmt.Errorf("error parsing names (%s) into integer: %s", zoneIDs, err)
 		}
 
-		if zoneIdsQuantity != expectedResources {
+		if zoneIDsQuantity != expectedResources {
 			return fmt.Errorf("unexpected number of resource (%v), expected %v",
-				zoneIdsQuantity, expectedResources)
+				zoneIDsQuantity, expectedResources)
 		}
 
 		return nil
