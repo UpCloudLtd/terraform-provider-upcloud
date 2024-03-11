@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -99,8 +100,31 @@ func ResourceGateway() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
+			"address": {
+				Description: addressesDescription,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"address": {
+							Type:        schema.TypeString,
+							Description: "IP addresss",
+							Computed:    true,
+							Optional:    false,
+						},
+						"name": {
+							Type:        schema.TypeString,
+							Description: "Name of the IP address",
+							Computed:    true,
+							Optional:    true,
+						},
+					},
+				},
+			},
 			"addresses": {
-				Deprecated:  "",
+				Deprecated:  "Use 'address' attribute instead. This attribute will be removed in the next major version of the provider",
 				Description: addressesDescription,
 				Computed:    true,
 				Type:        schema.TypeSet,
@@ -140,6 +164,29 @@ func resourceGatewayCreate(ctx context.Context, d *schema.ResourceData, meta int
 		},
 		Labels:           utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
 		ConfiguredStatus: upcloud.GatewayConfiguredStatus(d.Get("configured_status").(string)),
+	}
+
+	addresses := []upcloud.GatewayAddress{}
+	for i, val := range d.Get("address").(*schema.Set).List() {
+		addrMap := val.(map[string]interface{})
+
+		addrName, ok := addrMap["name"]
+		if !ok || addrName == "" {
+			return append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       "Malformed resource data",
+				Detail:        "Gateway address does not have a required name.",
+				AttributePath: cty.GetAttrPath("address").IndexInt(i).GetAttr("name"),
+			})
+		}
+
+		addresses = append(addresses, upcloud.GatewayAddress{
+			Name: addrName.(string),
+		})
+	}
+
+	if len(addresses) > 0 {
+		req.Addresses = addresses
 	}
 
 	gw, err := svc.CreateGateway(ctx, req)
@@ -253,6 +300,11 @@ func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags 
 		})
 	}
 
+	if err := d.Set("address", addresses); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// This one is deprecated, can be removed later
 	if err := d.Set("addresses", addresses); err != nil {
 		return diag.FromErr(err)
 	}

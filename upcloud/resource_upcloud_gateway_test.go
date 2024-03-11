@@ -32,7 +32,13 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "labels.%", "2"),
 					resource.TestCheckResourceAttr(name, "labels.test", "net-gateway-tf"),
 					resource.TestCheckResourceAttr(name, "labels.owned-by", "team-iaas"),
-					resource.TestCheckTypeSetElemNestedAttrs(name, "addresses.*", map[string]string{"name": "public-ip-1"}),
+					resource.TestCheckResourceAttr(name, "address.#", "1"),
+					resource.TestCheckResourceAttr(name, "address.0.%", "2"),
+					resource.TestCheckResourceAttr(name, "address.0.name", "my-public-ip"),
+					resource.TestCheckResourceAttrSet(name, "address.0.address"),
+
+					// This field is deprecated, can be removed later
+					resource.TestCheckTypeSetElemNestedAttrs(name, "addresses.*", map[string]string{"name": "my-public-ip"}),
 				),
 			},
 			{

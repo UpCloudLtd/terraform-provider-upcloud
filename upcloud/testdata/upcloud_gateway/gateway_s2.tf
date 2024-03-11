@@ -40,6 +40,10 @@ resource "upcloud_gateway" "this" {
     id = upcloud_router.this.id
   }
 
+  address {
+    name = "my-public-ip"
+  }
+
   labels = {
     test     = "net-gateway-tf"
     owned-by = "team-devex"
