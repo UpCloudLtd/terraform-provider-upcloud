@@ -12,6 +12,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - upcloud_managed_database: set all fields when importing database resources
+- docs: update provider version to `~> 5.0`
 
 ## [5.1.0] - 2024-03-07
 
