@@ -19,11 +19,15 @@ func ResourceConnection() *schema.Resource {
 		ReadContext:   resourceConnectionRead,
 		UpdateContext: resourceConnectionUpdate,
 		DeleteContext: resourceConnectionDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description:      "The name of the connection, should be unique within the gateway",
 				Type:             schema.TypeString,
 				Required:         true,
+				ForceNew:         true,
 				ValidateDiagFunc: validateName,
 			},
 			"gateway": {
@@ -119,6 +123,29 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+	var (
+		svc         = meta.(*service.Service)
+		serviceUUID string
+		name        string
+	)
+
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	conn, err := svc.ModifyGatewayConnection(ctx, &request.ModifyGatewayConnectionRequest{
+		ServiceUUID: serviceUUID,
+		Name:        name,
+		Connection: request.ModifyGatewayConnection{
+			LocalRoutes:  expandRoutes(d.Get("local_route")),
+			RemoteRoutes: expandRoutes(d.Get("remote_route")),
+		},
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	diags = append(diags, setConnectionResourceData(d, conn)...)
 	return diags
 }
 

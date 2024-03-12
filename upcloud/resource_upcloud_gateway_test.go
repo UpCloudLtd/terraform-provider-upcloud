@@ -16,7 +16,8 @@ func TestAccUpcloudGateway(t *testing.T) {
 
 	var providers []*schema.Provider
 	name := "upcloud_gateway.this"
-	connName := "upcloud_gateway_connection.this"
+	conn1Name := "upcloud_gateway_connection.this"
+	conn2Name := "upcloud_gateway_connection.this2"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -38,17 +39,29 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "address.0.name", "my-public-ip"),
 					resource.TestCheckResourceAttrSet(name, "address.0.address"),
 
-					resource.TestCheckResourceAttr(connName, "name", "test-connection"),
-					resource.TestCheckResourceAttrSet(connName, "gateway"),
-					resource.TestCheckResourceAttr(connName, "type", "ipsec"),
-					resource.TestCheckResourceAttr(connName, "local_route.#", "1"),
-					resource.TestCheckResourceAttr(connName, "local_route.0.name", "local-route"),
-					resource.TestCheckResourceAttr(connName, "local_route.0.type", "static"),
-					resource.TestCheckResourceAttr(connName, "local_route.0.static_network", "10.123.123.0/24"),
-					resource.TestCheckResourceAttr(connName, "remote_route.#", "1"),
-					resource.TestCheckResourceAttr(connName, "remote_route.0.name", "remote-route"),
-					resource.TestCheckResourceAttr(connName, "remote_route.0.type", "static"),
-					resource.TestCheckResourceAttr(connName, "remote_route.0.static_network", "100.123.123.0/24"),
+					resource.TestCheckResourceAttr(conn1Name, "name", "test-connection"),
+					resource.TestCheckResourceAttrSet(conn1Name, "gateway"),
+					resource.TestCheckResourceAttr(conn1Name, "type", "ipsec"),
+					resource.TestCheckResourceAttr(conn1Name, "local_route.#", "1"),
+					resource.TestCheckResourceAttr(conn1Name, "local_route.0.name", "local-route"),
+					resource.TestCheckResourceAttr(conn1Name, "local_route.0.type", "static"),
+					resource.TestCheckResourceAttr(conn1Name, "local_route.0.static_network", "10.123.123.0/24"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.#", "1"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.name", "remote-route"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.type", "static"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.static_network", "100.123.123.0/24"),
+
+					resource.TestCheckResourceAttr(conn2Name, "name", "test-connection2"),
+					resource.TestCheckResourceAttrSet(conn2Name, "gateway"),
+					resource.TestCheckResourceAttr(conn2Name, "type", "ipsec"),
+					resource.TestCheckResourceAttr(conn2Name, "local_route.#", "1"),
+					resource.TestCheckResourceAttr(conn2Name, "local_route.0.name", "local-route2"),
+					resource.TestCheckResourceAttr(conn2Name, "local_route.0.type", "static"),
+					resource.TestCheckResourceAttr(conn2Name, "local_route.0.static_network", "22.123.123.0/24"),
+					resource.TestCheckResourceAttr(conn2Name, "remote_route.#", "1"),
+					resource.TestCheckResourceAttr(conn2Name, "remote_route.0.name", "remote-route2"),
+					resource.TestCheckResourceAttr(conn2Name, "remote_route.0.type", "static"),
+					resource.TestCheckResourceAttr(conn2Name, "remote_route.0.static_network", "222.123.123.0/24"),
 
 					// This field is deprecated, can be removed later
 					resource.TestCheckTypeSetElemNestedAttrs(name, "addresses.*", map[string]string{"name": "my-public-ip"}),
@@ -60,7 +73,17 @@ func TestAccUpcloudGateway(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "name", "tf-acc-test-net-gateway-gw-renamed"),
 					resource.TestCheckResourceAttr(name, "configured_status", "stopped"),
+					resource.TestCheckResourceAttr(name, "labels.test", "net-gateway-tf"),
 					resource.TestCheckResourceAttr(name, "labels.owned-by", "team-devex"),
+
+					resource.TestCheckResourceAttr(conn1Name, "local_route.#", "1"),
+					resource.TestCheckResourceAttr(conn1Name, "local_route.0.name", "local-route-updated"),
+					resource.TestCheckResourceAttr(conn1Name, "local_route.0.type", "static"),
+					resource.TestCheckResourceAttr(conn1Name, "local_route.0.static_network", "11.123.123.0/24"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.#", "1"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.name", "remote-route-updated"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.type", "static"),
+					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.static_network", "111.123.123.0/24"),
 				),
 			},
 		},

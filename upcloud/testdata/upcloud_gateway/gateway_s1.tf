@@ -55,14 +55,32 @@ resource "upcloud_gateway_connection" "this" {
   type    = "ipsec"
 
   local_route {
-    name         = "local-route"
-    type         = "static"
+    name           = "local-route"
+    type           = "static"
     static_network = "10.123.123.0/24"
   }
 
   remote_route {
-    name         = "remote-route"
-    type         = "static"
+    name           = "remote-route"
+    type           = "static"
     static_network = "100.123.123.0/24"
+  }
+}
+
+resource "upcloud_gateway_connection" "this2" {
+  gateway = upcloud_gateway.this.id
+  name    = "test-connection2"
+  type    = "ipsec"
+
+  local_route {
+    name           = "local-route2"
+    type           = "static"
+    static_network = "22.123.123.0/24"
+  }
+
+  remote_route {
+    name           = "remote-route2"
+    type           = "static"
+    static_network = "222.123.123.0/24"
   }
 }

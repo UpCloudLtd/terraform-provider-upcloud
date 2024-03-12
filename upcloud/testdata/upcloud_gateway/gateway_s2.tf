@@ -49,3 +49,21 @@ resource "upcloud_gateway" "this" {
     owned-by = "team-devex"
   }
 }
+
+resource "upcloud_gateway_connection" "this" {
+  gateway = upcloud_gateway.this.id
+  name    = "test-connection"
+  type    = "ipsec"
+
+  local_route {
+    name           = "local-route-updated"
+    type           = "static"
+    static_network = "11.123.123.0/24"
+  }
+
+  remote_route {
+    name           = "remote-route-updated"
+    type           = "static"
+    static_network = "111.123.123.0/24"
+  }
+}
