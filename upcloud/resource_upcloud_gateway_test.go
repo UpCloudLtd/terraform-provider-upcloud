@@ -16,6 +16,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 
 	var providers []*schema.Provider
 	name := "upcloud_gateway.this"
+	connName := "upcloud_gateway_connection.this"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -36,6 +37,14 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "address.0.%", "2"),
 					resource.TestCheckResourceAttr(name, "address.0.name", "my-public-ip"),
 					resource.TestCheckResourceAttrSet(name, "address.0.address"),
+
+					resource.TestCheckResourceAttr(connName, "name", "test-connection"),
+					resource.TestCheckResourceAttrSet(connName, "gateway"),
+					resource.TestCheckResourceAttr(connName, "type", "ipsec"),
+					resource.TestCheckResourceAttr(connName, "local_route.#", "1"),
+					resource.TestCheckResourceAttr(connName, "local_route.0.name", "local-route"),
+					resource.TestCheckResourceAttr(connName, "local_route.0.type", "static"),
+					resource.TestCheckResourceAttr(connName, "local_route.0.static_network", "10.123.123.0/24"),
 
 					// This field is deprecated, can be removed later
 					resource.TestCheckTypeSetElemNestedAttrs(name, "addresses.*", map[string]string{"name": "my-public-ip"}),

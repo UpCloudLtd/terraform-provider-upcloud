@@ -33,7 +33,7 @@ resource "upcloud_gateway" "this" {
   name     = "${var.prefix}gw"
   zone     = var.zone
   plan     = "advanced"
-  features = ["nat"]
+  features = ["nat", "vpn"]
 
   router {
     id = upcloud_router.this.id
@@ -46,5 +46,17 @@ resource "upcloud_gateway" "this" {
   labels = {
     test     = "net-gateway-tf"
     owned-by = "team-iaas"
+  }
+}
+
+resource "upcloud_gateway_connection" "this" {
+  gateway = upcloud_gateway.this.id
+  name    = "test-connection"
+  type    = "ipsec"
+
+  local_route {
+    name         = "local-route"
+    type         = "static"
+    static_network = "10.123.123.0/24"
   }
 }

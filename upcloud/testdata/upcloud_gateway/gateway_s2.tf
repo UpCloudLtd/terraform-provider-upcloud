@@ -33,7 +33,7 @@ resource "upcloud_gateway" "this" {
   name              = "${var.prefix}gw-renamed"
   zone              = var.zone
   plan              = "advanced"
-  features          = ["nat"]
+  features          = ["nat", "vpn"]
   configured_status = "stopped"
 
   router {

@@ -115,10 +115,11 @@ func ResourceGateway() *schema.Resource {
 							Optional:    false,
 						},
 						"name": {
-							Type:        schema.TypeString,
-							Description: "Name of the IP address",
-							Computed:    true,
-							Optional:    true,
+							Type:             schema.TypeString,
+							Description:      "Name of the IP address",
+							Computed:         true,
+							Optional:         true,
+							ValidateDiagFunc: validateName,
 						},
 					},
 				},
@@ -158,6 +159,7 @@ func resourceGatewayCreate(ctx context.Context, d *schema.ResourceData, meta int
 	req := &request.CreateGatewayRequest{
 		Name:     d.Get("name").(string),
 		Zone:     d.Get("zone").(string),
+		Plan:     d.Get("plan").(string),
 		Features: features,
 		Routers: []request.GatewayRouter{
 			{UUID: d.Get("router.0.id").(string)},
@@ -348,7 +350,7 @@ func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id str
 
 var validateName = validation.ToDiagFunc(validation.All(
 	validation.StringLenBetween(1, 64),
-	validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), ""),
+	validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), "must contain only alphanumeric characters, hyphens, and underscores"),
 ))
 
 var validateFeaturesElen = validation.ToDiagFunc(validation.StringInSlice([]string{
