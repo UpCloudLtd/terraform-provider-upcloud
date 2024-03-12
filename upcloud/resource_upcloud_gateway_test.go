@@ -45,6 +45,10 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(connName, "local_route.0.name", "local-route"),
 					resource.TestCheckResourceAttr(connName, "local_route.0.type", "static"),
 					resource.TestCheckResourceAttr(connName, "local_route.0.static_network", "10.123.123.0/24"),
+					resource.TestCheckResourceAttr(connName, "remote_route.#", "1"),
+					resource.TestCheckResourceAttr(connName, "remote_route.0.name", "remote-route"),
+					resource.TestCheckResourceAttr(connName, "remote_route.0.type", "static"),
+					resource.TestCheckResourceAttr(connName, "remote_route.0.static_network", "100.123.123.0/24"),
 
 					// This field is deprecated, can be removed later
 					resource.TestCheckTypeSetElemNestedAttrs(name, "addresses.*", map[string]string{"name": "my-public-ip"}),

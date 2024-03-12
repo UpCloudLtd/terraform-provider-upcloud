@@ -59,4 +59,10 @@ resource "upcloud_gateway_connection" "this" {
     type         = "static"
     static_network = "10.123.123.0/24"
   }
+
+  remote_route {
+    name         = "remote-route"
+    type         = "static"
+    static_network = "100.123.123.0/24"
+  }
 }
