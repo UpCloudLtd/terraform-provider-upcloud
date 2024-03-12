@@ -131,7 +131,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Optional:    true,
 			},
 		},
-		CustomizeDiff: customdiff.ForceNewIfChange("networks.#", func(ctx context.Context, old, new, meta interface{}) bool {
+		CustomizeDiff: customdiff.ForceNewIfChange("networks.#", func(_ context.Context, old, new, _ interface{}) bool {
 			return new.(int) != old.(int)
 		}),
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceUpCloudManagedDatabaseWaitState(
@@ -54,8 +53,4 @@ func resourceUpCloudManagedDatabaseWaitState(
 		return nil, err
 	}
 	return res.(*upcloud.ManagedDatabase), nil
-}
-
-func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool {
-	return d.Id() != ""
 }

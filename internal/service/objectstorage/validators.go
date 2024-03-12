@@ -13,7 +13,7 @@ func createKeyValidationFunc(attrName objectStorageKeyType, minLength, maxLength
 		objectStorageKeyTypeSecret objectStorageKeyType = "secret_key"
 	)
 
-	return func(val interface{}, path cty.Path) diag.Diagnostics {
+	return func(val interface{}, _ cty.Path) diag.Diagnostics {
 		key, ok := val.(string)
 
 		if !ok {

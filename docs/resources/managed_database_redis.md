@@ -81,36 +81,37 @@ Required:
 
 Optional:
 
-- `automatic_utility_network_ip_filter` (Boolean) Automatic utility network IP Filter
-- `ip_filter` (List of String) IP filter
-- `migration` (Block List, Max: 1) Migrate data from existing server (see [below for nested schema](#nestedblock--properties--migration))
-- `public_access` (Boolean) Public access allows connections to your Managed Database services via the public internet.
+- `automatic_utility_network_ip_filter` (Boolean) Automatic utility network IP Filter. Automatically allow connections from servers in the utility network within the same zone.
+- `ip_filter` (List of String) IP filter. Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'.
+- `migration` (Block List, Max: 1) Migrate data from existing server. (see [below for nested schema](#nestedblock--properties--migration))
+- `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `redis_acl_channels_default` (String) Default ACL for pub/sub channels used when Redis user is created. Determines default pub/sub channels' ACL for new users if ACL is not supplied. When this option is not defined, all_channels is assumed to keep backward compatibility. This option doesn't affect Redis configuration acl-pubsub-default.
-- `redis_io_threads` (Number) Redis IO thread count.
-- `redis_lfu_decay_time` (Number) LFU maxmemory-policy counter decay time in minutes. Default is 1.
-- `redis_lfu_log_factor` (Number) Counter logarithm factor for volatile-lfu and allkeys-lfu maxmemory-policies. Default is 10.
-- `redis_maxmemory_policy` (String) Redis maxmemory-policy. Default is `noeviction`.
-- `redis_notify_keyspace_events` (String) Set notify-keyspace-events option. Default is "".
-- `redis_number_of_databases` (Number) Number of redis databases. Set number of redis databases. Changing this will cause a restart of redis service.
+- `redis_io_threads` (Number) Redis IO thread count. Set Redis IO thread count. Changing this will cause a restart of the Redis service.
+- `redis_lfu_decay_time` (Number) LFU maxmemory-policy counter decay time in minutes.
+- `redis_lfu_log_factor` (Number) Counter logarithm factor for volatile-lfu and allkeys-lfu maxmemory-policies.
+- `redis_maxmemory_policy` (String) Redis maxmemory-policy.
+- `redis_notify_keyspace_events` (String) Set notify-keyspace-events option.
+- `redis_number_of_databases` (Number) Number of Redis databases. Set number of Redis databases. Changing this will cause a restart of the Redis service.
 - `redis_persistence` (String) Redis persistence. When persistence is 'rdb', Redis does RDB dumps each 10 minutes if any key is changed. Also RDB dumps are done according to backup schedule for backup purposes. When persistence is 'off', no RDB dumps and backups are done, so data can be lost at any moment if service is restarted for any reason, or if service is powered off. Also service can't be forked.
 - `redis_pubsub_client_output_buffer_limit` (Number) Pub/sub client output buffer hard limit in MB. Set output buffer limit for pub / sub clients in MB. The value is the hard limit, the soft limit is 1/4 of the hard limit. When setting the limit, be mindful of the available memory in the selected service plan.
-- `redis_ssl` (Boolean) Require SSL to access Redis. Default is `true`.
-- `redis_timeout` (Number) Redis idle connection timeout in seconds. Default is 300.
+- `redis_ssl` (Boolean) Require SSL to access Redis.
+- `redis_timeout` (Number) Redis idle connection timeout in seconds.
 - `redis_version` (String) Redis major version.
-- `service_log` (Boolean) Store logs for the service so that they are available in the HTTP API and console.
+- `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`
 
 Optional:
 
-- `dbname` (String) Database name for bootstrapping the initial connection
-- `host` (String) Hostname or IP address of the server where to migrate data from
-- `ignore_dbs` (String) Comma-separated list of databases, which should be ignored during migration (supported by MySQL only at the moment)
-- `password` (String, Sensitive) Password for authentication with the server where to migrate data from
-- `port` (Number) Port number of the server where to migrate data from
-- `ssl` (Boolean) The server where to migrate data from is secured with SSL
-- `username` (String) User name for authentication with the server where to migrate data from
+- `dbname` (String) Database name for bootstrapping the initial connection.
+- `host` (String) Hostname or IP address of the server where to migrate data from.
+- `ignore_dbs` (String) Comma-separated list of databases, which should be ignored during migration (supported by MySQL and PostgreSQL only at the moment).
+- `method` (String) The migration method to be used (currently supported only by Redis, Dragonfly, MySQL and PostgreSQL service types).
+- `password` (String, Sensitive) Password for authentication with the server where to migrate data from.
+- `port` (Number) Port number of the server where to migrate data from.
+- `ssl` (Boolean) The server where to migrate data from is secured with SSL.
+- `username` (String) User name for authentication with the server where to migrate data from.
 
 
 

@@ -3,13 +3,13 @@ package database
 import (
 	"context"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database/properties"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func ResourceOpenSearch() *schema.Resource {
@@ -110,24 +110,8 @@ func schemaOpenSearchEngine() map[string]*schema.Schema {
 			Computed:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: utils.JoinSchemas(
-					schemaDatabaseCommonProperties(),
-					schemaOpenSearchProperties(),
-				),
+				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeOpenSearch),
 			},
-		},
-	}
-}
-
-func schemaOpenSearchProperties() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"version": {
-			Type:             schema.TypeString,
-			Description:      "OpenSearch major version",
-			Optional:         true,
-			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"1", "2"}, false)),
-			ForceNew:         true,
 		},
 	}
 }

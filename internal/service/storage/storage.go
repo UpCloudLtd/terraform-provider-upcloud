@@ -441,7 +441,6 @@ func resourceStorageDelete(ctx context.Context, d *schema.ResourceData, meta int
 		UUID: d.Id(),
 	}
 	err = client.DeleteStorage(ctx, deleteStorageRequest)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -24,6 +24,9 @@ build: fmtcheck
 		-ldflags '-X $(PACKAGE)/internal/config.Version=$(GIT_VERSION)' \
 		-o $(PROVIDER_PATH)/terraform-provider-$(PROVIDER_NAMESPACE)_v$(VERSION)
 
+generate:
+	go generate ./...
+
 build_0_12: fmtcheck
 	go install
 
@@ -72,4 +75,4 @@ docs: install-tools
 	$(TOOLS_DIR)/tfplugindocs
 	./scripts/group-docs.sh
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_12 install-tools docs
+.PHONY: build generate test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_12 install-tools docs

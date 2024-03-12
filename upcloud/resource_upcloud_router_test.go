@@ -327,7 +327,7 @@ func testAccCheckNetworkExists(resourceName string, network *upcloud.Network) re
 }
 
 func testAccCheckUpCloudRouterAttributes(router *upcloud.Router, name string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(_ *terraform.State) error {
 		// Confirm the remote router has the following attributes
 		if router.Name != name {
 			return fmt.Errorf("Bad name, expected (%s), got (%s)", name, router.Name)
@@ -422,7 +422,7 @@ resource "upcloud_router" "my_example_router" {
 }
 
 func testAccNetworkRouterAttached(network *upcloud.Network, router *upcloud.Router) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(_ *terraform.State) error {
 		if network.Router != router.UUID {
 			return fmt.Errorf("network does not have the correct router attached, expected %s, got %s", router.UUID, network.Router)
 		}
@@ -440,7 +440,7 @@ func testAccNetworkRouterAttached(network *upcloud.Network, router *upcloud.Rout
 }
 
 func testAccNetworkRouterNotAttached(network *upcloud.Network, router *upcloud.Router) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(_ *terraform.State) error {
 		if network.Router == router.UUID {
 			return fmt.Errorf("network %s still has the router %s attached", network.UUID, network.Router)
 		}
@@ -458,7 +458,7 @@ func testAccNetworkRouterNotAttached(network *upcloud.Network, router *upcloud.R
 }
 
 func testAccNetworkNoRouterAttachment(network *upcloud.Network) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(_ *terraform.State) error {
 		if network.Router != "" {
 			return fmt.Errorf("network %s still has the router %s attached", network.UUID, network.Router)
 		}
@@ -467,7 +467,7 @@ func testAccNetworkNoRouterAttachment(network *upcloud.Network) resource.TestChe
 }
 
 func testAccRouterAttachedNetworksCount(router *upcloud.Router, expectedAttachedNetworksCount int) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(_ *terraform.State) error {
 		if len(router.AttachedNetworks) != expectedAttachedNetworksCount {
 			return fmt.Errorf("router does not have the correct number of networks, expected %d, got %d", expectedAttachedNetworksCount, len(router.AttachedNetworks))
 		}

@@ -232,7 +232,6 @@ func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	err = client.DeleteRouter(ctx, &request.DeleteRouterRequest{
 		UUID: d.Id(),
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

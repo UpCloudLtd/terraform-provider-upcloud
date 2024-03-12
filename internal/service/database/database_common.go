@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -37,7 +36,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Computed:     true,
 			Optional:     true,
 			RequiredWith: []string{"maintenance_window_dow"},
-			ValidateDiagFunc: func(i interface{}, path cty.Path) diag.Diagnostics {
+			ValidateDiagFunc: func(i interface{}, _ cty.Path) diag.Diagnostics {
 				if _, err := time.Parse("15:04:05", i.(string)); err != nil {
 					return diag.FromErr(fmt.Errorf("maintenance_window_time format must be HH:MM:SS"))
 				}
@@ -109,79 +108,6 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Description: "Primary database name",
 			Type:        schema.TypeString,
 			Computed:    true,
-		},
-	}
-}
-
-func schemaRDBMSDatabaseCommonProperties() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"admin_password": {
-			Type:             schema.TypeString,
-			Description:      "Custom password for admin user. Defaults to random string. This must be set only when a new service is being created.",
-			Optional:         true,
-			Computed:         true,
-			Sensitive:        true,
-			ForceNew:         true,
-			DiffSuppressFunc: diffSuppressCreateOnlyProperty,
-		},
-		"admin_username": {
-			Type:             schema.TypeString,
-			Description:      "Custom username for admin user. This must be set only when a new service is being created.",
-			Optional:         true,
-			Computed:         true,
-			ForceNew:         true,
-			DiffSuppressFunc: diffSuppressCreateOnlyProperty,
-		},
-		"backup_hour": {
-			Type:             schema.TypeInt,
-			Description:      "The hour of day (in UTC) when backup for the service is started. New backup is only started if previous backup has already completed.",
-			Optional:         true,
-			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 23)),
-		},
-		"backup_minute": {
-			Type:             schema.TypeInt,
-			Description:      "The minute of an hour when backup for the service is started. New backup is only started if previous backup has already completed.",
-			Optional:         true,
-			Computed:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 59)),
-		},
-	}
-}
-
-func schemaDatabaseCommonProperties() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"automatic_utility_network_ip_filter": {
-			Type:        schema.TypeBool,
-			Description: "Automatic utility network IP Filter",
-			Optional:    true,
-			Default:     true,
-		},
-		"ip_filter": {
-			Type: schema.TypeList,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-			Description: "IP filter",
-			Optional:    true,
-			Computed:    true,
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return strings.TrimSuffix(old, "/32") == strings.TrimSuffix(new, "/32")
-			},
-		},
-		"public_access": {
-			Type:        schema.TypeBool,
-			Description: "Public access allows connections to your Managed Database services via the public internet.",
-			Optional:    true,
-			Default:     false,
-		},
-		"migration": {
-			Description: "Migrate data from existing server",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Computed:    true,
-			MaxItems:    1,
-			Elem:        &schema.Resource{Schema: schemaDatabaseMigration()},
 		},
 	}
 }
@@ -315,54 +241,6 @@ func schemaDatabaseNodeStates() *schema.Schema {
 					Computed:    true,
 				},
 			},
-		},
-	}
-}
-
-func schemaDatabaseMigration() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"dbname": {
-			Type:        schema.TypeString,
-			Description: "Database name for bootstrapping the initial connection",
-			Optional:    true,
-			Computed:    true,
-		},
-		"host": {
-			Type:        schema.TypeString,
-			Description: "Hostname or IP address of the server where to migrate data from",
-			Optional:    true,
-			Computed:    true,
-		},
-		"ignore_dbs": {
-			Type:        schema.TypeString,
-			Description: "Comma-separated list of databases, which should be ignored during migration (supported by MySQL only at the moment)",
-			Optional:    true,
-			Computed:    true,
-		},
-		"password": {
-			Type:        schema.TypeString,
-			Description: "Password for authentication with the server where to migrate data from",
-			Optional:    true,
-			Computed:    true,
-			Sensitive:   true,
-		},
-		"port": {
-			Type:        schema.TypeInt,
-			Description: "Port number of the server where to migrate data from",
-			Optional:    true,
-			Computed:    true,
-		},
-		"ssl": {
-			Type:        schema.TypeBool,
-			Description: "The server where to migrate data from is secured with SSL",
-			Optional:    true,
-			Default:     true,
-		},
-		"username": {
-			Type:        schema.TypeString,
-			Description: "User name for authentication with the server where to migrate data from",
-			Optional:    true,
-			Computed:    true,
 		},
 	}
 }

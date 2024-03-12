@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database/properties"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
@@ -76,7 +77,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	tflog.Debug(ctx, "managed database read", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
-	if d.Get("type").(string) == string(upcloud.ManagedDatabaseServiceTypePostgreSQL) {
+	if details.Type == upcloud.ManagedDatabaseServiceTypePostgreSQL {
 		if err := d.Set("sslmode", details.ServiceURIParams.SSLMode); err != nil {
 			return diag.FromErr(err)
 		}
@@ -86,7 +87,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 	if len(details.Properties) > 0 {
-		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(details, d)}); err != nil {
+		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(d, details)}); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -206,10 +207,14 @@ func buildManagedDatabaseRequestFromResourceData(d *schema.ResourceData) request
 func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceData) request.ManagedDatabasePropertiesRequest {
 	resourceProps := d.Get("properties.0").(map[string]interface{})
 	r := make(map[upcloud.ManagedDatabasePropertyKey]interface{})
+
+	dbType := upcloud.ManagedDatabaseServiceType(d.Get("type").(string))
+	propsInfo := properties.GetProperties(dbType)
+
 	for field := range resourceProps {
 		key := fmt.Sprintf("properties.0.%s", field)
 		value, isNotZero := d.GetOk(key)
-		// It seems to be hard to detect changes in boolen fields in some scenarios.
+		// It seems to be hard to detect changes in boolean fields in some scenarios.
 		// E.g. if boolean field is optional and has default value true, but is initially set as false in config
 		// then it's interpreted as boolean zero value and no change is detected.
 		//
@@ -221,37 +226,36 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 		if !isBool && !isNotZero && !hasChange {
 			continue
 		}
-		switch field {
-		case "migration", "pglookout", "timescaledb", "pgbouncer":
+		if propsInfo[field].CreateOnly {
+			if !hasChange {
+				continue
+			}
+		}
+		if propsInfo[field].Type == "object" {
 			// convert resource data list of objects into API objects
 			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
 				r[upcloud.ManagedDatabasePropertyKey(field)] = listValue[0]
 			}
-		case "admin_password", "admin_username":
-			if !hasChange {
-				continue
-			}
-		default:
+		} else {
 			r[upcloud.ManagedDatabasePropertyKey(field)] = value
 		}
 	}
 	return r
 }
 
-func buildManagedDatabaseResourceDataProperties(db *upcloud.ManagedDatabase, d *schema.ResourceData) map[string]interface{} {
+func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcloud.ManagedDatabase) map[string]interface{} {
 	props := d.Get("properties.0").(map[string]interface{})
-	for key, iv := range db.Properties {
-		if _, ok := props[string(key)]; !ok {
-			continue
-		}
-		switch key {
-		case "migration", "pglookout", "timescaledb", "pgbouncer":
+
+	propsInfo := properties.GetProperties(db.Type)
+
+	for key, value := range db.Properties {
+		if propsInfo[string(key)].Type == "object" {
 			// convert API objects into list of objects
-			if m, ok := iv.(map[string]interface{}); ok {
+			if m, ok := value.(map[string]interface{}); ok {
 				props[string(key)] = []map[string]interface{}{m}
 			}
-		default:
-			props[string(key)] = iv
+		} else {
+			props[string(key)] = value
 		}
 	}
 	return props
@@ -331,6 +335,9 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 		return err
 	}
 	if err = d.Set("title", details.Title); err != nil {
+		return err
+	}
+	if err = d.Set("type", string(details.Type)); err != nil {
 		return err
 	}
 	if err = d.Set("zone", details.Zone); err != nil {

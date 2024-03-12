@@ -2,12 +2,12 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database/properties"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -33,30 +33,20 @@ func TestWaitServiceNameToPropagateContextTimeout(t *testing.T) {
 	}
 }
 
-func TestPostgreSQLProperties(t *testing.T) {
-	s := utils.JoinSchemas(
-		schemaRDBMSDatabaseCommonProperties(),
-		schemaDatabaseCommonProperties(),
-		schemaPostgreSQLProperties(),
-	)
-	testProperties(t, "pg", s)
-}
+func TestDatabaseProperties(t *testing.T) {
+	dbTypes := []upcloud.ManagedDatabaseServiceType{
+		upcloud.ManagedDatabaseServiceTypeMySQL,
+		upcloud.ManagedDatabaseServiceTypeOpenSearch,
+		upcloud.ManagedDatabaseServiceTypePostgreSQL,
+		upcloud.ManagedDatabaseServiceTypeRedis,
+	}
 
-func TestMySQLProperties(t *testing.T) {
-	s := utils.JoinSchemas(
-		schemaRDBMSDatabaseCommonProperties(),
-		schemaDatabaseCommonProperties(),
-		schemaMySQLProperties(),
-	)
-	testProperties(t, "mysql", s)
-}
-
-func TestRedisProperties(t *testing.T) {
-	s := utils.JoinSchemas(
-		schemaDatabaseCommonProperties(),
-		schemaRedisProperties(),
-	)
-	testProperties(t, "redis", s)
+	for _, dbType := range dbTypes {
+		t.Run(string(dbType), func(t *testing.T) {
+			s := properties.GetSchemaMap(dbType)
+			testProperties(t, string(dbType), s)
+		})
+	}
 }
 
 func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
@@ -73,19 +63,15 @@ func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
 		t.Error(err)
 	}
 	// check fields that are not in schema
-	for key, prop := range dbt.Properties {
+	for key := range dbt.Properties {
 		if _, ok := s[key]; !ok {
-			js, err := json.MarshalIndent(&prop, " ", " ")
-			if err != nil {
-				js = []byte{}
-			}
-			t.Logf("%s property '%s' is not defined in schema\n%s", dbType, key, string(js))
+			t.Errorf("%s property '%s' is not defined in schema. Run `make generate` to update properties.", dbType, key)
 		}
 	}
 	// check removed fields from schema
 	for key := range s {
 		if _, ok := dbt.Properties[key]; !ok {
-			t.Logf("%s schema field '%s' is no longer supported", dbType, key)
+			t.Errorf("%s schema field '%s' is no longer supported. Run `make generate` to update properties.", dbType, key)
 		}
 	}
 }

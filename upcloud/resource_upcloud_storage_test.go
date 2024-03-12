@@ -275,7 +275,7 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 }
 
 func testAccCheckClonedStorageSize(expected int, storage *upcloud.StorageDetails) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(_ *terraform.State) error {
 		// Use the API SDK to locate the remote resource.
 		client := testAccProvider.Meta().(*service.Service)
 		latest, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
