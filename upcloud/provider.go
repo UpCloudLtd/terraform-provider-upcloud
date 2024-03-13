@@ -83,6 +83,7 @@ func Provider() *schema.Provider {
 			"upcloud_network":                                 network.ResourceNetwork(),
 			"upcloud_gateway":                                 gateway.ResourceGateway(),
 			"upcloud_gateway_connection":                      gateway.ResourceConnection(),
+			"upcloud_gateway_connection_tunnel":               gateway.ResourceTunnel(),
 			"upcloud_floating_ip_address":                     ip.ResourceFloatingIPAddress(),
 			"upcloud_object_storage":                          objectstorage.ResourceObjectStorage(),
 			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),

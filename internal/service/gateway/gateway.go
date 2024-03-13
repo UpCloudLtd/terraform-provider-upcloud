@@ -114,6 +114,7 @@ func ResourceGateway() *schema.Resource {
 							Description: "IP addresss",
 							Computed:    true,
 							Optional:    false,
+							Required:    false,
 						},
 						"name": {
 							Type:             schema.TypeString,

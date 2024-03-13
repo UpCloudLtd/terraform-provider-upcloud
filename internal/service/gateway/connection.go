@@ -109,11 +109,12 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 		Name:        name,
 	})
 	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		return utils.HandleResourceError(name, d, err)
 	}
 
 	d.SetId(utils.MarshalID(serviceUUID, conn.Name))
 
+	// WTF? move to setConnectionResourceData
 	if err = d.Set("gateway", serviceUUID); err != nil {
 		return diag.FromErr(err)
 	}
@@ -151,9 +152,9 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	var (
+		svc         = meta.(*service.Service)
 		serviceUUID string
 		name        string
-		svc         = meta.(*service.Service)
 	)
 
 	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &name); err != nil {
