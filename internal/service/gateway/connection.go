@@ -114,7 +114,6 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 
 	d.SetId(utils.MarshalID(serviceUUID, conn.Name))
 
-	// WTF? move to setConnectionResourceData
 	if err = d.Set("gateway", serviceUUID); err != nil {
 		return diag.FromErr(err)
 	}

@@ -55,6 +55,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 
 					resource.TestCheckResourceAttr(tunnel1Name, "name", "test-tunnel"),
 					resource.TestCheckResourceAttrSet(tunnel1Name, "connection_id"),
+					resource.TestCheckResourceAttrSet(tunnel1Name, "operational_state"),
 					resource.TestCheckResourceAttr(tunnel1Name, "local_address_name", "my-public-ip"),
 					resource.TestCheckResourceAttr(tunnel1Name, "remote_address", "100.123.123.10"),
 					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_auth_psk.0.psk", ""),

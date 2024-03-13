@@ -71,6 +71,11 @@ func ResourceTunnel() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"operational_state": {
+				Description: "Tunnel's current operational, effective state",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"ipsec_auth_psk": {
 				Description: "Configuration for authenticating with pre-shared key",
 				Type:        schema.TypeList,
@@ -137,6 +142,10 @@ func resourceTunnelRead(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+
+	if err = d.Set("connection_id", utils.MarshalID(serviceUUID, connectionName)); err != nil {
+		return diag.FromErr(err)
+	}
 
 	diags = append(diags, setTunnelResourceData(d, tunnel)...)
 	if len(diags) > 0 {
@@ -270,6 +279,10 @@ func setTunnelResourceData(d *schema.ResourceData, tunnel *upcloud.GatewayTunnel
 	}
 
 	if err := d.Set("remote_address", tunnel.RemoteAddress.Address); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("operational_state", string(tunnel.OperationalState)); err != nil {
 		return diag.FromErr(err)
 	}
 
