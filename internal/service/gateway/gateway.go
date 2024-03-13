@@ -27,6 +27,7 @@ const (
 	operationalStateDescription = "The service operational state indicates the service's current operational, effective state. Managed by the system."
 	addressesDescription        = "IP addresses assigned to the gateway."
 	planDescription             = "Gateway pricing plan."
+	connectionsDescription      = "Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terrafrom refresh'."
 
 	cleanupWaitTimeSeconds = 15
 )
@@ -122,6 +123,14 @@ func ResourceGateway() *schema.Resource {
 							ValidateDiagFunc: validateName,
 						},
 					},
+				},
+			},
+			"connections": {
+				Description: connectionsDescription,
+				Computed:    true,
+				Type:        schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
 			},
 			"addresses": {
@@ -303,6 +312,15 @@ func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags 
 	}
 
 	if err := d.Set("address", addresses); err != nil {
+		return diag.FromErr(err)
+	}
+
+	var connections []string
+	for _, conn := range gw.Connections {
+		connections = append(connections, conn.Name)
+	}
+
+	if err := d.Set("connections", connections); err != nil {
 		return diag.FromErr(err)
 	}
 

@@ -68,8 +68,15 @@ func TestAccUpcloudGateway(t *testing.T) {
 				),
 			},
 			{
-				Config:            testDataS2,
-				ImportStateVerify: true,
+				// Check that computed fields are updated properly after refresh
+				RefreshState:       true,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, "connections.#", "2"),
+				),
+			},
+			{
+				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "name", "tf-acc-test-net-gateway-gw-renamed"),
 					resource.TestCheckResourceAttr(name, "configured_status", "stopped"),
@@ -84,6 +91,15 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.name", "remote-route-updated"),
 					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.type", "static"),
 					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.static_network", "111.123.123.0/24"),
+				),
+			},
+			{
+				// Check that computed fields are updated properly after refresh
+				RefreshState:       true,
+				ExpectNonEmptyPlan: true,
+				ImportStateVerify:  true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, "connections.#", "1"),
 				),
 			},
 		},
