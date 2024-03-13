@@ -24,20 +24,20 @@ func ResourceConnection() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:      "The name of the connection, should be unique within the gateway",
+				Description:      "The name of the connection, should be unique within the gateway.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				ValidateDiagFunc: validateName,
 			},
 			"gateway": {
-				Description: "The UUID of the gateway to which the connection belongs",
+				Description: "The UUID of the gateway to which the connection belongs.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"type": {
-				Description: "The type of the connection; currently the only supported type is 'ipsec'",
+				Description: "The type of the connection; currently the only supported type is 'ipsec'.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
@@ -47,18 +47,26 @@ func ResourceConnection() *schema.Resource {
 				),
 			},
 			"local_route": {
-				Description:  "Route for the UpCloud side of the network",
+				Description:  "Route for the UpCloud side of the network.",
 				Type:         schema.TypeSet,
 				Optional:     true,
 				AtLeastOneOf: []string{"local_route", "remote_route"},
 				Elem:         gatewayRouteSchema(),
 			},
 			"remote_route": {
-				Description:  "Route for the remote side of the network",
+				Description:  "Route for the remote side of the network.",
 				Type:         schema.TypeSet,
 				Optional:     true,
 				AtLeastOneOf: []string{"local_route", "remote_route"},
 				Elem:         gatewayRouteSchema(),
+			},
+			"tunnels": {
+				Description: "List of connection's tunnels names. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terrafrom refresh'.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 		},
 	}
@@ -210,6 +218,15 @@ func setConnectionResourceData(d *schema.ResourceData, conn *upcloud.GatewayConn
 	}
 
 	if err := d.Set("remote_route", flattenRoutes(conn.RemoteRoutes)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	tunnels := []string{}
+	for _, tunnel := range conn.Tunnels {
+		tunnels = append(tunnels, tunnel.Name)
+	}
+
+	if err := d.Set("tunnels", tunnels); err != nil {
 		return diag.FromErr(err)
 	}
 

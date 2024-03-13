@@ -78,6 +78,17 @@ resource "upcloud_gateway_connection_tunnel" "this" {
   }
 }
 
+resource "upcloud_gateway_connection_tunnel" "this2" {
+  connection_id = upcloud_gateway_connection.this.id
+  name       = "test-tunnel2"
+  local_address_name = tolist(upcloud_gateway.this.address).0.name
+  remote_address = "222.123.123.10"
+  
+  ipsec_auth_psk {
+    psk = "i_like_cookies"
+  }
+}
+
 resource "upcloud_gateway_connection" "this2" {
   gateway = upcloud_gateway.this.id
   name    = "test-connection2"
@@ -93,17 +104,6 @@ resource "upcloud_gateway_connection" "this2" {
     name           = "remote-route2"
     type           = "static"
     static_network = "222.123.123.0/24"
-  }
-}
-
-resource "upcloud_gateway_connection_tunnel" "this2" {
-  connection_id = upcloud_gateway_connection.this2.id
-  name       = "test-tunnel2"
-  local_address_name = tolist(upcloud_gateway.this.address).0.name
-  remote_address = "222.123.123.10"
-  
-  ipsec_auth_psk {
-    psk = "i_like_cookies"
   }
 }
 

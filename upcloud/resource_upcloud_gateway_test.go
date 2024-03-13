@@ -95,6 +95,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "connections.#", "2"),
+					resource.TestCheckResourceAttr(conn1Name, "tunnels.#", "2"),
 				),
 			},
 			{
@@ -139,6 +140,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 				ImportStateVerify:  true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "connections.#", "1"),
+					resource.TestCheckResourceAttr(conn1Name, "tunnels.#", "1"),
 				),
 			},
 		},
