@@ -56,7 +56,7 @@ func ResourceTunnel() *schema.Resource {
 				ValidateDiagFunc: validateName,
 			},
 			"connection_id": {
-				Description: "ID of the connection to which the tunnel belongs",
+				Description: "ID of the upcloud_gateway_connection resource to which the tunnel belongs",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

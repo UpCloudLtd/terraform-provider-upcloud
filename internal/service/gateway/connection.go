@@ -31,7 +31,7 @@ func ResourceConnection() *schema.Resource {
 				ValidateDiagFunc: validateName,
 			},
 			"gateway": {
-				Description: "The UUID of the gateway to which the connection belongs.",
+				Description: "The ID of the upcloud_gateway resource to which the connection belongs.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
