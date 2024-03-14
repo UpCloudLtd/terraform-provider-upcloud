@@ -386,7 +386,7 @@ func ipsecAuthPSKSchema() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Sensitive:   true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
 					return d.Id() != "" // create-only property
 				},
 				ValidateDiagFunc: validation.ToDiagFunc(validation.All(
