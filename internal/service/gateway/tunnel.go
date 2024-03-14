@@ -79,7 +79,6 @@ func ResourceTunnel() *schema.Resource {
 			},
 			"ipsec_auth_psk": {
 				Description: "Configuration for authenticating with pre-shared key",
-				ForceNew:    true,
 				Type:        schema.TypeList,
 				Required:    true,
 				MaxItems:    1,
@@ -217,6 +216,19 @@ func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		req.Tunnel.IPSec = &ipsec
 	}
 
+	if d.HasChange("ipsec_auth_psk") {
+		ipsecAuth, err := getIPSecAuthenticationFromSchema(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if req.Tunnel.IPSec == nil {
+			req.Tunnel.IPSec = &upcloud.GatewayTunnelIPSec{}
+		}
+
+		req.Tunnel.IPSec.Authentication = ipsecAuth
+	}
+
 	if d.HasChange("local_address_name") {
 		req.Tunnel.LocalAddress = &upcloud.GatewayTunnelLocalAddress{
 			Name: d.Get("local_address_name").(string),
@@ -329,34 +341,11 @@ func getIPSecAuthenticationFromSchema(d *schema.ResourceData) (upcloud.GatewayTu
 func setTunnelResourceData(d *schema.ResourceData, tunnel *upcloud.GatewayTunnel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	if err := d.Set("name", tunnel.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("local_address_name", tunnel.LocalAddress.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("remote_address", tunnel.RemoteAddress.Address); err != nil {
-		return diag.FromErr(err)
-	}
-
 	if err := d.Set("operational_state", string(tunnel.OperationalState)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if tunnel.IPSec.Authentication.Authentication == upcloud.GatewayTunnelIPSecAuthTypePSK {
-		// We use slice of maps here because 'ipsec_auth_psk' is of type schema.TypeList, but with just one element
-		ipsecAuthPSK := []map[string]interface{}{{
-			"psk": "", // This value is only used during resource creation and should not really be stored in state
-		}}
-
-		if err := d.Set("ipsec_auth_psk", ipsecAuthPSK); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	// Again, slice of maps because it's a schema.TypeList
+	// Slice of maps because it's a schema.TypeList that contains separate resource
 	ipsecProperties := []map[string]interface{}{{
 		"child_rekey_time":            tunnel.IPSec.ChildRekeyTime,
 		"dpd_delay":                   tunnel.IPSec.DPDDelay,
@@ -382,13 +371,10 @@ func ipsecAuthPSKSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"psk": {
-				Description: "The pre-shared key. This value is only used during resource creation and is not returned in the state. It is not possible to update this value. If you need to update it, delete the connection and create a new one.",
+				Description: "The pre-shared key.",
 				Type:        schema.TypeString,
 				Required:    true,
 				Sensitive:   true,
-				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
-					return d.Id() != "" // create-only property
-				},
 				ValidateDiagFunc: validation.ToDiagFunc(validation.All(
 					validation.StringLenBetween(8, 64),
 					validation.StringMatch(regexp.MustCompile("^[a-zA-Z1-9_.][a-zA-Z0-9_.]+$"), "must contain only alphanumeric characters, underscores, and dots"),

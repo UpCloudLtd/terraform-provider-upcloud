@@ -58,7 +58,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttrSet(tunnel1Name, "operational_state"),
 					resource.TestCheckResourceAttr(tunnel1Name, "local_address_name", "my-public-ip"),
 					resource.TestCheckResourceAttr(tunnel1Name, "remote_address", "100.123.123.10"),
-					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_auth_psk.0.psk", ""),
+					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_auth_psk.0.psk", "presharedkey1"),
 					resource.TestCheckResourceAttrSet(tunnel1Name, "ipsec_properties.0.child_rekey_time"),
 					resource.TestCheckResourceAttrSet(tunnel1Name, "ipsec_properties.0.dpd_delay"),
 					resource.TestCheckResourceAttrSet(tunnel1Name, "ipsec_properties.0.dpd_timeout"),
@@ -116,7 +116,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(conn1Name, "remote_route.0.static_network", "111.123.123.0/24"),
 
 					resource.TestCheckResourceAttr(tunnel1Name, "remote_address", "100.123.123.20"),
-					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_auth_psk.0.psk", ""),
+					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_auth_psk.0.psk", "presharedkey2"),
 					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_properties.0.child_rekey_time", "1000"),
 					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_properties.0.rekey_time", "1000"),
 					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_properties.0.phase1_algorithms.#", "2"),

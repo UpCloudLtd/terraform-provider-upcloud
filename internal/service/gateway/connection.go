@@ -206,22 +206,6 @@ func gatewayRouteSchema() *schema.Resource {
 }
 
 func setConnectionResourceData(d *schema.ResourceData, conn *upcloud.GatewayConnection) (diags diag.Diagnostics) {
-	if err := d.Set("name", conn.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("type", conn.Type); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("local_route", flattenRoutes(conn.LocalRoutes)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("remote_route", flattenRoutes(conn.RemoteRoutes)); err != nil {
-		return diag.FromErr(err)
-	}
-
 	tunnels := []string{}
 	for _, tunnel := range conn.Tunnels {
 		tunnels = append(tunnels, tunnel.Name)
@@ -232,18 +216,6 @@ func setConnectionResourceData(d *schema.ResourceData, conn *upcloud.GatewayConn
 	}
 
 	return diags
-}
-
-func flattenRoutes(routes []upcloud.GatewayRoute) []interface{} {
-	data := make([]interface{}, len(routes))
-	for i, route := range routes {
-		data[i] = map[string]interface{}{
-			"type":           route.Type,
-			"static_network": route.StaticNetwork,
-			"name":           route.Name,
-		}
-	}
-	return data
 }
 
 func expandRoutes(d interface{}) []upcloud.GatewayRoute {
