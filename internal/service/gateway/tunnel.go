@@ -186,17 +186,61 @@ func resourceTunnelRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	// var (
-	// 	svc            = meta.(*service.Service)
-	// 	serviceUUID    string
-	// 	connectionName string
-	// 	tunnelName     string
-	// )
+	var (
+		svc            = meta.(*service.Service)
+		serviceUUID    string
+		connectionName string
+		tunnelName     string
+	)
 
-	// if err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName); err != nil {
-	// 	return diag.FromErr(err)
-	// }
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName); err != nil {
+		return diag.FromErr(err)
+	}
 
+	req := request.ModifyGatewayConnectionTunnelRequest{
+		ServiceUUID:    serviceUUID,
+		ConnectionName: connectionName,
+		Name:           tunnelName,
+		Tunnel: request.ModifyGatewayTunnel{
+			// We don't allow updating the tunnel name in TF, but as of now it is a required parameter in the request payload (due to some bug)
+			// TODO: remove once API allows modification requests without the name
+			Name: tunnelName,
+		},
+	}
+
+	if d.HasChange("ipsec_properties") {
+		ipsec, err := getIPSecRequestFieldsFromSchema(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		req.Tunnel.IPSec = &ipsec
+	}
+
+	if d.HasChange("local_address_name") {
+		req.Tunnel.LocalAddress = &upcloud.GatewayTunnelLocalAddress{
+			Name: d.Get("local_address_name").(string),
+		}
+	}
+
+	if d.HasChange("remote_address") {
+		req.Tunnel.RemoteAddress = &upcloud.GatewayTunnelRemoteAddress{
+			Address: d.Get("remote_address").(string),
+		}
+	}
+
+	tunnel, err := svc.ModifyGatewayConnectionTunnel(ctx, &req)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+
+	if diags = append(diags, setTunnelResourceData(d, tunnel)...); len(diags) > 0 {
+		return diags
+	}
+
+	tflog.Info(ctx, "gateway tunnel updated", map[string]interface{}{"name": tunnel.Name, "service_uuid": serviceUUID, "connection_name": connectionName})
 	return diags
 }
 

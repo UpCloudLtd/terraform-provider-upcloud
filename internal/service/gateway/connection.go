@@ -153,6 +153,8 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
+	d.SetId(utils.MarshalID(serviceUUID, conn.Name))
+
 	diags = append(diags, setConnectionResourceData(d, conn)...)
 	return diags
 }
