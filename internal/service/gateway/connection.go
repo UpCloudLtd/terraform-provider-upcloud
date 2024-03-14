@@ -85,7 +85,6 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 			RemoteRoutes: expandRoutes(d.Get("remote_route")),
 		},
 	})
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -236,7 +235,7 @@ func setConnectionResourceData(d *schema.ResourceData, conn *upcloud.GatewayConn
 }
 
 func flattenRoutes(routes []upcloud.GatewayRoute) []interface{} {
-	var data = make([]interface{}, len(routes))
+	data := make([]interface{}, len(routes))
 	for i, route := range routes {
 		data[i] = map[string]interface{}{
 			"type":           route.Type,
@@ -249,7 +248,7 @@ func flattenRoutes(routes []upcloud.GatewayRoute) []interface{} {
 
 func expandRoutes(d interface{}) []upcloud.GatewayRoute {
 	routes := d.(*schema.Set).List()
-	var data = make([]upcloud.GatewayRoute, len(routes))
+	data := make([]upcloud.GatewayRoute, len(routes))
 	for i, route := range routes {
 		route := route.(map[string]interface{})
 		data[i] = upcloud.GatewayRoute{
