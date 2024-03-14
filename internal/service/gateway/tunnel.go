@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -78,10 +79,11 @@ func ResourceTunnel() *schema.Resource {
 			},
 			"ipsec_auth_psk": {
 				Description: "Configuration for authenticating with pre-shared key",
-				Type:        schema.TypeList,
-				Required:    true,
-				MaxItems:    1,
-				Elem:        ipsecAuthPSKSchema(),
+				// ForceNew:    true,
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem:     ipsecAuthPSKSchema(),
 			},
 			"ipsec_properties": {
 				Description: "IPsec configuration for the tunnel",
@@ -96,26 +98,54 @@ func ResourceTunnel() *schema.Resource {
 }
 
 func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	var (
+		svc            = meta.(*service.Service)
+		serviceUUID    string
+		connectionName string
+	)
 
-	req, err := getCreateTunnelRequestFromSchema(d)
+	if err := utils.UnmarshalID(d.Get("connection_id").(string), &serviceUUID, &connectionName); err != nil {
+		return diag.FromErr(err)
+	}
+
+	ipsec, err := getIPSecRequestFieldsFromSchema(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	tunnel, err := svc.CreateGatewayConnectionTunnel(ctx, req)
+	ipsecAuth, err := getIPSecAuthenticationFromSchema(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(req.ServiceUUID, req.ConnectionName, tunnel.Name))
+	ipsec.Authentication = ipsecAuth
+
+	tunnel, err := svc.CreateGatewayConnectionTunnel(ctx, &request.CreateGatewayConnectionTunnelRequest{
+		ServiceUUID:    serviceUUID,
+		ConnectionName: connectionName,
+		Tunnel: request.GatewayTunnel{
+			Name: d.Get("name").(string),
+			LocalAddress: upcloud.GatewayTunnelLocalAddress{
+				Name: d.Get("local_address_name").(string),
+			},
+			RemoteAddress: upcloud.GatewayTunnelRemoteAddress{
+				Address: d.Get("remote_address").(string),
+			},
+			IPSec: ipsec,
+		},
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
 
 	diags = append(diags, setTunnelResourceData(d, tunnel)...)
 	if len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "gateway tunnel created successfully", map[string]interface{}{"name": tunnel.Name, "service_uuid": req.ServiceUUID, "connection_name": req.ConnectionName})
+	tflog.Info(ctx, "gateway tunnel created successfully", map[string]interface{}{"name": tunnel.Name, "service_uuid": serviceUUID, "connection_name": connectionName})
 	return diags
 }
 
@@ -192,7 +222,7 @@ func resourceTunnelDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	}))
 }
 
-func getCreateTunnelRequestFromSchema(d *schema.ResourceData) (*request.CreateGatewayConnectionTunnelRequest, error) {
+func getIPSecRequestFieldsFromSchema(d *schema.ResourceData) (upcloud.GatewayTunnelIPSec, error) {
 	phase1Algs := []upcloud.GatewayIPSecAlgorithm{}
 	for _, alg := range d.Get("ipsec_properties.0.phase1_algorithms").(*schema.Set).List() {
 		phase1Algs = append(phase1Algs, upcloud.GatewayIPSecAlgorithm(alg.(string)))
@@ -223,48 +253,33 @@ func getCreateTunnelRequestFromSchema(d *schema.ResourceData) (*request.CreateGa
 		phase2IntegrityAlgs = append(phase2IntegrityAlgs, upcloud.GatewayIPSecIntegrityAlgorithm(alg.(string)))
 	}
 
-	var serviceUUID, connectionName string
-	err := utils.UnmarshalID(d.Get("connection_id").(string), &serviceUUID, &connectionName)
-	if err != nil {
-		return nil, err
+	return upcloud.GatewayTunnelIPSec{
+		ChildRekeyTime:            d.Get("ipsec_properties.0.child_rekey_time").(int),
+		DPDDelay:                  d.Get("ipsec_properties.0.dpd_delay").(int),
+		DPDTimeout:                d.Get("ipsec_properties.0.dpd_timeout").(int),
+		IKELifetime:               d.Get("ipsec_properties.0.ike_lifetime").(int),
+		RekeyTime:                 d.Get("ipsec_properties.0.rekey_time").(int),
+		Phase1Algorithms:          phase1Algs,
+		Phase1DHGroupNumbers:      phase1DHGroupNumbers,
+		Phase1IntegrityAlgorithms: phase1IntegrityAlgs,
+		Phase2Algorithms:          phase2Algs,
+		Phase2DHGroupNumbers:      phase2DHGroupNumbers,
+		Phase2IntegrityAlgorithms: phase2IntegrityAlgs,
+	}, nil
+}
+
+func getIPSecAuthenticationFromSchema(d *schema.ResourceData) (upcloud.GatewayTunnelIPSecAuth, error) {
+	result := upcloud.GatewayTunnelIPSecAuth{}
+
+	if psk, authMethodIsPSK := d.GetOk("ipsec_auth_psk.0.psk"); authMethodIsPSK {
+		result.Authentication = upcloud.GatewayTunnelIPSecAuthTypePSK
+		result.PSK = psk.(string)
+		return result, nil
 	}
 
-	result := &request.CreateGatewayConnectionTunnelRequest{
-		ServiceUUID:    serviceUUID,
-		ConnectionName: connectionName,
-		Tunnel: request.GatewayTunnel{
-			Name: d.Get("name").(string),
-			LocalAddress: upcloud.GatewayTunnelLocalAddress{
-				Name: d.Get("local_address_name").(string),
-			},
-			RemoteAddress: upcloud.GatewayTunnelRemoteAddress{
-				Address: d.Get("remote_address").(string),
-			},
-			IPSec: upcloud.GatewayTunnelIPSec{
-				ChildRekeyTime:            d.Get("ipsec_properties.0.child_rekey_time").(int),
-				DPDDelay:                  d.Get("ipsec_properties.0.dpd_delay").(int),
-				DPDTimeout:                d.Get("ipsec_properties.0.dpd_timeout").(int),
-				IKELifetime:               d.Get("ipsec_properties.0.ike_lifetime").(int),
-				RekeyTime:                 d.Get("ipsec_properties.0.rekey_time").(int),
-				Phase1Algorithms:          phase1Algs,
-				Phase1DHGroupNumbers:      phase1DHGroupNumbers,
-				Phase1IntegrityAlgorithms: phase1IntegrityAlgs,
-				Phase2Algorithms:          phase2Algs,
-				Phase2DHGroupNumbers:      phase2DHGroupNumbers,
-				Phase2IntegrityAlgorithms: phase2IntegrityAlgs,
-			},
-		},
-	}
+	// Put more authentication methods here once supported
 
-	psk, authMethodIsPSK := d.GetOk("ipsec_auth_psk.0.psk")
-	if authMethodIsPSK {
-		result.Tunnel.IPSec.Authentication = upcloud.GatewayTunnelIPSecAuth{
-			Authentication: upcloud.GatewayTunnelIPSecAuthTypePSK,
-			PSK:            psk.(string),
-		}
-	}
-
-	return result, nil
+	return result, fmt.Errorf("tunnel IPsec authentication method not recognized")
 }
 
 func setTunnelResourceData(d *schema.ResourceData, tunnel *upcloud.GatewayTunnel) diag.Diagnostics {
