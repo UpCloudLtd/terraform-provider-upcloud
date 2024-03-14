@@ -79,11 +79,11 @@ func ResourceTunnel() *schema.Resource {
 			},
 			"ipsec_auth_psk": {
 				Description: "Configuration for authenticating with pre-shared key",
-				// ForceNew:    true,
-				Type:     schema.TypeList,
-				Required: true,
-				MaxItems: 1,
-				Elem:     ipsecAuthPSKSchema(),
+				ForceNew:    true,
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
+				Elem:        ipsecAuthPSKSchema(),
 			},
 			"ipsec_properties": {
 				Description: "IPsec configuration for the tunnel",
