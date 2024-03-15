@@ -345,16 +345,8 @@ func setTunnelResourceData(d *schema.ResourceData, tunnel *upcloud.GatewayTunnel
 		return diag.FromErr(err)
 	}
 
-	if tunnel.IPSec.Authentication.Authentication == upcloud.GatewayTunnelIPSecAuthTypePSK {
-		// We use slice of maps here because 'ipsec_auth_psk' is of type schema.TypeList, but with just one element
-		ipsecAuthPSK := []map[string]interface{}{{
-			"psk": "", // This value is only used during resource creation and should not really be stored in state
-		}}
-
-		if err := d.Set("ipsec_auth_psk", ipsecAuthPSK); err != nil {
-			return diag.FromErr(err)
-		}
-	}
+	// We do not set ipsec_auth_psk block as API don't return PSK in API responses
+	// We rely on TF core to just set it to state and track changes
 
 	// Again, slice of maps because it's a schema.TypeList
 	ipsecProperties := []map[string]interface{}{{
@@ -386,9 +378,6 @@ func ipsecAuthPSKSchema() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Sensitive:   true,
-				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
-					return d.Id() != "" // create-only property
-				},
 				ValidateDiagFunc: validation.ToDiagFunc(validation.All(
 					validation.StringLenBetween(8, 64),
 					validation.StringMatch(regexp.MustCompile("^[a-zA-Z1-9_.][a-zA-Z0-9_.]+$"), "must contain only alphanumeric characters, underscores, and dots"),
