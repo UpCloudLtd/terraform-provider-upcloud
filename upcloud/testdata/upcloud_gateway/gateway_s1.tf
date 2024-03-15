@@ -74,7 +74,7 @@ resource "upcloud_gateway_connection_tunnel" "this" {
   remote_address = "100.123.123.10"
   
   ipsec_auth_psk {
-    psk = "presharedkey1"
+    psk = "you_probably_want_to_use_env_vars_here"
   }
 }
 
