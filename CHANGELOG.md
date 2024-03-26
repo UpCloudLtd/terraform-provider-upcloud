@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_gateway: support for VPN feature (note that VPN feature is currently in beta)
+- upcloud_gateway: `upcloud_gateway_connection` resource for creating VPN connections
+- upcloud_gateway: `upcloud_gateway_connection_tunnel` resource for creating VPN tunnels
+
 ## [5.1.1] - 2024-03-13
 
 ### Changed

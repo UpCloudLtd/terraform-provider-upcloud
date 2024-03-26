@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -19,12 +20,14 @@ import (
 const (
 	nameDescription             = "Gateway name. Needs to be unique within the account."
 	zoneDescription             = "Zone in which the gateway will be hosted, e.g. `de-fra1`."
-	featuresDescription         = "Features enabled for the gateway."
+	featuresDescription         = "Features enabled for the gateway. Note that VPN feature is currently in beta, for more details see https://upcloud.com/resources/docs/networking#nat-and-vpn-gateways."
 	routerDescription           = "Attached Router from where traffic is routed towards the network gateway service."
 	routerIDDescription         = "ID of the router attached to the gateway."
 	configuredStatusDescription = "The service configured status indicates the service's current intended status. Managed by the customer."
 	operationalStateDescription = "The service operational state indicates the service's current operational, effective state. Managed by the system."
 	addressesDescription        = "IP addresses assigned to the gateway."
+	planDescription             = "Gateway pricing plan."
+	connectionsDescription      = "Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terrafrom refresh'."
 
 	cleanupWaitTimeSeconds = 15
 )
@@ -92,7 +95,47 @@ func ResourceGateway() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"plan": {
+				Description: planDescription,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			"address": {
+				Description: addressesDescription,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"address": {
+							Type:        schema.TypeString,
+							Description: "IP addresss",
+							Computed:    true,
+							Optional:    false,
+							Required:    false,
+						},
+						"name": {
+							Type:             schema.TypeString,
+							Description:      "Name of the IP address",
+							Computed:         true,
+							Optional:         true,
+							ValidateDiagFunc: validateName,
+						},
+					},
+				},
+			},
+			"connections": {
+				Description: connectionsDescription,
+				Computed:    true,
+				Type:        schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 			"addresses": {
+				Deprecated:  "Use 'address' attribute instead. This attribute will be removed in the next major version of the provider",
 				Description: addressesDescription,
 				Computed:    true,
 				Type:        schema.TypeSet,
@@ -126,12 +169,36 @@ func resourceGatewayCreate(ctx context.Context, d *schema.ResourceData, meta int
 	req := &request.CreateGatewayRequest{
 		Name:     d.Get("name").(string),
 		Zone:     d.Get("zone").(string),
+		Plan:     d.Get("plan").(string),
 		Features: features,
 		Routers: []request.GatewayRouter{
 			{UUID: d.Get("router.0.id").(string)},
 		},
 		Labels:           utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
 		ConfiguredStatus: upcloud.GatewayConfiguredStatus(d.Get("configured_status").(string)),
+	}
+
+	addresses := []upcloud.GatewayAddress{}
+	for i, val := range d.Get("address").(*schema.Set).List() {
+		addrMap := val.(map[string]interface{})
+
+		addrName, ok := addrMap["name"]
+		if !ok || addrName == "" {
+			return append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       "Malformed resource data",
+				Detail:        "Gateway address does not have a required name.",
+				AttributePath: cty.GetAttrPath("address").IndexInt(i).GetAttr("name"),
+			})
+		}
+
+		addresses = append(addresses, upcloud.GatewayAddress{
+			Name: addrName.(string),
+		})
+	}
+
+	if len(addresses) > 0 {
+		req.Addresses = addresses
 	}
 
 	gw, err := svc.CreateGateway(ctx, req)
@@ -217,6 +284,10 @@ func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags 
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("plan", gw.Plan); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set("features", gw.Features); err != nil {
 		return diag.FromErr(err)
 	}
@@ -245,6 +316,20 @@ func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags 
 		})
 	}
 
+	if err := d.Set("address", addresses); err != nil {
+		return diag.FromErr(err)
+	}
+
+	var connections []string
+	for _, conn := range gw.Connections {
+		connections = append(connections, conn.Name)
+	}
+
+	if err := d.Set("connections", connections); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// This one is deprecated, can be removed later
 	if err := d.Set("addresses", addresses); err != nil {
 		return diag.FromErr(err)
 	}
@@ -288,9 +373,12 @@ func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id str
 
 var validateName = validation.ToDiagFunc(validation.All(
 	validation.StringLenBetween(1, 64),
-	validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), ""),
+	validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), "must contain only alphanumeric characters, hyphens, and underscores"),
 ))
 
-var validateFeaturesElen = validation.ToDiagFunc(validation.StringInSlice([]string{string(upcloud.GatewayFeatureNAT)}, false))
+var validateFeaturesElen = validation.ToDiagFunc(validation.StringInSlice([]string{
+	string(upcloud.GatewayFeatureNAT),
+	string(upcloud.GatewayFeatureVPN),
+}, false))
 
 var validateConfiguredStatus = validation.ToDiagFunc(validation.StringInSlice([]string{string(upcloud.GatewayConfiguredStatusStarted), string(upcloud.GatewayConfiguredStatusStopped)}, false))

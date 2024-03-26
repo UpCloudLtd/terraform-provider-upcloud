@@ -22,6 +22,8 @@
     "storage.md": "Storage",
     "floating_ip_address.md": "Network",
     "gateway.md": "Network",
+    "gateway_connection.md": "Network",
+    "gateway_connection_tunnel.md": "Network",
     "network.md": "Network",
     "router.md": "Network",
     "managed_object_storage.md": "Object Storage",

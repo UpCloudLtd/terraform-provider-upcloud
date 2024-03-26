@@ -58,19 +58,22 @@ resource "upcloud_gateway" "this" {
 
 ### Required
 
-- `features` (Set of String) Features enabled for the gateway.
+- `features` (Set of String) Features enabled for the gateway. Note that VPN feature is currently in beta, for more details see https://upcloud.com/resources/docs/networking#nat-and-vpn-gateways.
 - `name` (String) Gateway name. Needs to be unique within the account.
 - `router` (Block List, Min: 1, Max: 1) Attached Router from where traffic is routed towards the network gateway service. (see [below for nested schema](#nestedblock--router))
 - `zone` (String) Zone in which the gateway will be hosted, e.g. `de-fra1`.
 
 ### Optional
 
+- `address` (Block Set, Max: 1) IP addresses assigned to the gateway. (see [below for nested schema](#nestedblock--address))
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
 - `labels` (Map of String) Key-value pairs to classify the network gateway.
+- `plan` (String) Gateway pricing plan.
 
 ### Read-Only
 
-- `addresses` (Set of Object) IP addresses assigned to the gateway. (see [below for nested schema](#nestedatt--addresses))
+- `addresses` (Set of Object, Deprecated) IP addresses assigned to the gateway. (see [below for nested schema](#nestedatt--addresses))
+- `connections` (List of String) Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terrafrom refresh'.
 - `id` (String) The ID of this resource.
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 
@@ -80,6 +83,18 @@ resource "upcloud_gateway" "this" {
 Required:
 
 - `id` (String) ID of the router attached to the gateway.
+
+
+<a id="nestedblock--address"></a>
+### Nested Schema for `address`
+
+Optional:
+
+- `name` (String) Name of the IP address
+
+Read-Only:
+
+- `address` (String) IP addresss
 
 
 <a id="nestedatt--addresses"></a>
