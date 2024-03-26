@@ -284,6 +284,10 @@ func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags 
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("plan", gw.Plan); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set("features", gw.Features); err != nil {
 		return diag.FromErr(err)
 	}
