@@ -91,12 +91,21 @@ func TestAccUpcloudGateway(t *testing.T) {
 			},
 			{
 				// Check that computed fields are updated properly after refresh
-				RefreshState:       true,
-				ExpectNonEmptyPlan: false,
+				RefreshState: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "connections.#", "2"),
 					resource.TestCheckResourceAttr(conn1Name, "tunnels.#", "2"),
 				),
+			},
+			{
+				Config:             testDataS1,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				ResourceName:      name,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 			{
 				Config: testDataS2,
@@ -135,12 +144,16 @@ func TestAccUpcloudGateway(t *testing.T) {
 			},
 			{
 				// Check that computed fields are updated properly after refresh
-				RefreshState:       true,
-				ExpectNonEmptyPlan: false,
+				RefreshState: true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "connections.#", "1"),
 					resource.TestCheckResourceAttr(conn1Name, "tunnels.#", "1"),
 				),
+			},
+			{
+				Config:             testDataS2,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
 			},
 		},
 	})
