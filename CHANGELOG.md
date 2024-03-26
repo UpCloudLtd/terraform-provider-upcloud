@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_database: do not populate removed properties after upgrading the provider
+
 ## [5.2.0] - 2024-03-26
 
 ### Added

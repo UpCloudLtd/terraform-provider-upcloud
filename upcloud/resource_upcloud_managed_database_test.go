@@ -31,10 +31,11 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 
 	verifyImportStep := func(name string) resource.TestStep {
 		return resource.TestStep{
-			Config:            testDataS1,
-			ResourceName:      name,
-			ImportState:       true,
-			ImportStateVerify: true,
+			Config:                  testDataS1,
+			ResourceName:            name,
+			ImportState:             true,
+			ImportStateVerify:       true,
+			ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username"}, // only provided on creation, not available on subsequent requests like import
 		}
 	}
 
