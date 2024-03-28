@@ -8,12 +8,20 @@ variable "zone" {
   type    = string
 }
 
-resource "upcloud_router" "this" {
-  name = "${var.prefix}router"
+resource "upcloud_router" "pg2" {
+  name = "${var.prefix}router-pg2"
 }
 
-resource "upcloud_network" "this" {
-  name = "${var.prefix}net"
+resource "upcloud_router" "r1" {
+  name = "${var.prefix}router-r1"
+}
+
+resource "upcloud_router" "msql1" {
+  name = "${var.prefix}router-msql1"
+}
+
+resource "upcloud_network" "pg2" {
+  name = "${var.prefix}net-pg2"
   zone = var.zone
 
   ip_network {
@@ -22,7 +30,33 @@ resource "upcloud_network" "this" {
     family  = "IPv4"
   }
 
-  router = upcloud_router.this.id
+  router = upcloud_router.pg2.id
+}
+
+resource "upcloud_network" "r1" {
+  name = "${var.prefix}net-r1"
+  zone = var.zone
+
+  ip_network {
+    address = "172.18.102.0/24"
+    dhcp    = false
+    family  = "IPv4"
+  }
+
+  router = upcloud_router.r1.id
+}
+
+resource "upcloud_network" "msql1" {
+  name = "${var.prefix}net-msql1"
+  zone = var.zone
+
+  ip_network {
+    address = "172.18.103.0/24"
+    dhcp    = false
+    family  = "IPv4"
+  }
+
+  router = upcloud_router.msql1.id
 }
 
 resource "upcloud_managed_database_postgresql" "pg1" {
@@ -56,7 +90,7 @@ resource "upcloud_managed_database_postgresql" "pg2" {
     family = "IPv4"
     name   = "${var.prefix}net"
     type   = "private"
-    uuid   = upcloud_network.this.id
+    uuid   = upcloud_network.pg2.id
   }
 }
 
@@ -71,7 +105,7 @@ resource "upcloud_managed_database_mysql" "msql1" {
     family = "IPv4"
     name   = "${var.prefix}net"
     type   = "private"
-    uuid   = upcloud_network.this.id
+    uuid   = upcloud_network.msql1.id
   }
 }
 
@@ -91,7 +125,7 @@ resource "upcloud_managed_database_redis" "r1" {
     family = "IPv4"
     name   = "${var.prefix}net"
     type   = "private"
-    uuid   = upcloud_network.this.id
+    uuid   = upcloud_network.r1.id
   }
 
 }

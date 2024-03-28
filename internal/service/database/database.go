@@ -212,7 +212,13 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 	propsInfo := properties.GetProperties(dbType)
 
 	for field := range resourceProps {
+		// skip properties that are not present in the propsInfo
+		if _, ok := propsInfo[field]; !ok {
+			continue
+		}
+
 		key := fmt.Sprintf("properties.0.%s", field)
+
 		value, isNotZero := d.GetOk(key)
 		// It seems to be hard to detect changes in boolean fields in some scenarios.
 		// E.g. if boolean field is optional and has default value true, but is initially set as false in config
@@ -244,21 +250,34 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 }
 
 func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcloud.ManagedDatabase) map[string]interface{} {
-	props := d.Get("properties.0").(map[string]interface{})
-
+	resourceProps := d.Get("properties.0").(map[string]interface{})
 	propsInfo := properties.GetProperties(db.Type)
 
-	for key, value := range db.Properties {
-		if propsInfo[string(key)].Type == "object" {
-			// convert API objects into list of objects
-			if m, ok := value.(map[string]interface{}); ok {
-				props[string(key)] = []map[string]interface{}{m}
-			}
-		} else {
-			props[string(key)] = value
+	// clean up removed properties that are not present in the propsInfo
+	for key := range resourceProps {
+		if _, ok := propsInfo[key]; !ok {
+			delete(resourceProps, key)
 		}
 	}
-	return props
+
+	for typedKey, value := range db.Properties {
+		key := string(typedKey)
+
+		// only use value from current state if it's a create-only property
+		if propsInfo[key].CreateOnly {
+			continue
+		}
+
+		if propsInfo[key].Type == "object" {
+			// convert API objects into list of objects
+			if m, ok := value.(map[string]interface{}); ok {
+				resourceProps[key] = []map[string]interface{}{m}
+			}
+		} else {
+			resourceProps[key] = value
+		}
+	}
+	return resourceProps
 }
 
 func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, details *upcloud.ManagedDatabase) error {
