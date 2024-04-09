@@ -152,37 +152,21 @@ func ResourceServer() *schema.Resource {
 				MinItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"ip_address_family": {
-							Type:        schema.TypeString,
-							Description: "The IP address type of this interface (one of `IPv4` or `IPv6`).",
+						"ip_address_family":   schemaIPAddressFamily("The type of the primary IP address of this interface (one of `IPv4` or `IPv6`)."),
+						"ip_address":          schemaIPAddress("The assigned primary IP address."),
+						"ip_address_floating": schemaIPAddressFloating("`true` indicates that the primary IP address is a floating IP address."),
+						"additional_ip_address": {
+							Type:        schema.TypeSet,
+							Description: "0-4 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private`",
 							Optional:    true,
-							Default:     upcloud.IPAddressFamilyIPv4,
-							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
-								switch v.(string) {
-								case upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6:
-									return nil
-								default:
-									return diag.Diagnostics{diag.Diagnostic{
-										Severity: diag.Error,
-										Summary:  "'ip_address_family' has incorrect value",
-										Detail: fmt.Sprintf(
-											"'ip_address_family' must be one of %s or %s",
-											upcloud.IPAddressFamilyIPv4,
-											upcloud.IPAddressFamilyIPv6),
-									}}
-								}
+							MaxItems:    4,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"ip_address_family":   schemaIPAddressFamily("The type of this additional IP address of this interface (one of `IPv4` or `IPv6`)."),
+									"ip_address":          schemaIPAddress("The assigned additional IP address."),
+									"ip_address_floating": schemaIPAddressFloating("`true` indicates that the additional IP address is a floating IP address."),
+								},
 							},
-						},
-						"ip_address": {
-							Type:        schema.TypeString,
-							Description: "The assigned IP address.",
-							Optional:    true,
-							Computed:    true,
-						},
-						"ip_address_floating": {
-							Type:        schema.TypeBool,
-							Description: "`true` is a floating IP address is attached.",
-							Computed:    true,
 						},
 						"mac_address": {
 							Type:        schema.TypeString,
@@ -441,6 +425,47 @@ func ResourceServer() *schema.Resource {
 	}
 }
 
+func schemaIPAddressFamily(description string) *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Description: description,
+		Optional:    true,
+		Default:     upcloud.IPAddressFamilyIPv4,
+		ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+			switch v.(string) {
+			case upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6:
+				return nil
+			default:
+				return diag.Diagnostics{diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "'ip_address_family' has incorrect value",
+					Detail: fmt.Sprintf(
+						"'ip_address_family' must be one of %s or %s",
+						upcloud.IPAddressFamilyIPv4,
+						upcloud.IPAddressFamilyIPv6),
+				}}
+			}
+		},
+	}
+}
+
+func schemaIPAddress(description string) *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Description: description,
+		Optional:    true,
+		Computed:    true,
+	}
+}
+
+func schemaIPAddressFloating(description string) *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeBool,
+		Description: description,
+		Computed:    true,
+	}
+}
+
 func resourceServerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
@@ -567,11 +592,47 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	var connIP string
 	for _, iface := range server.Networking.Interfaces {
 		ni := make(map[string]interface{})
-		ni["ip_address_family"] = iface.IPAddresses[0].Family
-		ni["ip_address"] = iface.IPAddresses[0].Address
-		if !iface.IPAddresses[0].Floating.Empty() {
-			ni["ip_address_floating"] = iface.IPAddresses[0].Floating.Bool()
+		primaryIPInState, primaryIPSet := d.GetOk(fmt.Sprintf("network_interface.%d.ip_address", iface.Index-1))
+		additionalIPAddresses := []map[string]interface{}{}
+
+		for i, ipAddress := range iface.IPAddresses {
+			// If the primary IP address is not set in the state, use the first IP address as primary. Otherwise,
+			// re-use the matching primary IP address
+			if (i == 0 && !primaryIPSet) || (primaryIPSet && primaryIPInState == ipAddress.Address) {
+				ni["ip_address_family"] = ipAddress.Family
+				ni["ip_address"] = ipAddress.Address
+				if !ipAddress.Floating.Empty() {
+					ni["ip_address_floating"] = ipAddress.Floating.Bool()
+				}
+
+				continue
+			}
+			if iface.Type == upcloud.NetworkTypePrivate {
+				additionalIPAddress := map[string]interface{}{
+					"ip_address":        ipAddress.Address,
+					"ip_address_family": ipAddress.Family,
+				}
+				if !ipAddress.Floating.Empty() {
+					additionalIPAddress["ip_address_floating"] = ipAddress.Floating.Bool()
+				}
+				additionalIPAddresses = append(additionalIPAddresses, additionalIPAddress)
+			}
 		}
+		// If the primary IP address was not found, use the first additional IP address as primary instead. This might
+		// happen if the attached network was changed.
+		if _, ok := ni["ip_address"]; !ok && len(additionalIPAddresses) > 0 {
+			ni["ip_address_family"] = additionalIPAddresses[0]["ip_address_family"]
+			ni["ip_address"] = additionalIPAddresses[0]["ip_address"]
+			if _, ok := additionalIPAddresses[0]["ip_address_floating"]; ok {
+				ni["ip_address_floating"] = additionalIPAddresses[0]["ip_address_floating"]
+			}
+
+			// remove first element of additionalIPAddresses
+			additionalIPAddresses = append(additionalIPAddresses[:0], additionalIPAddresses[1:]...)
+		}
+
+		ni["additional_ip_address"] = additionalIPAddresses
+
 		ni["mac_address"] = iface.MAC
 		ni["network"] = iface.Network
 		ni["type"] = iface.Type
@@ -649,6 +710,12 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	serverDetails, err := client.GetServerDetails(ctx, &request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Before stopping, build & validate network interface requests to avoid unnecessary server downtime
+	networkReqs, err := networkInterfacesFromResourceData(ctx, client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -896,7 +963,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if d.HasChange("network_interface") {
-		if err := reconfigureServerNetworkInterfaces(ctx, client, d); err != nil {
+		if err := reconfigureServerNetworkInterfaces(ctx, client, d, networkReqs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -1144,7 +1211,6 @@ func buildNetworkOpts(d *schema.ResourceData) ([]request.CreateServerInterface, 
 	niCount := d.Get("network_interface.#").(int)
 	for i := 0; i < niCount; i++ {
 		keyRoot := fmt.Sprintf("network_interface.%d.", i)
-
 		iface := request.CreateServerInterface{
 			IPAddresses: []request.CreateServerIPAddress{
 				{
@@ -1160,6 +1226,21 @@ func buildNetworkOpts(d *schema.ResourceData) ([]request.CreateServerInterface, 
 
 		if v, ok := d.GetOk(keyRoot + "network"); ok {
 			iface.Network = v.(string)
+		}
+
+		if additionalIPAddresses, ok := d.GetOk(keyRoot + "additional_ip_address"); ok {
+			if iface.Type != upcloud.NetworkTypePrivate {
+				return nil, fmt.Errorf("additional_ip_address can only be set for private network interfaces")
+			}
+
+			for _, v := range additionalIPAddresses.(*schema.Set).List() {
+				ipAddress := v.(map[string]interface{})
+
+				iface.IPAddresses = append(iface.IPAddresses, request.CreateServerIPAddress{
+					Family:  ipAddress["ip_address_family"].(string),
+					Address: ipAddress["ip_address"].(string),
+				})
+			}
 		}
 
 		ifaces = append(ifaces, iface)

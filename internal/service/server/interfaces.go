@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData) error {
+func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData, reqs []request.CreateNetworkInterfaceRequest) error {
 	// assert server is stopped
 	s, err := svc.GetServerDetails(ctx, &request.GetServerDetailsRequest{
 		UUID: d.Id(),
@@ -22,11 +22,6 @@ func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Servic
 	}
 	if s.State != upcloud.ServerStateStopped {
 		return errors.New("server needs to be stopped to alter networks")
-	}
-
-	reqs, err := networkInterfacesFromResourceData(ctx, svc, d)
-	if err != nil {
-		return err
 	}
 
 	// Try to preserve public (IPv4 or IPv6) and utility network interfaces so that IPs doesn't change
@@ -60,7 +55,7 @@ func networkInterfacesFromResourceData(ctx context.Context, svc *service.Service
 	rs := make([]request.CreateNetworkInterfaceRequest, 0)
 	nInf, ok := d.Get("network_interface.#").(int)
 	if !ok {
-		return rs, errors.New("unable read network_interface count")
+		return rs, errors.New("unable to read network_interface count")
 	}
 	for i := 0; i < nInf; i++ {
 		key := fmt.Sprintf("network_interface.%d", i)
@@ -106,6 +101,23 @@ func networkInterfacesFromResourceData(ctx context.Context, svc *service.Service
 			}
 		}
 		r.IPAddresses = append(r.IPAddresses, ip)
+
+		if v, ok := d.GetOk(key + ".additional_ip_address"); ok {
+			additionalIPAddresses := v.(*schema.Set).List()
+			if len(additionalIPAddresses) > 0 && val["type"].(string) != upcloud.NetworkTypePrivate {
+				return nil, fmt.Errorf("additional_ip_address can only be set for private network interfaces")
+			}
+
+			for _, v := range additionalIPAddresses {
+				ipAddress := v.(map[string]interface{})
+
+				r.IPAddresses = append(r.IPAddresses, request.CreateNetworkInterfaceIPAddress{
+					Family:  ipAddress["ip_address_family"].(string),
+					Address: ipAddress["ip_address"].(string),
+				})
+			}
+		}
+
 		rs = append(rs, r)
 	}
 	return rs, nil
