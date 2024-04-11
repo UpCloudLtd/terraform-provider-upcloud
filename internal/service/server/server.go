@@ -598,7 +598,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		for i, ipAddress := range iface.IPAddresses {
 			// If the primary IP address is not set in the state, use the first IP address as primary. Otherwise,
 			// re-use the matching primary IP address
-			if (i == 0 && !primaryIPSet) || (primaryIPSet && primaryIPInState == ipAddress.Address) {
+			if (i == 0 && !primaryIPSet) || (primaryIPSet && primaryIPInState.(string) == ipAddress.Address) {
 				ni["ip_address_family"] = ipAddress.Family
 				ni["ip_address"] = ipAddress.Address
 				if !ipAddress.Floating.Empty() {
