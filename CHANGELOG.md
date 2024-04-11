@@ -13,6 +13,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - managed object storage: fix error when refreshing a state after the resource was deleted outside of Terraform; applies to all upcloud_managed_object_storage* resources
 
+## Changed
+
+- Go version bump to 1.21
+
 ## [5.2.1] - 2024-03-28
 
 ### Fixed

@@ -53,4 +53,4 @@ release:
     owner: UpCloudLtd
     name: terraform-provider-upcloud
 changelog:
-  skip: true
+  disable: true
