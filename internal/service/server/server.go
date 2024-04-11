@@ -427,34 +427,21 @@ func ResourceServer() *schema.Resource {
 
 func schemaIPAddressFamily(description string) *schema.Schema {
 	return &schema.Schema{
-		Type:        schema.TypeString,
-		Description: description,
-		Optional:    true,
-		Default:     upcloud.IPAddressFamilyIPv4,
-		ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
-			switch v.(string) {
-			case upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6:
-				return nil
-			default:
-				return diag.Diagnostics{diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "'ip_address_family' has incorrect value",
-					Detail: fmt.Sprintf(
-						"'ip_address_family' must be one of %s or %s",
-						upcloud.IPAddressFamilyIPv4,
-						upcloud.IPAddressFamilyIPv6),
-				}}
-			}
-		},
+		Type:             schema.TypeString,
+		Description:      description,
+		Optional:         true,
+		Default:          upcloud.IPAddressFamilyIPv4,
+		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6}, false)),
 	}
 }
 
 func schemaIPAddress(description string) *schema.Schema {
 	return &schema.Schema{
-		Type:        schema.TypeString,
-		Description: description,
-		Optional:    true,
-		Computed:    true,
+		Type:             schema.TypeString,
+		Description:      description,
+		Optional:         true,
+		Computed:         true,
+		ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
 	}
 }
 
