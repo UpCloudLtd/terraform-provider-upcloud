@@ -87,7 +87,7 @@ func resourceManagedObjectStorageUserRead(ctx context.Context, d *schema.Resourc
 		Username:    username,
 	})
 	if err != nil {
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("username").(string), d, err)
 	}
 
 	return setManagedObjectStorageUserData(d, user)
