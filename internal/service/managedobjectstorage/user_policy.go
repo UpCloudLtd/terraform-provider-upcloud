@@ -91,7 +91,7 @@ func resourceManagedObjectStorageUserPolicyRead(ctx context.Context, d *schema.R
 		Username:    username,
 	})
 	if err != nil {
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	for _, policy := range policies {

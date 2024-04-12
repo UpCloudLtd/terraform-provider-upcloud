@@ -128,7 +128,7 @@ func resourceManagedObjectStorageUserAccessKeyRead(ctx context.Context, d *schem
 		AccessKeyID: id,
 	})
 	if err != nil {
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("access_key_id").(string), d, err)
 	}
 
 	return setManagedObjectStorageUserAccessKeyData(d, accessKey)

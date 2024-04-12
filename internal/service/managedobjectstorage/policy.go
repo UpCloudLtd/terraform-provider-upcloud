@@ -125,7 +125,7 @@ func resourceManagedObjectStoragePolicyRead(ctx context.Context, d *schema.Resou
 		Name:        name,
 	})
 	if err != nil {
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	return setManagedObjectStoragePolicyData(d, policy)

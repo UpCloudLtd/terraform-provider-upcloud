@@ -205,7 +205,7 @@ func resourceManagedObjectStorageRead(ctx context.Context, d *schema.ResourceDat
 
 	storage, err := svc.GetManagedObjectStorage(ctx, &request.GetManagedObjectStorageRequest{UUID: d.Id()})
 	if err != nil {
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
 	return setManagedObjectStorageData(d, storage)
