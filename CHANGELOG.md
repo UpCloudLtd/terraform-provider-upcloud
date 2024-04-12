@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_server: `additional_ip_address` block underneath `network_interface` for adding a maximum of 4 IP addresses to a server network interface
+
 ### Fixed
 
 - managed object storage: fix error when refreshing a state after the resource was deleted outside of Terraform; applies to all upcloud_managed_object_storage* resources

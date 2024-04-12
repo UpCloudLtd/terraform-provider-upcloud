@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func withPrefix(text string) string {
+func withPrefixDB(text string) string {
 	return fmt.Sprintf("tf-acc-test-db-%s", text)
 }
 
@@ -46,9 +46,9 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(pg1Name, "name", withPrefix("pg-1")),
+					resource.TestCheckResourceAttr(pg1Name, "name", withPrefixDB("pg-1")),
 					resource.TestCheckResourceAttr(pg1Name, "plan", "1x1xCPU-2GB-25GB"),
-					resource.TestCheckResourceAttr(pg1Name, "title", withPrefix("pg-1")),
+					resource.TestCheckResourceAttr(pg1Name, "title", withPrefixDB("pg-1")),
 					resource.TestCheckResourceAttr(pg1Name, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(pg1Name, "powered", "true"),
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_time", "10:00:00"),
@@ -59,22 +59,22 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttrSet(pg1Name, "service_uri"),
 					resource.TestCheckResourceAttr(pg1Name, "network.#", "0"),
 
-					resource.TestCheckResourceAttr(pg2Name, "name", withPrefix("pg-2")),
+					resource.TestCheckResourceAttr(pg2Name, "name", withPrefixDB("pg-2")),
 					resource.TestCheckResourceAttr(pg2Name, "plan", "1x1xCPU-2GB-25GB"),
-					resource.TestCheckResourceAttr(pg2Name, "title", withPrefix("pg-2")),
+					resource.TestCheckResourceAttr(pg2Name, "title", withPrefixDB("pg-2")),
 					resource.TestCheckResourceAttr(pg2Name, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
 					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
 					resource.TestCheckResourceAttr(pg2Name, "network.#", "1"),
 
-					resource.TestCheckResourceAttr(msql1Name, "name", withPrefix("mysql-1")),
+					resource.TestCheckResourceAttr(msql1Name, "name", withPrefixDB("mysql-1")),
 					resource.TestCheckResourceAttr(msql1Name, "plan", "1x1xCPU-2GB-25GB"),
-					resource.TestCheckResourceAttr(msql1Name, "title", withPrefix("mysql-1")),
+					resource.TestCheckResourceAttr(msql1Name, "title", withPrefixDB("mysql-1")),
 					resource.TestCheckResourceAttr(msql1Name, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(msql1Name, "powered", "true"),
 					resource.TestCheckResourceAttr(msql1Name, "network.#", "0"),
 
-					resource.TestCheckResourceAttr(lgDBName, "name", withPrefix("logical-db-1")),
+					resource.TestCheckResourceAttr(lgDBName, "name", withPrefixDB("logical-db-1")),
 					resource.TestCheckResourceAttrSet(lgDBName, "service"),
 
 					resource.TestCheckResourceAttr(userName1, "username", "somename"),
@@ -92,9 +92,9 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.index", ".opensearch-observability"),
 					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.permission", "admin"),
 
-					resource.TestCheckResourceAttr(redisName, "name", withPrefix("redis-1")),
+					resource.TestCheckResourceAttr(redisName, "name", withPrefixDB("redis-1")),
 					resource.TestCheckResourceAttr(redisName, "plan", "1x1xCPU-2GB"),
-					resource.TestCheckResourceAttr(redisName, "title", withPrefix("redis-1")),
+					resource.TestCheckResourceAttr(redisName, "title", withPrefixDB("redis-1")),
 					resource.TestCheckResourceAttr(redisName, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(redisName, "powered", "true"),
 					resource.TestCheckResourceAttr(redisName, "network.#", "1"),
@@ -112,7 +112,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(pg1Name, "title", withPrefix("pg-1-updated")),
+					resource.TestCheckResourceAttr(pg1Name, "title", withPrefixDB("pg-1-updated")),
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_time", "11:00:00"),
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_dow", "thursday"),
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.public_access", "false"),
@@ -120,15 +120,15 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "14"),
 					resource.TestCheckResourceAttr(pg1Name, "powered", "false"),
 
-					resource.TestCheckResourceAttr(pg2Name, "title", withPrefix("pg-2-updated")),
+					resource.TestCheckResourceAttr(pg2Name, "title", withPrefixDB("pg-2-updated")),
 					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
 					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
 					resource.TestCheckResourceAttr(pg2Name, "network.#", "1"),
 
-					resource.TestCheckResourceAttr(msql1Name, "title", withPrefix("mysql-1-updated")),
+					resource.TestCheckResourceAttr(msql1Name, "title", withPrefixDB("mysql-1-updated")),
 					resource.TestCheckResourceAttr(msql1Name, "network.#", "1"),
 
-					resource.TestCheckResourceAttr(lgDBName, "name", withPrefix("logical-db-1-updated")),
+					resource.TestCheckResourceAttr(lgDBName, "name", withPrefixDB("logical-db-1-updated")),
 
 					resource.TestCheckResourceAttr(userName1, "password", "Superpass890"),
 					resource.TestCheckResourceAttr(userName1, "authentication", "caching_sha2_password"),
@@ -140,9 +140,9 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.commands.#", "0"),
 					resource.TestCheckResourceAttr(userName3, "redis_access_control.0.keys.0", "key*"),
 
-					resource.TestCheckResourceAttr(redisName, "name", withPrefix("redis-1")),
+					resource.TestCheckResourceAttr(redisName, "name", withPrefixDB("redis-1")),
 					resource.TestCheckResourceAttr(redisName, "plan", "1x1xCPU-2GB"),
-					resource.TestCheckResourceAttr(redisName, "title", withPrefix("redis-1-updated")),
+					resource.TestCheckResourceAttr(redisName, "title", withPrefixDB("redis-1-updated")),
 					resource.TestCheckResourceAttr(redisName, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(redisName, "powered", "true"),
 				),
