@@ -100,16 +100,30 @@ Required:
 
 Optional:
 
+- `additional_ip_address` (Block Set, Max: 4) 0-4 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private` (see [below for nested schema](#nestedblock--network_interface--additional_ip_address))
 - `bootable` (Boolean) `true` if this interface should be used for network booting.
-- `ip_address` (String) The assigned IP address.
-- `ip_address_family` (String) The IP address type of this interface (one of `IPv4` or `IPv6`).
+- `ip_address` (String) The assigned primary IP address.
+- `ip_address_family` (String) The type of the primary IP address of this interface (one of `IPv4` or `IPv6`).
 - `network` (String) The unique ID of a network to attach this network to.
 - `source_ip_filtering` (Boolean) `true` if source IP should be filtered.
 
 Read-Only:
 
-- `ip_address_floating` (Boolean) `true` is a floating IP address is attached.
+- `ip_address_floating` (Boolean) `true` indicates that the primary IP address is a floating IP address.
 - `mac_address` (String) The assigned MAC address.
+
+<a id="nestedblock--network_interface--additional_ip_address"></a>
+### Nested Schema for `network_interface.additional_ip_address`
+
+Optional:
+
+- `ip_address` (String) The assigned additional IP address.
+- `ip_address_family` (String) The type of this additional IP address of this interface (one of `IPv4` or `IPv6`).
+
+Read-Only:
+
+- `ip_address_floating` (Boolean) `true` indicates that the additional IP address is a floating IP address.
+
 
 
 <a id="nestedblock--login"></a>
