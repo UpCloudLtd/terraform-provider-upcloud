@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.2.2] - 2024-04-15
+
 ### Added
 
 - upcloud_server: `additional_ip_address` block underneath `network_interface` for adding a maximum of 4 IP addresses to a server network interface
@@ -570,7 +572,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.2.1...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.2.2...HEAD
+[5.2.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.2.1...v5.2.2
 [5.2.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.2.0...v5.2.1
 [5.2.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.1.1...v5.2.0
 [5.1.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.1.0...v5.1.1
