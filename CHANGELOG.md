@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_object_storage_user_policy: fix issue with refreshing state after the resouce was deleted outside of Terraform
+- upcloud_firewall_rules: fix issue with refreshing state after the resouce was deleted outside of Terraform
+
 ## [5.2.2] - 2024-04-15
 
 ### Added
@@ -15,7 +20,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - managed object storage: fix error when refreshing a state after the resource was deleted outside of Terraform; applies to all upcloud_managed_object_storage* resources
 
-## Changed
+### Changed
 
 - Go version bump to 1.21
 
