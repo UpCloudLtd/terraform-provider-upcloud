@@ -2,9 +2,11 @@ package managedobjectstorage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -94,12 +96,13 @@ func resourceManagedObjectStorageUserPolicyRead(ctx context.Context, d *schema.R
 		return utils.HandleResourceError(d.Get("name").(string), d, err)
 	}
 
-	for _, policy := range policies {
-		if policy.Name == name {
-			if err = d.Set("name", policy.Name); err != nil {
-				return diag.FromErr(err)
-			}
-		}
+	policy, policyExists := findUserPolicy(policies, name)
+	if !policyExists {
+		return utils.HandleResourceError(d.Get("name").(string), d, fmt.Errorf("policy not found"))
+	}
+
+	if err = d.Set("name", policy.Name); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
@@ -124,4 +127,14 @@ func resourceManagedObjectStorageUserPolicyDelete(ctx context.Context, d *schema
 	}
 
 	return nil
+}
+
+func findUserPolicy(policies []upcloud.ManagedObjectStorageUserPolicy, name string) (*upcloud.ManagedObjectStorageUserPolicy, bool) {
+	for _, policy := range policies {
+		if policy.Name == name {
+			return &policy, true
+		}
+	}
+
+	return nil, false
 }
