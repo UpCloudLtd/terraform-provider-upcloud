@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -214,7 +215,7 @@ func resourceFirewallRulesRead(ctx context.Context, d *schema.ResourceData, meta
 
 	firewallRules, err := client.GetFirewallRules(ctx, opts)
 	if err != nil {
-		return diag.FromErr(err)
+		return utils.HandleResourceError(d.Get("server_id").(string), d, err)
 	}
 
 	var frMaps []map[string]interface{}
