@@ -10,21 +10,18 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccUpCloudRouter(t *testing.T) {
-	var providers []*schema.Provider
-
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 
 	staticRoutes := []upcloud.StaticRoute{{Name: "my-example-route", Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckRouterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccRouterConfig(name, staticRoutes),
@@ -43,8 +40,6 @@ func TestAccUpCloudRouter(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_update(t *testing.T) {
-	var providers []*schema.Provider
-
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
 	updateName := fmt.Sprintf("tf-test-update-%s", acctest.RandString(10))
@@ -53,9 +48,9 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 	updateStaticRoutes := []upcloud.StaticRoute{{Name: "my-example-route-2", Nexthop: "10.0.0.101", Route: "0.0.0.0/0"}}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckRouterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccRouterConfig(name, staticRoutes),
@@ -86,14 +81,12 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_import(t *testing.T) {
-	var providers []*schema.Provider
-
 	var router upcloud.Router
 	name := fmt.Sprintf("tf-test-import-%s", acctest.RandString(10))
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckRouterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccRouterConfig(name, nil),
@@ -111,13 +104,12 @@ func TestAccUpCloudRouter_import(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_detach(t *testing.T) {
-	var providers []*schema.Provider
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckRouterNetworkDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
 				// first create network and router attached
@@ -180,13 +172,12 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
-	var providers []*schema.Provider
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckRouterNetworkDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
 				// first create network and router attached

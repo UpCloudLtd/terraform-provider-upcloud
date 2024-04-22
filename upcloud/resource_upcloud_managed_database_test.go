@@ -7,7 +7,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func withPrefixDB(text string) string {
@@ -18,7 +17,6 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s2.tf")
 
-	var providers []*schema.Provider
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
 	msql1Name := "upcloud_managed_database_mysql.msql1"
@@ -40,8 +38,8 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

@@ -5,12 +5,9 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccDataSourceUpCloudZone_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	resourceName := "data.upcloud_zone.my_zone"
 
 	expectedZoneName := "uk-lon1"
@@ -18,8 +15,8 @@ func TestAccDataSourceUpCloudZone_basic(t *testing.T) {
 	expectedPublic := "true"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZoneConfig(expectedZoneName),

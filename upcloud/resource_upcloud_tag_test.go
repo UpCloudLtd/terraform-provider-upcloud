@@ -10,20 +10,18 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccUpcloudTag_basic(t *testing.T) {
-	var providers []*schema.Provider
 	tag1 := acctest.RandString(10)
 	tag2 := acctest.RandString(10)
 	expectedNames := []string{tag1, tag2}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckTagDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudTagInstanceConfig(expectedNames),
@@ -47,16 +45,15 @@ func TestAccUpcloudTag_basic(t *testing.T) {
 }
 
 func TestAccUpCloudTag_import(t *testing.T) {
-	var providers []*schema.Provider
 	var tags upcloud.Tags
 
 	tag1 := acctest.RandString(10)
 	expectedNames := []string{tag1}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckTagDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudTagInstanceConfig(expectedNames),

@@ -5,18 +5,15 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceUpCloudIPAddresses_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	resourceName := "data.upcloud_ip_addresses.empty"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudIPAddressesConfigEmpty(),

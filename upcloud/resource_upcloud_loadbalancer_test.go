@@ -6,7 +6,6 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudLoadBalancer(t *testing.T) {
@@ -15,7 +14,6 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
 	testDataS4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s4.tf")
 
-	var providers []*schema.Provider
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
 	be1Name := "upcloud_loadbalancer_backend.lb_be_1"
@@ -31,8 +29,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	cbm1Name := "upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -219,11 +217,9 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 	testDataE3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e3.tf")
 	testDataE4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
 
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testDataE1,

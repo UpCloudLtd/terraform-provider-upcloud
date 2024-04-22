@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -114,10 +115,15 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	if err != nil {
 		resp.Diagnostics.AddError("Authentication failed", "Failed to authenticate to UpCloud API with given credentials")
 	}
+
+	resp.ResourceData = service
+	resp.DataSourceData = service
 }
 
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		network.NewNetworkResource,
+	}
 }
 
 func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {

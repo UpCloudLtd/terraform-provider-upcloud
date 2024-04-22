@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -18,13 +17,11 @@ const (
 )
 
 func TestAccDataSourceUpCloudZones_default(t *testing.T) {
-	var providers []*schema.Provider
-
 	resourceName := "data.upcloud_zones.empty"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigEmpty(),
@@ -37,14 +34,12 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 }
 
 func TestAccDataSourceUpCloudZones_public(t *testing.T) {
-	var providers []*schema.Provider
-
 	filterType := publicFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
@@ -59,14 +54,12 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 }
 
 func TestAccDataSourceUpCloudZones_private(t *testing.T) {
-	var providers []*schema.Provider
-
 	filterType := privateFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
@@ -80,14 +73,12 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 }
 
 func TestAccDataSourceUpCloudZones_all(t *testing.T) {
-	var providers []*schema.Provider
-
 	filterType := allFilter
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),

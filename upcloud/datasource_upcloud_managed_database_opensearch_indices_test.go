@@ -6,20 +6,18 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccDataSourceUpcloudManagedDatabaseOpenSearchIndices(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/data_source_opensearch_indices_s1.tf")
 
-	var providers []*schema.Provider
 	name := "data.upcloud_managed_database_opensearch_indices.opensearch_indices"
 	prop := func(name string) string {
 		return fmt.Sprintf("indices.0.%s", name)
 	}
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

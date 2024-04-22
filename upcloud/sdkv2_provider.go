@@ -80,7 +80,6 @@ func Provider() *schema.Provider {
 			"upcloud_storage":                                 storage.ResourceStorage(),
 			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
 			"upcloud_tag":                                     tag.ResourceTag(),
-			"upcloud_network":                                 network.SDKV2ResourceNetwork(),
 			"upcloud_gateway":                                 gateway.ResourceGateway(),
 			"upcloud_gateway_connection":                      gateway.ResourceConnection(),
 			"upcloud_gateway_connection_tunnel":               gateway.ResourceTunnel(),

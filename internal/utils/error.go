@@ -19,3 +19,11 @@ func HandleResourceError(resourceName string, d *schema.ResourceData, err error)
 	}
 	return diag.FromErr(err)
 }
+
+func ErrorDiagnosticDetail(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	return "Error: " + err.Error()
+}

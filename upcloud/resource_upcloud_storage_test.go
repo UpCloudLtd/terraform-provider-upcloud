@@ -16,7 +16,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -30,11 +29,9 @@ const (
 )
 
 func TestAccUpcloudStorage_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -131,7 +128,6 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_import(t *testing.T) {
-	var providers []*schema.Provider
 	var storageDetails upcloud.StorageDetails
 
 	expectedSize := "10"
@@ -140,9 +136,9 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 	expectedZone := "fi-hel1"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckStorageDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone, false, false),
@@ -160,13 +156,12 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_StorageImport(t *testing.T) {
-	var providers []*schema.Provider
 	var storageDetails upcloud.StorageDetails
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckStorageDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfigWithStorageImport(
@@ -185,7 +180,6 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 
 func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 	if os.Getenv(resource.EnvTfAcc) != "" {
-		var providers []*schema.Provider
 		var storageDetails upcloud.StorageDetails
 
 		imagePath, sum, err := createTempImage()
@@ -196,9 +190,9 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 		sha256sum := hex.EncodeToString((*sum).Sum(nil))
 
 		resource.ParallelTest(t, resource.TestCase{
-			PreCheck:          func() { testAccPreCheck(t) },
-			ProviderFactories: testAccProviderFactories(&providers),
-			CheckDestroy:      testAccCheckStorageDestroy,
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV5ProviderFactories: testAccProviderFactories,
+			CheckDestroy:             testAccCheckStorageDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testUpcloudStorageInstanceConfigWithStorageImport(
@@ -217,12 +211,10 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckStorageDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfigWithStorageImport(
@@ -235,12 +227,10 @@ func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckStorageDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testUpcloudStorageInstanceConfigWithImportAndClone(),
@@ -251,14 +241,13 @@ func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
-	var providers []*schema.Provider
 	var storageDetailsPlain upcloud.StorageDetails
 	var storageDetailsClone upcloud.StorageDetails
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckStorageDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudStorageInstanceConfigWithClone(20),

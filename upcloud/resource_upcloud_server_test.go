@@ -7,18 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestUpcloudServer_customPlan(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -67,11 +64,9 @@ func TestUpcloudServer_customPlan(t *testing.T) {
 }
 
 func TestUpcloudServer_minimal(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -120,11 +115,9 @@ func TestUpcloudServer_minimal(t *testing.T) {
 }
 
 func TestUpcloudServer_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -181,11 +174,9 @@ func TestUpcloudServer_basic(t *testing.T) {
 }
 
 func TestUpcloudServer_changePlan(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccServerConfigWithSmallServerPlan,
@@ -206,11 +197,9 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 }
 
 func TestUpcloudServer_simpleBackup(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// basic setup
@@ -355,11 +344,9 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 }
 
 func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// basic setup
@@ -572,11 +559,9 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 }
 
 func TestUpcloudServer_updateTags(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Setup server with tags
@@ -718,13 +703,11 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 }
 
 func TestUpcloudServer_networkInterface(t *testing.T) {
-	var providers []*schema.Provider
-
 	var serverID string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccServerNetworkInterfaceConfig(
@@ -1033,11 +1016,9 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 }
 
 func TestUpcloudServer_updatePreChecks(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -1083,11 +1064,9 @@ func TestUpcloudServer_updatePreChecks(t *testing.T) {
 }
 
 func TestUpcloudServer_createPreChecks(t *testing.T) {
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Test creating with invalid plan

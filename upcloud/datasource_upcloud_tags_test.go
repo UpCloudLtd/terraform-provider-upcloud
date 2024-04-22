@@ -6,19 +6,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceUpCloudTags_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	resourceName := "data.upcloud_tags.empty"
 	tagName := fmt.Sprintf("tag-%s", acctest.RandString(10))
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudTagsConfigEmpty(tagName),

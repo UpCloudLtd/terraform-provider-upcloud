@@ -5,36 +5,24 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccProviders         map[string]*schema.Provider
-	testAccProviderFactories func(providers *[]*schema.Provider) map[string]func() (*schema.Provider, error)
+	testAccProviderFactories map[string]func() (tfprotov5.ProviderServer, error)
 	testAccProvider          *schema.Provider
-	testAccProviderFunc      func() *schema.Provider
 )
 
 func init() {
 	testAccProvider = Provider()
-	testAccProviders = map[string]*schema.Provider{
-		"upcloud": testAccProvider,
-	}
+	testAccProviderFactories = make(map[string]func() (tfprotov5.ProviderServer, error))
 
-	testAccProviderFactories = func(providers *[]*schema.Provider) map[string]func() (*schema.Provider, error) {
-		providerNames := []string{"upcloud"}
-		factories := make(map[string]func() (*schema.Provider, error), len(providerNames))
-		for _, name := range providerNames {
-			p := Provider()
-			factories[name] = func() (*schema.Provider, error) { //nolint:unparam
-				return p, nil
-			}
-			*providers = append(*providers, p)
-		}
-		return factories
+	testAccProviderFactories["upcloud"] = func() (tfprotov5.ProviderServer, error) {
+		factory, err := NewProviderServerFactory()
+		return factory(), err
 	}
-	testAccProviderFunc = func() *schema.Provider { return testAccProvider }
 }
 
 func TestProvider(t *testing.T) {

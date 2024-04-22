@@ -7,20 +7,18 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_s2.tf")
 
-	var providers []*schema.Provider
 	this := "upcloud_managed_object_storage.this"
 	minimal := "upcloud_managed_object_storage.minimal"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -82,11 +80,9 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 		})
 	}
 
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		Steps:             steps,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps:                    steps,
 	})
 }

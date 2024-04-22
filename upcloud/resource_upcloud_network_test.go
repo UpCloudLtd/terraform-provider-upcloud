@@ -9,13 +9,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccUpCloudNetwork_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
@@ -34,8 +31,8 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 	)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -63,16 +60,14 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false, []string{"10.0.0.2"}, []string{"192.168.0.0/24"}),
@@ -109,8 +104,6 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_withRouter(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
@@ -119,8 +112,8 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 	config := testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true, nil, nil)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -147,16 +140,14 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false, nil, nil),
@@ -191,20 +182,18 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 }
 
 func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
-	var providers []*schema.Provider
-
 	netName := fmt.Sprintf("test_network_%s", acctest.RandString(5))
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false, nil, nil),
-				ExpectError: regexp.MustCompile(`'family' has incorrect value`),
+				ExpectError: regexp.MustCompile(`family value must be one of: \["IPv4" "IPv6"\]`),
 			},
 		},
 	})
@@ -234,8 +223,8 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 		  address            = "%s"
 		  dhcp               = "%t"
 		  dhcp_default_route = "%t"
-		  family  			 = "%s"
-		  gateway			 = "%s"
+		  family             = "%s"
+		  gateway            = "%s"
 		
 	`,
 		address,
