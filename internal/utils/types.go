@@ -43,3 +43,11 @@ func SetAsSliceOfStrings(ctx context.Context, set types.Set) ([]string, diag.Dia
 
 	return strings, diags
 }
+
+func NilAsEmptyList[T any](l []T) []T {
+	if l == nil {
+		return []T{}
+	}
+
+	return l
+}

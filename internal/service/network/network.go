@@ -16,7 +16,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -95,8 +97,11 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 			},
 			"type": schema.StringAttribute{
-				Description: "The network type",
-				Computed:    true,
+				MarkdownDescription: "The network type",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"zone": schema.StringAttribute{
 				Description: "The zone the network is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
@@ -107,7 +112,6 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"router": schema.StringAttribute{
 				Description: "UUID of a router to attach to this network.",
-				Computed:    true,
 				Optional:    true,
 			},
 		},
@@ -134,12 +138,18 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Description: "Is the gateway the DHCP default route?",
 							Computed:    true,
 							Optional:    true,
+							PlanModifiers: []planmodifier.Bool{
+								boolplanmodifier.UseStateForUnknown(),
+							},
 						},
 						"dhcp_dns": schema.SetAttribute{
 							ElementType: types.StringType,
 							Description: "The DNS servers given by DHCP",
 							Computed:    true,
 							Optional:    true,
+							PlanModifiers: []planmodifier.Set{
+								setplanmodifier.UseStateForUnknown(),
+							},
 							Validators: []validator.Set{
 								setvalidator.ValueStringsAre(
 									stringvalidator.Any(
@@ -154,6 +164,9 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Description: "The additional DHCP classless static routes given by DHCP",
 							Computed:    true,
 							Optional:    true,
+							PlanModifiers: []planmodifier.Set{
+								setplanmodifier.UseStateForUnknown(),
+							},
 							Validators: []validator.Set{
 								setvalidator.ValueStringsAre(
 									stringvalidator.Any(
@@ -165,6 +178,9 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						"family": schema.StringAttribute{
 							Description: "IP address family",
 							Required:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 							Validators: []validator.String{
 								stringvalidator.OneOf(upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6),
 							},
@@ -173,6 +189,9 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Description: "Gateway address given by DHCP",
 							Computed:    true,
 							Optional:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 						},
 					},
 				},
@@ -207,11 +226,11 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 		data.IPNetwork[i].DHCP = utils.AsBool(ipnet.DHCP)
 		data.IPNetwork[i].DHCPDefaultRoute = utils.AsBool(ipnet.DHCPDefaultRoute)
 
-		dhcpdns, diags := types.SetValueFrom(ctx, types.StringType, ipnet.DHCPDns)
+		dhcpdns, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPDns))
 		diags.Append(diags...)
 		data.IPNetwork[i].DHCPDns = dhcpdns
 
-		dhcproutes, diags := types.SetValueFrom(ctx, types.StringType, ipnet.DHCPRoutes)
+		dhcproutes, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPRoutes))
 		diags.Append(diags...)
 		data.IPNetwork[i].DHCPRoutes = dhcproutes
 
