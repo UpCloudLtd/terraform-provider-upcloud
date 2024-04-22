@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 )
 
-func ResourceNetwork() *schema.Resource {
+func SDKV2ResourceNetwork() *schema.Resource {
 	return &schema.Resource{
 		Description:   "This resource represents an SDN private network that cloud servers from the same zone can be attached to.",
 		ReadContext:   resourceNetworkRead,

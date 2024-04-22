@@ -21,22 +21,24 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
+	config := testAccNetworkConfig(
+		netName,
+		"fi-hel1",
+		cidr,
+		gateway,
+		true,
+		false,
+		false,
+		[]string{"10.0.0.2", "10.0.0.3"},
+		[]string{"192.168.0.0/24", "192.168.100.0/32"},
+	)
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNetworkConfig(
-					netName,
-					"fi-hel1",
-					cidr,
-					gateway,
-					true,
-					false,
-					false,
-					[]string{"10.0.0.2", "10.0.0.3"},
-					[]string{"192.168.0.0/24", "192.168.100.0/32"},
-				),
+				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
@@ -49,6 +51,12 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_dns.#", "2"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_routes.#", "2"),
 				),
+			},
+			{
+				Config:            config,
+				ResourceName:      "upcloud_network.test_network",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -108,12 +116,14 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
+	config := testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true, nil, nil)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviderFactories(&providers),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true, nil, nil),
+				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
@@ -125,6 +135,12 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.family", "IPv4"),
 					testAccNetworkRouterIsSet("upcloud_network.test_network", "upcloud_router.test_network_router"),
 				),
+			},
+			{
+				Config:            config,
+				ResourceName:      "upcloud_network.test_network",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
