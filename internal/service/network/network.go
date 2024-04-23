@@ -204,7 +204,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 }
 
 func setValues(ctx context.Context, data *networkModel, network *upcloud.Network) diag.Diagnostics {
-	diags := diag.Diagnostics{}
+	respDiagnostics := diag.Diagnostics{}
 
 	data.Name = types.StringValue(network.Name)
 	data.ID = types.StringValue(network.UUID)
@@ -227,18 +227,18 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 		data.IPNetwork[i].DHCPDefaultRoute = utils.AsBool(ipnet.DHCPDefaultRoute)
 
 		dhcpdns, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPDns))
-		diags.Append(diags...)
+		respDiagnostics.Append(diags...)
 		data.IPNetwork[i].DHCPDns = dhcpdns
 
 		dhcproutes, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPRoutes))
-		diags.Append(diags...)
+		respDiagnostics.Append(diags...)
 		data.IPNetwork[i].DHCPRoutes = dhcproutes
 
 		data.IPNetwork[i].Family = types.StringValue(ipnet.Family)
 		data.IPNetwork[i].Gateway = types.StringValue(ipnet.Gateway)
 	}
 
-	return diags
+	return respDiagnostics
 }
 
 func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

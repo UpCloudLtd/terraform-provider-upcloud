@@ -124,7 +124,6 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
 			"upcloud_managed_database_redis_sessions":      database.DataSourceSessionsRedis(),
-			"upcloud_managed_object_storage_regions":       managedobjectstorage.DataSourceManagedObjectStorageRegions(),
 			"upcloud_managed_object_storage_policies":      managedobjectstorage.DataSourceManagedObjectStoragePolicies(),
 		},
 
