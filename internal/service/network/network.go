@@ -84,6 +84,7 @@ type ipNetworkModel struct {
 
 func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "This resource represents an SDN private network that cloud servers and other resources from the same zone can be attached to.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the network.",
@@ -196,6 +197,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 					},
 				},
 				Validators: []validator.List{
+					listvalidator.IsRequired(),
 					listvalidator.SizeBetween(1, 1),
 				},
 			},

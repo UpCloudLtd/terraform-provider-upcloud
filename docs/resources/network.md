@@ -3,12 +3,12 @@
 page_title: "upcloud_network Resource - terraform-provider-upcloud"
 subcategory: Network
 description: |-
-  This resource represents an SDN private network that cloud servers from the same zone can be attached to.
+  This resource represents an SDN private network that cloud servers and other resources from the same zone can be attached to.
 ---
 
 # upcloud_network (Resource)
 
-This resource represents an SDN private network that cloud servers from the same zone can be attached to.
+This resource represents an SDN private network that cloud servers and other resources from the same zone can be attached to.
 
 ## Example Usage
 
@@ -39,17 +39,17 @@ resource "upcloud_router" "example_router" {
 
 ### Required
 
-- `ip_network` (Block List, Min: 1, Max: 1) A list of IP subnets within the network (see [below for nested schema](#nestedblock--ip_network))
-- `name` (String) A valid name for the network
+- `name` (String) Name of the network.
 - `zone` (String) The zone the network is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional
 
-- `router` (String) The UUID of a router
+- `ip_network` (Block List) A list of IP subnets within the network (see [below for nested schema](#nestedblock--ip_network))
+- `router` (String) UUID of a router to attach to this network.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) UUID of the network.
 - `type` (String) The network type
 
 <a id="nestedblock--ip_network"></a>
