@@ -243,6 +243,31 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 	return respDiagnostics
 }
 
+func buildIPNetworks(ctx context.Context, planNetworks []ipNetworkModel) ([]upcloud.IPNetwork, diag.Diagnostics) {
+	respDiagnostics := diag.Diagnostics{}
+	networks := make([]upcloud.IPNetwork, 0)
+
+	for _, ipnet := range planNetworks {
+		dhcpdns, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPDns)
+		respDiagnostics.Append(diags...)
+
+		dhcproutes, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPRoutes)
+		respDiagnostics.Append(diags...)
+
+		networks = append(networks, upcloud.IPNetwork{
+			Address:          ipnet.Address.ValueString(),
+			DHCP:             utils.AsUpCloudBoolean(ipnet.DHCP),
+			DHCPDefaultRoute: utils.AsUpCloudBoolean(ipnet.DHCPDefaultRoute),
+			DHCPDns:          dhcpdns,
+			DHCPRoutes:       dhcproutes,
+			Family:           ipnet.Family.ValueString(),
+			Gateway:          ipnet.Gateway.ValueString(),
+		})
+	}
+
+	return networks, respDiagnostics
+}
+
 func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data networkModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -257,23 +282,12 @@ func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest
 		Router: data.Router.ValueString(),
 	}
 
-	for _, ipnet := range data.IPNetwork {
-		dhcpdns, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPDns)
-		resp.Diagnostics.Append(diags...)
-
-		dhcproutes, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPRoutes)
-		resp.Diagnostics.Append(diags...)
-
-		apiReq.IPNetworks = append(apiReq.IPNetworks, upcloud.IPNetwork{
-			Address:          ipnet.Address.ValueString(),
-			DHCP:             utils.AsUpCloudBoolean(ipnet.DHCP),
-			DHCPDefaultRoute: utils.AsUpCloudBoolean(ipnet.DHCPDefaultRoute),
-			DHCPDns:          dhcpdns,
-			DHCPRoutes:       dhcproutes,
-			Family:           ipnet.Family.ValueString(),
-			Gateway:          ipnet.Gateway.ValueString(),
-		})
+	networks, diags := buildIPNetworks(ctx, data.IPNetwork)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+	apiReq.IPNetworks = networks
 
 	network, err := r.client.CreateNetwork(ctx, &apiReq)
 	if err != nil {
@@ -320,23 +334,12 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 		Name: data.Name.ValueString(),
 	}
 
-	for _, ipnet := range data.IPNetwork {
-		dhcpdns, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPDns)
-		resp.Diagnostics.Append(diags...)
-
-		dhcproutes, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPRoutes)
-		resp.Diagnostics.Append(diags...)
-
-		apiReq.IPNetworks = append(apiReq.IPNetworks, upcloud.IPNetwork{
-			Address:          ipnet.Address.ValueString(),
-			DHCP:             utils.AsUpCloudBoolean(ipnet.DHCP),
-			DHCPDefaultRoute: utils.AsUpCloudBoolean(ipnet.DHCPDefaultRoute),
-			DHCPDns:          dhcpdns,
-			DHCPRoutes:       dhcproutes,
-			Family:           ipnet.Family.ValueString(),
-			Gateway:          ipnet.Gateway.ValueString(),
-		})
+	networks, diags := buildIPNetworks(ctx, data.IPNetwork)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+	apiReq.IPNetworks = networks
 
 	network, err := r.client.ModifyNetwork(ctx, &apiReq)
 	if err != nil {
