@@ -133,6 +133,7 @@ func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, me
 	for i, ldb := range ldbs {
 		if ldb.Name == name {
 			details = &ldbs[i]
+			break
 		}
 	}
 	if details == nil {
