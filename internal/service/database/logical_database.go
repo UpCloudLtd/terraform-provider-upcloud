@@ -79,7 +79,7 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
-		d.Timeout(schema.TimeoutCreate), upcloud.ManagedDatabaseStateRunning)
+		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
 	if err != nil {
 		return diag.FromErr(err)
 	}
