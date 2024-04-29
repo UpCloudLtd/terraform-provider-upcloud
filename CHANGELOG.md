@@ -9,6 +9,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_managed_object_storage_user_policy: fix issue with refreshing state after the resouce was deleted outside of Terraform
 - upcloud_firewall_rules: fix issue with refreshing state after the resouce was deleted outside of Terraform
+- upcloud_managed_database: removed additional properties are not stored in the state even if API returns them
 
 ## [5.2.2] - 2024-04-15
 

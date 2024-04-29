@@ -253,13 +253,6 @@ func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcl
 	resourceProps := d.Get("properties.0").(map[string]interface{})
 	propsInfo := properties.GetProperties(db.Type)
 
-	// clean up removed properties that are not present in the propsInfo
-	for key := range resourceProps {
-		if _, ok := propsInfo[key]; !ok {
-			delete(resourceProps, key)
-		}
-	}
-
 	for typedKey, value := range db.Properties {
 		key := string(typedKey)
 
@@ -277,6 +270,14 @@ func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcl
 			resourceProps[key] = value
 		}
 	}
+
+	// clean up removed properties that are not present in the propsInfo
+	for key := range resourceProps {
+		if _, ok := propsInfo[key]; !ok {
+			delete(resourceProps, key)
+		}
+	}
+
 	return resourceProps
 }
 
