@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -91,6 +92,7 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(utils.MarshalID(serviceID, d.Get("name").(string)))
 
 	tflog.Info(ctx, "managed database logical database created", map[string]interface{}{
@@ -131,10 +133,12 @@ func resourceLogicalDatabaseRead(ctx context.Context, d *schema.ResourceData, me
 	for i, ldb := range ldbs {
 		if ldb.Name == name {
 			details = &ldbs[i]
+			break
 		}
 	}
 	if details == nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		// We need to manually construct the error here as the actual `err` value is not relevant here
+		return utils.HandleResourceError(d.Get("name").(string), d, &upcloud.Problem{Status: http.StatusNotFound})
 	}
 
 	tflog.Info(ctx, "managed database logical database read", map[string]interface{}{
