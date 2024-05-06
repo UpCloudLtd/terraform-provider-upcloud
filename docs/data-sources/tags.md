@@ -28,5 +28,3 @@ Read-Only:
 - `description` (String)
 - `name` (String)
 - `servers` (Set of String)
-
-

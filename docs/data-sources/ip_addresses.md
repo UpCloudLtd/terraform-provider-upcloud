@@ -38,5 +38,3 @@ Read-Only:
 - `ptr_record` (String)
 - `server` (String)
 - `zone` (String)
-
-

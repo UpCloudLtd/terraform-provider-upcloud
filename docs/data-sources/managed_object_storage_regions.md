@@ -32,5 +32,3 @@ Read-Only:
 - `name` (String) Name of the region.
 - `primary_zone` (String) Primary zone of the region.
 - `zones` (Set of String) List of zones in the region.
-
-
