@@ -8,6 +8,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/networkpeering"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -124,6 +125,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		network.NewNetworkResource,
+		networkpeering.NewNetworkPeeringResource,
 	}
 }
 
