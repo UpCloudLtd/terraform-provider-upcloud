@@ -48,7 +48,7 @@ resource "upcloud_router" "example_router" {
 
 ### Blocks
 
-- `ip_network` (Block List) A list of IP subnets within the network (see [below for nested schema](#nestedblock--ip_network))
+- `ip_network` (Block List) IP subnet within the network. Network must have exactly one IP subnet. (see [below for nested schema](#nestedblock--ip_network))
 
 ### Read-Only
 
