@@ -7,21 +7,18 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpCloudServerGroup_ServerGroupMembers(t *testing.T) {
 	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_group_members_s1.tf")
 	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_group_members_s2.tf")
 
-	var providers []*schema.Provider
-
 	group1 := "upcloud_server_group.tf_test_1"
 	group2 := "upcloud_server_group.tf_test_2"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,
@@ -53,13 +50,11 @@ func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
 	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_server_group_s1.tf")
 	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_server_group_s2.tf")
 
-	var providers []*schema.Provider
-
 	server := func(i int) string { return fmt.Sprintf("upcloud_server.test_%d", i) }
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,
@@ -82,11 +77,9 @@ func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
 func TestAccUpCloudServerGroup_TrackMembersValidation(t *testing.T) {
 	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/errors.tf")
 
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testDataE,

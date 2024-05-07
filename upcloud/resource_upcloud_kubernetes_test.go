@@ -5,21 +5,19 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudKubernetes(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s2.tf")
 
-	var providers []*schema.Provider
 	cName := "upcloud_kubernetes_cluster.main"
 	g1Name := "upcloud_kubernetes_node_group.g1"
 	g2Name := "upcloud_kubernetes_node_group.g2"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -73,12 +71,11 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s2.tf")
 	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s3.tf")
 
-	var providers []*schema.Provider
 	cluster := "upcloud_kubernetes_cluster.main"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

@@ -7,14 +7,12 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudGateway(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_gateway/gateway_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_gateway/gateway_s2.tf")
 
-	var providers []*schema.Provider
 	name := "upcloud_gateway.this"
 	conn1Name := "upcloud_gateway_connection.this"
 	conn2Name := "upcloud_gateway_connection.this2"
@@ -22,8 +20,8 @@ func TestAccUpcloudGateway(t *testing.T) {
 	tunnel2Name := "upcloud_gateway_connection_tunnel.this2"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -193,11 +191,9 @@ func TestAccUpcloudGateway_LabelsValidation(t *testing.T) {
 		})
 	}
 
-	var providers []*schema.Provider
-
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		Steps:             steps,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps:                    steps,
 	})
 }

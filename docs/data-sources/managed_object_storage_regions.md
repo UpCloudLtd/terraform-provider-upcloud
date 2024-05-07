@@ -22,15 +22,13 @@ data "upcloud_Managed_object_storage_regions" "this" {}
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `regions` (Set of Object) (see [below for nested schema](#nestedatt--regions))
+- `regions` (Block Set) (see [below for nested schema](#nestedblock--regions))
 
-<a id="nestedatt--regions"></a>
+<a id="nestedblock--regions"></a>
 ### Nested Schema for `regions`
 
 Read-Only:
 
-- `name` (String)
-- `primary_zone` (String)
-- `zones` (Set of String)
-
-
+- `name` (String) Name of the region.
+- `primary_zone` (String) Primary zone of the region.
+- `zones` (Set of String) List of zones in the region.

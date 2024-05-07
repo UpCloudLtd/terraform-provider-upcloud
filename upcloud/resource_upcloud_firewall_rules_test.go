@@ -8,7 +8,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -17,14 +16,13 @@ import (
 const firewallRulesResourceName = "upcloud_firewall_rules.my_rule"
 
 func TestUpcloudFirewallRules_basic(t *testing.T) {
-	var providers []*schema.Provider
 	var firewallRules upcloud.FirewallRules
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckFirewallRulesDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFirewallRulesInstanceConfig(),
@@ -66,15 +64,13 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 }
 
 func TestUpcloudFirewallRules_update(t *testing.T) {
-	var providers []*schema.Provider
-
 	var firewallRules upcloud.FirewallRules
 	resourceName := "upcloud_firewall_rules.my_rule"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckFirewallRulesDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFirewallRulesInstanceConfig(),
@@ -95,15 +91,13 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 }
 
 func TestUpcloudFirewallRules_import(t *testing.T) {
-	var providers []*schema.Provider
-
 	var firewallRules upcloud.FirewallRules
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      testAccCheckFirewallRulesDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFirewallRulesInstanceConfig(),

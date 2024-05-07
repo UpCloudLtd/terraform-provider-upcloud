@@ -2,29 +2,35 @@ package main // import "github.com/UpCloudLtd/terraform-provider-upcloud"
 
 import (
 	"flag"
+	"log"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
 )
 
 func main() {
-	var debugMode bool
-	var debugProviderAddr string
+	var debug bool
 
-	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
-	flag.StringVar(&debugProviderAddr, "debug-provider-addr", "registry.terraform.io/upcloudltd/upcloud",
-		"use same provider address as used in your configs")
-
+	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	opts := &plugin.ServeOpts{
-		ProviderFunc: func() *schema.Provider {
-			return upcloud.Provider()
-		},
-		Debug:        debugMode,
-		ProviderAddr: debugProviderAddr,
+	factory, err := upcloud.NewProviderServerFactory()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	plugin.Serve(opts)
+	var serveOpts []tf5server.ServeOpt
+
+	if debug {
+		serveOpts = append(serveOpts, tf5server.WithManagedDebug())
+	}
+
+	err = tf5server.Serve(
+		"registry.terraform.io/upcloudltd/upcloud",
+		factory,
+		serveOpts...,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -6,14 +6,12 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudServerNetwork(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_s2.tf")
 
-	var providers []*schema.Provider
 	server1Name := "upcloud_server.server1"
 
 	verifyImportStep := func(name string) resource.TestStep {
@@ -26,8 +24,8 @@ func TestAccUpcloudServerNetwork(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

@@ -4,291 +4,399 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func ResourceNetwork() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents an SDN private network that cloud servers from the same zone can be attached to.",
-		ReadContext:   resourceNetworkRead,
-		CreateContext: resourceNetworkCreate,
-		UpdateContext: resourceNetworkUpdate,
-		DeleteContext: resourceNetworkDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"ip_network": {
-				Type:        schema.TypeList,
-				Required:    true,
-				MaxItems:    1,
-				MinItems:    1,
-				Description: "A list of IP subnets within the network",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"address": {
-							Type:         schema.TypeString,
-							Description:  "The CIDR range of the subnet",
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.IsCIDR,
-						},
-						"dhcp": {
-							Type:        schema.TypeBool,
-							Description: "Is DHCP enabled?",
-							Required:    true,
-						},
-						"dhcp_default_route": {
-							Type:        schema.TypeBool,
-							Description: "Is the gateway the DHCP default route?",
-							Computed:    true,
-							Optional:    true,
-						},
-						"dhcp_dns": {
-							Type:        schema.TypeSet,
-							Description: "The DNS servers given by DHCP",
-							Computed:    true,
-							Optional:    true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
-								ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address),
-							},
-						},
-						"dhcp_routes": {
-							Type:        schema.TypeSet,
-							Description: "The additional DHCP classless static routes given by DHCP",
-							Computed:    true,
-							Optional:    true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
-								ValidateFunc: validation.IsCIDR,
-							},
-						},
-						"family": {
-							Type:        schema.TypeString,
-							Description: "IP address family",
-							Required:    true,
-							ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
-								switch v.(string) {
-								case upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6:
-									return nil
-								default:
-									return diag.Diagnostics{diag.Diagnostic{
-										Severity: diag.Error,
-										Summary:  "'family' has incorrect value",
-										Detail: fmt.Sprintf("'family' should have value of %s or %s",
-											upcloud.IPAddressFamilyIPv4,
-											upcloud.IPAddressFamilyIPv6),
-									}}
-								}
-							},
-						},
-						"gateway": {
-							Type:        schema.TypeString,
-							Description: "Gateway address given by DHCP",
-							Computed:    true,
-							Optional:    true,
-						},
-					},
+var (
+	_ resource.Resource                = &networkResource{}
+	_ resource.ResourceWithConfigure   = &networkResource{}
+	_ resource.ResourceWithImportState = &networkResource{}
+)
+
+func NewNetworkResource() resource.Resource {
+	return &networkResource{}
+}
+
+type networkResource struct {
+	client *service.Service
+}
+
+func (r *networkResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_network"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *networkResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*service.Service)
+
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected resource Configure type",
+			fmt.Sprintf("Expected *service.Service, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	r.client = client
+}
+
+type networkModel struct {
+	Name      types.String `tfsdk:"name"`
+	ID        types.String `tfsdk:"id"`
+	Type      types.String `tfsdk:"type"`
+	Zone      types.String `tfsdk:"zone"`
+	Router    types.String `tfsdk:"router"`
+	IPNetwork types.List   `tfsdk:"ip_network"`
+}
+
+type ipNetworkModel struct {
+	Address          types.String `tfsdk:"address"`
+	DHCP             types.Bool   `tfsdk:"dhcp"`
+	DHCPDefaultRoute types.Bool   `tfsdk:"dhcp_default_route"`
+	DHCPDns          types.Set    `tfsdk:"dhcp_dns"`
+	DHCPRoutes       types.Set    `tfsdk:"dhcp_routes"`
+	Family           types.String `tfsdk:"family"`
+	Gateway          types.String `tfsdk:"gateway"`
+}
+
+func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "This resource represents an SDN private network that cloud servers and other resources from the same zone can be attached to.",
+		Attributes: map[string]schema.Attribute{
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Name of the network.",
+				Required:            true,
+			},
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "UUID of the network.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"name": {
-				Type:        schema.TypeString,
-				Description: "A valid name for the network",
-				Required:    true,
+			"type": schema.StringAttribute{
+				MarkdownDescription: "The network type",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
-			"type": {
-				Type:        schema.TypeString,
-				Description: "The network type",
-				Computed:    true,
-			},
-			"zone": {
-				Type:        schema.TypeString,
+			"zone": schema.StringAttribute{
 				Description: "The zone the network is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Required:    true,
-				ForceNew:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"router": {
-				Type:        schema.TypeString,
-				Description: "The UUID of a router",
+			"router": schema.StringAttribute{
+				Description: "UUID of a router to attach to this network.",
 				Optional:    true,
 			},
 		},
+		Blocks: map[string]schema.Block{
+			"ip_network": schema.ListNestedBlock{
+				Description: "IP subnet within the network. Network must have exactly one IP subnet.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"address": schema.StringAttribute{
+							Description: "The CIDR range of the subnet",
+							Required:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								validatorutil.NewFrameworkStringValidator(validation.IsCIDR),
+							},
+						},
+						"dhcp": schema.BoolAttribute{
+							Description: "Is DHCP enabled?",
+							Required:    true,
+						},
+						"dhcp_default_route": schema.BoolAttribute{
+							Description: "Is the gateway the DHCP default route?",
+							Computed:    true,
+							Optional:    true,
+							PlanModifiers: []planmodifier.Bool{
+								boolplanmodifier.UseStateForUnknown(),
+							},
+						},
+						"dhcp_dns": schema.SetAttribute{
+							ElementType: types.StringType,
+							Description: "The DNS servers given by DHCP",
+							Computed:    true,
+							Optional:    true,
+							PlanModifiers: []planmodifier.Set{
+								setplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.Set{
+								setvalidator.ValueStringsAre(
+									stringvalidator.Any(
+										validatorutil.NewFrameworkStringValidator(validation.IsIPv4Address),
+										validatorutil.NewFrameworkStringValidator(validation.IsIPv6Address),
+									),
+								),
+							},
+						},
+						"dhcp_routes": schema.SetAttribute{
+							ElementType: types.StringType,
+							Description: "The additional DHCP classless static routes given by DHCP",
+							Computed:    true,
+							Optional:    true,
+							PlanModifiers: []planmodifier.Set{
+								setplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.Set{
+								setvalidator.ValueStringsAre(
+									stringvalidator.Any(
+										validatorutil.NewFrameworkStringValidator(validation.IsCIDR),
+									),
+								),
+							},
+						},
+						"family": schema.StringAttribute{
+							Description: "IP address family",
+							Required:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.String{
+								stringvalidator.OneOf(upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6),
+							},
+						},
+						"gateway": schema.StringAttribute{
+							Description: "Gateway address given by DHCP",
+							Computed:    true,
+							Optional:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
+						},
+					},
+				},
+				Validators: []validator.List{
+					listvalidator.IsRequired(),
+					listvalidator.SizeBetween(1, 1),
+				},
+			},
+		},
 	}
 }
 
-func resourceNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func setValues(ctx context.Context, data *networkModel, network *upcloud.Network) diag.Diagnostics {
+	respDiagnostics := diag.Diagnostics{}
 
-	req := request.CreateNetworkRequest{}
-	if v := d.Get("name"); v != nil {
-		req.Name = v.(string)
+	data.Name = types.StringValue(network.Name)
+	data.ID = types.StringValue(network.UUID)
+	data.Type = types.StringValue(network.Type)
+	data.Zone = types.StringValue(network.Zone)
+
+	if network.Router == "" {
+		data.Router = types.StringNull()
+	} else {
+		data.Router = types.StringValue(network.Router)
 	}
 
-	if v := d.Get("zone"); v != nil {
-		req.Zone = v.(string)
+	ipNetworks := make([]ipNetworkModel, len(network.IPNetworks))
+
+	for i, ipnet := range network.IPNetworks {
+		ipNetworks[i].Address = types.StringValue(ipnet.Address)
+		ipNetworks[i].DHCP = utils.AsBool(ipnet.DHCP)
+		ipNetworks[i].DHCPDefaultRoute = utils.AsBool(ipnet.DHCPDefaultRoute)
+
+		dhcpdns, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPDns))
+		respDiagnostics.Append(diags...)
+		ipNetworks[i].DHCPDns = dhcpdns
+
+		dhcproutes, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPRoutes))
+		respDiagnostics.Append(diags...)
+		ipNetworks[i].DHCPRoutes = dhcproutes
+
+		ipNetworks[i].Family = types.StringValue(ipnet.Family)
+		ipNetworks[i].Gateway = types.StringValue(ipnet.Gateway)
 	}
 
-	if v := d.Get("router"); v != nil {
-		req.Router = v.(string)
-	}
+	var diags diag.Diagnostics
+	data.IPNetwork, diags = types.ListValueFrom(ctx, data.IPNetwork.ElementType(ctx), ipNetworks)
+	respDiagnostics.Append(diags...)
 
-	if v, ok := d.GetOk("ip_network"); ok {
-		ipn := v.([]interface{})[0]
-		ipnConf := ipn.(map[string]interface{})
-
-		uipn := upcloud.IPNetwork{
-			Address:          ipnConf["address"].(string),
-			DHCP:             upcloud.FromBool(ipnConf["dhcp"].(bool)),
-			DHCPDefaultRoute: upcloud.FromBool(ipnConf["dhcp_default_route"].(bool)),
-			Family:           ipnConf["family"].(string),
-			Gateway:          ipnConf["gateway"].(string),
-		}
-
-		for _, dns := range ipnConf["dhcp_dns"].(*schema.Set).List() {
-			uipn.DHCPDns = append(uipn.DHCPDns, dns.(string))
-		}
-
-		for _, route := range ipnConf["dhcp_routes"].(*schema.Set).List() {
-			uipn.DHCPRoutes = append(uipn.DHCPRoutes, route.(string))
-		}
-
-		req.IPNetworks = append(req.IPNetworks, uipn)
-	}
-
-	network, err := client.CreateNetwork(ctx, &req)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(network.UUID)
-
-	return resourceNetworkRead(ctx, d, meta)
+	return respDiagnostics
 }
 
-func resourceNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.IPNetwork, diag.Diagnostics) {
+	var planNetworks []ipNetworkModel
+	respDiagnostics := dataIPNetworks.ElementsAs(ctx, &planNetworks, false)
 
-	req := request.GetNetworkDetailsRequest{
-		UUID: d.Id(),
-	}
+	networks := make([]upcloud.IPNetwork, 0)
 
-	network, err := client.GetNetworkDetails(ctx, &req)
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
-	}
+	for _, ipnet := range planNetworks {
+		dhcpdns, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPDns)
+		respDiagnostics.Append(diags...)
 
-	_ = d.Set("name", network.Name)
-	_ = d.Set("type", network.Type)
-	_ = d.Set("zone", network.Zone)
+		dhcproutes, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPRoutes)
+		respDiagnostics.Append(diags...)
 
-	if network.Router != "" {
-		_ = d.Set("router", network.Router)
-	}
-
-	if len(network.IPNetworks) > 1 {
-		return diag.Errorf("too many ip_networks: %d", len(network.IPNetworks))
-	}
-
-	if len(network.IPNetworks) == 1 {
-		ipn := map[string]interface{}{
-			"address":            network.IPNetworks[0].Address,
-			"dhcp":               network.IPNetworks[0].DHCP.Bool(),
-			"dhcp_default_route": network.IPNetworks[0].DHCPDefaultRoute.Bool(),
-			"dhcp_dns":           network.IPNetworks[0].DHCPDns,
-			"dhcp_routes":        network.IPNetworks[0].DHCPRoutes,
-			"family":             network.IPNetworks[0].Family,
-			"gateway":            network.IPNetworks[0].Gateway,
-		}
-
-		_ = d.Set("ip_network", []map[string]interface{}{
-			ipn,
+		networks = append(networks, upcloud.IPNetwork{
+			Address:          ipnet.Address.ValueString(),
+			DHCP:             utils.AsUpCloudBoolean(ipnet.DHCP),
+			DHCPDefaultRoute: utils.AsUpCloudBoolean(ipnet.DHCPDefaultRoute),
+			DHCPDns:          dhcpdns,
+			DHCPRoutes:       dhcproutes,
+			Family:           ipnet.Family.ValueString(),
+			Gateway:          ipnet.Gateway.ValueString(),
 		})
 	}
 
-	d.SetId(network.UUID)
-
-	return nil
+	return networks, respDiagnostics
 }
 
-func resourceNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data networkModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	req := request.ModifyNetworkRequest{
-		UUID: d.Id(),
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	if d.HasChange("name") {
-		_, v := d.GetChange("name")
-		req.Name = v.(string)
+	apiReq := request.CreateNetworkRequest{
+		Name:   data.Name.ValueString(),
+		Zone:   data.Zone.ValueString(),
+		Router: data.Router.ValueString(),
 	}
 
-	if d.HasChange("ip_network") {
-		v := d.Get("ip_network")
-
-		ipn := v.([]interface{})[0]
-		ipnConf := ipn.(map[string]interface{})
-
-		uipn := upcloud.IPNetwork{
-			Address:          ipnConf["address"].(string),
-			DHCP:             upcloud.FromBool(ipnConf["dhcp"].(bool)),
-			DHCPDefaultRoute: upcloud.FromBool(ipnConf["dhcp_default_route"].(bool)),
-			Family:           ipnConf["family"].(string),
-			Gateway:          ipnConf["gateway"].(string),
-		}
-
-		for _, dns := range ipnConf["dhcp_dns"].(*schema.Set).List() {
-			uipn.DHCPDns = append(uipn.DHCPDns, dns.(string))
-		}
-
-		for _, route := range ipnConf["dhcp_routes"].(*schema.Set).List() {
-			uipn.DHCPRoutes = append(uipn.DHCPRoutes, route.(string))
-		}
-
-		req.IPNetworks = []upcloud.IPNetwork{uipn}
+	networks, diags := buildIPNetworks(ctx, data.IPNetwork)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+	apiReq.IPNetworks = networks
 
-	network, err := client.ModifyNetwork(ctx, &req)
+	network, err := r.client.CreateNetwork(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to create network",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	if d.HasChange("router") {
-		_, v := d.GetChange("router")
-		if v.(string) == "" {
-			err = client.DetachNetworkRouter(ctx, &request.DetachNetworkRouterRequest{NetworkUUID: d.Id()})
-		} else {
-			err = client.AttachNetworkRouter(ctx, &request.AttachNetworkRouterRequest{NetworkUUID: d.Id(), RouterUUID: v.(string)})
-		}
+	resp.Diagnostics.Append(setValues(ctx, &data, network)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data networkModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	network, err := r.client.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{
+		UUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read network details",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setValues(ctx, &data, network)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data networkModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	apiReq := request.ModifyNetworkRequest{
+		UUID: data.ID.ValueString(),
+		Name: data.Name.ValueString(),
+	}
+
+	networks, diags := buildIPNetworks(ctx, data.IPNetwork)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	apiReq.IPNetworks = networks
+
+	network, err := r.client.ModifyNetwork(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete network",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	if network.Router != data.Router.ValueString() {
+		err = r.client.AttachNetworkRouter(ctx, &request.AttachNetworkRouterRequest{
+			NetworkUUID: data.ID.ValueString(),
+			RouterUUID:  data.Router.ValueString(),
+		})
 		if err != nil {
-			return diag.FromErr(err)
+			resp.Diagnostics.AddError(
+				"Unable to modify networks router attachment",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+
+		network, err = r.client.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{
+			UUID: data.ID.ValueString(),
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to read network details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
 		}
 	}
 
-	d.SetId(network.UUID)
-
-	return nil
+	resp.Diagnostics.Append(setValues(ctx, &data, network)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *networkResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data networkModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	req := request.DeleteNetworkRequest{
-		UUID: d.Id(),
+	if err := r.client.DeleteNetwork(ctx, &request.DeleteNetworkRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete network",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
-	err := client.DeleteNetwork(ctx, &req)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+}
 
-	return nil
+func (r *networkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

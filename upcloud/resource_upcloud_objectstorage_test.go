@@ -15,7 +15,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/minio/minio-go/v7"
 )
@@ -89,14 +88,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestUpCloudObjectStorage_basic(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "250"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName1),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName1),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceConfig(
@@ -123,8 +120,6 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_basic_update(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "500"
 
 	const expectedUpdatedSize = "1000"
@@ -133,9 +128,9 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 	const expectedUpdatedSecret = "an updated secret"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceConfig(
@@ -175,17 +170,15 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_default_values(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "500"
 	const expectedUpdatedSize = "1000"
 	const expectedUpdatedKey = "an updated access key"
 	const expectedUpdatedSecret = "an updated secret"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageInstanceDefaultsConfig(
@@ -216,8 +209,6 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
-	var providers []*schema.Provider
-
 	const expectedSize = "500"
 	const expectedBucketName1 = "bucket1"
 	const expectedBucketName2 = "bucket2"
@@ -226,9 +217,9 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 	const expectedBucketName5 = "bucket5"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
 				Config: testUpCloudObjectStorageWithBucketsInstanceConfig(
@@ -304,8 +295,6 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 
 // We bundle creating object storage using env vars and import because import relies on passing access and secret key as env vars
 func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
-	var providers []*schema.Provider
-
 	name := objectStorageTestExpectedName4
 	zone := "pl-waw1"
 	desc := "just some random stuff"
@@ -326,8 +315,8 @@ func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
 			os.Setenv(accessKeyEnvVarName, accessKey)
 			os.Setenv(secretKeyEnvVarName, secretKey)
 		},
-		ProviderFactories: testAccProviderFactories(&providers),
-		CheckDestroy:      verifyObjectStorageDoesNotExist(name),
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             verifyObjectStorageDoesNotExist(name),
 		Steps: []resource.TestStep{
 			{
 				// Pass empty strings as access and secret keys to check if those values will be taken from env vars

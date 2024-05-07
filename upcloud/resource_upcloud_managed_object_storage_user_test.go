@@ -5,14 +5,12 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_user_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_user_s2.tf")
 
-	var providers []*schema.Provider
 	storage := "upcloud_managed_object_storage.user"
 	policy := "upcloud_managed_object_storage_policy.user"
 	user := "upcloud_managed_object_storage_user.user"
@@ -20,8 +18,8 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 	userPolicy := "upcloud_managed_object_storage_user_policy.user"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories(&providers),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
