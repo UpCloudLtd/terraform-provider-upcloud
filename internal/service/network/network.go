@@ -118,7 +118,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 		},
 		Blocks: map[string]schema.Block{
 			"ip_network": schema.ListNestedBlock{
-				Description: "A list of IP subnets within the network",
+				Description: "IP subnet within the network. Network must have exactly one IP subnet.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"address": schema.StringAttribute{
