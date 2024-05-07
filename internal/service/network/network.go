@@ -64,12 +64,12 @@ func (r *networkResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 type networkModel struct {
-	Name      types.String     `tfsdk:"name"`
-	ID        types.String     `tfsdk:"id"`
-	Type      types.String     `tfsdk:"type"`
-	Zone      types.String     `tfsdk:"zone"`
-	Router    types.String     `tfsdk:"router"`
-	IPNetwork []ipNetworkModel `tfsdk:"ip_network"`
+	Name      types.String `tfsdk:"name"`
+	ID        types.String `tfsdk:"id"`
+	Type      types.String `tfsdk:"type"`
+	Zone      types.String `tfsdk:"zone"`
+	Router    types.String `tfsdk:"router"`
+	IPNetwork types.List   `tfsdk:"ip_network"`
 }
 
 type ipNetworkModel struct {
@@ -219,32 +219,36 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 		data.Router = types.StringValue(network.Router)
 	}
 
-	if len(data.IPNetwork) == 0 {
-		data.IPNetwork = make([]ipNetworkModel, len(network.IPNetworks))
-	}
+	ipNetworks := make([]ipNetworkModel, len(network.IPNetworks))
 
 	for i, ipnet := range network.IPNetworks {
-		data.IPNetwork[i].Address = types.StringValue(ipnet.Address)
-		data.IPNetwork[i].DHCP = utils.AsBool(ipnet.DHCP)
-		data.IPNetwork[i].DHCPDefaultRoute = utils.AsBool(ipnet.DHCPDefaultRoute)
+		ipNetworks[i].Address = types.StringValue(ipnet.Address)
+		ipNetworks[i].DHCP = utils.AsBool(ipnet.DHCP)
+		ipNetworks[i].DHCPDefaultRoute = utils.AsBool(ipnet.DHCPDefaultRoute)
 
 		dhcpdns, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPDns))
 		respDiagnostics.Append(diags...)
-		data.IPNetwork[i].DHCPDns = dhcpdns
+		ipNetworks[i].DHCPDns = dhcpdns
 
 		dhcproutes, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ipnet.DHCPRoutes))
 		respDiagnostics.Append(diags...)
-		data.IPNetwork[i].DHCPRoutes = dhcproutes
+		ipNetworks[i].DHCPRoutes = dhcproutes
 
-		data.IPNetwork[i].Family = types.StringValue(ipnet.Family)
-		data.IPNetwork[i].Gateway = types.StringValue(ipnet.Gateway)
+		ipNetworks[i].Family = types.StringValue(ipnet.Family)
+		ipNetworks[i].Gateway = types.StringValue(ipnet.Gateway)
 	}
+
+	var diags diag.Diagnostics
+	data.IPNetwork, diags = types.ListValueFrom(ctx, data.IPNetwork.ElementType(ctx), ipNetworks)
+	respDiagnostics.Append(diags...)
 
 	return respDiagnostics
 }
 
-func buildIPNetworks(ctx context.Context, planNetworks []ipNetworkModel) ([]upcloud.IPNetwork, diag.Diagnostics) {
-	respDiagnostics := diag.Diagnostics{}
+func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.IPNetwork, diag.Diagnostics) {
+	var planNetworks []ipNetworkModel
+	respDiagnostics := dataIPNetworks.ElementsAs(ctx, &planNetworks, false)
+
 	networks := make([]upcloud.IPNetwork, 0)
 
 	for _, ipnet := range planNetworks {

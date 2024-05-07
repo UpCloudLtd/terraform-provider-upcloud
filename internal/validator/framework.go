@@ -21,6 +21,10 @@ func (v *frameworkStringValidator) MarkdownDescription(_ context.Context) string
 }
 
 func (v *frameworkStringValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+
 	warnings, errors := v.validateFunc(req.ConfigValue.ValueString(), req.Path.String())
 
 	for _, warning := range warnings {
