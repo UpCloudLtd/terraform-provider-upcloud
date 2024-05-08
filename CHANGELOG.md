@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## Removed
+
+- upcloud_managed_database_opensearch: `max_index_count` property in favor of `index_patterns`
+
 ## [5.2.3] - 2024-04-30
 
 ### Fixed
