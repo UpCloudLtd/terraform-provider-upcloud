@@ -25,6 +25,7 @@
     "gateway_connection.md": "Network",
     "gateway_connection_tunnel.md": "Network",
     "network.md": "Network",
+    "network_peering.md": "Network",
     "router.md": "Network",
     "managed_object_storage.md": "Object Storage",
     "managed_object_storage_policy.md": "Object Storage",

@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_network_peering: support for network peerings.
+
 ## Removed
 
 - upcloud_managed_database_opensearch: `max_index_count` property in favor of `index_patterns`
