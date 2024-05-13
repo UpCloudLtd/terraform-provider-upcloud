@@ -2,7 +2,7 @@ package managedobjectstorage
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
@@ -98,7 +98,7 @@ func resourceManagedObjectStorageUserPolicyRead(ctx context.Context, d *schema.R
 
 	policy, policyExists := findUserPolicy(policies, name)
 	if !policyExists {
-		return utils.HandleResourceError(d.Get("name").(string), d, fmt.Errorf("policy not found"))
+		return utils.HandleResourceError(d.Get("name").(string), d, &upcloud.Problem{Status: http.StatusNotFound})
 	}
 
 	if err = d.Set("name", policy.Name); err != nil {
