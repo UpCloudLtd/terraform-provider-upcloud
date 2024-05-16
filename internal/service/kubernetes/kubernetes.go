@@ -112,7 +112,8 @@ func ResourceCluster() *schema.Resource {
 				ForceNew:    true,
 				Computed:    true,
 			},
-			"labels": utils.LabelsSchema("cluster"),
+			"labels":             utils.LabelsSchema("cluster"),
+			"storage_encryption": storageEncryptionSchema("Set default storage encryption strategy for all node groups.", false),
 		},
 	}
 }
@@ -137,6 +138,10 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 	filters := d.Get("control_plane_ip_filter")
 	for _, v := range filters.(*schema.Set).List() {
 		req.ControlPlaneIPFilter = append(req.ControlPlaneIPFilter, v.(string))
+	}
+
+	if v, ok := d.GetOk("storage_encryption"); ok {
+		req.StorageEncryption = upcloud.StorageEncryption(v.(string))
 	}
 
 	c, err := svc.CreateKubernetesCluster(ctx, req)
@@ -278,6 +283,10 @@ func setClusterResourceData(d *schema.ResourceData, c *upcloud.KubernetesCluster
 	}
 
 	if err := d.Set("version", c.Version); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("storage_encryption", c.StorageEncryption); err != nil {
 		return diag.FromErr(err)
 	}
 

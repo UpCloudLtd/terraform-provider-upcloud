@@ -33,4 +33,5 @@ resource "upcloud_kubernetes_cluster" "main" {
   labels = {
     test = "terraform-provider-acceptance-test"
   }
+  storage_encryption = "data-at-rest"
 }
