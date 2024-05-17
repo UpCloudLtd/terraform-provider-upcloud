@@ -5,13 +5,16 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- kubernetes: support for node group custom plans
+- kubernetes: support for data at rest encryption in node groups
+
 ## [5.3.0] - 2024-05-13
 
 ### Added
 
 - upcloud_network_peering: support for network peerings.
-- kubernetes: support for node group custom plans
-- kubernetes: support for data at rest encryption in node groups
 
 ### Removed
 
