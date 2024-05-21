@@ -113,7 +113,7 @@ func ResourceCluster() *schema.Resource {
 				Computed:    true,
 			},
 			"labels":             utils.LabelsSchema("cluster"),
-			"storage_encryption": storageEncryptionSchema("Set default storage encryption strategy for all node groups.", false),
+			"storage_encryption": storageEncryptionSchema("Set default storage encryption strategy for all nodes in the cluster.", false),
 		},
 	}
 }

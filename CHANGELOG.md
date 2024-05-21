@@ -8,7 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - kubernetes: support for node group custom plans
-- kubernetes: support for data at rest encryption in node groups
+- kubernetes: support for node storage data at rest encryption
 
 ## [5.3.0] - 2024-05-13
 
