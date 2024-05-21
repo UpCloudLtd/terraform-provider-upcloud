@@ -41,6 +41,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 
 					resource.TestCheckResourceAttr(conn1Name, "name", "test-connection"),
 					resource.TestCheckResourceAttrSet(conn1Name, "gateway"),
+					resource.TestCheckResourceAttrSet(conn1Name, "uuid"),
 					resource.TestCheckResourceAttr(conn1Name, "type", "ipsec"),
 					resource.TestCheckResourceAttr(conn1Name, "local_route.#", "1"),
 					resource.TestCheckResourceAttr(conn1Name, "local_route.0.name", "local-route"),
@@ -54,6 +55,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(tunnel1Name, "name", "test-tunnel"),
 					resource.TestCheckResourceAttrSet(tunnel1Name, "connection_id"),
 					resource.TestCheckResourceAttrSet(tunnel1Name, "operational_state"),
+					resource.TestCheckResourceAttrSet(tunnel1Name, "uuid"),
 					resource.TestCheckResourceAttr(tunnel1Name, "local_address_name", "my-public-ip"),
 					resource.TestCheckResourceAttr(tunnel1Name, "remote_address", "100.123.123.10"),
 					resource.TestCheckResourceAttr(tunnel1Name, "ipsec_auth_psk.0.psk", "presharedkey1"),
@@ -71,6 +73,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 
 					resource.TestCheckResourceAttr(conn2Name, "name", "test-connection2"),
 					resource.TestCheckResourceAttrSet(conn2Name, "gateway"),
+					resource.TestCheckResourceAttrSet(conn2Name, "uuid"),
 					resource.TestCheckResourceAttr(conn2Name, "type", "ipsec"),
 					resource.TestCheckResourceAttr(conn2Name, "local_route.#", "1"),
 					resource.TestCheckResourceAttr(conn2Name, "local_route.0.name", "local-route2"),
@@ -81,7 +84,8 @@ func TestAccUpcloudGateway(t *testing.T) {
 					resource.TestCheckResourceAttr(conn2Name, "remote_route.0.type", "static"),
 					resource.TestCheckResourceAttr(conn2Name, "remote_route.0.static_network", "222.123.123.0/24"),
 
-					resource.TestCheckResourceAttr(tunnel2Name, "name", "test-tunnel2"), // Single check for tunnel2 just to make sure it gets created
+					resource.TestCheckResourceAttr(tunnel2Name, "name", "test-tunnel2"), // Two checks for tunnel2 just to make sure it gets created
+					resource.TestCheckResourceAttrSet(tunnel2Name, "uuid"),
 
 					// This field is deprecated, can be removed later
 					resource.TestCheckTypeSetElemNestedAttrs(name, "addresses.*", map[string]string{"name": "my-public-ip"}),
