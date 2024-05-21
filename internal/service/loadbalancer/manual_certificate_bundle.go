@@ -15,11 +15,13 @@ import (
 
 func ResourceManualCertificateBundle() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents manual certificate bundle",
-		CreateContext: resourceManualCertificateBundleCreate,
-		ReadContext:   resourceManualCertificateBundleRead,
-		UpdateContext: resourceManualCertificateBundleUpdate,
-		DeleteContext: resourceCertificateBundleDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents manual certificate bundle",
+		CreateContext:                     resourceManualCertificateBundleCreate,
+		ReadContext:                       resourceManualCertificateBundleRead,
+		UpdateContext:                     resourceManualCertificateBundleUpdate,
+		DeleteContext:                     resourceCertificateBundleDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

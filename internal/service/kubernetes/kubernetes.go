@@ -37,11 +37,13 @@ const (
 
 func ResourceCluster() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster.",
-		CreateContext: resourceClusterCreate,
-		ReadContext:   resourceClusterRead,
-		UpdateContext: resourceClusterUpdate,
-		DeleteContext: resourceClusterDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster.",
+		CreateContext:                     resourceClusterCreate,
+		ReadContext:                       resourceClusterRead,
+		UpdateContext:                     resourceClusterUpdate,
+		DeleteContext:                     resourceClusterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

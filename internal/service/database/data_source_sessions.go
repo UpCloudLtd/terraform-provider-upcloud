@@ -15,8 +15,10 @@ import (
 
 func DataSourceSessionsMySQL() *schema.Resource {
 	return &schema.Resource{
-		Description: "Current sessions of a MySQL managed database",
-		ReadContext: dataSourceSessionsMySQLRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Current sessions of a MySQL managed database",
+		ReadContext:                       dataSourceSessionsMySQLRead,
 		Schema: utils.JoinSchemas(
 			schemaDataSourceSessionsCommon(),
 			schemaDataSourceSessionsMySQL(),
@@ -26,8 +28,10 @@ func DataSourceSessionsMySQL() *schema.Resource {
 
 func DataSourceSessionsPostgreSQL() *schema.Resource {
 	return &schema.Resource{
-		Description: "Current sessions of a PostgreSQL managed database",
-		ReadContext: dataSourceSessionsPostgreSQLRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Current sessions of a PostgreSQL managed database",
+		ReadContext:                       dataSourceSessionsPostgreSQLRead,
 		Schema: utils.JoinSchemas(
 			schemaDataSourceSessionsCommon(),
 			schemaDataSourceSessionsPostgreSQL(),
@@ -37,8 +41,10 @@ func DataSourceSessionsPostgreSQL() *schema.Resource {
 
 func DataSourceSessionsRedis() *schema.Resource {
 	return &schema.Resource{
-		Description: "Current sessions of a Redis managed database",
-		ReadContext: dataSourceSessionsRedisRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Current sessions of a Redis managed database",
+		ReadContext:                       dataSourceSessionsRedisRead,
 		Schema: utils.JoinSchemas(
 			schemaDataSourceSessionsCommon(),
 			schemaDataSourceSessionsRedis(),
@@ -113,7 +119,9 @@ func schemaDataSourceSessionsRedis() map[string]*schema.Schema {
 
 func schemaDatabaseSessionMySQL() *schema.Resource {
 	return &schema.Resource{
-		Description: "MySQL session",
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "MySQL session",
 		Schema: map[string]*schema.Schema{
 			"application_name": {
 				Description: "Name of the application that is connected to this service.",
@@ -161,7 +169,9 @@ func schemaDatabaseSessionMySQL() *schema.Resource {
 
 func schemaDatabaseSessionPostgreSQL() *schema.Resource {
 	return &schema.Resource{
-		Description: "PostgreSQL session",
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "PostgreSQL session",
 		Schema: map[string]*schema.Schema{
 			"application_name": {
 				Description: "Name of the application that is connected to this service.",
@@ -278,7 +288,9 @@ func schemaDatabaseSessionPostgreSQL() *schema.Resource {
 
 func schemaDatabaseSessionRedis() *schema.Resource {
 	return &schema.Resource{
-		Description: "Redis session",
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Redis session",
 		Schema: map[string]*schema.Schema{
 			"active_channel_subscriptions": {
 				Description: "Number of active channel subscriptions",

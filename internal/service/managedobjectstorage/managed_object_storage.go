@@ -17,11 +17,13 @@ import (
 
 func ResourceManagedObjectStorage() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents an UpCloud Managed Object Storage instance, which provides S3 compatible storage.",
-		CreateContext: resourceManagedObjectStorageCreate,
-		ReadContext:   resourceManagedObjectStorageRead,
-		UpdateContext: resourceManagedObjectStorageUpdate,
-		DeleteContext: resourceManagedObjectStorageDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents an UpCloud Managed Object Storage instance, which provides S3 compatible storage.",
+		CreateContext:                     resourceManagedObjectStorageCreate,
+		ReadContext:                       resourceManagedObjectStorageRead,
+		UpdateContext:                     resourceManagedObjectStorageUpdate,
+		DeleteContext:                     resourceManagedObjectStorageDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -82,7 +84,9 @@ func ResourceManagedObjectStorage() *schema.Resource {
 
 func schemaEndpoint() *schema.Resource {
 	return &schema.Resource{
-		Description: "Endpoint",
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Endpoint",
 		Schema: map[string]*schema.Schema{
 			"domain_name": {
 				Description: "Domain name of the endpoint.",
@@ -110,7 +114,9 @@ func schemaEndpoint() *schema.Resource {
 
 func schemaNetwork() *schema.Resource {
 	return &schema.Resource{
-		Description: "Network",
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Network",
 		Schema: map[string]*schema.Schema{
 			"family": {
 				Description: "Network family. IPv6 currently not supported.",

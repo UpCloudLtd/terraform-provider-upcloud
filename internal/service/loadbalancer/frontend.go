@@ -15,11 +15,13 @@ import (
 
 func ResourceFrontend() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents load balancer frontend service",
-		CreateContext: resourceFrontendCreate,
-		ReadContext:   resourceFrontendRead,
-		UpdateContext: resourceFrontendUpdate,
-		DeleteContext: resourceFrontendDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents load balancer frontend service",
+		CreateContext:                     resourceFrontendCreate,
+		ReadContext:                       resourceFrontendRead,
+		UpdateContext:                     resourceFrontendUpdate,
+		DeleteContext:                     resourceFrontendDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -83,7 +85,9 @@ func ResourceFrontend() *schema.Resource {
 				MaxItems:    1,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: schemaFrontendProperties(),
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
+					Schema:                            schemaFrontendProperties(),
 				},
 			},
 			"networks": {
@@ -92,6 +96,8 @@ func ResourceFrontend() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"name": {
 							Description: "Name of the load balancer network",

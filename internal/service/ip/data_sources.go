@@ -11,13 +11,17 @@ import (
 
 func DataSourceIPAddresses() *schema.Resource {
 	return &schema.Resource{
-		Description: "Returns a set of IP Addresses that are associated with the UpCloud account.",
-		ReadContext: dataSourceIPAddressesRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Returns a set of IP Addresses that are associated with the UpCloud account.",
+		ReadContext:                       dataSourceIPAddressesRead,
 		Schema: map[string]*schema.Schema{
 			"addresses": {
 				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"access": {
 							Type:        schema.TypeString,

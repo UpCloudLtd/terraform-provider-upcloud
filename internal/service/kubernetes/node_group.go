@@ -16,11 +16,13 @@ import (
 
 func ResourceNodeGroup() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents a node group in a Managed Kubernetes cluster.",
-		CreateContext: resourceNodeGroupCreate,
-		ReadContext:   resourceNodeGroupRead,
-		DeleteContext: resourceNodeGroupDelete,
-		UpdateContext: resourceNodeGroupUpdate,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents a node group in a Managed Kubernetes cluster.",
+		CreateContext:                     resourceNodeGroupCreate,
+		ReadContext:                       resourceNodeGroupRead,
+		DeleteContext:                     resourceNodeGroupDelete,
+		UpdateContext:                     resourceNodeGroupUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -73,6 +75,8 @@ func ResourceNodeGroup() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"key": {
 							Description: "Kubelet argument key.",
@@ -97,6 +101,8 @@ func ResourceNodeGroup() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"effect": {
 							Description: "Taint effect.",

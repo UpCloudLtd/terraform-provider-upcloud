@@ -28,6 +28,8 @@ func DataSourceStorage() *schema.Resource {
 	}
 
 	return &schema.Resource{
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
 		Description: fmt.Sprintf(`
 Returns storage resource information based on defined arguments.  
 

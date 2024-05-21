@@ -12,15 +12,19 @@ import (
 
 func DataSourceManagedObjectStoragePolicies() *schema.Resource {
 	return &schema.Resource{
-		Description: "Policies available for a Managed Object Storage resource. See `managed_object_storage_user_policy` for attaching to a user.",
-		ReadContext: dataSourcePoliciesRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Policies available for a Managed Object Storage resource. See `managed_object_storage_user_policy` for attaching to a user.",
+		ReadContext:                       dataSourcePoliciesRead,
 		Schema: map[string]*schema.Schema{
 			"policies": {
 				Description: "Policies.",
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: schemaPolicy(),
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
+					Schema:                            schemaPolicy(),
 				},
 			},
 			"service_uuid": {

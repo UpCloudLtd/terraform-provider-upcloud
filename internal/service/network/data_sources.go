@@ -17,8 +17,10 @@ import (
 
 func DataSourceNetworks() *schema.Resource {
 	return &schema.Resource{
-		Description: "Use this data source to get the available UpCloud networks.",
-		ReadContext: dataSourceNetworksRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Use this data source to get the available UpCloud networks.",
+		ReadContext:                       dataSourceNetworksRead,
 		Schema: map[string]*schema.Schema{
 			"zone": {
 				Type:        schema.TypeString,
@@ -34,12 +36,16 @@ func DataSourceNetworks() *schema.Resource {
 				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"ip_network": {
 							Type:        schema.TypeSet,
 							Computed:    true,
 							Description: "A list of IP subnets within the network",
 							Elem: &schema.Resource{
+								EnableLegacyTypeSystemApplyErrors: true,
+								EnableLegacyTypeSystemPlanErrors:  true,
 								Schema: map[string]*schema.Schema{
 									"address": {
 										Type:        schema.TypeString,
@@ -112,6 +118,8 @@ func DataSourceNetworks() *schema.Resource {
 							Description: "A list of attached servers",
 							Computed:    true,
 							Elem: &schema.Resource{
+								EnableLegacyTypeSystemApplyErrors: true,
+								EnableLegacyTypeSystemPlanErrors:  true,
 								Schema: map[string]*schema.Schema{
 									"id": {
 										Type:        schema.TypeString,

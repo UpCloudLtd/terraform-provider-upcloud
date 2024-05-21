@@ -181,7 +181,11 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema
 
 		s.Type = schema.TypeList
 		s.MaxItems = 1
-		s.Elem = &schema.Resource{Schema: nested}
+		s.Elem = &schema.Resource{
+			EnableLegacyTypeSystemApplyErrors: true,
+			EnableLegacyTypeSystemPlanErrors:  true,
+			Schema:                            nested,
+		}
 	default:
 		return nil, fmt.Errorf(`unknown property value type "%s"`, prop.Type)
 	}

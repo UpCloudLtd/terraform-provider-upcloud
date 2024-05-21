@@ -14,11 +14,13 @@ import (
 
 func ResourceFrontendTLSConfig() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents frontend TLS config",
-		CreateContext: resourceFrontendTLSConfigCreate,
-		ReadContext:   resourceFrontendTLSConfigRead,
-		UpdateContext: resourceFrontendTLSConfigUpdate,
-		DeleteContext: resourceFrontendTLSConfigDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents frontend TLS config",
+		CreateContext:                     resourceFrontendTLSConfigCreate,
+		ReadContext:                       resourceFrontendTLSConfigRead,
+		UpdateContext:                     resourceFrontendTLSConfigUpdate,
+		DeleteContext:                     resourceFrontendTLSConfigDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

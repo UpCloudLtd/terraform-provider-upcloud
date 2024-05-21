@@ -16,11 +16,13 @@ import (
 
 func ResourceDynamicCertificateBundle() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents dynamic certificate bundle",
-		CreateContext: resourceDynamicCertificateBundleCreate,
-		ReadContext:   resourceDynamicCertificateBundleRead,
-		UpdateContext: resourceDynamicCertificateBundleUpdate,
-		DeleteContext: resourceCertificateBundleDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents dynamic certificate bundle",
+		CreateContext:                     resourceDynamicCertificateBundleCreate,
+		ReadContext:                       resourceDynamicCertificateBundleRead,
+		UpdateContext:                     resourceDynamicCertificateBundleUpdate,
+		DeleteContext:                     resourceCertificateBundleDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

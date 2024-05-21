@@ -13,11 +13,13 @@ import (
 
 func ResourcePostgreSQL() *schema.Resource {
 	return &schema.Resource{
-		Description:   serviceDescription("PostgreSQL"),
-		CreateContext: resourcePostgreSQLCreate,
-		ReadContext:   resourcePostgreSQLRead,
-		UpdateContext: resourcePostgreSQLUpdate,
-		DeleteContext: resourceDatabaseDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       serviceDescription("PostgreSQL"),
+		CreateContext:                     resourcePostgreSQLCreate,
+		ReadContext:                       resourcePostgreSQLRead,
+		UpdateContext:                     resourcePostgreSQLUpdate,
+		DeleteContext:                     resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -107,7 +109,9 @@ func schemaPostgreSQLEngine() map[string]*schema.Schema {
 			Computed:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypePostgreSQL),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypePostgreSQL),
 			},
 		},
 	}

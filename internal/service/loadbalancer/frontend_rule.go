@@ -16,11 +16,13 @@ import (
 
 func ResourceFrontendRule() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents load balancer frontend rule",
-		CreateContext: resourceFrontendRuleCreate,
-		ReadContext:   resourceFrontendRuleRead,
-		UpdateContext: resourceFrontendRuleUpdate,
-		DeleteContext: resourceFrontendRuleDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents load balancer frontend rule",
+		CreateContext:                     resourceFrontendRuleCreate,
+		ReadContext:                       resourceFrontendRuleRead,
+		UpdateContext:                     resourceFrontendRuleUpdate,
+		DeleteContext:                     resourceFrontendRuleDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -55,7 +57,9 @@ func ResourceFrontendRule() *schema.Resource {
 				MaxItems:    1,
 				ForceNew:    true,
 				Elem: &schema.Resource{
-					Schema: frontendRuleMatchersSchema(),
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
+					Schema:                            frontendRuleMatchersSchema(),
 				},
 			},
 			"actions": {
@@ -65,7 +69,9 @@ func ResourceFrontendRule() *schema.Resource {
 				MaxItems:    1,
 				ForceNew:    true,
 				Elem: &schema.Resource{
-					Schema: frontendRuleActionsSchema(),
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
+					Schema:                            frontendRuleActionsSchema(),
 				},
 			},
 		},

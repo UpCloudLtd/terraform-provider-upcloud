@@ -14,10 +14,12 @@ import (
 
 func ResourceManagedObjectStoragePolicy() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents an UpCloud Managed Object Storage policy.",
-		CreateContext: resourceManagedObjectStoragePolicyCreate,
-		ReadContext:   resourceManagedObjectStoragePolicyRead,
-		DeleteContext: resourceManagedObjectStoragePolicyDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents an UpCloud Managed Object Storage policy.",
+		CreateContext:                     resourceManagedObjectStoragePolicyCreate,
+		ReadContext:                       resourceManagedObjectStoragePolicyRead,
+		DeleteContext:                     resourceManagedObjectStoragePolicyDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

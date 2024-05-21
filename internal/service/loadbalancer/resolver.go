@@ -15,11 +15,13 @@ import (
 
 func ResourceResolver() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents service's domain name resolver",
-		CreateContext: resourceResolverCreate,
-		ReadContext:   resourceResolverRead,
-		UpdateContext: resourceResolverUpdate,
-		DeleteContext: resourceResolverDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents service's domain name resolver",
+		CreateContext:                     resourceResolverCreate,
+		ReadContext:                       resourceResolverRead,
+		UpdateContext:                     resourceResolverUpdate,
+		DeleteContext:                     resourceResolverDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

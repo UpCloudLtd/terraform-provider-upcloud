@@ -14,11 +14,13 @@ import (
 
 func ResourceTag() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource is deprecated, use tags schema in server resource",
-		CreateContext: resourceTagCreate,
-		ReadContext:   resourceTagRead,
-		UpdateContext: resourceTagUpdate,
-		DeleteContext: resourceTagDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource is deprecated, use tags schema in server resource",
+		CreateContext:                     resourceTagCreate,
+		ReadContext:                       resourceTagRead,
+		UpdateContext:                     resourceTagUpdate,
+		DeleteContext:                     resourceTagDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
