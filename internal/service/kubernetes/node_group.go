@@ -2,6 +2,8 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -10,6 +12,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -141,13 +144,87 @@ func ResourceNodeGroup() *schema.Resource {
 				Default:     true,
 				ForceNew:    true,
 			},
+			"storage_encryption": storageEncryptionSchema("Storage encryption strategy for the nodes in this group.", true),
+			"custom_plan": {
+				Description: "Resource properties for custom plan",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				ForceNew:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"memory": {
+							Description: "The amount of memory in megabytes to assign to individual node group node when using custom plan. Value needs to be divisible by 1024.",
+							Type:        schema.TypeInt,
+							ForceNew:    true,
+							Required:    true,
+							ValidateDiagFunc: validation.AllDiag(
+								validation.ToDiagFunc(validation.IntBetween(2048, 131072)),
+								validation.ToDiagFunc(validation.IntDivisibleBy(1024)),
+							),
+						},
+						"cores": {
+							Description:      "The number of CPU cores dedicated to individual node group nodes when using custom plan",
+							Type:             schema.TypeInt,
+							ForceNew:         true,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 20)),
+						},
+						"storage_size": {
+							Description:      "The size of the storage device in gigabytes.",
+							Type:             schema.TypeInt,
+							ForceNew:         true,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(25, 1024)),
+						},
+						"storage_tier": {
+							Description: fmt.Sprintf("The storage tier to use. Defaults to %s", upcloud.KubernetesStorageTierMaxIOPS),
+							Type:        schema.TypeString,
+							ForceNew:    true,
+							Optional:    true,
+							Computed:    true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+								string(upcloud.KubernetesStorageTierMaxIOPS),
+								string(upcloud.KubernetesStorageTierHDD),
+							}, false)),
+						},
+					},
+				},
+			},
 		},
+		CustomizeDiff: customdiff.Sequence(validateCustomPlan, computeClusterLevelStorageEncryption),
 	}
+}
+
+func validateCustomPlan(_ context.Context, rd *schema.ResourceDiff, _ interface{}) error {
+	if plan, ok := rd.Get("plan").(string); ok {
+		_, customPlanOk := rd.GetOk("custom_plan")
+		if !customPlanOk && plan == "custom" {
+			return errors.New("`custom_plan` field is required when using custom server plan for the node group")
+		}
+		if customPlanOk && plan != "custom" {
+			return fmt.Errorf("defining `custom_plan` properties with %s plan is not supported, use `custom` plan instead", plan)
+		}
+	}
+	return nil
+}
+
+// computeClusterLevelStorageEncryption checks if cluster has storage encryption strategy set and applies that value to the node group when applicable.
+// Purpose for this is to make storage_encryption attribute known *before* apply if it's not defined.
+func computeClusterLevelStorageEncryption(ctx context.Context, rd *schema.ResourceDiff, meta interface{}) error {
+	clusterID, ok := rd.Get("cluster").(string)
+	if !ok || rd.NewValueKnown("storage_encryption") {
+		return nil
+	}
+	c, err := meta.(*service.Service).GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: clusterID})
+	if err == nil && c.StorageEncryption != "" {
+		return rd.SetNew("storage_encryption", c.StorageEncryption)
+	}
+	return nil
 }
 
 func resourceNodeGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	svc := meta.(*service.Service)
-
 	req := request.KubernetesNodeGroup{
 		Count:                d.Get("node_count").(int),
 		Name:                 d.Get("name").(string),
@@ -192,6 +269,21 @@ func resourceNodeGroupCreate(ctx context.Context, d *schema.ResourceData, meta i
 	if v, ok := d.GetOk("ssh_keys"); ok {
 		for _, v := range v.(*schema.Set).List() {
 			req.SSHKeys = append(req.SSHKeys, v.(string))
+		}
+	}
+
+	if v, ok := d.GetOk("storage_encryption"); ok {
+		req.StorageEncryption = upcloud.StorageEncryption(v.(string))
+	}
+
+	if v, ok := d.Get("custom_plan").([]interface{}); ok && len(v) > 0 {
+		req.CustomPlan = &upcloud.KubernetesNodeGroupCustomPlan{
+			Cores:       d.Get("custom_plan.0.cores").(int),
+			Memory:      d.Get("custom_plan.0.memory").(int),
+			StorageSize: d.Get("custom_plan.0.storage_size").(int),
+		}
+		if v, ok := d.Get("custom_plan.0.storage_tier").(string); ok && v != "" {
+			req.CustomPlan.StorageTier = upcloud.StorageTier(v)
 		}
 	}
 
@@ -341,6 +433,25 @@ func setNodeGroupResourceData(d *schema.ResourceData, clusterID string, ng *upcl
 	}
 
 	if err := d.Set("utility_network_access", ng.UtilityNetworkAccess); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("storage_encryption", ng.StorageEncryption); err != nil {
+		return diag.FromErr(err)
+	}
+
+	var customPlan []map[string]interface{}
+	if ng.CustomPlan != nil {
+		customPlan = []map[string]interface{}{
+			{
+				"cores":        ng.CustomPlan.Cores,
+				"memory":       ng.CustomPlan.Memory,
+				"storage_size": ng.CustomPlan.StorageSize,
+				"storage_tier": ng.CustomPlan.StorageTier,
+			},
+		}
+	}
+	if err := d.Set("custom_plan", customPlan); err != nil {
 		return diag.FromErr(err)
 	}
 

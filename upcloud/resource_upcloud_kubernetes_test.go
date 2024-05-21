@@ -14,6 +14,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 	cName := "upcloud_kubernetes_cluster.main"
 	g1Name := "upcloud_kubernetes_node_group.g1"
 	g2Name := "upcloud_kubernetes_node_group.g2"
+	g3Name := "upcloud_kubernetes_node_group.g3"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -50,6 +51,16 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					}),
 					resource.TestCheckResourceAttr(g1Name, "utility_network_access", "true"),
 					resource.TestCheckResourceAttr(g2Name, "utility_network_access", "false"),
+
+					resource.TestCheckResourceAttr(g3Name, "name", "encrypted-custom"),
+					resource.TestCheckResourceAttr(g3Name, "plan", "custom"),
+					resource.TestCheckResourceAttr(g3Name, "storage_encryption", "data-at-rest"),
+					resource.TestCheckResourceAttr(g3Name, "custom_plan.#", "1"),
+					resource.TestCheckTypeSetElemNestedAttrs(g3Name, "custom_plan.*", map[string]string{
+						"cores":        "1",
+						"memory":       "2048",
+						"storage_size": "25",
+					}),
 				),
 			},
 			{
@@ -85,6 +96,7 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 					resource.TestCheckResourceAttr(cluster, "zone", "de-fra1"),
 					resource.TestCheckResourceAttr(cluster, "labels.%", "1"),
 					resource.TestCheckResourceAttr(cluster, "labels.test", "terraform-provider-acceptance-test"),
+					resource.TestCheckResourceAttr(cluster, "storage_encryption", "data-at-rest"),
 				),
 			},
 			{
