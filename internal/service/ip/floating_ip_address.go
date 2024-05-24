@@ -14,11 +14,13 @@ import (
 
 func ResourceFloatingIPAddress() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents a UpCloud floating IP address resource.",
-		CreateContext: resourceFloatingIPAddressCreate,
-		ReadContext:   resourceFloatingIPAddressRead,
-		UpdateContext: resourceFloatingIPAddressUpdate,
-		DeleteContext: resourceFloatingIPAddressDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents a UpCloud floating IP address resource.",
+		CreateContext:                     resourceFloatingIPAddressCreate,
+		ReadContext:                       resourceFloatingIPAddressRead,
+		UpdateContext:                     resourceFloatingIPAddressUpdate,
+		DeleteContext:                     resourceFloatingIPAddressDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

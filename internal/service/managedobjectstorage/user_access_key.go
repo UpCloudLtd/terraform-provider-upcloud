@@ -15,11 +15,13 @@ import (
 
 func ResourceManagedObjectStorageUserAccessKey() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents an UpCloud Managed Object Storage user access key.",
-		CreateContext: resourceManagedObjectStorageUserAccessKeyCreate,
-		ReadContext:   resourceManagedObjectStorageUserAccessKeyRead,
-		UpdateContext: resourceManagedObjectStorageUserAccessKeyUpdate,
-		DeleteContext: resourceManagedObjectStorageUserAccessKeyDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents an UpCloud Managed Object Storage user access key.",
+		CreateContext:                     resourceManagedObjectStorageUserAccessKeyCreate,
+		ReadContext:                       resourceManagedObjectStorageUserAccessKeyRead,
+		UpdateContext:                     resourceManagedObjectStorageUserAccessKeyUpdate,
+		DeleteContext:                     resourceManagedObjectStorageUserAccessKeyDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

@@ -18,10 +18,12 @@ import (
 
 func ResourceLogicalDatabase() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents a logical database in managed database",
-		CreateContext: resourceLogicalDatabaseCreate,
-		ReadContext:   resourceLogicalDatabaseRead,
-		DeleteContext: resourceLogicalDatabaseDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents a logical database in managed database",
+		CreateContext:                     resourceLogicalDatabaseCreate,
+		ReadContext:                       resourceLogicalDatabaseRead,
+		DeleteContext:                     resourceLogicalDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

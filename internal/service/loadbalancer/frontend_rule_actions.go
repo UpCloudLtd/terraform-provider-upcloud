@@ -20,6 +20,8 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
 				Schema: map[string]*schema.Schema{
 					"backend_name": {
 						Description: "The name of the backend where traffic will be routed.",
@@ -37,6 +39,8 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
 				Schema: map[string]*schema.Schema{
 					"location": {
 						Description:      "Target location.",
@@ -65,6 +69,8 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
 				Schema: map[string]*schema.Schema{
 					"content_type": {
 						Description: "Content type.",
@@ -96,6 +102,8 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
 				Schema: map[string]*schema.Schema{
 					"active": {
 						Type:     schema.TypeBool,
@@ -113,6 +121,8 @@ func frontendRuleActionsSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
 				Schema: map[string]*schema.Schema{
 					"active": {
 						Type:     schema.TypeBool,

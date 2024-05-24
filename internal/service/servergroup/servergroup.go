@@ -36,10 +36,12 @@ const (
 
 func ResourceServerGroup() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceServerGroupCreate,
-		ReadContext:   resourceServerGroupRead,
-		UpdateContext: resourceServerGroupUpdate,
-		DeleteContext: resourceServerGroupDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		CreateContext:                     resourceServerGroupCreate,
+		ReadContext:                       resourceServerGroupRead,
+		UpdateContext:                     resourceServerGroupUpdate,
+		DeleteContext:                     resourceServerGroupDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

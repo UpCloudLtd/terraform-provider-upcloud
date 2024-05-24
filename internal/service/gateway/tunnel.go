@@ -40,10 +40,12 @@ var allowedDHGroups = []int{2, 5, 14, 15, 16, 18, 19, 20, 21, 24}
 
 func ResourceTunnel() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceTunnelCreate,
-		ReadContext:   resourceTunnelRead,
-		UpdateContext: resourceTunnelUpdate,
-		DeleteContext: resourceTunnelDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		CreateContext:                     resourceTunnelCreate,
+		ReadContext:                       resourceTunnelRead,
+		UpdateContext:                     resourceTunnelUpdate,
+		DeleteContext:                     resourceTunnelDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -372,6 +374,8 @@ func setTunnelResourceData(d *schema.ResourceData, tunnel *upcloud.GatewayTunnel
 
 func ipsecAuthPSKSchema() *schema.Resource {
 	return &schema.Resource{
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
 		Schema: map[string]*schema.Schema{
 			"psk": {
 				Description: "The pre-shared key. This value is only used during resource creation and is not returned in the state. It is not possible to update this value. If you need to update it, delete the connection and create a new one.",
@@ -389,6 +393,8 @@ func ipsecAuthPSKSchema() *schema.Resource {
 
 func ipsecPropertiesSchema() *schema.Resource {
 	return &schema.Resource{
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
 		Schema: map[string]*schema.Schema{
 			"child_rekey_time": {
 				Description: "IKE child SA rekey time in seconds.",

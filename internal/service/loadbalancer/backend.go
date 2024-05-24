@@ -15,11 +15,13 @@ import (
 
 func ResourceBackend() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents load balancer backend service",
-		CreateContext: resourceBackendCreate,
-		ReadContext:   resourceBackendRead,
-		UpdateContext: resourceBackendUpdate,
-		DeleteContext: resourceBackendDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents load balancer backend service",
+		CreateContext:                     resourceBackendCreate,
+		ReadContext:                       resourceBackendRead,
+		UpdateContext:                     resourceBackendUpdate,
+		DeleteContext:                     resourceBackendDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -57,7 +59,9 @@ func ResourceBackend() *schema.Resource {
 				MaxItems:    1,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: schemaBackendProperties(),
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
+					Schema:                            schemaBackendProperties(),
 				},
 			},
 			"tls_configs": {

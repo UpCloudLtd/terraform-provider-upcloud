@@ -16,11 +16,13 @@ import (
 
 func ResourceUser() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents a user in managed database",
-		CreateContext: resourceUserCreate,
-		ReadContext:   resourceUserRead,
-		UpdateContext: resourceUserUpdate,
-		DeleteContext: resourceUserDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents a user in managed database",
+		CreateContext:                     resourceUserCreate,
+		ReadContext:                       resourceUserRead,
+		UpdateContext:                     resourceUserUpdate,
+		DeleteContext:                     resourceUserDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -72,7 +74,9 @@ func schemaUser() map[string]*schema.Schema {
 			Optional:      true,
 			MaxItems:      1,
 			Elem: &schema.Resource{
-				Schema: schemaPostgreSQLUserAccessControl(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            schemaPostgreSQLUserAccessControl(),
 			},
 		},
 		"redis_access_control": {
@@ -81,7 +85,9 @@ func schemaUser() map[string]*schema.Schema {
 			Optional:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: schemaRedisUserAccessControl(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            schemaRedisUserAccessControl(),
 			},
 		},
 		"opensearch_access_control": {
@@ -90,7 +96,9 @@ func schemaUser() map[string]*schema.Schema {
 			Optional:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: schemaOpenSearchUserAccessControl(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            schemaOpenSearchUserAccessControl(),
 			},
 		},
 	}
@@ -155,6 +163,8 @@ func schemaOpenSearchUserAccessControl() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Required:    true,
 			Elem: &schema.Resource{
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
 				Schema: map[string]*schema.Schema{
 					"index": {
 						Description: "Set index name, pattern or top level API.",

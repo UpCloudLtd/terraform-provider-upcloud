@@ -14,10 +14,12 @@ import (
 
 func ResourceManagedObjectStorageUser() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents an UpCloud Managed Object Storage user. No relation to UpCloud API accounts.",
-		CreateContext: resourceManagedObjectStorageUserCreate,
-		ReadContext:   resourceManagedObjectStorageUserRead,
-		DeleteContext: resourceManagedObjectStorageUserDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents an UpCloud Managed Object Storage user. No relation to UpCloud API accounts.",
+		CreateContext:                     resourceManagedObjectStorageUserCreate,
+		ReadContext:                       resourceManagedObjectStorageUserRead,
+		DeleteContext:                     resourceManagedObjectStorageUserDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

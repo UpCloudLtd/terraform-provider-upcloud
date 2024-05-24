@@ -19,6 +19,8 @@ func BackupRuleSchema() *schema.Schema {
 		MaxItems: 1,
 		Optional: true,
 		Elem: &schema.Resource{
+			EnableLegacyTypeSystemApplyErrors: true,
+			EnableLegacyTypeSystemPlanErrors:  true,
 			Schema: map[string]*schema.Schema{
 				"interval": {
 					Description: "The weekday when the backup is created",

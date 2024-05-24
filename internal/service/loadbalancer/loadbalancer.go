@@ -21,11 +21,13 @@ import (
 
 func ResourceLoadBalancer() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents [Managed Load Balancer](https://upcloud.com/products/managed-load-balancer) service.",
-		CreateContext: resourceLoadBalancerCreate,
-		ReadContext:   resourceLoadBalancerRead,
-		UpdateContext: resourceLoadBalancerUpdate,
-		DeleteContext: resourceLoadBalancerDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents [Managed Load Balancer](https://upcloud.com/products/managed-load-balancer) service.",
+		CreateContext:                     resourceLoadBalancerCreate,
+		ReadContext:                       resourceLoadBalancerRead,
+		UpdateContext:                     resourceLoadBalancerUpdate,
+		DeleteContext:                     resourceLoadBalancerDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -54,7 +56,9 @@ func ResourceLoadBalancer() *schema.Resource {
 				MaxItems:     8,
 				MinItems:     2,
 				Elem: &schema.Resource{
-					Schema: loadBalancerNetworkSchema(),
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
+					Schema:                            loadBalancerNetworkSchema(),
 				},
 			},
 			"configured_status": {
@@ -103,7 +107,9 @@ func ResourceLoadBalancer() *schema.Resource {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: loadBalancerNodeSchema(),
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
+					Schema:                            loadBalancerNodeSchema(),
 				},
 			},
 			"network": {
@@ -201,7 +207,9 @@ func loadBalancerNodeSchema() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Computed: true,
 			Elem: &schema.Resource{
-				Schema: loadBalancerNodeNetworkSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            loadBalancerNodeNetworkSchema(),
 			},
 		},
 	}
@@ -223,6 +231,8 @@ func loadBalancerNodeNetworkSchema() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Computed: true,
 			Elem: &schema.Resource{
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
 				Schema: map[string]*schema.Schema{
 					"address": {
 						Description: "Node's IP address.",

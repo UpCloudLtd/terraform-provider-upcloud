@@ -21,11 +21,13 @@ import (
 
 func ResourceStorage() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Manages UpCloud [Block Storage](https://upcloud.com/products/block-storage) devices.",
-		CreateContext: resourceStorageCreate,
-		ReadContext:   resourceStorageRead,
-		UpdateContext: resourceStorageUpdate,
-		DeleteContext: resourceStorageDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Manages UpCloud [Block Storage](https://upcloud.com/products/block-storage) devices.",
+		CreateContext:                     resourceStorageCreate,
+		ReadContext:                       resourceStorageRead,
+		UpdateContext:                     resourceStorageUpdate,
+		DeleteContext:                     resourceStorageDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -71,6 +73,8 @@ func ResourceStorage() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"import"},
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Description: "The unique identifier of the storage/template to clone",
@@ -89,6 +93,8 @@ func ResourceStorage() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"clone"},
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"source": {
 							Description: "The mode of the import task. One of `http_import` or `direct_upload`.",

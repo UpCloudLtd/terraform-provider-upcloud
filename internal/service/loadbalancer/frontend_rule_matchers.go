@@ -24,7 +24,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherIntegerSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherIntegerSchema(),
 			},
 		},
 		"src_port_range": {
@@ -34,7 +36,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherRangeSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherRangeSchema(),
 			},
 		},
 		"src_ip": {
@@ -44,7 +48,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherIPSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherIPSchema(),
 			},
 		},
 		"body_size": {
@@ -54,7 +60,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherIntegerSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherIntegerSchema(),
 			},
 		},
 		"body_size_range": {
@@ -64,7 +72,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherRangeSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherRangeSchema(),
 			},
 		},
 		"path": {
@@ -74,7 +84,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherStringSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherStringSchema(),
 			},
 		},
 		"url": {
@@ -84,7 +96,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherStringSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherStringSchema(),
 			},
 		},
 		"url_query": {
@@ -94,7 +108,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherStringSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherStringSchema(),
 			},
 		},
 		"host": {
@@ -104,7 +120,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherHostSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherHostSchema(),
 			},
 		},
 		"http_method": {
@@ -114,7 +132,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherHTTPMethodSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherHTTPMethodSchema(),
 			},
 		},
 		"cookie": {
@@ -124,7 +144,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherStringWithArgumentSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherStringWithArgumentSchema(),
 			},
 		},
 		"header": {
@@ -134,7 +156,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherStringWithArgumentSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherStringWithArgumentSchema(),
 			},
 		},
 		"url_param": {
@@ -144,7 +168,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherStringWithArgumentSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherStringWithArgumentSchema(),
 			},
 		},
 		"num_members_up": {
@@ -154,7 +180,9 @@ func frontendRuleMatchersSchema() map[string]*schema.Schema {
 			MaxItems:    100,
 			ForceNew:    true,
 			Elem: &schema.Resource{
-				Schema: frontendRuleMatcherBackendSchema(),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            frontendRuleMatcherBackendSchema(),
 			},
 		},
 	}

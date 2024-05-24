@@ -15,10 +15,12 @@ import (
 
 func ResourceConnection() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceConnectionCreate,
-		ReadContext:   resourceConnectionRead,
-		UpdateContext: resourceConnectionUpdate,
-		DeleteContext: resourceConnectionDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		CreateContext:                     resourceConnectionCreate,
+		ReadContext:                       resourceConnectionRead,
+		UpdateContext:                     resourceConnectionUpdate,
+		DeleteContext:                     resourceConnectionDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -179,6 +181,8 @@ func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 func gatewayRouteSchema() *schema.Resource {
 	return &schema.Resource{
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
 		Schema: map[string]*schema.Schema{
 			"type": {
 				Description: "Type of route; currently the only supported type is 'static'",

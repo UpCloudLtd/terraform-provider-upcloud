@@ -13,8 +13,10 @@ import (
 
 func DataSourceOpenSearchIndices() *schema.Resource {
 	return &schema.Resource{
-		Description: "OpenSearch indices",
-		ReadContext: dataSourceOpenSearchIndicesRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "OpenSearch indices",
+		ReadContext:                       dataSourceOpenSearchIndicesRead,
 		Schema: map[string]*schema.Schema{
 			"indices": {
 				Description: "Available indices for OpenSearch",
@@ -35,7 +37,9 @@ func DataSourceOpenSearchIndices() *schema.Resource {
 
 func schemaOpenSearchIndex() *schema.Resource {
 	return &schema.Resource{
-		Description: "OpenSearch index",
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "OpenSearch index",
 		Schema: map[string]*schema.Schema{
 			"create_time": {
 				Description: "Timestamp indicating the creation time of the index.",

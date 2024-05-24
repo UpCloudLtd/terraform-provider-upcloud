@@ -51,8 +51,10 @@ type kubeconfigUserData struct {
 
 func DataSourceCluster() *schema.Resource {
 	return &schema.Resource{
-		Description: "Managed Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.",
-		ReadContext: dataSourceClusterRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Managed Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.",
+		ReadContext:                       dataSourceClusterRead,
 		Schema: map[string]*schema.Schema{
 			"client_certificate": {
 				Description: clientCertificateDescription,

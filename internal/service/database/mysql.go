@@ -12,11 +12,13 @@ import (
 
 func ResourceMySQL() *schema.Resource {
 	return &schema.Resource{
-		Description:   serviceDescription("MySQL"),
-		CreateContext: resourceMySQLCreate,
-		ReadContext:   resourceMySQLRead,
-		UpdateContext: resourceMySQLUpdate,
-		DeleteContext: resourceDatabaseDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       serviceDescription("MySQL"),
+		CreateContext:                     resourceMySQLCreate,
+		ReadContext:                       resourceMySQLRead,
+		UpdateContext:                     resourceMySQLUpdate,
+		DeleteContext:                     resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -63,7 +65,9 @@ func schemaMySQLEngine() map[string]*schema.Schema {
 			Computed:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeMySQL),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeMySQL),
 			},
 		},
 	}

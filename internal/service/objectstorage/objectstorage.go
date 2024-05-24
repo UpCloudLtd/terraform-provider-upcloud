@@ -34,6 +34,8 @@ type objectStorageKeyType string
 
 func ResourceObjectStorage() *schema.Resource {
 	return &schema.Resource{
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
 		Description: fmt.Sprintf(`~> %s
 
 This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.`, deprecationMessage),
@@ -112,6 +114,8 @@ This resource represents an UpCloud Object Storage instance, which provides S3 c
 				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"name": {
 							Type:         schema.TypeString,

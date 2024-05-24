@@ -14,11 +14,13 @@ import (
 
 func ResourceOpenSearch() *schema.Resource {
 	return &schema.Resource{
-		Description:   serviceDescription("OpenSearch"),
-		CreateContext: resourceOpenSearchCreate,
-		ReadContext:   resourceOpenSearchRead,
-		UpdateContext: resourceOpenSearchUpdate,
-		DeleteContext: resourceDatabaseDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       serviceDescription("OpenSearch"),
+		CreateContext:                     resourceOpenSearchCreate,
+		ReadContext:                       resourceOpenSearchRead,
+		UpdateContext:                     resourceOpenSearchUpdate,
+		DeleteContext:                     resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -110,7 +112,9 @@ func schemaOpenSearchEngine() map[string]*schema.Schema {
 			Computed:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeOpenSearch),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeOpenSearch),
 			},
 		},
 	}

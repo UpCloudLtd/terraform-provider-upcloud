@@ -12,13 +12,17 @@ import (
 
 func DataSourceTags() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data-source is deprecated.",
-		ReadContext: dataSourceTagsRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Data-source is deprecated.",
+		ReadContext:                       dataSourceTagsRead,
 		Schema: map[string]*schema.Schema{
 			"tags": {
 				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"description": {
 							Description: "Free form text representing the meaning of the tag",

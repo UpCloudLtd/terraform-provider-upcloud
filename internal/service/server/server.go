@@ -26,11 +26,13 @@ const serverTitleLength int = 255
 
 func ResourceServer() *schema.Resource {
 	return &schema.Resource{
-		Description:   "The UpCloud server resource allows the creation, update and deletion of a [cloud server](https://upcloud.com/products/cloud-servers).",
-		CreateContext: resourceServerCreate,
-		ReadContext:   resourceServerRead,
-		UpdateContext: resourceServerUpdate,
-		DeleteContext: resourceServerDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "The UpCloud server resource allows the creation, update and deletion of a [cloud server](https://upcloud.com/products/cloud-servers).",
+		CreateContext:                     resourceServerCreate,
+		ReadContext:                       resourceServerRead,
+		UpdateContext:                     resourceServerUpdate,
+		DeleteContext:                     resourceServerDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -151,6 +153,8 @@ func ResourceServer() *schema.Resource {
 				Required:    true,
 				MinItems:    1,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"ip_address_family":   schemaIPAddressFamily("The type of the primary IP address of this interface (one of `IPv4` or `IPv6`)."),
 						"ip_address":          schemaIPAddress("The assigned primary IP address."),
@@ -161,6 +165,8 @@ func ResourceServer() *schema.Resource {
 							Optional:    true,
 							MaxItems:    4,
 							Elem: &schema.Resource{
+								EnableLegacyTypeSystemApplyErrors: true,
+								EnableLegacyTypeSystemPlanErrors:  true,
 								Schema: map[string]*schema.Schema{
 									"ip_address_family":   schemaIPAddressFamily("The type of this additional IP address of this interface (one of `IPv4` or `IPv6`)."),
 									"ip_address":          schemaIPAddress("The assigned additional IP address."),
@@ -233,6 +239,8 @@ func ResourceServer() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"address": {
 							Description:  "The device address the storage will be attached to (`scsi`|`virtio`|`ide`). Leave `address_position` field empty to auto-select next available address from that bus.",
@@ -276,6 +284,8 @@ func ResourceServer() *schema.Resource {
 				MaxItems:     1,
 				AtLeastOneOf: []string{"storage_devices", "template"},
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Description: "The unique identifier for the storage",
@@ -352,6 +362,8 @@ func ResourceServer() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"user": {
 							Description: "Username to be create to access the server",
@@ -395,6 +407,8 @@ func ResourceServer() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"template.0.backup_rule"},
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"plan": {
 							Description:  "Simple backup plan. Accepted values: daily, dailies, weeklies, monthlies.",

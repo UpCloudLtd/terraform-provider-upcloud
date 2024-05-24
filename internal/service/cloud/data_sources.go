@@ -21,6 +21,8 @@ const (
 
 func DataSourceHosts() *schema.Resource {
 	return &schema.Resource{
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
 		Description: `Returns a list of available UpCloud hosts. 
 		A host identifies the host server that virtual machines are run on. 
 		Only hosts on private cloud to which the calling account has access to are available through this resource.`,
@@ -30,6 +32,8 @@ func DataSourceHosts() *schema.Resource {
 				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"host_id": {
 							Type:        schema.TypeInt,
@@ -86,8 +90,10 @@ func dataSourceHostsRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 func DataSourceZone() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data-source is deprecated.",
-		ReadContext: resourceZoneRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Data-source is deprecated.",
+		ReadContext:                       resourceZoneRead,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Unique lablel for the zone",
@@ -148,8 +154,10 @@ func resourceZoneRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 func DataSourceZones() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data-source is deprecated.",
-		ReadContext: dataSourceZonesRead,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Data-source is deprecated.",
+		ReadContext:                       dataSourceZonesRead,
 		Schema: map[string]*schema.Schema{
 			"zone_ids": {
 				Type:     schema.TypeSet,

@@ -12,11 +12,13 @@ import (
 
 func ResourceRedis() *schema.Resource {
 	return &schema.Resource{
-		Description:   serviceDescription("Redis"),
-		CreateContext: resourceRedisCreate,
-		ReadContext:   resourceRedisRead,
-		UpdateContext: resourceRedisUpdate,
-		DeleteContext: resourceDatabaseDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       serviceDescription("Redis"),
+		CreateContext:                     resourceRedisCreate,
+		ReadContext:                       resourceRedisRead,
+		UpdateContext:                     resourceRedisUpdate,
+		DeleteContext:                     resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -63,7 +65,9 @@ func schemaRedisEngine() map[string]*schema.Schema {
 			Computed:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeRedis),
+				EnableLegacyTypeSystemApplyErrors: true,
+				EnableLegacyTypeSystemPlanErrors:  true,
+				Schema:                            properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeRedis),
 			},
 		},
 	}

@@ -16,11 +16,13 @@ import (
 
 func ResourceStaticBackendMember() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents load balancer's static backend member",
-		CreateContext: resourceBackendMemberCreateFunc(upcloud.LoadBalancerBackendMemberTypeStatic),
-		ReadContext:   resourceBackendMemberRead,
-		UpdateContext: resourceBackendMemberUpdate,
-		DeleteContext: resourceBackendMemberDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents load balancer's static backend member",
+		CreateContext:                     resourceBackendMemberCreateFunc(upcloud.LoadBalancerBackendMemberTypeStatic),
+		ReadContext:                       resourceBackendMemberRead,
+		UpdateContext:                     resourceBackendMemberUpdate,
+		DeleteContext:                     resourceBackendMemberDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -75,11 +77,13 @@ func ResourceStaticBackendMember() *schema.Resource {
 
 func ResourceDynamicBackendMember() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource represents load balancer's dynamic backend member",
-		CreateContext: resourceBackendMemberCreateFunc(upcloud.LoadBalancerBackendMemberTypeDynamic),
-		ReadContext:   resourceBackendMemberRead,
-		UpdateContext: resourceBackendMemberUpdate,
-		DeleteContext: resourceBackendMemberDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "This resource represents load balancer's dynamic backend member",
+		CreateContext:                     resourceBackendMemberCreateFunc(upcloud.LoadBalancerBackendMemberTypeDynamic),
+		ReadContext:                       resourceBackendMemberRead,
+		UpdateContext:                     resourceBackendMemberUpdate,
+		DeleteContext:                     resourceBackendMemberDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

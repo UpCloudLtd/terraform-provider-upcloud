@@ -17,6 +17,8 @@ import (
 
 func ResourceFirewallRules() *schema.Resource {
 	return &schema.Resource{
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
 		Description: `This resource represents a generated list of UpCloud firewall rules. 
 		Firewall rules are used in conjunction with UpCloud servers. 
 		Each server has its own firewall rules. 
@@ -47,6 +49,8 @@ func ResourceFirewallRules() *schema.Resource {
 				MaxItems: 1000,
 				Required: true,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"direction": {
 							Type:         schema.TypeString,

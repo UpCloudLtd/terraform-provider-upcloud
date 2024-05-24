@@ -118,6 +118,8 @@ func schemaDatabaseComponents() *schema.Schema {
 		Type:        schema.TypeList,
 		Computed:    true,
 		Elem: &schema.Resource{
+			EnableLegacyTypeSystemApplyErrors: true,
+			EnableLegacyTypeSystemPlanErrors:  true,
 			Schema: map[string]*schema.Schema{
 				"component": {
 					Description: "Type of the component",
@@ -157,6 +159,8 @@ func schemaDatabaseNetwork() *schema.Schema {
 		MaxItems:    8,
 		MinItems:    1,
 		Elem: &schema.Resource{
+			EnableLegacyTypeSystemApplyErrors: true,
+			EnableLegacyTypeSystemPlanErrors:  true,
 			Schema: map[string]*schema.Schema{
 				"name": {
 					Description: "The name of the network. Must be unique within the service.",
@@ -223,6 +227,8 @@ func schemaDatabaseNodeStates() *schema.Schema {
 		Type:        schema.TypeList,
 		Computed:    true,
 		Elem: &schema.Resource{
+			EnableLegacyTypeSystemApplyErrors: true,
+			EnableLegacyTypeSystemPlanErrors:  true,
 			Schema: map[string]*schema.Schema{
 				"name": {
 					Description: "Name plus a node iteration",
