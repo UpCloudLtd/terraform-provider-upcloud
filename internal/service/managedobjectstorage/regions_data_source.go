@@ -2,7 +2,6 @@ package managedobjectstorage
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -31,22 +30,7 @@ func (d *regionsDataSource) Metadata(_ context.Context, req datasource.MetadataR
 }
 
 func (d *regionsDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*service.Service)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected resource Configure type",
-			fmt.Sprintf("Expected *service.Service, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	d.client = client
+	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
 type regionsModel struct {

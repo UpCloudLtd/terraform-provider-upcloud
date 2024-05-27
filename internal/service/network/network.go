@@ -2,7 +2,6 @@ package network
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
@@ -45,22 +44,7 @@ func (r *networkResource) Metadata(_ context.Context, req resource.MetadataReque
 
 // Configure adds the provider configured client to the resource.
 func (r *networkResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*service.Service)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected resource Configure type",
-			fmt.Sprintf("Expected *service.Service, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
 type networkModel struct {

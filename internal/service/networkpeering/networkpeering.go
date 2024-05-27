@@ -43,22 +43,7 @@ func (r *networkPeeringResource) Metadata(_ context.Context, req resource.Metada
 
 // Configure adds the provider configured client to the resource.
 func (r *networkPeeringResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*service.Service)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected resource Configure type",
-			fmt.Sprintf("Expected *service.Service, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
 type networkPeeringModel struct {

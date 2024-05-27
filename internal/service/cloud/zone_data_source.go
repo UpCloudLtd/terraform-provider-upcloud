@@ -2,7 +2,6 @@ package cloud
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -30,22 +29,7 @@ func (d *zoneDataSource) Metadata(_ context.Context, req datasource.MetadataRequ
 }
 
 func (d *zoneDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*service.Service)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected resource Configure type",
-			fmt.Sprintf("Expected *service.Service, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	d.client = client
+	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
 type zoneModel struct {
