@@ -112,7 +112,6 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"upcloud_zone":               cloud.DataSourceZone(),
 			"upcloud_zones":              cloud.DataSourceZones(),
 			"upcloud_networks":           network.DataSourceNetworks(),
 			"upcloud_hosts":              cloud.DataSourceHosts(),
