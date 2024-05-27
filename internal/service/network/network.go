@@ -54,6 +54,7 @@ type networkModel struct {
 	Zone      types.String `tfsdk:"zone"`
 	Router    types.String `tfsdk:"router"`
 	IPNetwork types.List   `tfsdk:"ip_network"`
+	Labels    types.Map    `tfsdk:"labels"`
 }
 
 type ipNetworkModel struct {
@@ -70,6 +71,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 	resp.Schema = schema.Schema{
 		Description: "This resource represents an SDN private network that cloud servers and other resources from the same zone can be attached to.",
 		Attributes: map[string]schema.Attribute{
+			"labels": utils.LabelsAttribute("network"),
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the network.",
 				Required:            true,
@@ -190,12 +192,14 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 }
 
 func setValues(ctx context.Context, data *networkModel, network *upcloud.Network) diag.Diagnostics {
-	respDiagnostics := diag.Diagnostics{}
+	var respDiagnostics diag.Diagnostics
 
 	data.Name = types.StringValue(network.Name)
 	data.ID = types.StringValue(network.UUID)
 	data.Type = types.StringValue(network.Type)
 	data.Zone = types.StringValue(network.Zone)
+
+	data.Labels, respDiagnostics = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(network.Labels))
 
 	if network.Router == "" {
 		data.Router = types.StringNull()
@@ -264,8 +268,14 @@ func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+
 	apiReq := request.CreateNetworkRequest{
 		Name:   data.Name.ValueString(),
+		Labels: utils.LabelsMapToSlice(labels),
 		Zone:   data.Zone.ValueString(),
 		Router: data.Router.ValueString(),
 	}
@@ -317,9 +327,16 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 	var data networkModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+	labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+
 	apiReq := request.ModifyNetworkRequest{
-		UUID: data.ID.ValueString(),
-		Name: data.Name.ValueString(),
+		UUID:   data.ID.ValueString(),
+		Name:   data.Name.ValueString(),
+		Labels: &labelsSlice,
 	}
 
 	networks, diags := buildIPNetworks(ctx, data.IPNetwork)
@@ -332,7 +349,7 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 	network, err := r.client.ModifyNetwork(ctx, &apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to delete network",
+			"Unable to modify network",
 			utils.ErrorDiagnosticDetail(err),
 		)
 		return
