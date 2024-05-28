@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_zone: `parent_zone` field.
+
+### Deprecated
+
+- upcloud_zone: `name` field will be removed as the same value is available through `id` field.
+
 ## [5.4.0] - 2024-05-21
 
 ### Added
