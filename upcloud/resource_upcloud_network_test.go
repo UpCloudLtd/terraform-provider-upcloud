@@ -192,18 +192,88 @@ func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false, nil, nil),
+				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false, nil, nil, nil),
 				ExpectError: regexp.MustCompile(`family value must be one of: \["IPv4" "IPv6"\]`),
 			},
 		},
 	})
 }
 
-func testAccNetworkConfig(name string, zone string, address string, gateway string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string) string {
-	return testAccNetworkConfigWithFamily(name, zone, address, gateway, "IPv4", dhcp, dhcpDefaultRoute, router, dhcpDNS, dhcpRoutes)
+func TestAccUpCloudNetwork_labels(t *testing.T) {
+	netName := fmt.Sprintf("test_network_labels_%s", acctest.RandString(5))
+	subnet := acctest.RandIntRange(0, 250)
+	cidr := fmt.Sprintf("10.0.%d.0/24", subnet)
+
+	config1 := testAccNetworkLabelsConfig(
+		netName,
+		"fi-hel1",
+		cidr,
+		map[string]string{
+			"key":    "value",
+			"test":   "tf-acc-test",
+			"animal": "cow",
+		},
+	)
+	config2 := testAccNetworkLabelsConfig(
+		netName,
+		"fi-hel1",
+		cidr,
+		map[string]string{
+			"key":  "",
+			"test": "tf-acc-test",
+		},
+	)
+	config3 := testAccNetworkLabelsConfig(
+		netName,
+		"fi-hel1",
+		cidr,
+		nil,
+	)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccNetworkExists("upcloud_network.test_network"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "labels.%", "3"),
+				),
+			},
+			{
+				Config:            config1,
+				ResourceName:      "upcloud_network.test_network",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: config2,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccNetworkExists("upcloud_network.test_network"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "labels.%", "2"),
+				),
+			},
+			{
+				Config: config3,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccNetworkExists("upcloud_network.test_network"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "labels.%", "0"),
+				),
+			},
+		},
+	})
 }
 
-func testAccNetworkConfigWithFamily(name string, zone string, address string, gateway string, family string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string) string {
+func testAccNetworkConfig(name string, zone string, address string, gateway string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string) string {
+	return testAccNetworkConfigWithFamily(name, zone, address, gateway, "IPv4", dhcp, dhcpDefaultRoute, router, dhcpDNS, dhcpRoutes, nil)
+}
+
+func testAccNetworkLabelsConfig(name string, zone string, address string, labels map[string]string) string {
+	return testAccNetworkConfigWithFamily(name, zone, address, "", "IPv4", true, true, false, nil, nil, labels)
+}
+
+func testAccNetworkConfigWithFamily(name string, zone string, address string, gateway string, family string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string, labels map[string]string) string {
 	config := strings.Builder{}
 
 	config.WriteString(fmt.Sprintf(`
@@ -211,6 +281,19 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 		name = "%s"
 		zone = "%s"
 	`, name, zone))
+
+	if len(labels) > 0 {
+		config.WriteString(`
+		labels = {
+		`)
+		for k, v := range labels {
+			config.WriteString(fmt.Sprintf(`
+			"%s" = "%s"`, k, v))
+		}
+		config.WriteString(`
+		}
+		`)
+	}
 
 	if router {
 		config.WriteString(`
@@ -224,14 +307,17 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 		  dhcp               = "%t"
 		  dhcp_default_route = "%t"
 		  family             = "%s"
-		  gateway            = "%s"
 		
 	`,
 		address,
 		dhcp,
 		dhcpDefaultRoute,
-		family,
-		gateway))
+		family))
+
+	if gateway != "" {
+		config.WriteString(fmt.Sprintf(`
+		  gateway            = "%s"`, gateway))
+	}
 
 	if len(dhcpDNS) > 0 {
 		config.WriteString(fmt.Sprintf(`
