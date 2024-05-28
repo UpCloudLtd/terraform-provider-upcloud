@@ -204,6 +204,21 @@ func buildManagedDatabaseRequestFromResourceData(d *schema.ResourceData) request
 	return req
 }
 
+func getPropertiesValue(d *schema.ResourceData, key string) (interface{}, bool, bool) {
+	value, isNotZero := d.GetOk(key)
+	// It seems to be hard to detect changes in boolean fields in some scenarios.
+	// E.g. if boolean field is optional and has default value true, but is initially set as false in config
+	// then it's interpreted as boolean zero value and no change is detected.
+	//
+	// This might need more thinking, but for now, exclude field from the request if
+	// it's not boolean, has type's "zero" value and value hasn't changed.
+	_, isBool := value.(bool)
+	hasChange := d.HasChange(key)
+	shouldOmit := !isBool && !isNotZero && !hasChange
+
+	return value, hasChange, shouldOmit
+}
+
 func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceData) request.ManagedDatabasePropertiesRequest {
 	resourceProps := d.Get("properties.0").(map[string]interface{})
 	r := make(map[upcloud.ManagedDatabasePropertyKey]interface{})
@@ -219,17 +234,9 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 
 		key := fmt.Sprintf("properties.0.%s", field)
 
-		value, isNotZero := d.GetOk(key)
-		// It seems to be hard to detect changes in boolean fields in some scenarios.
-		// E.g. if boolean field is optional and has default value true, but is initially set as false in config
-		// then it's interpreted as boolean zero value and no change is detected.
-		//
-		// This might need more thinking, but for now, exclude field from the request if
-		// it's not boolean, has type's "zero" value and value hasn't changed.
-		_, isBool := value.(bool)
-		hasChange := d.HasChange(key)
+		value, hasChange, shouldOmit := getPropertiesValue(d, key)
 
-		if !isBool && !isNotZero && !hasChange {
+		if shouldOmit {
 			continue
 		}
 		if propsInfo[field].CreateOnly {
@@ -240,7 +247,16 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 		if propsInfo[field].Type == "object" {
 			// convert resource data list of objects into API objects
 			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
-				r[upcloud.ManagedDatabasePropertyKey(field)] = listValue[0]
+				// Do similar filtering for nested properties as is done for main level properties.
+				stateObj := listValue[0].(map[string]interface{})
+				reqObj := make(map[string]interface{})
+				for k := range stateObj {
+					value, _, shouldOmit := getPropertiesValue(d, fmt.Sprintf("%s.0.%s", key, k))
+					if !shouldOmit {
+						reqObj[k] = value
+					}
+				}
+				r[upcloud.ManagedDatabasePropertyKey(field)] = reqObj
 			}
 		} else {
 			r[upcloud.ManagedDatabasePropertyKey(field)] = value

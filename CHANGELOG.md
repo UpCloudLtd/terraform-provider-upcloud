@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_zone: `parent_zone` field.
 
+### Fixed
+
+- upcloud_managed_database_*: do not include empty or unmodified nested properties values in the API request. I.e., filter nested properties similarly than main level properties.
+
 ### Deprecated
 
 - upcloud_zone: `name` field will be removed as the same value is available through `id` field.
