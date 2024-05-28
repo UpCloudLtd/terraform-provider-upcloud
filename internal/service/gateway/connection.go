@@ -148,6 +148,7 @@ func resourceConnectionStateUpgradeV0(ctx context.Context, rawState map[string]a
 	for _, conn := range conns {
 		if conn.Name == rawState["name"].(string) {
 			rawState["uuid"] = conn.UUID
+			rawState["id"] = utils.MarshalID(rawState["gateway"].(string), conn.UUID)
 
 			return rawState, nil
 		}
@@ -173,14 +174,14 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(serviceID, conn.Name))
+	d.SetId(utils.MarshalID(serviceID, conn.UUID))
 
 	diags = append(diags, setConnectionResourceData(d, conn)...)
 	if len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "gateway connection created", map[string]interface{}{"name": conn.Name, "service_uuid": serviceID})
+	tflog.Info(ctx, "gateway connection created", map[string]interface{}{"uuid": conn.UUID, "service_uuid": serviceID})
 	return diags
 }
 
@@ -188,24 +189,22 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	var (
 		svc         = meta.(*service.Service)
 		serviceUUID string
-		name        string
+		uuid        string
 	)
 
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &uuid); err != nil {
 		return diag.FromErr(err)
 	}
-
-	uuid := d.Get("uuid").(string)
 
 	conn, err := svc.GetGatewayConnection(ctx, &request.GetGatewayConnectionRequest{
 		ServiceUUID: serviceUUID,
 		UUID:        uuid,
 	})
 	if err != nil {
-		return utils.HandleResourceError(name, d, err)
+		return utils.HandleResourceError(uuid, d, err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, conn.Name))
+	d.SetId(utils.MarshalID(serviceUUID, conn.UUID))
 
 	if err = d.Set("gateway", serviceUUID); err != nil {
 		return diag.FromErr(err)
@@ -219,14 +218,12 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	var (
 		svc         = meta.(*service.Service)
 		serviceUUID string
-		name        string
+		uuid        string
 	)
 
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &uuid); err != nil {
 		return diag.FromErr(err)
 	}
-
-	uuid := d.Get("uuid").(string)
 
 	conn, err := svc.ModifyGatewayConnection(ctx, &request.ModifyGatewayConnectionRequest{
 		ServiceUUID: serviceUUID,
@@ -240,7 +237,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, conn.Name))
+	d.SetId(utils.MarshalID(serviceUUID, conn.UUID))
 
 	diags = append(diags, setConnectionResourceData(d, conn)...)
 	return diags
@@ -250,16 +247,14 @@ func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta 
 	var (
 		svc         = meta.(*service.Service)
 		serviceUUID string
-		name        string
+		uuid        string
 	)
 
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &name); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &uuid); err != nil {
 		return diag.FromErr(err)
 	}
 
-	uuid := d.Get("uuid").(string)
-
-	tflog.Info(ctx, "deleting gateway connection", map[string]interface{}{"name": name, "service_uuid": serviceUUID})
+	tflog.Info(ctx, "deleting gateway connection", map[string]interface{}{"uuid": uuid, "service_uuid": serviceUUID})
 
 	return diag.FromErr(svc.DeleteGatewayConnection(ctx, &request.DeleteGatewayConnectionRequest{
 		ServiceUUID: serviceUUID,

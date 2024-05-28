@@ -166,12 +166,26 @@ func resourceTunnelStateUpgradeV0(ctx context.Context, rawState map[string]any, 
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
+		connectionName string
 		connectionUUID string
 		name           string
 	)
 
-	if err := utils.UnmarshalID(rawState["id"].(string), &serviceUUID, &connectionUUID, &name); err != nil {
+	if err := utils.UnmarshalID(rawState["id"].(string), &serviceUUID, &connectionName, &name); err != nil {
 		return rawState, err
+	}
+
+	conns, err := svc.GetGatewayConnections(ctx, &request.GetGatewayConnectionsRequest{ServiceUUID: serviceUUID})
+	if err != nil {
+		return rawState, err
+	}
+
+	for _, conn := range conns {
+		if conn.Name == connectionName {
+			connectionUUID = conn.UUID
+
+			break
+		}
 	}
 
 	tunnels, err := svc.GetGatewayConnectionTunnels(ctx, &request.GetGatewayConnectionTunnelsRequest{
@@ -185,6 +199,8 @@ func resourceTunnelStateUpgradeV0(ctx context.Context, rawState map[string]any, 
 	for _, tunnel := range tunnels {
 		if tunnel.Name == rawState["name"].(string) {
 			rawState["uuid"] = tunnel.UUID
+			rawState["id"] = utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID)
+			rawState["connection_id"] = utils.MarshalID(serviceUUID, connectionUUID)
 
 			return rawState, nil
 		}
@@ -197,11 +213,10 @@ func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
-		connectionName string
 		connectionUUID string
 	)
 
-	if err := utils.UnmarshalID(d.Get("connection_id").(string), &serviceUUID, &connectionName); err != nil {
+	if err := utils.UnmarshalID(d.Get("connection_id").(string), &serviceUUID, &connectionUUID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -216,17 +231,6 @@ func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	ipsec.Authentication = ipsecAuth
-
-	conns, err := svc.GetGatewayConnections(ctx, &request.GetGatewayConnectionsRequest{ServiceUUID: serviceUUID})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, conn := range conns {
-		if conn.Name == connectionName {
-			connectionUUID = conn.UUID
-		}
-	}
 
 	tunnel, err := svc.CreateGatewayConnectionTunnel(ctx, &request.CreateGatewayConnectionTunnelRequest{
 		ServiceUUID:    serviceUUID,
@@ -246,14 +250,14 @@ func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+	d.SetId(utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID))
 
 	diags = append(diags, setTunnelResourceData(d, tunnel)...)
 	if len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "gateway tunnel created successfully", map[string]interface{}{"name": tunnel.Name, "service_uuid": serviceUUID, "connection_name": connectionName})
+	tflog.Info(ctx, "gateway tunnel created successfully", map[string]interface{}{"uuid": tunnel.UUID, "service_uuid": serviceUUID, "connection_uuid": connectionUUID})
 	return diags
 }
 
@@ -261,27 +265,13 @@ func resourceTunnelRead(ctx context.Context, d *schema.ResourceData, meta interf
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
-		connectionName string
 		connectionUUID string
-		tunnelName     string
+		uuid           string
 	)
 
-	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName)
+	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionUUID, &uuid)
 	if err != nil {
 		return diag.FromErr(err)
-	}
-
-	uuid := d.Get("uuid").(string)
-
-	conns, err := svc.GetGatewayConnections(ctx, &request.GetGatewayConnectionsRequest{ServiceUUID: serviceUUID})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, conn := range conns {
-		if conn.Name == connectionName {
-			connectionUUID = conn.UUID
-		}
 	}
 
 	tunnel, err := svc.GetGatewayConnectionTunnel(ctx, &request.GetGatewayConnectionTunnelRequest{
@@ -290,12 +280,12 @@ func resourceTunnelRead(ctx context.Context, d *schema.ResourceData, meta interf
 		UUID:           uuid,
 	})
 	if err != nil {
-		return utils.HandleResourceError(tunnelName, d, err)
+		return utils.HandleResourceError(uuid, d, err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+	d.SetId(utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID))
 
-	if err = d.Set("connection_id", utils.MarshalID(serviceUUID, connectionName)); err != nil {
+	if err = d.Set("connection_id", utils.MarshalID(serviceUUID, connectionUUID)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -311,26 +301,12 @@ func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
-		connectionName string
 		connectionUUID string
-		tunnelName     string
+		uuid           string
 	)
 
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionUUID, &uuid); err != nil {
 		return diag.FromErr(err)
-	}
-
-	uuid := d.Get("uuid").(string)
-
-	conns, err := svc.GetGatewayConnections(ctx, &request.GetGatewayConnectionsRequest{ServiceUUID: serviceUUID})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, conn := range conns {
-		if conn.Name == connectionName {
-			connectionUUID = conn.UUID
-		}
 	}
 
 	req := request.ModifyGatewayConnectionTunnelRequest{
@@ -340,7 +316,7 @@ func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		Tunnel: request.ModifyGatewayTunnel{
 			// We don't allow updating the tunnel name in TF, but as of now it is a required parameter in the request payload (due to some bug)
 			// TODO: remove once API allows modification requests without the name
-			Name: tunnelName,
+			Name: d.Get("name").(string),
 		},
 	}
 
@@ -370,13 +346,13 @@ func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+	d.SetId(utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID))
 
 	if diags = append(diags, setTunnelResourceData(d, tunnel)...); len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "gateway tunnel updated", map[string]interface{}{"name": tunnel.Name, "service_uuid": serviceUUID, "connection_name": connectionName})
+	tflog.Info(ctx, "gateway tunnel updated", map[string]interface{}{"uuid": tunnel.UUID, "service_uuid": serviceUUID, "connection_uuid": connectionUUID})
 	return diags
 }
 
@@ -384,19 +360,16 @@ func resourceTunnelDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
-		connectionName string
 		connectionUUID string
-		tunnelName     string
+		uuid           string
 	)
 
-	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName)
+	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionUUID, &uuid)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	uuid := d.Get("uuid").(string)
-
-	tflog.Info(ctx, "deleting gateway tunnel", map[string]interface{}{"name": tunnelName, "service_uuid": serviceUUID, "connection_name": connectionName})
+	tflog.Info(ctx, "deleting gateway tunnel", map[string]interface{}{"uuid": uuid, "service_uuid": serviceUUID, "connection_uuid": connectionUUID})
 
 	return diag.FromErr(svc.DeleteGatewayConnectionTunnel(ctx, &request.DeleteGatewayConnectionTunnelRequest{
 		ServiceUUID:    serviceUUID,
