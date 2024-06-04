@@ -91,6 +91,7 @@ resource "upcloud_gateway_connection" "this" {
 
 - `id` (String) The ID of this resource.
 - `tunnels` (List of String) List of connection's tunnels names. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terrafrom refresh'.
+- `uuid` (String) The UUID of the connection
 
 <a id="nestedblock--local_route"></a>
 ### Nested Schema for `local_route`
