@@ -9,6 +9,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_zone: `parent_zone` field.
 - upcloud_network: support `labels` field
+- gateway: uuid field for `upcloud_gateway_connection` resource
+- gateway: uuid field for `upcloud_gateway_connection_tunnel` resource
 
 ### Fixed
 

@@ -48,6 +48,71 @@ func ResourceTunnel() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
+			"uuid": {
+				Description: "The UUID of the tunnel",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"name": {
+				Description:      "The name of the tunnel, should be unique within the connection",
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				ValidateDiagFunc: validateName,
+			},
+			"connection_id": {
+				Description: "ID of the upcloud_gateway_connection resource to which the tunnel belongs",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"local_address_name": {
+				Description:      "Public (UpCloud) endpoint address of this tunnel",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateName,
+			},
+			"remote_address": {
+				Description: "Remote public IP address of the tunnel",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"operational_state": {
+				Description: "Tunnel's current operational, effective state",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"ipsec_auth_psk": {
+				Description: "Configuration for authenticating with pre-shared key",
+				ForceNew:    true,
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
+				Elem:        ipsecAuthPSKSchema(),
+			},
+			"ipsec_properties": {
+				Description: "IPsec configuration for the tunnel",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
+				Elem:        ipsecPropertiesSchema(),
+			},
+		},
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceTunnelResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceTunnelStateUpgradeV0,
+				Version: 0,
+			},
+		},
+	}
+}
+
+func resourceTunnelResourceV0() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
 			"name": {
 				Description:      "The name of the tunnel, should be unique within the connection",
 				Type:             schema.TypeString,
@@ -97,14 +162,61 @@ func ResourceTunnel() *schema.Resource {
 	}
 }
 
-func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+func resourceTunnelStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
 		connectionName string
+		connectionUUID string
+		name           string
 	)
 
-	if err := utils.UnmarshalID(d.Get("connection_id").(string), &serviceUUID, &connectionName); err != nil {
+	if err := utils.UnmarshalID(rawState["id"].(string), &serviceUUID, &connectionName, &name); err != nil {
+		return rawState, err
+	}
+
+	conns, err := svc.GetGatewayConnections(ctx, &request.GetGatewayConnectionsRequest{ServiceUUID: serviceUUID})
+	if err != nil {
+		return rawState, err
+	}
+
+	for _, conn := range conns {
+		if conn.Name == connectionName {
+			connectionUUID = conn.UUID
+
+			break
+		}
+	}
+
+	tunnels, err := svc.GetGatewayConnectionTunnels(ctx, &request.GetGatewayConnectionTunnelsRequest{
+		ServiceUUID:    serviceUUID,
+		ConnectionUUID: connectionUUID,
+	})
+	if err != nil {
+		return rawState, err
+	}
+
+	for _, tunnel := range tunnels {
+		if tunnel.Name == rawState["name"].(string) {
+			rawState["uuid"] = tunnel.UUID
+			rawState["id"] = utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID)
+			rawState["connection_id"] = utils.MarshalID(serviceUUID, connectionUUID)
+
+			return rawState, nil
+		}
+	}
+
+	return rawState, fmt.Errorf("tunnel by name %s not found", name)
+}
+
+func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+	var (
+		svc            = meta.(*service.Service)
+		serviceUUID    string
+		connectionUUID string
+	)
+
+	if err := utils.UnmarshalID(d.Get("connection_id").(string), &serviceUUID, &connectionUUID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -122,7 +234,7 @@ func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	tunnel, err := svc.CreateGatewayConnectionTunnel(ctx, &request.CreateGatewayConnectionTunnelRequest{
 		ServiceUUID:    serviceUUID,
-		ConnectionName: connectionName,
+		ConnectionUUID: connectionUUID,
 		Tunnel: request.GatewayTunnel{
 			Name: d.Get("name").(string),
 			LocalAddress: upcloud.GatewayTunnelLocalAddress{
@@ -138,14 +250,14 @@ func resourceTunnelCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+	d.SetId(utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID))
 
 	diags = append(diags, setTunnelResourceData(d, tunnel)...)
 	if len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "gateway tunnel created successfully", map[string]interface{}{"name": tunnel.Name, "service_uuid": serviceUUID, "connection_name": connectionName})
+	tflog.Info(ctx, "gateway tunnel created successfully", map[string]interface{}{"uuid": tunnel.UUID, "service_uuid": serviceUUID, "connection_uuid": connectionUUID})
 	return diags
 }
 
@@ -153,27 +265,27 @@ func resourceTunnelRead(ctx context.Context, d *schema.ResourceData, meta interf
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
-		connectionName string
-		tunnelName     string
+		connectionUUID string
+		uuid           string
 	)
 
-	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName)
+	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionUUID, &uuid)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	tunnel, err := svc.GetGatewayConnectionTunnel(ctx, &request.GetGatewayConnectionTunnelRequest{
 		ServiceUUID:    serviceUUID,
-		ConnectionName: connectionName,
-		Name:           tunnelName,
+		ConnectionUUID: connectionUUID,
+		UUID:           uuid,
 	})
 	if err != nil {
-		return utils.HandleResourceError(tunnelName, d, err)
+		return utils.HandleResourceError(uuid, d, err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+	d.SetId(utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID))
 
-	if err = d.Set("connection_id", utils.MarshalID(serviceUUID, connectionName)); err != nil {
+	if err = d.Set("connection_id", utils.MarshalID(serviceUUID, connectionUUID)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -189,22 +301,22 @@ func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
-		connectionName string
-		tunnelName     string
+		connectionUUID string
+		uuid           string
 	)
 
-	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName); err != nil {
+	if err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionUUID, &uuid); err != nil {
 		return diag.FromErr(err)
 	}
 
 	req := request.ModifyGatewayConnectionTunnelRequest{
 		ServiceUUID:    serviceUUID,
-		ConnectionName: connectionName,
-		Name:           tunnelName,
+		ConnectionUUID: connectionUUID,
+		UUID:           uuid,
 		Tunnel: request.ModifyGatewayTunnel{
 			// We don't allow updating the tunnel name in TF, but as of now it is a required parameter in the request payload (due to some bug)
 			// TODO: remove once API allows modification requests without the name
-			Name: tunnelName,
+			Name: d.Get("name").(string),
 		},
 	}
 
@@ -234,13 +346,13 @@ func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	d.SetId(utils.MarshalID(serviceUUID, connectionName, tunnel.Name))
+	d.SetId(utils.MarshalID(serviceUUID, connectionUUID, tunnel.UUID))
 
 	if diags = append(diags, setTunnelResourceData(d, tunnel)...); len(diags) > 0 {
 		return diags
 	}
 
-	tflog.Info(ctx, "gateway tunnel updated", map[string]interface{}{"name": tunnel.Name, "service_uuid": serviceUUID, "connection_name": connectionName})
+	tflog.Info(ctx, "gateway tunnel updated", map[string]interface{}{"uuid": tunnel.UUID, "service_uuid": serviceUUID, "connection_uuid": connectionUUID})
 	return diags
 }
 
@@ -248,21 +360,21 @@ func resourceTunnelDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	var (
 		svc            = meta.(*service.Service)
 		serviceUUID    string
-		connectionName string
-		tunnelName     string
+		connectionUUID string
+		uuid           string
 	)
 
-	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionName, &tunnelName)
+	err := utils.UnmarshalID(d.Id(), &serviceUUID, &connectionUUID, &uuid)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	tflog.Info(ctx, "deleting gateway tunnel", map[string]interface{}{"name": tunnelName, "service_uuid": serviceUUID, "connection_name": connectionName})
+	tflog.Info(ctx, "deleting gateway tunnel", map[string]interface{}{"uuid": uuid, "service_uuid": serviceUUID, "connection_uuid": connectionUUID})
 
 	return diag.FromErr(svc.DeleteGatewayConnectionTunnel(ctx, &request.DeleteGatewayConnectionTunnelRequest{
 		ServiceUUID:    serviceUUID,
-		ConnectionName: connectionName,
-		Name:           tunnelName,
+		ConnectionUUID: connectionUUID,
+		UUID:           uuid,
 	}))
 }
 
@@ -328,6 +440,10 @@ func getIPSecAuthenticationFromSchema(d *schema.ResourceData) (upcloud.GatewayTu
 
 func setTunnelResourceData(d *schema.ResourceData, tunnel *upcloud.GatewayTunnel) diag.Diagnostics {
 	var diags diag.Diagnostics
+
+	if err := d.Set("uuid", tunnel.UUID); err != nil {
+		return diag.FromErr(err)
+	}
 
 	if err := d.Set("name", tunnel.Name); err != nil {
 		return diag.FromErr(err)
