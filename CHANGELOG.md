@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.5.0] - 2024-06-04
+
 ### Added
 
 - upcloud_zone: `parent_zone` field.
@@ -617,7 +619,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.4.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.5.0...HEAD
+[5.5.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.4.0...v5.5.0
 [5.4.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.3.0...v5.4.0
 [5.3.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.2.3...v5.3.0
 [5.2.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.2.2...v5.2.3
