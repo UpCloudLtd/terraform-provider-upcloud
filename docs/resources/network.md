@@ -44,6 +44,7 @@ resource "upcloud_router" "example_router" {
 
 ### Optional Attributes
 
+- `labels` (Map of String) Key-value pairs to classify the network.
 - `router` (String) UUID of a router to attach to this network.
 
 ### Blocks
