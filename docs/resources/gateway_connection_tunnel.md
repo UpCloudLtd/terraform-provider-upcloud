@@ -100,6 +100,7 @@ resource "upcloud_gateway_connection_tunnel" "this" {
 
 - `id` (String) The ID of this resource.
 - `operational_state` (String) Tunnel's current operational, effective state
+- `uuid` (String) The UUID of the tunnel
 
 <a id="nestedblock--ipsec_auth_psk"></a>
 ### Nested Schema for `ipsec_auth_psk`
