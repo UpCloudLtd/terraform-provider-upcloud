@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - upcloud_zone: `parent_zone` field.
+- upcloud_network: support `labels` field
 
 ### Fixed
 
