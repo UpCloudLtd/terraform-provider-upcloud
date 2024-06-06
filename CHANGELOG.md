@@ -9,6 +9,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_router: support `labels` field
 
+### Fixed
+
+- upcloud_network: detect if resource was deleted outside of Terraform
+- upcloud_network_peering: detect if resource was deleted outside of Terraform
+
 ## [5.5.0] - 2024-06-04
 
 ### Added
