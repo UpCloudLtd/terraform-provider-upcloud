@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_router: support `labels` field
+
 ## [5.5.0] - 2024-06-04
 
 ### Added

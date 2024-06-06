@@ -23,7 +23,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/router"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/servergroup"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
@@ -76,7 +75,6 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"upcloud_server":                                  server.ResourceServer(),
 			"upcloud_server_group":                            servergroup.ResourceServerGroup(),
-			"upcloud_router":                                  router.ResourceRouter(),
 			"upcloud_storage":                                 storage.ResourceStorage(),
 			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
 			"upcloud_tag":                                     tag.ResourceTag(),
