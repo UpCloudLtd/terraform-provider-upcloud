@@ -20,6 +20,14 @@ func HandleResourceError(resourceName string, d *schema.ResourceData, err error)
 	return diag.FromErr(err)
 }
 
+func IsNotFoundError(err error) bool {
+	var ucProb *upcloud.Problem
+	if errors.As(err, &ucProb) && ucProb.Status == http.StatusNotFound {
+		return true
+	}
+	return false
+}
+
 func ErrorDiagnosticDetail(err error) string {
 	if err == nil {
 		return ""

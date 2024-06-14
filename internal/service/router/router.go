@@ -2,72 +2,114 @@ package router
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-
+	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func ResourceRouter() *schema.Resource {
-	return &schema.Resource{
-		Description: `This resource represents a generated UpCloud router resource. 
-		Routers can be used to connect multiple Private Networks. 
-		UpCloud Servers on any attached network can communicate directly with each other.`,
-		CreateContext: resourceRouterCreate,
-		ReadContext:   resourceRouterRead,
-		UpdateContext: resourceRouterUpdate,
-		DeleteContext: resourceRouterDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Name of the router",
-				Type:        schema.TypeString,
-				Required:    true,
+var (
+	_ resource.Resource                = &routerResource{}
+	_ resource.ResourceWithConfigure   = &routerResource{}
+	_ resource.ResourceWithImportState = &routerResource{}
+)
+
+func NewRouterResource() resource.Resource {
+	return &routerResource{}
+}
+
+type routerResource struct {
+	client *service.Service
+}
+
+func (r *routerResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_router"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *routerResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type routerModel struct {
+	ID               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	Type             types.String `tfsdk:"type"`
+	AttachedNetworks types.List   `tfsdk:"attached_networks"`
+	StaticRoutes     types.Set    `tfsdk:"static_route"`
+	Labels           types.Map    `tfsdk:"labels"`
+}
+
+type staticRouteModel struct {
+	Name    types.String `tfsdk:"name"`
+	Nexthop types.String `tfsdk:"nexthop"`
+	Route   types.String `tfsdk:"route"`
+}
+
+func (r *routerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Routers can be used to connect multiple Private Networks. UpCloud Servers on any attached network can communicate directly with each other.",
+		Attributes: map[string]schema.Attribute{
+			"labels": utils.LabelsAttribute("router"),
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Name of the router.",
+				Required:            true,
 			},
-			"type": {
-				Description: "The type of router",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"attached_networks": {
-				Description: "A collection of UUID representing networks attached to this router",
-				Computed:    true,
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "UUID of the router.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"static_route": {
-				Description: "A collection of static routes for this router",
-				Optional:    true,
-				Type:        schema.TypeSet,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
+			"type": schema.StringAttribute{
+				MarkdownDescription: "Type of the router",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"attached_networks": schema.ListAttribute{
+				Description: "List of UUIDs representing networks attached to this router.",
+				Computed:    true,
+				ElementType: types.StringType,
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"static_route": schema.SetNestedBlock{
+				Description: "A collection of static routes for this router.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
 							Description: "Name or description of the route.",
-							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
 						},
-						"nexthop": {
-							Description:  "Next hop address. NOTE: For static route to be active the next hop has to be an address of a reachable running Cloud Server in one of the Private Networks attached to the router.",
-							Type:         schema.TypeString,
-							Required:     true,
-							ValidateFunc: validation.Any(validation.IsIPv4Address, validation.IsIPv6Address),
+						"nexthop": schema.StringAttribute{
+							Description: "Next hop address. NOTE: For static route to be active the next hop has to be an address of a reachable running Cloud Server in one of the Private Networks attached to the router.",
+							Required:    true,
+							Validators: []validator.String{
+								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsIPv4Address, validation.IsIPv6Address)),
+							},
 						},
-						"route": {
-							Description:  "Destination prefix of the route.",
-							Type:         schema.TypeString,
-							Required:     true,
-							ValidateFunc: validation.Any(validation.IsCIDR),
+						"route": schema.StringAttribute{
+							Description: "Destination prefix of the route.",
+							Required:    true,
+							Validators: []validator.String{
+								validatorutil.NewFrameworkStringValidator(validation.IsCIDR),
+							},
 						},
 					},
 				},
@@ -76,166 +118,193 @@ func ResourceRouter() *schema.Resource {
 	}
 }
 
-func resourceRouterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	client := meta.(*service.Service)
+func setValues(ctx context.Context, data *routerModel, router *upcloud.Router) diag.Diagnostics {
+	var respDiagnostics diag.Diagnostics
 
-	req := &request.CreateRouterRequest{
-		Name: d.Get("name").(string),
-	}
+	data.Name = types.StringValue(router.Name)
+	data.ID = types.StringValue(router.UUID)
+	data.Type = types.StringValue(router.Type)
 
-	if v, ok := d.GetOk("static_route"); ok {
-		for _, staticRoute := range v.(*schema.Set).List() {
-			staticRouteData := staticRoute.(map[string]interface{})
-
-			r := upcloud.StaticRoute{
-				Name:    staticRouteData["name"].(string),
-				Nexthop: staticRouteData["nexthop"].(string),
-				Route:   staticRouteData["route"].(string),
-			}
-
-			req.StaticRoutes = append(req.StaticRoutes, r)
-		}
-	}
-
-	router, err := client.CreateRouter(ctx, req)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	attachedNetworks := make([]string, len(router.AttachedNetworks))
-
+	attachedNetworkUUIDs := make([]string, len(router.AttachedNetworks))
 	for _, network := range router.AttachedNetworks {
-		attachedNetworks = append(attachedNetworks, network.NetworkUUID)
+		attachedNetworkUUIDs = append(attachedNetworkUUIDs, network.NetworkUUID)
 	}
 
-	if err := d.Set("attached_networks", attachedNetworks); err != nil {
-		return diag.FromErr(err)
+	attachedNetworks, diags := types.ListValueFrom(ctx, types.StringType, utils.NilAsEmptyList(attachedNetworkUUIDs))
+	respDiagnostics.Append(diags...)
+	data.AttachedNetworks = attachedNetworks
+
+	data.Labels, respDiagnostics = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(router.Labels))
+
+	staticRoutes := make([]staticRouteModel, len(router.StaticRoutes))
+	for i, route := range router.StaticRoutes {
+		staticRoutes[i].Name = types.StringValue(route.Name)
+		staticRoutes[i].Nexthop = types.StringValue(route.Nexthop)
+		staticRoutes[i].Route = types.StringValue(route.Route)
 	}
 
-	var staticRoutes []map[string]interface{}
-	for _, staticRoute := range router.StaticRoutes {
-		staticRoutes = append(staticRoutes, map[string]interface{}{
-			"name":    staticRoute.Name,
-			"nexthop": staticRoute.Nexthop,
-			"route":   staticRoute.Route,
+	data.StaticRoutes, diags = types.SetValueFrom(ctx, data.StaticRoutes.ElementType(ctx), staticRoutes)
+	respDiagnostics.Append(diags...)
+
+	return respDiagnostics
+}
+
+func buildStaticRoutes(ctx context.Context, dataStaticRoutes types.List) ([]upcloud.StaticRoute, diag.Diagnostics) {
+	var planStaticRoutes []staticRouteModel
+	respDiagnostics := dataStaticRoutes.ElementsAs(ctx, &planStaticRoutes, false)
+
+	staticRoutes := make([]upcloud.StaticRoute, 0)
+
+	for _, route := range planStaticRoutes {
+		staticRoutes = append(staticRoutes, upcloud.StaticRoute{
+			Name:    route.Name.ValueString(),
+			Nexthop: route.Nexthop.ValueString(),
+			Route:   route.Route.ValueString(),
 		})
 	}
 
-	if err := d.Set("static_route", staticRoutes); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(router.UUID)
-
-	return diags
+	return staticRoutes, respDiagnostics
 }
 
-func resourceRouterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	client := meta.(*service.Service)
+func (r *routerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data routerModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	opts := &request.GetRouterDetailsRequest{
-		UUID: d.Id(),
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	router, err := client.GetRouterDetails(ctx, opts)
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+
+	staticRoutes, diags := buildStaticRoutes(ctx, basetypes.ListValue(data.StaticRoutes))
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiReq := request.CreateRouterRequest{
+		Name:         data.Name.ValueString(),
+		Labels:       utils.LabelsMapToSlice(labels),
+		StaticRoutes: staticRoutes,
+	}
+
+	router, err := r.client.CreateRouter(ctx, &apiReq)
 	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		resp.Diagnostics.AddError(
+			"Unable to create router",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	if err := d.Set("name", router.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("type", router.Type); err != nil {
-		return diag.FromErr(err)
-	}
-
-	attachedNetworks := make([]string, len(router.AttachedNetworks))
-	for i, network := range router.AttachedNetworks {
-		attachedNetworks[i] = network.NetworkUUID
-	}
-
-	if err := d.Set("attached_networks", attachedNetworks); err != nil {
-		return diag.FromErr(err)
-	}
-
-	var staticRoutes []map[string]interface{}
-	for _, staticRoute := range router.StaticRoutes {
-		staticRoutes = append(staticRoutes, map[string]interface{}{
-			"name":    staticRoute.Name,
-			"nexthop": staticRoute.Nexthop,
-			"route":   staticRoute.Route,
-		})
-	}
-
-	if err := d.Set("static_route", staticRoutes); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+	resp.Diagnostics.Append(setValues(ctx, &data, router)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceRouterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *routerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data routerModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	req := &request.ModifyRouterRequest{
-		UUID: d.Id(),
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	if v, ok := d.GetOk("name"); ok {
-		req.Name = v.(string)
-	}
-
-	var staticRoutes []upcloud.StaticRoute
-
-	if v, ok := d.GetOk("static_route"); ok {
-		for _, staticRoute := range v.(*schema.Set).List() {
-			staticRouteData := staticRoute.(map[string]interface{})
-
-			staticRoutes = append(staticRoutes, upcloud.StaticRoute{
-				Name:    staticRouteData["name"].(string),
-				Nexthop: staticRouteData["nexthop"].(string),
-				Route:   staticRouteData["route"].(string),
-			})
-		}
-	}
-
-	req.StaticRoutes = &staticRoutes
-
-	_, err := client.ModifyRouter(ctx, req)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return resourceRouterRead(ctx, d, meta)
-}
-
-func resourceRouterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	client := meta.(*service.Service)
-
-	router, err := client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{
-		UUID: d.Id(),
+	router, err := r.client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{
+		UUID: data.ID.ValueString(),
 	})
 	if err != nil {
-		return diag.FromErr(err)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read router details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
+	}
+
+	resp.Diagnostics.Append(setValues(ctx, &data, router)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *routerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data routerModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+	labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+
+	staticRoutes, diags := buildStaticRoutes(ctx, basetypes.ListValue(data.StaticRoutes))
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiReq := request.ModifyRouterRequest{
+		UUID:         data.ID.ValueString(),
+		Name:         data.Name.ValueString(),
+		Labels:       &labelsSlice,
+		StaticRoutes: &staticRoutes,
+	}
+
+	router, err := r.client.ModifyRouter(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify router",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setValues(ctx, &data, router)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *routerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data routerModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	router, err := r.client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{
+		UUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read router",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
 
 	if len(router.AttachedNetworks) > 0 {
 		for _, network := range router.AttachedNetworks {
-			err := client.DetachNetworkRouter(ctx, &request.DetachNetworkRouterRequest{
+			err := r.client.DetachNetworkRouter(ctx, &request.DetachNetworkRouterRequest{
 				NetworkUUID: network.NetworkUUID,
 			})
 			if err != nil {
-				return diag.FromErr(fmt.Errorf("cannot detach from network %v: %w", network.NetworkUUID, err))
+				resp.Diagnostics.AddError(
+					"Unable to detach router from a network",
+					utils.ErrorDiagnosticDetail(err),
+				)
 			}
 		}
 	}
-	err = client.DeleteRouter(ctx, &request.DeleteRouterRequest{
-		UUID: d.Id(),
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
-	d.SetId("")
-	return diags
+	if err := r.client.DeleteRouter(ctx, &request.DeleteRouterRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete router",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+}
+
+func (r *routerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

@@ -188,10 +188,14 @@ func (r *networkPeeringResource) Read(ctx context.Context, req resource.ReadRequ
 		UUID: data.ID.ValueString(),
 	})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read network peering details",
-			utils.ErrorDiagnosticDetail(err),
-		)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read network peering details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
 		return
 	}
 

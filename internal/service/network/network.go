@@ -312,10 +312,14 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 		UUID: data.ID.ValueString(),
 	})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read network details",
-			utils.ErrorDiagnosticDetail(err),
-		)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read network details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
 		return
 	}
 

@@ -3,16 +3,12 @@
 page_title: "upcloud_router Resource - terraform-provider-upcloud"
 subcategory: Network
 description: |-
-  This resource represents a generated UpCloud router resource.
-  Routers can be used to connect multiple Private Networks.
-  UpCloud Servers on any attached network can communicate directly with each other.
+  Routers can be used to connect multiple Private Networks. UpCloud Servers on any attached network can communicate directly with each other.
 ---
 
 # upcloud_router (Resource)
 
-This resource represents a generated UpCloud router resource. 
-		Routers can be used to connect multiple Private Networks. 
-		UpCloud Servers on any attached network can communicate directly with each other.
+Routers can be used to connect multiple Private Networks. UpCloud Servers on any attached network can communicate directly with each other.
 
 ## Example Usage
 
@@ -27,17 +23,21 @@ resource "upcloud_router" "my_example_router" {
 
 ### Required Attributes
 
-- `name` (String) Name of the router
+- `name` (String) Name of the router.
+
+### Optional Attributes
+
+- `labels` (Map of String) Key-value pairs to classify the router.
 
 ### Blocks
 
-- `static_route` (Block Set) A collection of static routes for this router (see [below for nested schema](#nestedblock--static_route))
+- `static_route` (Block Set) A collection of static routes for this router. (see [below for nested schema](#nestedblock--static_route))
 
 ### Read-Only
 
-- `attached_networks` (List of String) A collection of UUID representing networks attached to this router
-- `id` (String) The ID of this resource.
-- `type` (String) The type of router
+- `attached_networks` (List of String) List of UUIDs representing networks attached to this router.
+- `id` (String) UUID of the router.
+- `type` (String) Type of the router
 
 <a id="nestedblock--static_route"></a>
 ### Nested Schema for `static_route`
