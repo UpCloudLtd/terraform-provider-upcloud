@@ -14,36 +14,41 @@ import (
 
 const (
 	zone                   = "fi-hel1"
-	floatingIPResourceName = "upcloud_floating_ip_address.my_floating_ip"
+	floatingIPResourceName = "upcloud_floating_ip_address.test"
 )
 
 func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 	resourceName := floatingIPResourceName
 	expectedZone := zone
-	expectedMacAddress := ""
 	expectedFamily := "IPv4"
 	expectedAccess := "public"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckFloatingIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressBasicConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "mac_address", expectedMacAddress),
+					resource.TestCheckNoResourceAttr(resourceName, "mac_address"),
 					resource.TestCheckResourceAttr(resourceName, "zone", expectedZone),
 					resource.TestCheckResourceAttr(resourceName, "family", expectedFamily),
 					resource.TestCheckResourceAttr(resourceName, "access", expectedAccess),
 					resource.TestCheckResourceAttrSet(resourceName, "ip_address"),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
 
 func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
-	serverResourceName := "upcloud_server.my_server"
+	serverResourceName := "upcloud_server.test"
 	expectedZone := zone
 	expectedFamily := "IPv4"
 	expectedAccess := "public"
@@ -53,7 +58,7 @@ func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"my_server"}, 0),
+				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"test"}, 0),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(floatingIPResourceName, "zone", expectedZone),
 					resource.TestCheckResourceAttr(floatingIPResourceName, "family", expectedFamily),
@@ -63,20 +68,25 @@ func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
 					testAccCheckFloatingIP(floatingIPResourceName, serverResourceName),
 				),
 			},
+			{
+				ResourceName:      floatingIPResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
 
 func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
-	firstServerResourceName := "upcloud_server.my_first_server"
-	secondServerResourceName := "upcloud_server.my_second_server"
+	firstServerResourceName := "upcloud_server.first"
+	secondServerResourceName := "upcloud_server.second"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"my_first_server", "my_second_server"}, 0),
+				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"first", "second"}, 0),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(floatingIPResourceName, "ip_address"),
 					resource.TestCheckResourceAttrSet(floatingIPResourceName, "mac_address"),
@@ -84,7 +94,7 @@ func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
 				),
 			},
 			{
-				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"my_first_server", "my_second_server"}, 1),
+				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"first", "second"}, 1),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(floatingIPResourceName, "ip_address"),
 					resource.TestCheckResourceAttrSet(floatingIPResourceName, "mac_address"),
@@ -119,29 +129,6 @@ func testAccCheckFloatingIP(floatingIPResourceName, serverResourceName string) r
 	}
 }
 
-func TestAccUpcloudFloatingIPAddress_import(t *testing.T) {
-	resourceName := floatingIPResourceName
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
-		CheckDestroy:             testAccCheckFloatingIPAddressDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testUpcloudFloatingIPAddressBasicConfig(),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet(resourceName, "ip_address"),
-				),
-			},
-			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "upcloud_floating_ip_address" {
@@ -165,7 +152,7 @@ func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 
 func testUpcloudFloatingIPAddressBasicConfig() string {
 	return `
-		resource "upcloud_floating_ip_address" "my_floating_ip" {
+		resource "upcloud_floating_ip_address" "test" {
 			zone = "fi-hel1"
 		}
 `
@@ -178,7 +165,7 @@ func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, as
 		config.WriteString(fmt.Sprintf(`
 		resource "upcloud_server" "%s" {
   			zone     = "fi-hel1"
-  			hostname = "mydebian.example.com"
+  			hostname = "tf-acc-test-floating-ip-vm"
   			plan     = "1xCPU-2GB"
 
   			template {
@@ -194,7 +181,7 @@ func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, as
 	}
 
 	config.WriteString(fmt.Sprintf(`
-		resource "upcloud_floating_ip_address" "my_floating_ip" {
+		resource "upcloud_floating_ip_address" "test" {
   			mac_address = upcloud_server.%s.network_interface[0].mac_address
 		}
 	`, serverNames[assignedServerIndex]))

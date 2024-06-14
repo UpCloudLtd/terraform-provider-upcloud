@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_network: detect if resource was deleted outside of Terraform
 - upcloud_network_peering: detect if resource was deleted outside of Terraform
+- upcloud_floating_ip_address: replace floating IP address, if `family` or `zone` have changes.
 
 ## [5.5.0] - 2024-06-04
 

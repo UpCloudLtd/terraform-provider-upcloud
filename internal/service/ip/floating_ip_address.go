@@ -4,182 +4,238 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func ResourceFloatingIPAddress() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents a UpCloud floating IP address resource.",
-		CreateContext: resourceFloatingIPAddressCreate,
-		ReadContext:   resourceFloatingIPAddressRead,
-		UpdateContext: resourceFloatingIPAddressUpdate,
-		DeleteContext: resourceFloatingIPAddressDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"ip_address": {
-				Description: "An UpCloud assigned IP Address",
-				Type:        schema.TypeString,
-				Computed:    true,
+var (
+	_ resource.Resource                = &floatingIPResource{}
+	_ resource.ResourceWithConfigure   = &floatingIPResource{}
+	_ resource.ResourceWithImportState = &floatingIPResource{}
+)
+
+func NewFloatingIPAddressResource() resource.Resource {
+	return &floatingIPResource{}
+}
+
+type floatingIPResource struct {
+	client *service.Service
+}
+
+func (r *floatingIPResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_floating_ip_address"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *floatingIPResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type floatingIPModel struct {
+	ID      types.String `tfsdk:"id"`
+	Address types.String `tfsdk:"ip_address"`
+	Access  types.String `tfsdk:"access"`
+	Family  types.String `tfsdk:"family"`
+	MAC     types.String `tfsdk:"mac_address"`
+	Zone    types.String `tfsdk:"zone"`
+}
+
+func (r *floatingIPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "This resource represents a UpCloud floating IP address resource.",
+		Attributes: map[string]schema.Attribute{
+			"ip_address": schema.StringAttribute{
+				MarkdownDescription: "An UpCloud assigned IP Address.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
-			"access": {
-				Description:  "Network access for the floating IP address. Supported value: `public`",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "public",
-				ValidateFunc: validation.StringInSlice([]string{"public"}, false),
+			"id": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the floating IP address. Contains the same value as `ip_address`.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
-			"family": {
-				Description:  "The address family of new IP address",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "IPv4",
-				ValidateFunc: validation.StringInSlice([]string{"IPv4", "IPv6"}, false),
+			"access": schema.StringAttribute{
+				MarkdownDescription: "Network access for the floating IP address. Supported value: `public`.",
+				Computed:            true,
+				Optional:            true,
+				Default:             stringdefault.StaticString("public"),
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"public",
+					),
+				},
 			},
-			"mac_address": {
-				Description:  "MAC address of server interface to assign address to",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.IsMACAddress,
+			"family": schema.StringAttribute{
+				MarkdownDescription: "The address family of the floating IP address.",
+				Computed:            true,
+				Optional:            true,
+				Default:             stringdefault.StaticString("IPv4"),
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"IPv4",
+						"IPv6",
+					),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"zone": {
-				Description: "Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+			"mac_address": schema.StringAttribute{
+				MarkdownDescription: "MAC address of a server interface to assign address to.",
+				Optional:            true,
+				Validators: []validator.String{
+					validatorutil.NewFrameworkStringValidator(validation.IsMACAddress),
+				},
+			},
+			"zone": schema.StringAttribute{
+				MarkdownDescription: "Zone of the address, e.g. `de-fra1`. Required when assigning a detached floating IP address. You can list available zones with `upctl zone list`.",
+				Computed:            true,
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
 }
 
-func resourceFloatingIPAddressCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func setValues(data *floatingIPModel, ip *upcloud.IPAddress) {
+	data.ID = types.StringValue(ip.Address)
+	data.Address = types.StringValue(ip.Address)
+	data.Access = types.StringValue(ip.Access)
+	data.Family = types.StringValue(ip.Family)
+	data.Zone = types.StringValue(ip.Zone)
 
-	assignIPAddressRequest := &request.AssignIPAddressRequest{
+	if ip.MAC == "" {
+		data.MAC = types.StringNull()
+	} else {
+		data.MAC = types.StringValue(ip.MAC)
+	}
+}
+
+func (r *floatingIPResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data floatingIPModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiReq := request.AssignIPAddressRequest{
 		Floating: upcloud.True,
+		Access:   data.Access.ValueString(),
+		Family:   data.Family.ValueString(),
+		MAC:      data.MAC.ValueString(),
+		Zone:     data.Zone.ValueString(),
 	}
 
-	if access, ok := d.GetOk("access"); ok {
-		assignIPAddressRequest.Access = access.(string)
-	}
-	if family, ok := d.GetOk("Family"); ok {
-		assignIPAddressRequest.Family = family.(string)
-	}
-	if mac, ok := d.GetOk("mac_address"); ok {
-		assignIPAddressRequest.MAC = mac.(string)
-	}
-	if zone, ok := d.GetOk("zone"); ok {
-		assignIPAddressRequest.Zone = zone.(string)
-	}
-
-	ipAddress, err := client.AssignIPAddress(ctx, assignIPAddressRequest)
+	ip, err := r.client.AssignIPAddress(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to create floating IP address",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	if err := d.Set("ip_address", ipAddress.Address); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(ipAddress.Address)
-
-	return resourceFloatingIPAddressRead(ctx, d, meta)
+	setValues(&data, ip)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFloatingIPAddressRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *floatingIPResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data floatingIPModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	var diags diag.Diagnostics
-
-	getIPAddressDetailsRequest := &request.GetIPAddressDetailsRequest{
-		Address: d.Id(),
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	ipAddress, err := client.GetIPAddressDetails(ctx, getIPAddressDetailsRequest)
+	ip, err := r.client.GetIPAddressDetails(ctx, &request.GetIPAddressDetailsRequest{
+		Address: data.ID.ValueString(),
+	})
 	if err != nil {
-		name := "ip address" // set default name because ip_address is optional field
-		if ip, ok := d.GetOk("ip_address"); ok {
-			name = ip.(string)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read floating IP address details",
+				utils.ErrorDiagnosticDetail(err),
+			)
 		}
-		return utils.HandleResourceError(name, d, err)
+		return
 	}
 
-	if err := d.Set("ip_address", ipAddress.Address); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("access", ipAddress.Access); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("family", ipAddress.Family); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("mac_address", ipAddress.MAC); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("zone", ipAddress.Zone); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+	setValues(&data, ip)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFloatingIPAddressUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *floatingIPResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data floatingIPModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	modifyIPAddressRequest := &request.ModifyIPAddressRequest{
-		IPAddress: d.Id(),
+	apiReq := request.ModifyIPAddressRequest{
+		IPAddress: data.ID.ValueString(),
+		MAC:       data.MAC.ValueString(),
 	}
 
-	if d.HasChange("mac_address") {
-		_, newMAC := d.GetChange("mac_address")
-		modifyIPAddressRequest.MAC = newMAC.(string)
-	}
-
-	_, err := client.ModifyIPAddress(ctx, modifyIPAddressRequest)
+	ip, err := r.client.ModifyIPAddress(ctx, &apiReq)
 	if err != nil {
-		diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to modify floating IP address",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	return resourceFloatingIPAddressRead(ctx, d, meta)
+	setValues(&data, ip)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFloatingIPAddressDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *floatingIPResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data floatingIPModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	var diags diag.Diagnostics
-
-	if _, ok := d.GetOk("mac_address"); ok {
-		modifyIPAddressRequest := &request.ModifyIPAddressRequest{
-			IPAddress: d.Id(),
+	if data.MAC.ValueString() != "" {
+		_, err := r.client.ModifyIPAddress(ctx, &request.ModifyIPAddressRequest{
+			IPAddress: data.ID.ValueString(),
 			MAC:       "",
-		}
-
-		_, err := client.ModifyIPAddress(ctx, modifyIPAddressRequest)
+		})
 		if err != nil {
-			diag.FromErr(err)
+			resp.Diagnostics.AddError(
+				"Unable to detach floating IP address from a server network interface",
+				utils.ErrorDiagnosticDetail(err),
+			)
 		}
 	}
 
-	releaseIPAddressRequest := &request.ReleaseIPAddressRequest{
-		IPAddress: d.Id(),
-	}
-
-	err := client.ReleaseIPAddress(ctx, releaseIPAddressRequest)
+	err := r.client.ReleaseIPAddress(ctx, &request.ReleaseIPAddressRequest{
+		IPAddress: data.ID.ValueString(),
+	})
 	if err != nil {
-		diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to delete floating IP address",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
+}
 
-	d.SetId("")
-
-	return diags
+func (r *floatingIPResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
