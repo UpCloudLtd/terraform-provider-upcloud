@@ -7,6 +7,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/cloud"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/networkpeering"
@@ -126,6 +127,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		ip.NewFloatingIPAddressResource,
 		network.NewNetworkResource,
 		networkpeering.NewNetworkPeeringResource,
 		router.NewRouterResource,

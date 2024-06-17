@@ -45,15 +45,15 @@ resource "upcloud_floating_ip_address" "my_new_floating_address" {
 
 ### Optional Attributes
 
-- `access` (String) Network access for the floating IP address. Supported value: `public`
-- `family` (String) The address family of new IP address
-- `mac_address` (String) MAC address of server interface to assign address to
-- `zone` (String) Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
+- `access` (String) Network access for the floating IP address. Supported value: `public`.
+- `family` (String) The address family of the floating IP address.
+- `mac_address` (String) MAC address of a server interface to assign address to.
+- `zone` (String) Zone of the address, e.g. `de-fra1`. Required when assigning a detached floating IP address. You can list available zones with `upctl zone list`.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `ip_address` (String) An UpCloud assigned IP Address
+- `id` (String) Identifier of the floating IP address. Contains the same value as `ip_address`.
+- `ip_address` (String) An UpCloud assigned IP Address.
 
 ## Import
 
