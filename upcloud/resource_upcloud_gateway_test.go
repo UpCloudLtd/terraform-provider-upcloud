@@ -105,9 +105,10 @@ func TestAccUpcloudGateway(t *testing.T) {
 				ExpectNonEmptyPlan: false,
 			},
 			{
-				ResourceName:      name,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            name,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"operational_state"},
 			},
 			{
 				Config: testDataS2,

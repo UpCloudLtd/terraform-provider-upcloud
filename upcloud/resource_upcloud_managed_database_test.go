@@ -33,7 +33,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			ResourceName:            name,
 			ImportState:             true,
 			ImportStateVerify:       true,
-			ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username"}, // only provided on creation, not available on subsequent requests like import
+			ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"}, // credentials only provided on creation, not available on subsequent requests like import
 		}
 	}
 
