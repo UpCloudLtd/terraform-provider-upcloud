@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const (
@@ -79,16 +81,22 @@ func (p *upcloudProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 	}
 }
 
-func withDefault[T comparable](val T, def T) T {
-	var empty T
-	if val == empty {
+func withInt64Default(val types.Int64, def int64) int64 {
+	if val.IsNull() {
 		return def
 	}
-	return val
+	return val.ValueInt64()
 }
 
-func withEnvDefault(val string, env string) string {
-	return withDefault(val, os.Getenv(env))
+func withStringDefault(val types.String, def string) string {
+	if val.IsNull() {
+		return def
+	}
+	return val.ValueString()
+}
+
+func withEnvDefault(val types.String, env string) string {
+	return withStringDefault(val, os.Getenv(env))
 }
 
 func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -98,16 +106,16 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	requestTimeout := time.Duration(withDefault(model.RequestTimeoutSec.ValueInt64(), 120)) * time.Second
+	requestTimeout := time.Duration(withInt64Default(model.RequestTimeoutSec, 120)) * time.Second
 	config := Config{
-		Username: withEnvDefault(model.Username.ValueString(), "UPCLOUD_USERNAME"),
-		Password: withEnvDefault(model.Password.ValueString(), "UPCLOUD_PASSWORD"),
+		Username: withEnvDefault(model.Username, "UPCLOUD_USERNAME"),
+		Password: withEnvDefault(model.Password, "UPCLOUD_PASSWORD"),
 	}
 
 	httpClient := retryablehttp.NewClient()
-	httpClient.RetryWaitMin = time.Duration(withDefault(model.RetryWaitMinSec.ValueInt64(), 1)) * time.Second
-	httpClient.RetryWaitMax = time.Duration(withDefault(model.RetryWaitMaxSec.ValueInt64(), 30)) * time.Second
-	httpClient.RetryMax = int(withDefault(model.RetryMax.ValueInt64(), 4))
+	httpClient.RetryWaitMin = time.Duration(withInt64Default(model.RetryWaitMinSec, 1)) * time.Second
+	httpClient.RetryWaitMax = time.Duration(withInt64Default(model.RetryWaitMaxSec, 30)) * time.Second
+	httpClient.RetryMax = int(withInt64Default(model.RetryMax, 4))
 
 	service := newUpCloudServiceConnection(
 		config.Username,
@@ -120,6 +128,8 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	if err != nil {
 		resp.Diagnostics.AddError("Authentication failed", "Failed to authenticate to UpCloud API with given credentials")
 	}
+
+	tflog.Info(ctx, "UpCloud service connection configured for plugin framework provider", map[string]interface{}{"http_client": fmt.Sprintf("%#v", httpClient), "request_timeout": requestTimeout})
 
 	resp.ResourceData = service
 	resp.DataSourceData = service
