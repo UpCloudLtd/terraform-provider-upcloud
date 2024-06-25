@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- dependencies: bump `github.com/hashicorp/go-retryablehttp` to `v0.7.7` to avoid potentially leaking basic auth credentials to logs.
+
 ## [5.6.0] - 2024-06-19
 
 ### Added
