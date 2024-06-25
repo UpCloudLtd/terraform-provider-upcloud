@@ -22,7 +22,7 @@ const (
 	clusterCACertificateDescription = "TLS authentication root certificate bundle, encoded (PEM)."
 	controlPlaneIPFilterDescription = "IP addresses or IP ranges in CIDR format which are allowed to access the cluster control plane. To allow access from any source, use `[\"0.0.0.0/0\"]`. To deny access from all sources, use `[]`. Values set here do not restrict access to node groups or exposed Kubernetes services."
 	hostDescription                 = "Hostname of the cluster API. Defined as URI."
-	idDescription                   = "Cluster ID."
+	idDescription                   = "UUID of the cluster."
 	kubeconfigDescription           = "Kubernetes config file contents for the cluster."
 	nameDescription                 = "Cluster name. Needs to be unique within the account."
 	networkDescription              = "Network ID for the cluster to run in."
