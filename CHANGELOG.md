@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.6.1] - 2024-06-25
+
 ### Fixed
 
 - dependencies: bump `github.com/hashicorp/go-retryablehttp` to `v0.7.7` to avoid potentially leaking basic auth credentials to logs.
@@ -636,7 +638,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.6.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.6.1...HEAD
+[5.6.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.6.0...v5.6.1
 [5.6.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.4.0...v5.5.0
 [5.4.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.3.0...v5.4.0
