@@ -34,7 +34,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(cName, "control_plane_ip_filter.*", "0.0.0.0/0"),
-					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-uks"),
+					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
 					resource.TestCheckResourceAttr(cName, "version", "1.27"),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(g1Name, "name", "small"),

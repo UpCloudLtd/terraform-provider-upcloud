@@ -1,5 +1,5 @@
-variable "name" {
-  default = "tf-acc-test-uks"
+variable "basename" {
+  default = "tf-acc-test-k8s-"
   type    = string
 }
 
@@ -9,7 +9,7 @@ variable "zone" {
 }
 
 resource "upcloud_network" "main" {
-  name = "terraform-provider-upcloud-test"
+  name = "${var.basename}net"
   zone = var.zone
   ip_network {
     address = "172.23.7.0/24"
@@ -24,7 +24,7 @@ resource "upcloud_network" "main" {
 
 resource "upcloud_kubernetes_cluster" "main" {
   control_plane_ip_filter = []
-  name                    = var.name
+  name                    = "${var.basename}cluster"
   network                 = upcloud_network.main.id
   zone                    = var.zone
 }
