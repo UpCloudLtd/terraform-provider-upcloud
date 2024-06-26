@@ -89,8 +89,9 @@ func (d *kubernetesClusterDataSource) Schema(_ context.Context, _ datasource.Sch
 				Description: hostDescription,
 			},
 			"kubeconfig": schema.StringAttribute{
-				Computed:    true,
 				Description: kubeconfigDescription,
+				Computed:    true,
+				Sensitive:   true,
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
