@@ -63,7 +63,7 @@ resource "upcloud_kubernetes_node_group" "group" {
 
 ### Required Attributes
 
-- `cluster` (String) Cluster ID.
+- `cluster` (String) UUID of the cluster.
 - `name` (String) The name of the node group. Needs to be unique within a cluster.
 - `node_count` (Number) Amount of nodes to provision in the node group.
 - `plan` (String) The server plan used for the node group. You can list available plans with `upctl server plans`

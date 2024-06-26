@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_cluster Data Source - terraform-provider-upcloud"
 subcategory: Kubernetes
 description: |-
-  Managed Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.
+  Managed Kubernetes cluster details. Please refer to Terraform documentation on sensitive data https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.
 ---
 
 # upcloud_kubernetes_cluster (Data Source)
 
-Managed Kubernetes cluster details. Please refer to https://www.terraform.io/language/state/sensitive-data to keep the credential data as safe as possible.
+Managed Kubernetes cluster details. Please refer to [Terraform documentation on sensitive data](https://www.terraform.io/language/state/sensitive-data) to keep the credential data as safe as possible.
 
 ## Example Usage
 
@@ -90,7 +90,7 @@ resource "local_file" "example" {
 
 ### Required Attributes
 
-- `id` (String) Cluster ID.
+- `id` (String) UUID of the cluster.
 
 ### Read-Only
 
@@ -98,5 +98,5 @@ resource "local_file" "example" {
 - `client_key` (String, Sensitive) Key to pair with `client_certificate`, encoded (PEM).
 - `cluster_ca_certificate` (String) TLS authentication root certificate bundle, encoded (PEM).
 - `host` (String) Hostname of the cluster API. Defined as URI.
-- `kubeconfig` (String) Kubernetes config file contents for the cluster.
+- `kubeconfig` (String, Sensitive) Kubernetes config file contents for the cluster.
 - `name` (String) Cluster name. Needs to be unique within the account.
