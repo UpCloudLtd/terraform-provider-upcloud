@@ -182,7 +182,13 @@ func setValues(ctx context.Context, data *kubernetesClusterModel, cluster *upclo
 	data.Plan = types.StringValue(cluster.Plan)
 	data.PrivateNodeGroups = types.BoolValue(cluster.PrivateNodeGroups)
 	data.State = types.StringValue(string(cluster.State))
-	data.StorageEncryption = types.StringValue(string(cluster.StorageEncryption))
+
+	if cluster.StorageEncryption == "" {
+		data.StorageEncryption = types.StringNull()
+	} else {
+		data.StorageEncryption = types.StringValue(string(cluster.StorageEncryption))
+	}
+
 	data.Version = types.StringValue(cluster.Version)
 	data.Zone = types.StringValue(cluster.Zone)
 
