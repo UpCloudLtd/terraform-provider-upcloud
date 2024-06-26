@@ -104,7 +104,6 @@ func Provider() *schema.Provider {
 			"upcloud_loadbalancer_frontend_tls_config":        loadbalancer.ResourceFrontendTLSConfig(),
 			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
 			"upcloud_loadbalancer_manual_certificate_bundle":  loadbalancer.ResourceManualCertificateBundle(),
-			"upcloud_kubernetes_cluster":                      kubernetes.ResourceCluster(),
 			"upcloud_kubernetes_node_group":                   kubernetes.ResourceNodeGroup(),
 		},
 
