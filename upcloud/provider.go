@@ -9,6 +9,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/cloud"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/networkpeering"
@@ -148,5 +149,6 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 	return []func() datasource.DataSource{
 		cloud.NewZoneDataSource,
 		managedobjectstorage.NewRegionsDataSource,
+		kubernetes.NewKubernetesClusterDataSource,
 	}
 }

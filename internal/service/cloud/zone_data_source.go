@@ -89,7 +89,7 @@ func (d *zoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	zones, err := d.client.GetZones(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to read managed zones",
+			"Unable to read zones",
 			utils.ErrorDiagnosticDetail(err),
 		)
 		return
