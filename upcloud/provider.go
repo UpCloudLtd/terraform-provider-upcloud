@@ -139,6 +139,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		ip.NewFloatingIPAddressResource,
+		kubernetes.NewKubernetesClusterResource,
 		network.NewNetworkResource,
 		networkpeering.NewNetworkPeeringResource,
 		router.NewRouterResource,

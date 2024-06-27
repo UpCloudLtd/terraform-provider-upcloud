@@ -16,6 +16,16 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 	g2Name := "upcloud_kubernetes_node_group.g2"
 	g3Name := "upcloud_kubernetes_node_group.g3"
 
+	verifyImportStep := func(name string, ignore ...string) resource.TestStep {
+		return resource.TestStep{
+			Config:                  testDataS1,
+			ResourceName:            name,
+			ImportState:             true,
+			ImportStateVerify:       true,
+			ImportStateVerifyIgnore: ignore,
+		}
+	}
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
@@ -24,7 +34,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(cName, "control_plane_ip_filter.*", "0.0.0.0/0"),
-					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-uks"),
+					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
 					resource.TestCheckResourceAttr(cName, "version", "1.27"),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(g1Name, "name", "small"),
@@ -63,9 +73,12 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					}),
 				),
 			},
+			verifyImportStep(cName, "state"),
+			verifyImportStep(g1Name),
+			verifyImportStep(g2Name),
+			verifyImportStep(g3Name),
 			{
-				Config:            testDataS2,
-				ImportStateVerify: true,
+				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "control_plane_ip_filter.#", "0"),
 					resource.TestCheckResourceAttr(cName, "version", "1.27"),
