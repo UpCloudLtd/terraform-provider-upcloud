@@ -95,7 +95,7 @@ resource "upcloud_kubernetes_cluster" "example2" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) UUID of the cluster.
 - `network_cidr` (String) Network CIDR for the given network. Computed automatically.
 - `node_groups` (List of String) Names of the node groups configured to cluster
 - `state` (String) Operational state of the cluster.
