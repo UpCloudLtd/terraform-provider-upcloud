@@ -212,6 +212,12 @@ func (r *routerResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
 	router, err := r.client.GetRouterDetails(ctx, &request.GetRouterDetailsRequest{
 		UUID: data.ID.ValueString(),
 	})

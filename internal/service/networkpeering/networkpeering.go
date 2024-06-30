@@ -184,6 +184,12 @@ func (r *networkPeeringResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
 	peering, err := r.client.GetNetworkPeering(ctx, &request.GetNetworkPeeringRequest{
 		UUID: data.ID.ValueString(),
 	})

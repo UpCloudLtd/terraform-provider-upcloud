@@ -308,6 +308,12 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
 	network, err := r.client.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{
 		UUID: data.ID.ValueString(),
 	})
