@@ -41,9 +41,9 @@ jobs:
         with:
           add-paths: internal/
           branch: chore/make-generate
-          commit-message: "chore: update generated code"
+          commit-message: "chore: update generated files"
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          title: Update generated files
+          title: "chore: update generated files"
           body: |
             This is an automatically created PR. Changes were created by running `make generate`.
 
