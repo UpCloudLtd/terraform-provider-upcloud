@@ -1,0 +1,52 @@
+name: Generate
+
+on:
+  push:
+    branches:
+      - test-make-generate # for testing
+  workflow_dispatch:
+  schedule:
+    - cron: '30 2 * * *'
+
+jobs:
+  update:
+    name: Update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Setup Go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: 'go.mod'
+      - name: Setup upctl
+        run: |
+          go install github.com/UpCloudLtd/upcloud-cli/v3/...@latest
+      - name: Generate JSON files
+        env:
+          UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
+          UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
+        run: |
+          make generate
+      - name: Store diff in variable
+        id: diff
+        run: |
+          {
+            echo 'DIFF<<EOF'
+            cat $(find internal/ -name "*.diff")
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+      - name: Create PR for update
+        uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5.0.3
+        with:
+          add-paths: internal/
+          branch: chore/make-generate
+          commit-message: "chore: update generated code"
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          title: Update generated files
+          body: |
+            This is an automatically created PR. Changes were created by running `make generate`.
+
+            ```diff
+            ${{ steps.diff.outputs.DIFF }}
+            ```
