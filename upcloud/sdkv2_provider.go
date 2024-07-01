@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/cloud"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
@@ -108,9 +107,7 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"upcloud_zones":        cloud.DataSourceZones(),
 			"upcloud_networks":     network.DataSourceNetworks(),
-			"upcloud_hosts":        cloud.DataSourceHosts(),
 			"upcloud_ip_addresses": ip.DataSourceIPAddresses(),
 			"upcloud_tags":         tag.DataSourceTags(),
 			"upcloud_storage":      storage.DataSourceStorage(),
