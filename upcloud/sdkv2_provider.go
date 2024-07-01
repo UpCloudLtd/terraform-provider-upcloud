@@ -6,7 +6,6 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
@@ -65,7 +64,6 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_firewall_rules":                         firewall.ResourceFirewallRules(),
 			"upcloud_tag":                                    tag.ResourceTag(),
 			"upcloud_gateway":                                gateway.ResourceGateway(),
 			"upcloud_gateway_connection":                     gateway.ResourceConnection(),
