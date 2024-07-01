@@ -148,7 +148,9 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 
 func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		cloud.NewHostsDataSource,
 		cloud.NewZoneDataSource,
+		cloud.NewZonesDataSource,
 		managedobjectstorage.NewRegionsDataSource,
 		kubernetes.NewKubernetesClusterDataSource,
 	}
