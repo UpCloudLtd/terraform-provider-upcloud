@@ -81,7 +81,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "control_plane_ip_filter.#", "0"),
-					resource.TestCheckResourceAttr(cName, "version", "1.27"),
+					resource.TestCheckResourceAttr(cName, "version", "1.28"),
 					resource.TestCheckResourceAttr(g1Name, "node_count", "1"),
 					resource.TestCheckResourceAttr(g2Name, "node_count", "2"),
 				),

@@ -152,7 +152,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 						"upcloud_server.this", "tags.*", "bar",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.this", "title", "Debian",
+						"upcloud_server.this", "title", "tf-acc-test-server-basic",
 					),
 				),
 			},
@@ -211,14 +211,14 @@ func TestUpcloudServer_developerPlan(t *testing.T) {
 				Config: configSimple("tf-acc-test-server-dev-plan", "DEV-1xCPU-1GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "DEV-1xCPU-1GB"),
-					resource.TestCheckResourceAttr("upcloud_server.this", "template[0].tier", "standard"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.tier", "standard"),
 				),
 			},
 			{
 				Config: configSimple("tf-acc-test-server-dev-plan", "1xCPU-1GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "1xCPU-1GB"),
-					resource.TestCheckResourceAttr("upcloud_server.this", "template[0].tier", "standard"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.tier", "standard"),
 				),
 			},
 		},
@@ -242,8 +242,8 @@ func configSimpleBackup(time, plan string) string {
 			}
 
 			simple_backup {
-				time = %s
-				plan = %s
+				time = "%s"
+				plan = "%s"
 			}
 		}`, debianTemplateUUID, time, plan)
 }
@@ -578,13 +578,13 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 				Config: configTags("acceptance-test", "foo", "bar"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.tags-test", "tags.*", "acceptance-test",
+						"upcloud_server.this", "tags.*", "acceptance-test",
 					),
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.tags-test", "tags.*", "foo",
+						"upcloud_server.this", "tags.*", "foo",
 					),
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.tags-test", "tags.*", "bar",
+						"upcloud_server.this", "tags.*", "bar",
 					),
 				),
 			},
@@ -593,13 +593,13 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 				Config: configTags("acceptance-test", "newfoo", "newbar"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.tags-test", "tags.*", "acceptance-test",
+						"upcloud_server.this", "tags.*", "acceptance-test",
 					),
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.tags-test", "tags.*", "newfoo",
+						"upcloud_server.this", "tags.*", "newfoo",
 					),
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.tags-test", "tags.*", "newbar",
+						"upcloud_server.this", "tags.*", "newbar",
 					),
 				),
 			},
@@ -608,10 +608,10 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 				Config: configTags("acceptance-test"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.tags-test", "tags.*", "acceptance-test",
+						"upcloud_server.this", "tags.*", "acceptance-test",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.tags-test", "tags.#", "1",
+						"upcloud_server.this", "tags.#", "1",
 					),
 				),
 			},
@@ -620,14 +620,14 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 				Config: configTags(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_server.tags-test", "tags.#", "0",
+						"upcloud_server.this", "tags.#", "0",
 					),
 				),
 			},
 			{
 				// Remove tags attribute
 				Config: configSimple("tf-acc-test-server-tags", "1xCPU-1GB", "fi-hel1"),
-				Check:  resource.TestCheckResourceAttr("upcloud_server.tags-test", "tags.#", "0"),
+				Check:  resource.TestCheckResourceAttr("upcloud_server.this", "tags.#", "0"),
 			},
 		},
 	})
@@ -921,7 +921,7 @@ func TestUpcloudServer_updatePreChecks(t *testing.T) {
 			{
 				Config: configSimple("tf-acc-test-server-update-pre-checks", "1xCPU-1GB", "fi-hel2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("upcloud_server.pre-checks", "plan"),
+					resource.TestCheckResourceAttrSet("upcloud_server.this", "plan"),
 				),
 			},
 			{
@@ -929,7 +929,7 @@ func TestUpcloudServer_updatePreChecks(t *testing.T) {
 				Config:             configSimple("tf-acc-test-server-create-pre-checks", "1xCPU-1G", "fi-hel1"),
 				ExpectNonEmptyPlan: true,
 				ExpectError:        regexp.MustCompile("expected plan to be one of"),
-				Check:              resource.TestCheckResourceAttr("upcloud_server.pre-checks", "plan", "1xCPU-1GB"),
+				Check:              resource.TestCheckResourceAttr("upcloud_server.this", "plan", "1xCPU-1GB"),
 			},
 		},
 	})
