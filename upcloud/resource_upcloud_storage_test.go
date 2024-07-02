@@ -25,7 +25,7 @@ const (
 	AlpineURL          = "https://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"
 	AlpineHash         = "fd805e748f1950a34e354dc8fdfdf2f883237d65f5cdb8bcb47c64b0561d97a5"
 	StorageTier        = "maxiops"
-	storageDescription = "My data collection"
+	storageDescription = "tf-acc-test-storage"
 )
 
 func TestAccUpcloudStorage_basic(t *testing.T) {
@@ -35,11 +35,11 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: `
-					resource "upcloud_storage" "my_storage" {
+					resource "upcloud_storage" "this" {
 						encrypt = true
 						size    = 10
 						tier    = "maxiops"
-						title   = "My_data"
+						title   = "tf-acc-test-storage-basic"
 						zone    = "pl-waw1"
 						filesystem_autoresize = false
 						delete_autoresize_backup = false
@@ -53,42 +53,42 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "encrypt", "true"),
-					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "size"),
-					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "tier"),
-					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "title"),
-					resource.TestCheckResourceAttrSet("upcloud_storage.my_storage", "zone"),
+						"upcloud_storage.this", "encrypt", "true"),
+					resource.TestCheckResourceAttrSet("upcloud_storage.this", "size"),
+					resource.TestCheckResourceAttrSet("upcloud_storage.this", "tier"),
+					resource.TestCheckResourceAttrSet("upcloud_storage.this", "title"),
+					resource.TestCheckResourceAttrSet("upcloud_storage.this", "zone"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "size", "10"),
+						"upcloud_storage.this", "size", "10"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "tier", "maxiops"),
+						"upcloud_storage.this", "tier", "maxiops"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "title", "My_data"),
+						"upcloud_storage.this", "title", "tf-acc-test-storage-basic"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "zone", "pl-waw1"),
+						"upcloud_storage.this", "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "filesystem_autoresize", "false",
+						"upcloud_storage.this", "filesystem_autoresize", "false",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "delete_autoresize_backup", "false",
+						"upcloud_storage.this", "delete_autoresize_backup", "false",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.#", "1"),
+						"upcloud_storage.this", "backup_rule.#", "1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.interval", "daily"),
+						"upcloud_storage.this", "backup_rule.0.interval", "daily"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.time", "2200"),
+						"upcloud_storage.this", "backup_rule.0.time", "2200"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.retention", "2"),
+						"upcloud_storage.this", "backup_rule.0.retention", "2"),
 				),
 			},
 			{
 				Config: `
-					resource "upcloud_storage" "my_storage" {
+					resource "upcloud_storage" "this" {
 						encrypt = true
 						size    = 15
 						tier    = "maxiops"
-						title   = "My_data_updated"
+						title   = "tf-acc-test-storage-basic-updated"
 						zone    = "pl-waw1"
 						filesystem_autoresize = true
 						delete_autoresize_backup = true
@@ -102,25 +102,25 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "encrypt", "true"),
+						"upcloud_storage.this", "encrypt", "true"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "size", "15"),
+						"upcloud_storage.this", "size", "15"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "title", "My_data_updated"),
+						"upcloud_storage.this", "title", "tf-acc-test-storage-basic-updated"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "filesystem_autoresize", "true",
+						"upcloud_storage.this", "filesystem_autoresize", "true",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "delete_autoresize_backup", "true",
+						"upcloud_storage.this", "delete_autoresize_backup", "true",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.#", "1"),
+						"upcloud_storage.this", "backup_rule.#", "1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.interval", "mon"),
+						"upcloud_storage.this", "backup_rule.0.interval", "mon"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.time", "2230"),
+						"upcloud_storage.this", "backup_rule.0.time", "2230"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "backup_rule.0.retention", "5"),
+						"upcloud_storage.this", "backup_rule.0.retention", "5"),
 				),
 			},
 		},
@@ -143,11 +143,11 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 			{
 				Config: testUpcloudStorageInstanceConfig(expectedSize, expectedTier, expectedTitle, expectedZone, false, false),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckStorageExists("upcloud_storage.my_storage", &storageDetails),
+					testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
 				),
 			},
 			{
-				ResourceName:      "upcloud_storage.my_storage",
+				ResourceName:      "upcloud_storage.this",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -168,10 +168,10 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 					"http_import",
 					AlpineURL),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckStorageExists("upcloud_storage.my_storage", &storageDetails),
+					testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.my_storage", "import.#", "1"),
-					resource.TestCheckResourceAttr("upcloud_storage.my_storage", "import.0.sha256sum", AlpineHash),
+						"upcloud_storage.this", "import.#", "1"),
+					resource.TestCheckResourceAttr("upcloud_storage.this", "import.0.sha256sum", AlpineHash),
 				),
 			},
 		},
@@ -199,10 +199,10 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 						"direct_upload",
 						imagePath),
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckStorageExists("upcloud_storage.my_storage", &storageDetails),
+						testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
 						resource.TestCheckResourceAttr(
-							"upcloud_storage.my_storage", "import.#", "1"),
-						resource.TestCheckResourceAttr("upcloud_storage.my_storage", "import.0.sha256sum", sha256sum),
+							"upcloud_storage.this", "import.#", "1"),
+						resource.TestCheckResourceAttr("upcloud_storage.this", "import.0.sha256sum", sha256sum),
 					),
 				},
 			},
@@ -334,7 +334,7 @@ func testAccCheckStorageDestroy(s *terraform.State) error {
 
 func testUpcloudStorageInstanceConfig(size, tier, title, zone string, autoresize, deleteAutoresizeBackup bool) string {
 	return fmt.Sprintf(`
-		resource "upcloud_storage" "my_storage" {
+		resource "upcloud_storage" "this" {
 			size  = %s
 			tier  = "%s"
 			title = "%s"
@@ -347,10 +347,10 @@ func testUpcloudStorageInstanceConfig(size, tier, title, zone string, autoresize
 
 func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation string) string {
 	return fmt.Sprintf(`
-		resource "upcloud_storage" "my_storage" {
+		resource "upcloud_storage" "this" {
 			size  = 10
 			tier  = "maxiops"
-			title = "My Import Data"
+			title = "tf-acc-test-storage-import"
 			zone  = "fi-hel1"
 
 			import {
@@ -363,10 +363,10 @@ func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation st
 
 func testUpcloudStorageInstanceConfigWithImportAndClone() string {
 	return `
-		resource "upcloud_storage" "my_storage" {
+		resource "upcloud_storage" "this" {
 			size  = 10
 			tier  = "maxiops"
-			title = "My Imported with hash data"
+			title = "tf-acc-test-storage-import-hash"
 			zone  = "fi-hel1"
 
 			import {
@@ -387,14 +387,14 @@ func testUpcloudStorageInstanceConfigWithClone(clonedSize int) string {
 		resource "upcloud_storage" "plain_storage" {
 			size  = 10
 			tier  = "maxiops"
-			title = "Plain storage"
+			title = "tf-acc-test-storage-plain"
 			zone  = "fi-hel1"
 		}
 
 		resource "upcloud_storage" "cloned_storage" {
 			size  = %d
 			tier  = "maxiops"
-			title = "My clone storage"
+			title = "tf-acc-test-storage-cloned"
 			zone  = "fi-hel1"
 
 			clone {
