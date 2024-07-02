@@ -5,9 +5,17 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_database_postgresql: support for Postgres 16
+
 ### Fixed
 
 - upcloud_kubernetes_cluster (data source): make `kubeconfig` value sensitive.
+
+### Removed
+
+- upcloud_managed_database_postgresql: `pgaudit` property
 
 ## [5.6.1] - 2024-06-25
 

@@ -259,6 +259,12 @@ func (r *kubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
 	cluster, err := r.client.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{
 		UUID: data.ID.ValueString(),
 	})

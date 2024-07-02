@@ -112,7 +112,7 @@ Optional Attributes:
 - `jit` (Boolean) Controls system-wide use of Just-in-Time Compilation (JIT).
 - `log_autovacuum_min_duration` (Number) Causes each action executed by autovacuum to be logged if it ran for at least the specified number of milliseconds. Setting this to zero logs all autovacuum actions. Minus-one (the default) disables logging autovacuum actions.
 - `log_error_verbosity` (String) Controls the amount of detail written in the server log for each message that is logged.
-- `log_line_prefix` (String) Choose from one of the available log-formats. These can support popular log analyzers like pgbadger, pganalyze etc.
+- `log_line_prefix` (String) Choose from one of the available log formats.
 - `log_min_duration_statement` (Number) Log statements that take more than this number of milliseconds to run, -1 disables.
 - `log_temp_files` (Number) Log statements for each temporary file created larger than this number of kilobytes, -1 disables.
 - `max_files_per_process` (Number) PostgreSQL maximum number of files that can be open per process.
@@ -154,7 +154,6 @@ Optional Attributes:
 Blocks:
 
 - `migration` (Block List, Max: 1) Migrate data from existing server. (see [below for nested schema](#nestedblock--properties--migration))
-- `pgaudit` (Block List, Max: 1) PGAudit settings. System-wide settings for the pgaudit extension. (see [below for nested schema](#nestedblock--properties--pgaudit))
 - `pgbouncer` (Block List, Max: 1) PGBouncer connection pooling settings. System-wide settings for pgbouncer. (see [below for nested schema](#nestedblock--properties--pgbouncer))
 - `pglookout` (Block List, Max: 1) PGLookout settings. System-wide settings for pglookout. (see [below for nested schema](#nestedblock--properties--pglookout))
 - `timescaledb` (Block List, Max: 1) TimescaleDB extension configuration values. System-wide settings for the timescaledb extension. (see [below for nested schema](#nestedblock--properties--timescaledb))
@@ -172,27 +171,6 @@ Optional Attributes:
 - `port` (Number) Port number of the server where to migrate data from.
 - `ssl` (Boolean) The server where to migrate data from is secured with SSL.
 - `username` (String) User name for authentication with the server where to migrate data from.
-
-
-<a id="nestedblock--properties--pgaudit"></a>
-### Nested Schema for `properties.pgaudit`
-
-Optional Attributes:
-
-- `feature_enabled` (Boolean) Enable pgaudit extension. Enable pgaudit extension. When enabled, pgaudit extension will be automatically installed.Otherwise, extension will be uninstalled but auditing configurations will be preserved.
-- `log` (List of String) Specifies which classes of statements will be logged by session audit logging.
-- `log_catalog` (Boolean) Specifies that session logging should be enabled in the casewhere all relations in a statement are in pg_catalog.
-- `log_client` (Boolean) Specifies whether log messages will be visible to a client process such as psql.
-- `log_level` (String) Specifies the log level that will be used for log entries.
-- `log_max_string_length` (Number) Crop parameters representation and whole statements if they exceed this threshold. A (default) value of -1 disable the truncation.
-- `log_nested_statements` (Boolean) This GUC allows to turn off logging nested statements, that is, statements that are executed as part of another ExecutorRun.
-- `log_parameter` (Boolean) Specifies that audit logging should include the parameters that were passed with the statement.
-- `log_parameter_max_size` (Number) Specifies that parameter values longer than this setting (in bytes) should not be logged, but replaced with <long param suppressed>.
-- `log_relation` (Boolean) Specifies whether session audit logging should create a separate log entry for each relation (TABLE, VIEW, etc.) referenced in a SELECT or DML statement.
-- `log_rows` (Boolean) Specifies that audit logging should include the rows retrieved or affected by a statement. When enabled the rows field will be included after the parameter field.
-- `log_statement` (Boolean) Specifies whether logging will include the statement text and parameters (if enabled).
-- `log_statement_once` (Boolean) Specifies whether logging will include the statement text and parameters with the first log entry for a statement/substatement combination or with every entry.
-- `role` (String) Specifies the master role to use for object audit logging.
 
 
 <a id="nestedblock--properties--pgbouncer"></a>

@@ -36,6 +36,6 @@ jobs:
           commit-message: "chore(docs): update documentation for #${{ github.event.number }}"
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
           reviewers: ${{ github.actor }}
-          title: Update documentation
+          title: "chore(docs): update documentation for #${{ github.event.number }}"
           body: "This is an automatically created PR. Changes were created by running `make docs` after merging #${{ github.event.number }} (${{ github.sha }})."
           base: ${{ github.event.pull_request.base.ref }}
