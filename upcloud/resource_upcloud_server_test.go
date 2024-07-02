@@ -59,7 +59,7 @@ func TestUpcloudServer_customPlan(t *testing.T) {
 
 func TestUpcloudServer_minimal(t *testing.T) {
 	config := fmt.Sprintf(`
-		resource "upcloud_server" "min" {
+		resource "upcloud_server" "this" {
 			hostname = "tf-acc-test-server-minimal" 
 			zone     = "fi-hel2"
 			metadata = true
@@ -81,9 +81,9 @@ func TestUpcloudServer_minimal(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.min", "zone", "fi-hel2"),
-					resource.TestCheckResourceAttr("upcloud_server.min", "hostname", "tf-acc-test-server-minimal"),
-					resource.TestCheckNoResourceAttr("upcloud_server.min", "tags"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "zone", "fi-hel2"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "hostname", "tf-acc-test-server-minimal"),
+					resource.TestCheckNoResourceAttr("upcloud_server.this", "tags"),
 				),
 			},
 			{
@@ -162,7 +162,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 
 func configSimple(hostname, plan, zone string) string {
 	return fmt.Sprintf(`
-	resource "upcloud_server" "min" {
+	resource "upcloud_server" "this" {
 		hostname = "%s"
 		plan     = "%s"
 		zone     = "%s"
@@ -196,6 +196,29 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_server.this", "plan", "2xCPU-4GB"),
+				),
+			},
+		},
+	})
+}
+
+func TestUpcloudServer_developerPlan(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: configSimple("tf-acc-test-server-dev-plan", "DEV-1xCPU-1GB", "fi-hel1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "DEV-1xCPU-1GB"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template[0].tier", "standard"),
+				),
+			},
+			{
+				Config: configSimple("tf-acc-test-server-dev-plan", "1xCPU-1GB", "fi-hel1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "1xCPU-1GB"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template[0].tier", "standard"),
 				),
 			},
 		},
@@ -527,7 +550,7 @@ func configTags(tags ...string) string {
 	}
 
 	return fmt.Sprintf(`
-		resource "upcloud_server" "min" {
+		resource "upcloud_server" "this" {
 			hostname = "tf-acc-test-server-tags"
 			plan     = "1xCPU-1GB"
 			zone     = "fi-hel1"
