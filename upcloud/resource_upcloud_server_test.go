@@ -96,7 +96,7 @@ func TestUpcloudServer_minimal(t *testing.T) {
 
 func TestUpcloudServer_basic(t *testing.T) {
 	config := fmt.Sprintf(`
-		resource "upcloud_server" "my-server" {
+		resource "upcloud_server" "this" {
 			zone     = "fi-hel1"
 			hostname = "tf-acc-test-server-basic"
 			title    = "tf-acc-test-server-basic"
@@ -132,27 +132,27 @@ func TestUpcloudServer_basic(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.encrypt", "true"),
-					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "zone"),
-					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "hostname"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.encrypt", "true"),
+					resource.TestCheckResourceAttrSet("upcloud_server.this", "zone"),
+					resource.TestCheckResourceAttrSet("upcloud_server.this", "hostname"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "zone", "fi-hel1"),
+						"upcloud_server.this", "zone", "fi-hel1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "hostname", "tf-acc-test-server-basic"),
+						"upcloud_server.this", "hostname", "tf-acc-test-server-basic"),
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.my-server", "tags.*", "foo",
+						"upcloud_server.this", "tags.*", "foo",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "labels.env", "dev",
+						"upcloud_server.this", "labels.env", "dev",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "labels.production", "false",
+						"upcloud_server.this", "labels.production", "false",
 					),
 					resource.TestCheckTypeSetElemAttr(
-						"upcloud_server.my-server", "tags.*", "bar",
+						"upcloud_server.this", "tags.*", "bar",
 					),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "title", "Debian",
+						"upcloud_server.this", "title", "Debian",
 					),
 				),
 			},
@@ -188,14 +188,14 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 				Config: configSimple("tf-acc-test-server-change-plan", "1xCPU-2GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "plan", "1xCPU-2GB"),
+						"upcloud_server.this", "plan", "1xCPU-2GB"),
 				),
 			},
 			{
 				Config: configSimple("tf-acc-test-server-change-plan", "2xCPU-4GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "plan", "2xCPU-4GB"),
+						"upcloud_server.this", "plan", "2xCPU-4GB"),
 				),
 			},
 		},
@@ -204,7 +204,7 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 
 func configSimpleBackup(time, plan string) string {
 	return fmt.Sprintf(`
-		resource "upcloud_server" "my-server" {
+		resource "upcloud_server" "this" {
 			hostname = "tf-acc-test-server-simple-backup"
 			zone     = "fi-hel1"
 			metadata = true
@@ -227,7 +227,7 @@ func configSimpleBackup(time, plan string) string {
 
 func configBackupRule(time, interval string, retention int) string {
 	return fmt.Sprintf(`
-		resource "upcloud_server" "my-server" {
+		resource "upcloud_server" "this" {
 			zone     = "fi-hel1"
 			hostname = "tf-acc-test-server-simple-backup"
 			metadata = true
@@ -256,7 +256,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 			{
 				// basic setup
 				Config: configSimpleBackup("0300", "dailies"),
-				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
 					"time": "0300",
 					"plan": "dailies",
 				}),
@@ -264,7 +264,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 			{
 				// change simple backup config
 				Config: configSimpleBackup("2200", "weeklies"),
-				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
 					"time": "2200",
 					"plan": "weeklies",
 				}),
@@ -273,8 +273,8 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 				// replace simple backup with backup rule on the template
 				Config: configBackupRule("0010", "mon", 2),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.#", "0"),
-					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "template.0.backup_rule.*", map[string]string{
+					resource.TestCheckResourceAttr("upcloud_server.this", "simple_backup.#", "0"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "template.0.backup_rule.*", map[string]string{
 						"time":      "0010",
 						"interval":  "mon",
 						"retention": "2",
@@ -284,7 +284,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 			{
 				// adjust backup rule on the template
 				Config: configBackupRule("0010", "tue", 3),
-				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "template.0.backup_rule.*", map[string]string{
+				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "template.0.backup_rule.*", map[string]string{
 					"time":      "0010",
 					"interval":  "tue",
 					"retention": "3",
@@ -294,8 +294,8 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 				// replace template backup rule back with simple backup
 				Config: configSimpleBackup("2300", "daily"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.#", "0"),
-					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.#", "0"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
 						"time": "2300",
 						"plan": "daily",
 					}),
@@ -325,7 +325,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 					
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "this" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
@@ -359,7 +359,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 					}
 					
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "this" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
@@ -385,7 +385,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
-					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
 						"time": "2200",
 						"plan": "dailies",
 					}),
@@ -400,7 +400,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 					}
 					
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "this" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
@@ -426,7 +426,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
-					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
 						"time": "2300",
 						"plan": "weeklies",
 					}),
@@ -442,7 +442,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 					}
 					
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "this" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
@@ -463,7 +463,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.#", "0"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "simple_backup.#", "0"),
 				),
 			},
 
@@ -482,7 +482,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 					
-					resource "upcloud_server" "my-server" {
+					resource "upcloud_server" "this" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
@@ -508,9 +508,9 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.time", "2200"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.interval", "daily"),
-					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.0.retention", "4"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.0.time", "2200"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.0.interval", "daily"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.0.retention", "4"),
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.time", "0100"),
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.interval", "mon"),
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.0.retention", "2"),
@@ -625,28 +625,28 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "plan", "2xCPU-4GB"),
+						"upcloud_server.this", "plan", "2xCPU-4GB"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "network_interface.#", "1"),
+						"upcloud_server.this", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.type",
 						"utility"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.ip_address_family",
 						"IPv4"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.mac_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.ip_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.network"),
-					testAccGetServerID("upcloud_server.my-server", &serverID),
-					testAccCheckServerIDEqual("upcloud_server.my-server", &serverID),
+					testAccGetServerID("upcloud_server.this", &serverID),
+					testAccCheckServerIDEqual("upcloud_server.this", &serverID),
 				),
 			},
 			{
@@ -661,43 +661,43 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "plan", "2xCPU-4GB"),
+						"upcloud_server.this", "plan", "2xCPU-4GB"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "network_interface.#", "2"),
+						"upcloud_server.this", "network_interface.#", "2"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.type",
 						"utility"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.ip_address_family",
 						"IPv4"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.mac_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.ip_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.network"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.type",
 						"private"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.ip_address_family",
 						"IPv4"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.mac_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.ip_address"),
-					testAccCheckServerIDEqual("upcloud_server.my-server", &serverID),
-					testAccCheckNetwork("upcloud_server.my-server", 1, "upcloud_network.test_network_1"),
-					testAccGetServerID("upcloud_server.my-server", &serverID),
+					testAccCheckServerIDEqual("upcloud_server.this", &serverID),
+					testAccCheckNetwork("upcloud_server.this", 1, "upcloud_network.test_network_1"),
+					testAccGetServerID("upcloud_server.this", &serverID),
 				),
 			},
 			{
@@ -713,42 +713,42 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "plan", "2xCPU-4GB"),
+						"upcloud_server.this", "plan", "2xCPU-4GB"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "network_interface.#", "2"),
+						"upcloud_server.this", "network_interface.#", "2"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.type",
 						"utility"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.ip_address_family",
 						"IPv4"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.mac_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.ip_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.0.network"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.type",
 						"private"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.ip_address_family",
 						"IPv4"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.mac_address"),
 					resource.TestCheckResourceAttrSet(
-						"upcloud_server.my-server",
+						"upcloud_server.this",
 						"network_interface.1.ip_address"),
-					testAccCheckServerIDEqual("upcloud_server.my-server", &serverID),
-					testAccCheckNetwork("upcloud_server.my-server", 1, "upcloud_network.test_network_11"),
+					testAccCheckServerIDEqual("upcloud_server.this", &serverID),
+					testAccCheckNetwork("upcloud_server.this", 1, "upcloud_network.test_network_11"),
 				),
 			},
 		},
@@ -815,7 +815,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	var builder strings.Builder
 
 	builder.WriteString(fmt.Sprintf(`
-		resource "upcloud_server" "my-server" {
+		resource "upcloud_server" "this" {
 			zone     = "fi-hel1"
 			hostname = "tf-acc-test-server-network-interface"
 			plan     = "2xCPU-4GB"
