@@ -167,9 +167,10 @@ func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, as
   			zone     = "fi-hel1"
   			hostname = "tf-acc-test-floating-ip-vm"
   			plan     = "1xCPU-2GB"
+			metadata = yes
 
   			template {
-  				storage = "01000000-0000-4000-8000-000020050100"
+  				storage = "01000000-0000-4000-8000-000020070100"
   				size = 10
   			}
 

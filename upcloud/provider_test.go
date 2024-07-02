@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+const debianTemplateUUID = "01000000-0000-4000-8000-000020070100"
+
 var (
 	testAccProviderFactories map[string]func() (tfprotov5.ProviderServer, error)
 	testAccProvider          *schema.Provider

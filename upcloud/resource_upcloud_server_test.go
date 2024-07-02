@@ -12,26 +12,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+func configCustomPlan(cpu, mem int) string {
+	return fmt.Sprintf(`
+		resource "upcloud_server" "custom" {
+			hostname = "tf-acc-test-server-custom-plan" 
+			zone     = "fi-hel2"
+			cpu      = "%d"
+			mem		 = "%d"
+			metadata = true
+
+			template {
+					storage = "%s"
+					size = 10
+			}
+
+			network_interface {
+				type = "utility"
+			}
+		}`, cpu, mem, debianTemplateUUID)
+}
+
 func TestUpcloudServer_customPlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: `
-					resource "upcloud_server" "custom" {
-            			hostname = "custom-server" 
-						zone     = "fi-hel2"
-						cpu      = "1"
-						mem		 = "1024"
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configCustomPlan(1, 1024),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.custom", "plan", "custom"),
 					resource.TestCheckResourceAttr("upcloud_server.custom", "cpu", "1"),
@@ -39,20 +46,7 @@ func TestUpcloudServer_customPlan(t *testing.T) {
 				),
 			},
 			{
-				Config: `
-					resource "upcloud_server" "custom" {
-            			hostname = "custom-server" 
-						zone     = "fi-hel2"
-						cpu      = "2"
-						mem		 = "2048"
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configCustomPlan(2, 2048),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.custom", "plan", "custom"),
 					resource.TestCheckResourceAttr("upcloud_server.custom", "cpu", "2"),
@@ -64,50 +58,36 @@ func TestUpcloudServer_customPlan(t *testing.T) {
 }
 
 func TestUpcloudServer_minimal(t *testing.T) {
+	config := fmt.Sprintf(`
+		resource "upcloud_server" "min" {
+			hostname = "tf-acc-test-server-minimal" 
+			zone     = "fi-hel2"
+			metadata = true
+
+			template {
+				storage = "%s"
+				size = 10
+			}
+
+			network_interface {
+				type = "utility"
+			}
+		}`, debianTemplateUUID)
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: `
-					resource "upcloud_server" "min" {
-            hostname = "min-server" 
-						zone     = "fi-hel2"
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-								filesystem_autoresize = true
-								delete_autoresize_backup = true
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.min", "zone", "fi-hel2"),
-					resource.TestCheckResourceAttr("upcloud_server.min", "hostname", "min-server"),
+					resource.TestCheckResourceAttr("upcloud_server.min", "hostname", "tf-acc-test-server-minimal"),
 					resource.TestCheckNoResourceAttr("upcloud_server.min", "tags"),
 				),
 			},
 			{
-				Config: `
-					resource "upcloud_server" "min" {
-            hostname = "min-server" 
-						zone     = "fi-hel2"
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-								filesystem_autoresize = true
-								delete_autoresize_backup = true
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config:             config,
 				ExpectNonEmptyPlan: false, // ensure nothing changed
 			},
 		},
@@ -115,35 +95,42 @@ func TestUpcloudServer_minimal(t *testing.T) {
 }
 
 func TestUpcloudServer_basic(t *testing.T) {
+	config := fmt.Sprintf(`
+		resource "upcloud_server" "my-server" {
+			zone     = "fi-hel1"
+			hostname = "tf-acc-test-server-basic"
+			title    = "tf-acc-test-server-basic"
+			metadata = true
+
+			labels   = {
+				env         = "dev",
+				production  = "false"
+			}
+
+			tags = [
+				"foo",
+				"bar"
+			]
+
+			template {
+				encrypt = true
+				storage = "%s"
+				size = 10
+				filesystem_autoresize = true
+				delete_autoresize_backup = true
+			}
+
+			network_interface {
+				type = "utility"
+			}
+		}`, debianTemplateUUID)
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: `
-					resource "upcloud_server" "my-server" {
-						zone     = "fi-hel1"
-						hostname = "debian.example.com"
-						title    = "Debian"
-						labels   = {
-							env         = "dev",
-							production  = "false"
-						}
-						tags = [
-						"foo",
-						"bar"
-						]
-
-						template {
-								encrypt = true
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.encrypt", "true"),
 					resource.TestCheckResourceAttrSet("upcloud_server.my-server", "zone"),
@@ -151,7 +138,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "zone", "fi-hel1"),
 					resource.TestCheckResourceAttr(
-						"upcloud_server.my-server", "hostname", "debian.example.com"),
+						"upcloud_server.my-server", "hostname", "tf-acc-test-server-basic"),
 					resource.TestCheckTypeSetElemAttr(
 						"upcloud_server.my-server", "tags.*", "foo",
 					),
@@ -173,20 +160,39 @@ func TestUpcloudServer_basic(t *testing.T) {
 	})
 }
 
+func configSimple(hostname, plan, zone string) string {
+	return fmt.Sprintf(`
+	resource "upcloud_server" "min" {
+		hostname = "%s"
+		plan     = "%s"
+		zone     = "%s"
+		metadata = true
+
+		template {
+			storage = "%s"
+			size = 10
+		}
+
+		network_interface {
+			type = "utility"
+		}
+	}`, hostname, plan, zone, debianTemplateUUID)
+}
+
 func TestUpcloudServer_changePlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccServerConfigWithSmallServerPlan,
+				Config: configSimple("tf-acc-test-server-change-plan", "1xCPU-2GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "plan", "1xCPU-2GB"),
 				),
 			},
 			{
-				Config: testAccPlanConfigUpdateServerPlan,
+				Config: configSimple("tf-acc-test-server-change-plan", "2xCPU-4GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_server.my-server", "plan", "2xCPU-4GB"),
@@ -196,6 +202,52 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 	})
 }
 
+func configSimpleBackup(time, plan string) string {
+	return fmt.Sprintf(`
+		resource "upcloud_server" "my-server" {
+			hostname = "tf-acc-test-server-simple-backup"
+			zone     = "fi-hel1"
+			metadata = true
+
+			template {
+				storage = "%s"
+				size = 10
+			}
+
+			network_interface {
+				type = "utility"
+			}
+
+			simple_backup {
+				time = %s
+				plan = %s
+			}
+		}`, debianTemplateUUID, time, plan)
+}
+
+func configBackupRule(time, interval string, retention int) string {
+	return fmt.Sprintf(`
+		resource "upcloud_server" "my-server" {
+			zone     = "fi-hel1"
+			hostname = "tf-acc-test-server-simple-backup"
+			metadata = true
+
+			template {
+					storage = "%s"
+					size = 10
+					backup_rule {
+						time = "%s"
+						interval = "%s"
+						retention = %d
+					}
+			}
+
+			network_interface {
+				type = "utility"
+			}
+		}`, debianTemplateUUID, time, interval, retention)
+}
+
 func TestUpcloudServer_simpleBackup(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -203,25 +255,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// basic setup
-				Config: `
-					resource "upcloud_server" "my-server" {
-						zone     = "fi-hel1"
-						hostname = "debian.example.com"
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-
-						simple_backup {
-							time = "0300"
-							plan = "dailies"
-						}
-					}`,
+				Config: configSimpleBackup("0300", "dailies"),
 				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
 					"time": "0300",
 					"plan": "dailies",
@@ -229,25 +263,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 			},
 			{
 				// change simple backup config
-				Config: `
-					resource "upcloud_server" "my-server" {
-						zone     = "fi-hel1"
-						hostname = "debian.example.com"
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-
-						simple_backup {
-							time = "2200"
-							plan = "weeklies"
-						}
-					}`,
+				Config: configSimpleBackup("2200", "weeklies"),
 				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
 					"time": "2200",
 					"plan": "weeklies",
@@ -255,25 +271,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 			},
 			{
 				// replace simple backup with backup rule on the template
-				Config: `
-					resource "upcloud_server" "my-server" {
-						zone     = "fi-hel1"
-						hostname = "debian.example.com"
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-								backup_rule {
-									time = "0010"
-									interval = "mon"
-									retention = 2
-								}
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configBackupRule("0010", "mon", 2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.my-server", "simple_backup.#", "0"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "template.0.backup_rule.*", map[string]string{
@@ -285,25 +283,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 			},
 			{
 				// adjust backup rule on the template
-				Config: `
-					resource "upcloud_server" "my-server" {
-						zone     = "fi-hel1"
-						hostname = "debian.example.com"
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-								backup_rule {
-									time = "0010"
-									interval = "tue"
-									retention = 3
-								}
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configBackupRule("0010", "tue", 3),
 				Check: resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "template.0.backup_rule.*", map[string]string{
 					"time":      "0010",
 					"interval":  "tue",
@@ -312,25 +292,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 			},
 			{
 				// replace template backup rule back with simple backup
-				Config: `
-					resource "upcloud_server" "my-server" {
-						zone     = "fi-hel1"
-						hostname = "debian.example.com"
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						simple_backup {
-							time = "2300"
-							plan = "daily"
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configSimpleBackup("2300", "daily"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.my-server", "template.0.backup_rule.#", "0"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.my-server", "simple_backup.*", map[string]string{
@@ -366,7 +328,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					resource "upcloud_server" "my-server" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
-						hostname = "main1"
+						hostname = "tf-acc-test-server-storage-simple-backup"
 						
 						template {
 							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
@@ -400,7 +362,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					resource "upcloud_server" "my-server" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
-						hostname = "main1"
+						hostname = "tf-acc-test-server-storage-simple-backup"
 						
 						template {
 							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
@@ -441,7 +403,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					resource "upcloud_server" "my-server" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
-						hostname = "main1"
+						hostname = "tf-acc-test-server-storage-simple-backup"
 						
 						template {
 							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
@@ -483,7 +445,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					resource "upcloud_server" "my-server" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
-						hostname = "main1"
+						hostname = "tf-acc-test-server-storage-simple-backup"
 						
 						template {
 							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
@@ -523,7 +485,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 					resource "upcloud_server" "my-server" {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
-						hostname = "main1"
+						hostname = "tf-acc-test-server-storage-simple-backup"
 						
 						template {
 							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
@@ -558,6 +520,31 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 	})
 }
 
+func configTags(tags ...string) string {
+	tagsStr := ""
+	if len(tags) > 0 {
+		tagsStr = fmt.Sprintf(`"%s"`, strings.Join(tags, `", "`))
+	}
+
+	return fmt.Sprintf(`
+		resource "upcloud_server" "min" {
+			hostname = "tf-acc-test-server-tags"
+			plan     = "1xCPU-1GB"
+			zone     = "fi-hel1"
+			metadata = true
+			tags     = [%s]
+
+			template {
+				storage = "%s"
+				size = 10
+			}
+
+			network_interface {
+				type = "utility"
+			}
+		}`, tagsStr, debianTemplateUUID)
+}
+
 func TestUpcloudServer_updateTags(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -565,25 +552,7 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Setup server with tags
-				Config: `
-					resource "upcloud_server" "tags-test" {
-						zone     = "fi-hel1"
-						hostname = "provider-atest-tags-server"
-						tags = [
-							"acceptance-test",
-							"foo",
-							"bar"
-						]
-
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configTags("acceptance-test", "foo", "bar"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(
 						"upcloud_server.tags-test", "tags.*", "acceptance-test",
@@ -598,25 +567,7 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 			},
 			{
 				// Update some of the tags
-				Config: `
-					resource "upcloud_server" "tags-test" {
-						zone     = "fi-hel1"
-						hostname = "provider-atest-tags-server"
-						tags = [
-							"acceptance-test",
-							"newfoo",
-							"newbar"
-						]
-
-						template {
-							storage = "01000000-0000-4000-8000-000020050100"
-							size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configTags("acceptance-test", "newfoo", "newbar"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(
 						"upcloud_server.tags-test", "tags.*", "acceptance-test",
@@ -631,23 +582,7 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 			},
 			{
 				// Remove some of the tags
-				Config: `
-					resource "upcloud_server" "tags-test" {
-						zone     = "fi-hel1"
-						hostname = "provider-atest-tags-server"
-						tags = [
-							"acceptance-test",
-						]
-
-						template {
-							storage = "01000000-0000-4000-8000-000020050100"
-							size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configTags("acceptance-test"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(
 						"upcloud_server.tags-test", "tags.*", "acceptance-test",
@@ -659,21 +594,7 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 			},
 			{
 				// Remove all of the tags
-				Config: `
-					resource "upcloud_server" "tags-test" {
-						zone     = "fi-hel1"
-						hostname = "provider-atest-tags-server"
-						tags = []
-
-						template {
-							storage = "01000000-0000-4000-8000-000020050100"
-							size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configTags(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_server.tags-test", "tags.#", "0",
@@ -682,21 +603,8 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 			},
 			{
 				// Remove tags attribute
-				Config: `
-					resource "upcloud_server" "tags-test" {
-						zone     = "fi-hel1"
-						hostname = "provider-atest-tags-server"
-
-						template {
-							storage = "01000000-0000-4000-8000-000020050100"
-							size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
-				Check: resource.TestCheckResourceAttr("upcloud_server.tags-test", "tags.#", "0"),
+				Config: configSimple("tf-acc-test-server-tags", "1xCPU-1GB", "fi-hel1"),
+				Check:  resource.TestCheckResourceAttr("upcloud_server.tags-test", "tags.#", "0"),
 			},
 		},
 	})
@@ -897,40 +805,6 @@ func testAccCheckNetwork(resourceName string, niIdx int, networkResourceName str
 	}
 }
 
-const testAccServerConfigWithSmallServerPlan = `
-resource "upcloud_server" "my-server" {
-			zone     = "fi-hel1"
-			hostname = "debian.example.com"
-			plan     = "1xCPU-2GB"
-
-			template {
-					storage = "01000000-0000-4000-8000-000020050100"
-					size = 10
-			}
-
-			network_interface {
-				type = "utility"
-			}
-		}
-`
-
-const testAccPlanConfigUpdateServerPlan = `
-resource "upcloud_server" "my-server" {
-			zone     = "fi-hel1"
-			hostname = "debian.example.com"
-			plan     = "2xCPU-4GB"
-
-			template {
-					storage = "01000000-0000-4000-8000-000020050100"
-					size = 10
-			}
-
-			network_interface {
-				type = "utility"
-			}
-		}
-`
-
 type networkInterface struct {
 	niType     string
 	network    bool
@@ -940,17 +814,18 @@ type networkInterface struct {
 func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	var builder strings.Builder
 
-	builder.WriteString(`
+	builder.WriteString(fmt.Sprintf(`
 		resource "upcloud_server" "my-server" {
 			zone     = "fi-hel1"
-			hostname = "debian.example.com"
+			hostname = "tf-acc-test-server-network-interface"
 			plan     = "2xCPU-4GB"
+			metadata = true
 
 			template {
-					storage = "01000000-0000-4000-8000-000020050100"
+					storage = "%s"
 					size = 10
 			}
-	`)
+	`, debianTemplateUUID))
 
 	for i, ni := range nis {
 		builder.WriteString(fmt.Sprintf(`
@@ -980,7 +855,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 		if ni.network {
 			builder.WriteString(fmt.Sprintf(`
 				resource "upcloud_network" "test_network_%d" {
-					name = "test_network_%d"
+					name = "tf-acc-test-server-network-interface-net-%d"
 					zone = "fi-hel1"
 
 					ip_network {
@@ -997,7 +872,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 		if ni.newNetwork {
 			builder.WriteString(fmt.Sprintf(`
 				resource "upcloud_network" "test_network_%d" {
-					name = "test_network_%d"
+					name = "tf-acc-test-server-network-interface-net-%d"
 					zone = "fi-hel1"
 
 					ip_network {
@@ -1021,40 +896,14 @@ func TestUpcloudServer_updatePreChecks(t *testing.T) {
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: `
-					resource "upcloud_server" "pre-checks" {
-            			hostname = "pre-checks" 
-						zone     = "fi-hel2"
-						plan     = "1xCPU-1GB"
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config: configSimple("tf-acc-test-server-update-pre-checks", "1xCPU-1GB", "fi-hel2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("upcloud_server.pre-checks", "plan"),
 				),
 			},
 			{
 				// Test updating with invalid plan
-				Config: `
-					resource "upcloud_server" "pre-checks" {
-            			hostname = "pre-checks" 
-						zone     = "fi-hel2"
-						plan     = "1xCPU-1G"
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config:             configSimple("tf-acc-test-server-create-pre-checks", "1xCPU-1G", "fi-hel1"),
 				ExpectNonEmptyPlan: true,
 				ExpectError:        regexp.MustCompile("expected plan to be one of"),
 				Check:              resource.TestCheckResourceAttr("upcloud_server.pre-checks", "plan", "1xCPU-1GB"),
@@ -1070,39 +919,13 @@ func TestUpcloudServer_createPreChecks(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Test creating with invalid plan
-				Config: `
-					resource "upcloud_server" "pre-checks" {
-            			hostname = "pre-checks" 
-						zone     = "fi-hel2"
-						plan     = "1xCPU-1G"
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config:             configSimple("tf-acc-test-server-create-pre-checks", "1xCPU-1G", "fi-hel1"),
 				ExpectNonEmptyPlan: true,
 				ExpectError:        regexp.MustCompile("expected plan to be one of"),
 			},
 			{
 				// Test creating with invalid zone
-				Config: `
-					resource "upcloud_server" "pre-checks" {
-            			hostname = "pre-checks" 
-						zone     = "_fi-hel2"
-						plan     = "1xCPU-1GB"
-						template {
-								storage = "01000000-0000-4000-8000-000020050100"
-								size = 10
-						}
-
-						network_interface {
-							type = "utility"
-						}
-					}`,
+				Config:             configSimple("tf-acc-test-server-create-pre-checks", "1xCPU-1GB", "_fi-hel2"),
 				ExpectNonEmptyPlan: true,
 				ExpectError:        regexp.MustCompile("expected zone to be one of"),
 			},

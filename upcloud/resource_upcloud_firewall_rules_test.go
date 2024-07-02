@@ -229,103 +229,104 @@ func testAccCheckUpCloudFirewallRuleAttributes(firewallRules *upcloud.FirewallRu
 }
 
 func testUpcloudFirewallRulesInstanceConfig() string {
-	return `
+	return fmt.Sprintf(`
 		resource "upcloud_server" "my_server" {
-		  zone     = "fi-hel1"
-		  hostname = "debian.example.com"
-		  plan     = "1xCPU-2GB"
+			zone     = "fi-hel1"
+			hostname = "tf-acc-test-firewall-rules-vm"
+			plan     = "1xCPU-2GB"
+			metadata = true
 
-		  template {
-			storage = "01000000-0000-4000-8000-000020050100"
-			size = 10
-		  }
+			template {
+				storage = "%s"
+				size = 10
+			}
 
-		  network_interface {
-			type = "utility"
-		  }
+			network_interface {
+				type = "utility"
+			}
 
 		}
 
 		resource "upcloud_firewall_rules" "my_rule" {
-		  server_id = upcloud_server.my_server.id
+			server_id = upcloud_server.my_server.id
 
-		  firewall_rule {
-			action = "accept"
-			comment = "Allow SSH from this network"
-			destination_address_end = ""
-			destination_address_start = ""
-			destination_port_end = 22
-			destination_port_start = 22
-			direction = "in"
-			family = "IPv4"
-			icmp_type = ""
-			protocol = "tcp"
-			source_address_end = "192.168.1.255"
-			source_address_start = "192.168.1.1"
-		  }
+			firewall_rule {
+				action = "accept"
+				comment = "Allow SSH from this network"
+				destination_address_end = ""
+				destination_address_start = ""
+				destination_port_end = 22
+				destination_port_start = 22
+				direction = "in"
+				family = "IPv4"
+				icmp_type = ""
+				protocol = "tcp"
+				source_address_end = "192.168.1.255"
+				source_address_start = "192.168.1.1"
+			}
 
-		  firewall_rule {
-			action = "drop"
-			comment = "Drop all connection from ip range"
-			direction = "in"
-			family = "IPv4"
-			source_address_end = "192.168.1.255"
-			source_address_start = "192.168.1.1"
-		  }
-
-		}`
+			firewall_rule {
+				action = "drop"
+				comment = "Drop all connection from ip range"
+				direction = "in"
+				family = "IPv4"
+				source_address_end = "192.168.1.255"
+				source_address_start = "192.168.1.1"
+			}
+		}`, debianTemplateUUID)
 }
 
 func testUpcloudFirewallRulesInstanceConfigUpdate() string {
-	return `
+	return fmt.Sprintf(`
 		resource "upcloud_server" "my_server" {
-		  zone     = "fi-hel1"
-		  hostname = "debian.example.com"
-		  plan     = "1xCPU-2GB"
+			zone     = "fi-hel1"
+			hostname = "tf-acc-test-firewall-rules-vm"
+			plan     = "1xCPU-2GB"
+			metadata = true
 
-		  template {
-			storage = "01000000-0000-4000-8000-000020050100"
-			size = 10
-		  }
+			template {
+				storage = "%s"
+				size = 10
+			}
 
-		  network_interface {
-			type = "utility"
-		  }
+			network_interface {
+				type = "utility"
+			}
 
 		}
 
 		resource "upcloud_firewall_rules" "my_rule" {
-		  server_id = upcloud_server.my_server.id
+			server_id = upcloud_server.my_server.id
 
-		  firewall_rule {
-			action = "accept"
-			comment = "Allow SSH from this network"
-			destination_address_end = ""
-			destination_address_start = ""
-			destination_port_end = 22
-			destination_port_start = 22
-			direction = "in"
-			family = "IPv4"
-			icmp_type = ""
-			protocol = "tcp"
-			source_address_end = "192.168.1.255"
-			source_address_start = "192.168.1.1"
-		  }
+			firewall_rule {
+				action = "accept"
+				comment = "Allow SSH from this network"
+				destination_address_end = ""
+				destination_address_start = ""
+				destination_port_end = 22
+				destination_port_start = 22
+				direction = "in"
+				family = "IPv4"
+				icmp_type = ""
+				protocol = "tcp"
+				source_address_end = "192.168.1.255"
+				source_address_start = "192.168.1.1"
+			}
 
-		  firewall_rule {
-			action = "accept"
-			comment = "Allow SSH from this network"
-			destination_address_end = ""
-			destination_address_start = ""
-			destination_port_end = 22
-			destination_port_start = 22
-			direction = "in"
-			family = "IPv4"
-			icmp_type = ""
-			protocol = "tcp"
-			source_address_end = "192.168.3.255"
-			source_address_start = "192.168.3.1"
-		  }
+			firewall_rule {
+				action = "accept"
+				comment = "Allow SSH from this network"
+				destination_address_end = ""
+				destination_address_start = ""
+				destination_port_end = 22
+				destination_port_start = 22
+				direction = "in"
+				family = "IPv4"
+				icmp_type = ""
+				protocol = "tcp"
+				source_address_end = "192.168.3.255"
+				source_address_start = "192.168.3.1"
+			}
 
-		}`
+		}`, debianTemplateUUID)
 }
