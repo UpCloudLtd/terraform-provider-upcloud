@@ -46,3 +46,6 @@ terraform/
 
 # Ignore tools installed by make install-tools
 /.ci/bin
+
+# Ignore diff files from make generate
+*.diff
