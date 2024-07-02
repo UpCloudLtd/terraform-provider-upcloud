@@ -167,6 +167,12 @@ func (r *floatingIPResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
 	ip, err := r.client.GetIPAddressDetails(ctx, &request.GetIPAddressDetailsRequest{
 		Address: data.ID.ValueString(),
 	})
