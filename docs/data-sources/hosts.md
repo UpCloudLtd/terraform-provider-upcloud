@@ -25,14 +25,14 @@ data "upcloud_hosts" "all_hosts" {}
 
 ### Read-Only
 
-- `hosts` (Set of Object) (see [below for nested schema](#nestedatt--hosts))
+- `hosts` (Block Set) (see [below for nested schema](#nestedblock--hosts))
 - `id` (String) The ID of this resource.
 
-<a id="nestedatt--hosts"></a>
+<a id="nestedblock--hosts"></a>
 ### Nested Schema for `hosts`
 
 Read-Only:
 
-- `description` (String)
-- `host_id` (Number)
-- `zone` (String)
+- `description` (String) Free form text describing the host
+- `host_id` (Number) The unique id of the host
+- `zone` (String) The zone the host is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
