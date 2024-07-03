@@ -3,12 +3,12 @@
 page_title: "upcloud_zones Data Source - terraform-provider-upcloud"
 subcategory: Cloud
 description: |-
-  Data-source is deprecated.
+  Returns a list of available UpCloud zones.
 ---
 
 # upcloud_zones (Data Source)
 
-Data-source is deprecated.
+Returns a list of available UpCloud zones.
 
 
 
@@ -17,9 +17,9 @@ Data-source is deprecated.
 
 ### Optional Attributes
 
-- `filter_type` (String)
+- `filter_type` (String) Filter zones by type. Possible values are "all", "public" and "private". Default is "public".
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `zone_ids` (Set of String)
+- `zone_ids` (Set of String) List of zone IDs.
