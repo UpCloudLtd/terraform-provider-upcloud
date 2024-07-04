@@ -144,7 +144,17 @@ func ResourceNodeGroup() *schema.Resource {
 				Default:     true,
 				ForceNew:    true,
 			},
-			"storage_encryption": storageEncryptionSchema("Storage encryption strategy for the nodes in this group.", true),
+			"storage_encryption": {
+				Description: "Storage encryption strategy for the nodes in this group.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				ForceNew:    true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+					string(upcloud.StorageEncryptionDataAtReset),
+					string(upcloud.StorageEncryptionNone),
+				}, false)),
+			},
 			"custom_plan": {
 				Description: "Resource properties for custom plan",
 				Type:        schema.TypeList,

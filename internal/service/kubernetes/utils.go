@@ -7,22 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	sdkv2_schema "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
-
-func storageEncryptionSchema(description string, computed bool) *sdkv2_schema.Schema {
-	return &sdkv2_schema.Schema{
-		Description: description,
-		Type:        sdkv2_schema.TypeString,
-		Computed:    computed,
-		Optional:    true,
-		ForceNew:    true,
-		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-			string(upcloud.StorageEncryptionDataAtReset),
-		}, false)),
-	}
-}
 
 func StorageEncryptionAttribute(description string, computed bool) *schema.StringAttribute {
 	return &schema.StringAttribute{
