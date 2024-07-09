@@ -14,7 +14,6 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
@@ -75,7 +74,6 @@ func Provider() *schema.Provider {
 			"upcloud_server":                                  server.ResourceServer(),
 			"upcloud_server_group":                            servergroup.ResourceServerGroup(),
 			"upcloud_storage":                                 storage.ResourceStorage(),
-			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
 			"upcloud_tag":                                     tag.ResourceTag(),
 			"upcloud_gateway":                                 gateway.ResourceGateway(),
 			"upcloud_gateway_connection":                      gateway.ResourceConnection(),
