@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
@@ -152,12 +153,17 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	return service, diags
 }
 
+func log(ctx context.Context, message string, data map[string]interface{}) {
+	tflog.Debug(ctx, message, data)
+}
+
 func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration) *service.Service {
 	providerClient := client.New(
 		username,
 		password,
 		client.WithHTTPClient(httpClient),
 		client.WithTimeout(requestTimeout),
+		client.WithLogger(log),
 	)
 
 	providerClient.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
