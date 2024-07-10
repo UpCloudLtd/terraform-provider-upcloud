@@ -107,6 +107,14 @@ make testacc TESTARGS='-run=TestUpcloudServer_*'
 In order to view the documentation change rendering visite
 [the terraform documentation preview](https://registry.terraform.io/tools/doc-preview).
 
+## Debugging
+
+To print UpCloud API requests and responses, set Terraform log level to debug or lower. For example, when running an apply:
+
+```sh
+TF_LOG=debug terraform apply
+```
+
 ## Generating documentation
 
 The documentation in [docs](./docs/) directory is generated with [tfplugindocs](https://github.com/hashicorp/terraform-plugin-docs). This is done automatically when changes are merged to the `main` branch. If there are documentation changes, actions will create a new pull request for documentation changes. Review and merge this pull-request.

@@ -16,10 +16,10 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
-
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -134,12 +134,29 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...
 	return svc, diags
 }
 
+// logDebug converts slog style key-value varargs to a map compatible with tflog methods and calls tflog.Debug.
+func logDebug(ctx context.Context, format string, args ...any) {
+	meta := make(map[string]interface{})
+	for i := 0; i < len(args); i += 2 {
+		key := fmt.Sprintf("%+v", args[i])
+
+		var value interface{}
+		if i+1 < len(args) {
+			value = args[i+1]
+		}
+
+		meta[key] = value
+	}
+	tflog.Debug(ctx, format, meta)
+}
+
 func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration, userAgents ...string) *service.Service {
 	providerClient := client.New(
 		username,
 		password,
 		client.WithHTTPClient(httpClient),
 		client.WithTimeout(requestTimeout),
+		client.WithLogger(logDebug),
 	)
 
 	if len(userAgents) == 0 {

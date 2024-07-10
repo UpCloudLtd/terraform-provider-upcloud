@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- Log UpCloud API requests and responses with debug level to Terraform logs.
+
 ### Fixed
 
 - upcloud_loadbalancer: allow `stopped` value to be set for `configured_status` field.
