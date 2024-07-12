@@ -323,7 +323,14 @@ func (r *frontendResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	var loadBalancer, name string
-	utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &name)
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
 
 	network, err := r.client.GetLoadBalancerFrontend(ctx, &request.GetLoadBalancerFrontendRequest{
 		ServiceUUID: loadBalancer,
