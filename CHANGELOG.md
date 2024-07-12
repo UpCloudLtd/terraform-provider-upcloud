@@ -10,6 +10,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_kubernetes_node_group: support for non-encrypted node groups in encrypted cluster
 - upcloud_managed_database_opensearch: `knn_memory_circuit_breaker_enabled` and `knn_memory_circuit_breaker_limit` properties.
 
+### Changed
+
+- upcloud_loadbalancer_frontend: use set type for `networks` as the backend returns them in alphabetical order instead of maintaining the order
+
+### Fixed
+
+- upcloud_loadbalancer_frontend: handle changes in the `networks`
+
 ## [5.7.0] - 2024-07-02
 
 ### Added
