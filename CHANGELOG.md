@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 
 - upcloud_loadbalancer_frontend: use set type for `networks` as the backend returns them in alphabetical order instead of maintaining the order
+- upcloud_loadbalancer_frontend: only store networks in state when the networks have been configured using `networks` blocks instead of deprecated `upcloud_loadbalancer.network` field.
 
 ### Fixed
 

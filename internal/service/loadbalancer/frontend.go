@@ -220,13 +220,15 @@ func setValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadB
 		respDiagnostics.Append(diags...)
 	}
 
-	networks := make([]networkModel, len(frontend.Networks))
-	for i, net := range frontend.Networks {
-		networks[i].Name = types.StringValue(net.Name)
-	}
+	if !data.Networks.IsNull() {
+		networks := make([]networkModel, len(frontend.Networks))
+		for i, net := range frontend.Networks {
+			networks[i].Name = types.StringValue(net.Name)
+		}
 
-	data.Networks, diags = types.SetValueFrom(ctx, data.Networks.ElementType(ctx), networks)
-	respDiagnostics.Append(diags...)
+		data.Networks, diags = types.SetValueFrom(ctx, data.Networks.ElementType(ctx), networks)
+		respDiagnostics.Append(diags...)
+	}
 
 	return respDiagnostics
 }
