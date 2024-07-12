@@ -9,6 +9,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -55,7 +56,7 @@ type frontendModel struct {
 	DefaultBackendName types.String `tfsdk:"default_backend_name"`
 	Rules              types.List   `tfsdk:"rules"`
 	TLSConfigs         types.List   `tfsdk:"tls_configs"`
-	Networks           types.List   `tfsdk:"networks"`
+	Networks           types.Set    `tfsdk:"networks"`
 	Properties         types.List   `tfsdk:"properties"`
 }
 
@@ -136,7 +137,7 @@ func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"networks": schema.ListNestedBlock{
+			"networks": schema.SetNestedBlock{
 				MarkdownDescription: "Networks that frontend will be listening. Networks are required if load balancer has `networks` defined. This field will be required when deprecated field `network` is removed from load balancer resource.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
@@ -146,8 +147,8 @@ func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						},
 					},
 				},
-				Validators: []validator.List{
-					listvalidator.SizeBetween(0, 100),
+				Validators: []validator.Set{
+					setvalidator.SizeBetween(0, 100),
 				},
 			},
 			"properties": schema.ListNestedBlock{
@@ -224,13 +225,13 @@ func setValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadB
 		networks[i].Name = types.StringValue(net.Name)
 	}
 
-	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
+	data.Networks, diags = types.SetValueFrom(ctx, data.Networks.ElementType(ctx), networks)
 	respDiagnostics.Append(diags...)
 
 	return respDiagnostics
 }
 
-func buildNetworks(ctx context.Context, dataNetworks types.List) ([]upcloud.LoadBalancerFrontendNetwork, diag.Diagnostics) {
+func buildNetworks(ctx context.Context, dataNetworks types.Set) ([]upcloud.LoadBalancerFrontendNetwork, diag.Diagnostics) {
 	var planNetworks []networkModel
 	respDiagnostics := dataNetworks.ElementsAs(ctx, &planNetworks, false)
 
