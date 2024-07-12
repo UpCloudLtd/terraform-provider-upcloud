@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -22,14 +21,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var (
-	_ resource.Resource                 = &frontendResource{}
-	_ resource.ResourceWithConfigure    = &frontendResource{}
-	_ resource.ResourceWithImportState  = &frontendResource{}
-	_ resource.ResourceWithUpgradeState = &frontendResource{}
+	_ resource.Resource                = &frontendResource{}
+	_ resource.ResourceWithConfigure   = &frontendResource{}
+	_ resource.ResourceWithImportState = &frontendResource{}
 )
 
 func NewFrontendResource() resource.Resource {
@@ -49,7 +46,7 @@ func (r *frontendResource) Configure(_ context.Context, req resource.ConfigureRe
 	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
-type frontendModelV0 struct {
+type frontendModel struct {
 	ID                 types.String `tfsdk:"id"`
 	LoadBalancer       types.String `tfsdk:"loadbalancer"`
 	Name               types.String `tfsdk:"name"`
@@ -62,63 +59,18 @@ type frontendModelV0 struct {
 	Properties         types.List   `tfsdk:"properties"`
 }
 
-type frontendModelV1 struct {
-	ID                 types.String `tfsdk:"id"`
-	LoadBalancer       types.String `tfsdk:"loadbalancer"`
-	Name               types.String `tfsdk:"name"`
-	Mode               types.String `tfsdk:"mode"`
-	Port               types.Int64  `tfsdk:"port"`
-	DefaultBackendName types.String `tfsdk:"default_backend_name"`
-	Rules              types.List   `tfsdk:"rules"`
-	TLSConfigs         types.List   `tfsdk:"tls_configs"`
-	Networks           types.List   `tfsdk:"networks"`
-	Properties         types.Object `tfsdk:"properties"`
-}
-
 type propertiesModel struct {
 	TimeoutClient        types.Int64 `tfsdk:"timeout_client"`
 	InboundProxyProtocol types.Bool  `tfsdk:"inbound_proxy_protocol"`
 	HTTP2Enabled         types.Bool  `tfsdk:"http2_enabled"`
 }
 
-var propertiesType = map[string]attr.Type{
-	"timeout_client":         types.Int64Type,
-	"inbound_proxy_protocol": types.BoolType,
-	"http2_enabled":          types.BoolType,
-}
-
 type networkModel struct {
 	Name types.String `tfsdk:"name"`
 }
 
-func schemaByVersion(version int64) schema.Schema {
-	propertiesDescription := "Frontend properties. Properties can set back to defaults by defining empty `properties {}` block."
-	propertiesAttributes := map[string]schema.Attribute{
-		"timeout_client": schema.Int64Attribute{
-			Description: "Client request timeout in seconds.",
-			Computed:    true,
-			Optional:    true,
-			Default:     int64default.StaticInt64(10),
-			Validators: []validator.Int64{
-				int64validator.Between(1, 86400),
-			},
-		},
-		"inbound_proxy_protocol": schema.BoolAttribute{
-			Description: "Enable or disable inbound proxy protocol support.",
-			Computed:    true,
-			Optional:    true,
-			Default:     booldefault.StaticBool(false),
-		},
-		"http2_enabled": schema.BoolAttribute{
-			Description: "Enable or disable HTTP/2 support.",
-			Computed:    true,
-			Optional:    true,
-			Default:     booldefault.StaticBool(false),
-		},
-	}
-
-	frontendSchema := schema.Schema{
-		Version:     1,
+func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource represents load balancer frontend service.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -198,80 +150,42 @@ func schemaByVersion(version int64) schema.Schema {
 					listvalidator.SizeBetween(0, 100),
 				},
 			},
-			"properties": schema.SingleNestedBlock{
-				MarkdownDescription: propertiesDescription,
-				Attributes:          propertiesAttributes,
-			},
-		},
-	}
-
-	switch version {
-	case 0:
-		frontendSchema.Version = 0
-		frontendSchema.Blocks["properties"] = schema.ListNestedBlock{
-			MarkdownDescription: propertiesDescription,
-			NestedObject: schema.NestedBlockObject{
-				Attributes: propertiesAttributes,
-			},
-		}
-	}
-	return frontendSchema
-}
-
-func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schemaByVersion(1)
-}
-
-func (r *frontendResource) UpgradeState(_ context.Context) map[int64]resource.StateUpgrader {
-	schemaV0 := schemaByVersion(0)
-
-	return map[int64]resource.StateUpgrader{
-		0: {
-			PriorSchema: &schemaV0,
-			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
-				var dataV0 frontendModelV0
-				resp.Diagnostics.Append(req.State.Get(ctx, &dataV0)...)
-
-				if resp.Diagnostics.HasError() {
-					return
-				}
-
-				var propertiesSlice []propertiesModel
-				resp.Diagnostics.Append(dataV0.Properties.ElementsAs(ctx, &propertiesSlice, false)...)
-
-				dataV1 := frontendModelV1{
-					ID:                 dataV0.ID,
-					LoadBalancer:       dataV0.LoadBalancer,
-					Name:               dataV0.Name,
-					Mode:               dataV0.Mode,
-					Port:               dataV0.Port,
-					DefaultBackendName: dataV0.DefaultBackendName,
-					Rules:              dataV0.Rules,
-					TLSConfigs:         dataV0.TLSConfigs,
-					Networks:           dataV0.Networks,
-				}
-
-				if len(propertiesSlice) == 1 {
-					var diags diag.Diagnostics
-					properties := propertiesSlice[0]
-
-					dataV1.Properties, diags = types.ObjectValue(propertiesType, map[string]attr.Value{
-						"timeout_client":         properties.TimeoutClient,
-						"inbound_proxy_protocol": properties.InboundProxyProtocol,
-						"http2_enabled":          properties.HTTP2Enabled,
-					})
-					resp.Diagnostics.Append(diags...)
-				} else {
-					dataV1.Properties = types.ObjectNull(propertiesType)
-				}
-
-				resp.Diagnostics.Append(resp.State.Set(ctx, &dataV1)...)
+			"properties": schema.ListNestedBlock{
+				MarkdownDescription: "Frontend properties. Properties can set back to defaults by defining empty `properties {}` block.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"timeout_client": schema.Int64Attribute{
+							Description: "Client request timeout in seconds.",
+							Computed:    true,
+							Optional:    true,
+							Default:     int64default.StaticInt64(10),
+							Validators: []validator.Int64{
+								int64validator.Between(1, 86400),
+							},
+						},
+						"inbound_proxy_protocol": schema.BoolAttribute{
+							Description: "Enable or disable inbound proxy protocol support.",
+							Computed:    true,
+							Optional:    true,
+							Default:     booldefault.StaticBool(false),
+						},
+						"http2_enabled": schema.BoolAttribute{
+							Description: "Enable or disable HTTP/2 support.",
+							Computed:    true,
+							Optional:    true,
+							Default:     booldefault.StaticBool(false),
+						},
+					},
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 1),
+				},
 			},
 		},
 	}
 }
 
-func setValues(ctx context.Context, data *frontendModelV1, frontend *upcloud.LoadBalancerFrontend) diag.Diagnostics {
+func setValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadBalancerFrontend) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
 	data.Name = types.StringValue(frontend.Name)
@@ -279,8 +193,7 @@ func setValues(ctx context.Context, data *frontendModelV1, frontend *upcloud.Loa
 	data.Port = types.Int64Value(int64(frontend.Port))
 	data.DefaultBackendName = types.StringValue(frontend.DefaultBackend)
 
-	var tlsConfigs, rules []string
-
+	rules := make([]string, 0)
 	for _, r := range frontend.Rules {
 		rules = append(rules, r.Name)
 	}
@@ -288,6 +201,7 @@ func setValues(ctx context.Context, data *frontendModelV1, frontend *upcloud.Loa
 	data.Rules, diags = types.ListValueFrom(ctx, types.StringType, rules)
 	respDiagnostics.Append(diags...)
 
+	tlsConfigs := make([]string, 0)
 	for _, t := range frontend.TLSConfigs {
 		tlsConfigs = append(tlsConfigs, t.Name)
 	}
@@ -296,11 +210,12 @@ func setValues(ctx context.Context, data *frontendModelV1, frontend *upcloud.Loa
 	respDiagnostics.Append(diags...)
 
 	if !data.Properties.IsNull() {
-		data.Properties, diags = types.ObjectValue(propertiesType, map[string]attr.Value{
-			"timeout_client":         types.Int64Value(int64(frontend.Properties.TimeoutClient)),
-			"inbound_proxy_protocol": asBool(frontend.Properties.InboundProxyProtocol),
-			"http2_enabled":          asBool(frontend.Properties.HTTP2Enabled),
-		})
+		properties := make([]propertiesModel, 1)
+		properties[0].TimeoutClient = types.Int64Value(int64(frontend.Properties.TimeoutClient))
+		properties[0].InboundProxyProtocol = asBool(frontend.Properties.InboundProxyProtocol)
+		properties[0].HTTP2Enabled = asBool(frontend.Properties.HTTP2Enabled)
+
+		data.Properties, diags = types.ListValueFrom(ctx, data.Properties.ElementType(ctx), properties)
 		respDiagnostics.Append(diags...)
 	}
 
@@ -330,20 +245,22 @@ func buildNetworks(ctx context.Context, dataNetworks types.List) ([]upcloud.Load
 	return networks, respDiagnostics
 }
 
-func buildProperties(ctx context.Context, dataProperties types.Object) (*upcloud.LoadBalancerFrontendProperties, diag.Diagnostics) {
+func buildProperties(ctx context.Context, dataProperties types.List) (*upcloud.LoadBalancerFrontendProperties, diag.Diagnostics) {
 	if dataProperties.IsNull() {
 		return nil, nil
 	}
 
-	var properties propertiesModel
-	diags := dataProperties.As(ctx, &properties, basetypes.ObjectAsOptions{
-		UnhandledNullAsEmpty:    true,
-		UnhandledUnknownAsEmpty: false,
-	})
+	var planProperties []propertiesModel
+	diags := dataProperties.ElementsAs(ctx, &planProperties, false)
 	if diags.HasError() {
 		return nil, diags
 	}
 
+	if len(planProperties) != 1 {
+		return nil, nil
+	}
+
+	properties := planProperties[0]
 	return &upcloud.LoadBalancerFrontendProperties{
 		TimeoutClient:        int(properties.TimeoutClient.ValueInt64()),
 		InboundProxyProtocol: properties.InboundProxyProtocol.ValueBoolPointer(),
@@ -352,7 +269,7 @@ func buildProperties(ctx context.Context, dataProperties types.Object) (*upcloud
 }
 
 func (r *frontendResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data frontendModelV1
+	var data frontendModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
@@ -392,7 +309,7 @@ func (r *frontendResource) Create(ctx context.Context, req resource.CreateReques
 }
 
 func (r *frontendResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data frontendModelV1
+	var data frontendModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
@@ -429,7 +346,7 @@ func (r *frontendResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 func (r *frontendResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data frontendModelV1
+	var data frontendModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	var loadBalancer, name string
@@ -478,7 +395,7 @@ func (r *frontendResource) Update(ctx context.Context, req resource.UpdateReques
 }
 
 func (r *frontendResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data frontendModelV1
+	var data frontendModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	if err := r.client.DeleteLoadBalancerFrontend(ctx, &request.DeleteLoadBalancerFrontendRequest{
