@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -123,17 +122,11 @@ func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Set of frontend rule names.",
 				Computed:    true,
 				ElementType: types.StringType,
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"tls_configs": schema.ListAttribute{
 				Description: "Set of TLS config names.",
 				Computed:    true,
 				ElementType: types.StringType,
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.UseStateForUnknown(),
-				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -189,6 +182,8 @@ func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 func setValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadBalancerFrontend) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
+	isImport := data.LoadBalancer.ValueString() == ""
+
 	data.Name = types.StringValue(frontend.Name)
 	data.Mode = types.StringValue(string(frontend.Mode))
 	data.Port = types.Int64Value(int64(frontend.Port))
@@ -210,7 +205,7 @@ func setValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadB
 	data.TLSConfigs, diags = types.ListValueFrom(ctx, types.StringType, tlsConfigs)
 	respDiagnostics.Append(diags...)
 
-	if !data.Properties.IsNull() {
+	if !data.Properties.IsNull() || isImport {
 		properties := make([]propertiesModel, 1)
 		properties[0].TimeoutClient = types.Int64Value(int64(frontend.Properties.TimeoutClient))
 		properties[0].InboundProxyProtocol = asBool(frontend.Properties.InboundProxyProtocol)
@@ -220,7 +215,7 @@ func setValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadB
 		respDiagnostics.Append(diags...)
 	}
 
-	if !data.Networks.IsNull() {
+	if !data.Networks.IsNull() || isImport {
 		networks := make([]networkModel, len(frontend.Networks))
 		for i, net := range frontend.Networks {
 			networks[i].Name = types.StringValue(net.Name)
@@ -352,6 +347,10 @@ func (r *frontendResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	resp.Diagnostics.Append(setValues(ctx, &data, network)...)
+
+	data.LoadBalancer = types.StringValue(loadBalancer)
+	data.Name = types.StringValue(name)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
