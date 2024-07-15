@@ -75,7 +75,7 @@ func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "ID of the frontend. ID is `{load balancer UUID}/{frontend name}` format.",
+				MarkdownDescription: "ID of the frontend. ID is in `{load balancer UUID}/{frontend name}` format.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},

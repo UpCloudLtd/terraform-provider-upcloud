@@ -18,6 +18,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - upcloud_loadbalancer_frontend: handle changes in the `networks`
+- upcloud_loadbalancer: set `maintenance_dow` and `maintenance_time` as computed to avoid planning them to be removed when missing from configuration.
 
 ## [5.7.0] - 2024-07-02
 
