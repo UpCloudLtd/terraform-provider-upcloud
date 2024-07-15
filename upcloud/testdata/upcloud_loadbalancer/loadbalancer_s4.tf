@@ -1,23 +1,26 @@
-variable "lb_zone" {
+variable "basename" {
+  default = "tf-acc-test-lb-"
+  type    = string
+}
+
+variable "zone" {
   type    = string
   default = "fi-hel2"
 }
 
-resource "upcloud_network" "lb_network" {
-  name = "lb-test-net"
-  zone = var.lb_zone
-  ip_network {
-    address = "10.0.7.0/24"
-    dhcp    = true
-    family  = "IPv4"
-  }
+locals {
+  addresses = ["10.0.7.0/24", "10.0.8.0/24"]
+  names     = ["lan-a", "lan-b"]
 }
 
-resource "upcloud_network" "lb_network_2" {
-  name = "lb-test-net-2"
-  zone = var.lb_zone
+resource "upcloud_network" "lb_network" {
+  count = length(local.addresses)
+
+  name = "${var.basename}net-${count.index}"
+  zone = var.zone
+
   ip_network {
-    address = "10.0.8.0/24"
+    address = local.addresses[count.index]
     dhcp    = true
     family  = "IPv4"
   }
@@ -25,24 +28,22 @@ resource "upcloud_network" "lb_network_2" {
 
 resource "upcloud_loadbalancer" "lb" {
   configured_status = "started"
-  name              = "lb-test"
+  name              = "${var.basename}lb"
   plan              = "development"
-  zone              = var.lb_zone
+  zone              = var.zone
   maintenance_dow   = "monday"
   maintenance_time  = "00:01:01Z"
-  # change: network name
-  networks {
-    name    = "lan-a"
-    type    = "private"
-    family  = "IPv4"
-    network = resource.upcloud_network.lb_network.id
-  }
-  # change: network name
-  networks {
-    name    = "lan-b"
-    type    = "private"
-    family  = "IPv4"
-    network = resource.upcloud_network.lb_network_2.id
+
+  # change: network names
+  dynamic "networks" {
+    for_each = upcloud_network.lb_network
+
+    content {
+      name    = local.names[networks.key]
+      type    = "private"
+      family  = "IPv4"
+      network = networks.value.id
+    }
   }
 }
 
@@ -56,9 +57,14 @@ resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
     timeout_client         = 20
     inbound_proxy_protocol = true
   }
+
   # change: add network listener
   networks {
-    name = resource.upcloud_loadbalancer.lb.networks[0].name
+    name = "lan-a"
+  }
+
+  networks {
+    name = "lan-b"
   }
 }
 
