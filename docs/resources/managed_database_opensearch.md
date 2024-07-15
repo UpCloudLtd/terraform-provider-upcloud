@@ -118,6 +118,8 @@ Optional Attributes:
 - `ism_history_rollover_check_period` (Number) The time between rollover checks for the audit history index in hours.
 - `ism_history_rollover_retention_period` (Number) How long audit history indices are kept in days.
 - `keep_index_refresh_interval` (Boolean) Don't reset index.refresh_interval to the default value. Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
+- `knn_memory_circuit_breaker_enabled` (Boolean) Enable or disable KNN memory circuit breaker. Defaults to true.
+- `knn_memory_circuit_breaker_limit` (Number) Maximum amount of memory that can be used for KNN index. Defaults to 50% of the JVM heap size.
 - `override_main_response_version` (Boolean) Compatibility mode sets OpenSearch to report its version as 7.10 so clients continue to work. Default is false.
 - `plugins_alerting_filter_by_backend_roles` (Boolean) Enable or disable filtering of alerting by backend roles. Requires Security plugin. Defaults to false.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
