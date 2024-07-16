@@ -52,7 +52,7 @@ func ResourceLoadBalancer() *schema.Resource {
 				Type:         schema.TypeList,
 				Optional:     true,
 				MaxItems:     8,
-				MinItems:     2,
+				MinItems:     1,
 				Elem: &schema.Resource{
 					Schema: loadBalancerNetworkSchema(),
 				},
@@ -124,11 +124,13 @@ func ResourceLoadBalancer() *schema.Resource {
 				Description: "The day of the week on which maintenance will be performed. If not provided, we will randomly select a weekend day. Valid values `monday|tuesday|wednesday|thursday|friday|saturday|sunday`.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 			"maintenance_time": {
 				Description: "The time at which the maintenance will begin in UTC. A 2-hour timeframe has been allocated for maintenance. During this period, the multi-node production plans will not experience any downtime, while the one-node plans will have a downtime of 1-2 minutes. If not provided, we will randomly select an off-peak time. Needs to be a valid time format in UTC HH:MM:SSZ, for example `20:01:01Z`.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 		},
 		CustomizeDiff: customdiff.ForceNewIfChange("networks.#", func(_ context.Context, old, new, _ interface{}) bool {

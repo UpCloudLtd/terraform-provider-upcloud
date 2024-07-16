@@ -262,3 +262,30 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 		},
 	})
 }
+
+func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_minimal.tf")
+
+	name := "upcloud_loadbalancer.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testData,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "maintenance_dow"),
+					resource.TestCheckResourceAttrSet(name, "maintenance_time"),
+				),
+			},
+			{
+				Config:                  testData,
+				ResourceName:            name,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"operational_state"},
+			},
+		},
+	})
+}
