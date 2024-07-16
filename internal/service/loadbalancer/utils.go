@@ -3,10 +3,24 @@ package loadbalancer
 import (
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var validateNameDiagFunc = validation.ToDiagFunc(validation.StringMatch(
-	regexp.MustCompile("^[a-zA-Z0-9_-]+$"),
-	"should contain only alphanumeric characters, underscores and dashes",
-))
+var (
+	validNameRegexp      = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
+	validNameMessage     = "should contain only alphanumeric characters, underscores and dashes"
+	nameValidator        = stringvalidator.RegexMatches(validNameRegexp, validNameMessage)
+	portValidator        = int64validator.Between(1, 65535)
+	validateNameDiagFunc = validation.ToDiagFunc(validation.StringMatch(validNameRegexp, validNameMessage))
+)
+
+func asBool(p *bool) basetypes.BoolValue {
+	if p == nil {
+		return types.BoolValue(false)
+	}
+	return types.BoolValue(*p)
+}

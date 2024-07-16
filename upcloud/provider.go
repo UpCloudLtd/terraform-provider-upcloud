@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/cloud"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/networkpeering"
@@ -140,6 +141,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 	return []func() resource.Resource{
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
+		loadbalancer.NewFrontendResource,
 		network.NewNetworkResource,
 		networkpeering.NewNetworkPeeringResource,
 		router.NewRouterResource,
