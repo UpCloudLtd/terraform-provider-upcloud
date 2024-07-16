@@ -3,12 +3,12 @@
 page_title: "upcloud_loadbalancer_frontend Resource - terraform-provider-upcloud"
 subcategory: Load Balancer
 description: |-
-  This resource represents load balancer frontend service
+  This resource represents load balancer frontend service.
 ---
 
 # upcloud_loadbalancer_frontend (Resource)
 
-This resource represents load balancer frontend service
+This resource represents load balancer frontend service.
 
 ## Example Usage
 
@@ -69,28 +69,28 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Required Attributes
 
 - `default_backend_name` (String) The name of the default backend where traffic will be routed. Note, default backend can be overwritten in frontend rules.
-- `loadbalancer` (String) ID of the load balancer to which the frontend is connected.
+- `loadbalancer` (String) UUID of the load balancer to which the frontend is connected.
 - `mode` (String) When load balancer operating in `tcp` mode it acts as a layer 4 proxy. In `http` mode it acts as a layer 7 proxy.
-- `name` (String) The name of the frontend must be unique within the load balancer service.
-- `port` (Number) Port to listen incoming requests
+- `name` (String) The name of the frontend. Must be unique within the load balancer service.
+- `port` (Number) Port to listen for incoming requests.
 
 ### Blocks
 
-- `networks` (Block List) Networks that frontend will be listening. Networks are required if load balancer has `networks` defined. This field will be required when deprecated field `network` is removed from load balancer resource. (see [below for nested schema](#nestedblock--networks))
-- `properties` (Block List, Max: 1) Frontend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
+- `networks` (Block Set) Networks that frontend will be listening. Networks are required if load balancer has `networks` defined. This field will be required when deprecated field `network` is removed from load balancer resource. (see [below for nested schema](#nestedblock--networks))
+- `properties` (Block List) Frontend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `rules` (List of String) Set of frontend rule names
-- `tls_configs` (List of String) Set of TLS config names
+- `id` (String) ID of the frontend. ID is in `{load balancer UUID}/{frontend name}` format.
+- `rules` (List of String) Set of frontend rule names.
+- `tls_configs` (List of String) Set of TLS config names.
 
 <a id="nestedblock--networks"></a>
 ### Nested Schema for `networks`
 
 Required Attributes:
 
-- `name` (String) Name of the load balancer network
+- `name` (String) Name of the load balancer network.
 
 
 <a id="nestedblock--properties"></a>
