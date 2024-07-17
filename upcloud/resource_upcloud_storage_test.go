@@ -39,7 +39,7 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 						encrypt = true
 						size    = 10
 						tier    = "maxiops"
-						title   = "tf-acc-test-storage-basic"
+						title   = "tf-acc-test-storage-basic-with-a-title-consisting-of-64-characters-or-more"
 						zone    = "pl-waw1"
 						filesystem_autoresize = false
 						delete_autoresize_backup = false
@@ -63,7 +63,7 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.this", "tier", "maxiops"),
 					resource.TestCheckResourceAttr(
-						"upcloud_storage.this", "title", "tf-acc-test-storage-basic"),
+						"upcloud_storage.this", "title", "tf-acc-test-storage-basic-with-a-title-consisting-of-64-characters-or-more"),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.this", "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(
