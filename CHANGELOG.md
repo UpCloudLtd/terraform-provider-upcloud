@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_storage: sync title length constraint with API, allows 1-255 characters now
+
 ## [5.8.0] - 2024-07-16
 
 ### Added
