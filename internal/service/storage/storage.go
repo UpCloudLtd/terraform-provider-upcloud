@@ -54,7 +54,7 @@ func ResourceStorage() *schema.Resource {
 				Description:  "A short, informative description",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringLenBetween(0, 64),
+				ValidateFunc: validation.StringLenBetween(1, 255),
 			},
 			"zone": {
 				Description: "The zone in which the storage will be created, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
