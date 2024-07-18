@@ -19,6 +19,10 @@ jobs:
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@a1502cd9e758c50496cc9ac5308c4843bcd56d36 # v3.0.0
+        with:
+          terraform_wrapper: false
       - name: Setup upctl
         run: |
           go install github.com/UpCloudLtd/upcloud-cli/v3/...@latest
@@ -36,11 +40,15 @@ jobs:
             cat $(find internal/ -name "*.diff")
             echo EOF
           } >> "$GITHUB_OUTPUT"
+      - name: Generate documentation
+        run: |
+          terraform version
+          make docs
       - name: Create PR for update
         uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5.0.3
         with:
-          add-paths: internal/
-          branch: chore/make-generate
+          add-paths: internal/,docs/
+          branch: ${{ github.ref == 'refs/heads/main' && 'chore/make-generate' || 'test/make-generate-output' }}
           commit-message: "chore: update generated files"
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
           title: "chore: update generated files"
