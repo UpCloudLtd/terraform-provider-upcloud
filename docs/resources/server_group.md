@@ -3,12 +3,12 @@
 page_title: "upcloud_server_group Resource - terraform-provider-upcloud"
 subcategory: Servers
 description: |-
-  
+  Server groups allow grouping servers and defining anti-affinity for the servers.
 ---
 
 # upcloud_server_group (Resource)
 
-
+Server groups allow grouping servers and defining anti-affinity for the servers.
 
 ## Example Usage
 
@@ -57,7 +57,7 @@ resource "upcloud_server_group" "main" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) UUID of the server group.
 
 ## Import
 
