@@ -4,14 +4,21 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 const (
@@ -34,222 +41,226 @@ const (
 	for example via API, UpCloud Control Panel or upctl (UpCloud CLI)`
 )
 
-func ResourceServerGroup() *schema.Resource {
-	return &schema.Resource{
-		CreateContext: resourceServerGroupCreate,
-		ReadContext:   resourceServerGroupRead,
-		UpdateContext: resourceServerGroupUpdate,
-		DeleteContext: resourceServerGroupDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"title": {
-				Description: titleDescription,
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"labels": utils.LabelsSchema("server group"),
-			"members": {
-				Description: membersDescription,
-				Type:        schema.TypeSet,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+var (
+	_ resource.Resource                = &serverGroupResource{}
+	_ resource.ResourceWithConfigure   = &serverGroupResource{}
+	_ resource.ResourceWithImportState = &serverGroupResource{}
+)
+
+func NewServerGroupResource() resource.Resource {
+	return &serverGroupResource{}
+}
+
+type serverGroupResource struct {
+	client *service.Service
+}
+
+func (r *serverGroupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_server_group"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *serverGroupResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type serverGroupModel struct {
+	ID                 types.String `tfsdk:"id"`
+	Title              types.String `tfsdk:"title"`
+	Labels             types.Map    `tfsdk:"labels"`
+	Members            types.Set    `tfsdk:"members"`
+	AntiAffinityPolicy types.String `tfsdk:"anti_affinity_policy"`
+	TrackMembers       types.Bool   `tfsdk:"track_members"`
+}
+
+func (r *serverGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "Server groups allow grouping servers and defining anti-affinity for the servers.",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "UUID of the server group.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
-				Optional: true,
 			},
-			"track_members": {
-				Description: trackMembersDescription,
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
+			"title": schema.StringAttribute{
+				MarkdownDescription: titleDescription,
+				Required:            true,
 			},
-			"anti_affinity_policy": {
-				Description: antiAffinityPolicyDescription,
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "no",
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-					string(upcloud.ServerGroupAntiAffinityPolicyBestEffort),
-					string(upcloud.ServerGroupAntiAffinityPolicyOff),
-					string(upcloud.ServerGroupAntiAffinityPolicyStrict),
-				}, false)),
+			"labels": utils.LabelsAttribute("server group"),
+			"members": schema.SetAttribute{
+				MarkdownDescription: membersDescription,
+				ElementType:         types.StringType,
+				Optional:            true,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"track_members": schema.BoolAttribute{
+				MarkdownDescription: trackMembersDescription,
+				Computed:            true,
+				Optional:            true,
+				Default:             booldefault.StaticBool(true),
+				Validators: []validator.Bool{
+					trackMembersValidator{},
+				},
+			},
+			"anti_affinity_policy": schema.StringAttribute{
+				MarkdownDescription: antiAffinityPolicyDescription,
+				Computed:            true,
+				Optional:            true,
+				Default:             stringdefault.StaticString(string(upcloud.ServerGroupAntiAffinityPolicyOff)),
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.ServerGroupAntiAffinityPolicyBestEffort),
+						string(upcloud.ServerGroupAntiAffinityPolicyOff),
+						string(upcloud.ServerGroupAntiAffinityPolicyStrict),
+					),
+				},
 			},
 		},
-		CustomizeDiff: customdiff.Sequence(
-			validateTrackMembers,
-		),
 	}
 }
 
-func resourceServerGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	baseErrMsg := "creating server group failed"
+func setValues(ctx context.Context, data *serverGroupModel, serverGroup *upcloud.ServerGroup) diag.Diagnostics {
+	var respDiagnostics diag.Diagnostics
 
-	req, err := createServerGroupRequestFromConfig(ctx, d)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  baseErrMsg,
-			Detail:   err.Error(),
-		})
+	data.Title = types.StringValue(serverGroup.Title)
+	data.ID = types.StringValue(serverGroup.UUID)
+	data.AntiAffinityPolicy = types.StringValue(string(serverGroup.AntiAffinityPolicy))
 
-		return diags
+	data.Labels, respDiagnostics = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(serverGroup.Labels))
+
+	if data.TrackMembers.ValueBool() && !data.Members.IsNull() {
+		var diags diag.Diagnostics
+		data.Members, diags = types.SetValueFrom(ctx, types.StringType, serverGroup.Members)
+		respDiagnostics.Append(diags...)
+	} else {
+		data.Members = types.SetNull(types.StringType)
 	}
 
-	group, err := svc.CreateServerGroup(ctx, req)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  baseErrMsg,
-			Detail:   err.Error(),
-		})
-
-		return diags
-	}
-
-	d.SetId(group.UUID)
-
-	diags = append(diags, resourceServerGroupRead(ctx, d, meta)...)
-	return diags
+	return respDiagnostics
 }
 
-func resourceServerGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	baseErrMsg := "reading server group data failed"
+func (r *serverGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data serverGroupModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	group, err := svc.GetServerGroup(ctx, &request.GetServerGroupRequest{UUID: d.Id()})
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	err = setServerGroupData(group, d)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  baseErrMsg,
-			Detail:   err.Error(),
-		})
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+	var labelsSlice upcloud.LabelSlice = utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+
+	var members upcloud.ServerUUIDSlice
+	resp.Diagnostics.Append(data.Members.ElementsAs(ctx, &members, false)...)
+
+	apiReq := request.CreateServerGroupRequest{
+		Title:              data.Title.ValueString(),
+		Labels:             &labelsSlice,
+		Members:            members,
+		AntiAffinityPolicy: upcloud.ServerGroupAntiAffinityPolicy(data.AntiAffinityPolicy.ValueString()),
 	}
 
-	return diags
+	serverGroup, err := r.client.CreateServerGroup(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create server group",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setValues(ctx, &data, serverGroup)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceServerGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	baseErrMsg := "modifying server group data failed"
+func (r *serverGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data serverGroupModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	req, err := modifyServerGroupRequestFromConfig(ctx, d)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	serverGroup, err := r.client.GetServerGroup(ctx, &request.GetServerGroupRequest{
+		UUID: data.ID.ValueString(),
+	})
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  baseErrMsg,
-			Detail:   err.Error(),
-		})
-		return diags
-	}
-
-	_, err = svc.ModifyServerGroup(ctx, req)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  baseErrMsg,
-			Detail:   err.Error(),
-		})
-		return diags
-	}
-
-	diags = append(diags, resourceServerGroupRead(ctx, d, meta)...)
-	return diags
-}
-
-func resourceServerGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-
-	err := svc.DeleteServerGroup(ctx, &request.DeleteServerGroupRequest{UUID: d.Id()})
-	if err != nil {
-		diags = append(diags, diag.FromErr(err)...)
-	}
-
-	return diags
-}
-
-func setServerGroupData(group *upcloud.ServerGroup, d *schema.ResourceData) error {
-	if err := d.Set("title", group.Title); err != nil {
-		return err
-	}
-
-	if err := d.Set("anti_affinity_policy", group.AntiAffinityPolicy); err != nil {
-		return err
-	}
-
-	if d.Get("track_members").(bool) {
-		if err := d.Set("members", group.Members); err != nil {
-			return err
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read server group details",
+				utils.ErrorDiagnosticDetail(err),
+			)
 		}
+		return
 	}
 
-	return d.Set("labels", utils.LabelSliceToMap(group.Labels))
+	resp.Diagnostics.Append(setValues(ctx, &data, serverGroup)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func createServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceData) (*request.CreateServerGroupRequest, error) {
-	result := &request.CreateServerGroupRequest{
-		Title: d.Get("title").(string),
+func (r *serverGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data serverGroupModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+	var labelsSlice upcloud.LabelSlice = utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+
+	var members upcloud.ServerUUIDSlice
+	resp.Diagnostics.Append(data.Members.ElementsAs(ctx, &members, false)...)
+
+	apiReq := request.ModifyServerGroupRequest{
+		UUID:               data.ID.ValueString(),
+		Title:              data.Title.ValueString(),
+		Labels:             &labelsSlice,
+		Members:            &members,
+		AntiAffinityPolicy: upcloud.ServerGroupAntiAffinityPolicy(data.AntiAffinityPolicy.ValueString()),
 	}
 
-	aaPolicy := d.Get("anti_affinity_policy").(string)
-	result.AntiAffinityPolicy = upcloud.ServerGroupAntiAffinityPolicy(aaPolicy)
-
-	members, membersWereSet := d.GetOk("members")
-	if membersWereSet {
-		membersSlice, err := utils.SetOfStringsToSlice(ctx, members)
-		if err != nil {
-			return result, err
-		}
-
-		result.Members = membersSlice
+	serverGroup, err := r.client.ModifyServerGroup(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify server group",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	labels, labelsWereSet := d.GetOk("labels")
-	if labelsWereSet {
-		labelsSlice, err := utils.MapOfStringsToLabelSlice(ctx, labels)
-		if err != nil {
-			return result, err
-		}
-
-		result.Labels = &labelsSlice
-	}
-
-	return result, nil
+	resp.Diagnostics.Append(setValues(ctx, &data, serverGroup)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func modifyServerGroupRequestFromConfig(ctx context.Context, d *schema.ResourceData) (*request.ModifyServerGroupRequest, error) {
-	result := &request.ModifyServerGroupRequest{
-		Title: d.Get("title").(string),
-		UUID:  d.Id(),
+func (r *serverGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data serverGroupModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if err := r.client.DeleteServerGroup(ctx, &request.DeleteServerGroupRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete server group",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
+}
 
-	aaPolicy := d.Get("anti_affinity_policy").(string)
-	result.AntiAffinityPolicy = upcloud.ServerGroupAntiAffinityPolicy(aaPolicy)
-
-	if d.HasChange("members") {
-		members, err := utils.SetOfStringsToSlice(ctx, d.Get("members"))
-		if err != nil {
-			return result, err
-		}
-
-		membersUUIDSlice := utils.SliceOfStringToServerUUIDSlice(members)
-		result.Members = &membersUUIDSlice
-	}
-
-	if d.HasChange("labels") {
-		labels, err := utils.MapOfStringsToLabelSlice(ctx, d.Get("labels"))
-		if err != nil {
-			return result, err
-		}
-
-		result.Labels = &labels
-	}
-
-	return result, nil
+func (r *serverGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

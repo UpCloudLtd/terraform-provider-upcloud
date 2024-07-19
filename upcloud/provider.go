@@ -15,6 +15,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/networkpeering"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/router"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/servergroup"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -145,6 +146,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		network.NewNetworkResource,
 		networkpeering.NewNetworkPeeringResource,
 		router.NewRouterResource,
+		servergroup.NewServerGroupResource,
 	}
 }
 

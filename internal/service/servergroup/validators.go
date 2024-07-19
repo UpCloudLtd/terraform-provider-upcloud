@@ -2,23 +2,30 @@ package servergroup
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
-func validateTrackMembers(ctx context.Context, d *schema.ResourceDiff, _ interface{}) error {
-	members, err := utils.SetOfStringsToSlice(ctx, d.Get("members"))
-	if err != nil {
-		return fmt.Errorf("parsing members in track_members validation failed: %w", err)
+var _ validator.Bool = trackMembersValidator{}
+
+type trackMembersValidator struct{}
+
+func (v trackMembersValidator) Description(_ context.Context) string {
+	return "Validates that track_members is not set to false when members are set"
+}
+
+func (v trackMembersValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (v trackMembersValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
+	var data serverGroupModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	trackMembers := d.Get("track_members").(bool)
-
-	if !trackMembers && len(members) > 0 {
-		return fmt.Errorf("track_members can not be set to false when members set is not empty")
+	if !req.ConfigValue.IsNull() && !req.ConfigValue.ValueBool() && !data.Members.IsNull() {
+		resp.Diagnostics.AddError("Invalid track_members value", "track_members can not be set to false when members set is not empty")
 	}
-
-	return nil
 }
