@@ -18,7 +18,7 @@ func StorageEncryptionAttribute(description string, computed bool) *schema.Strin
 			stringplanmodifier.RequiresReplace(),
 		},
 		Validators: []validator.String{
-			stringvalidator.OneOf(string(upcloud.StorageEncryptionDataAtReset)),
+			stringvalidator.OneOf(string(upcloud.StorageEncryptionDataAtRest)),
 		},
 	}
 }

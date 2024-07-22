@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -21,6 +22,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Required:     true,
 			ValidateFunc: validation.StringLenBetween(3, 30),
 		},
+		"labels":     utils.LabelsSchema("managed database"),
 		"components": schemaDatabaseComponents(),
 		"maintenance_window_dow": {
 			Description:      "Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)",
