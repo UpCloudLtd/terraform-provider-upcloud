@@ -7,7 +7,17 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
-- upcloud_managed_database_\*: support for labels.
+- upcloud_managed_database_\*: support for labels
+- upcloud_router: add `static_routes` set for listing both user and service defined static routes
+
+### Changed
+
+- upcloud_router: store `attached_networks` values in alphabetical order
+- upcloud_router: do not include service defined routes in the `static_route` set, as those can not be modified or removed by the user
+
+### Fixed
+
+- upcloud_router: remove empty strings from `attached_networks` value
 
 ## [5.8.1] - 2024-07-18
 

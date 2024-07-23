@@ -2,12 +2,14 @@ package router
 
 import (
 	"context"
+	"sort"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
@@ -48,7 +49,8 @@ type routerModel struct {
 	Name             types.String `tfsdk:"name"`
 	Type             types.String `tfsdk:"type"`
 	AttachedNetworks types.List   `tfsdk:"attached_networks"`
-	StaticRoutes     types.Set    `tfsdk:"static_route"`
+	UserStaticRoutes types.Set    `tfsdk:"static_route"`
+	StaticRoutes     types.Set    `tfsdk:"static_routes"`
 	Labels           types.Map    `tfsdk:"labels"`
 }
 
@@ -56,6 +58,14 @@ type staticRouteModel struct {
 	Name    types.String `tfsdk:"name"`
 	Nexthop types.String `tfsdk:"nexthop"`
 	Route   types.String `tfsdk:"route"`
+	Type    types.String `tfsdk:"type"`
+}
+
+var staticRouteTypes = map[string]attr.Type{
+	"name":    types.StringType,
+	"nexthop": types.StringType,
+	"route":   types.StringType,
+	"type":    types.StringType,
 }
 
 func (r *routerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -86,10 +96,15 @@ func (r *routerResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Computed:    true,
 				ElementType: types.StringType,
 			},
+			"static_routes": schema.SetAttribute{
+				MarkdownDescription: "A collection of static routes for this router. This set includes both user and service defined static routes. The objects in this set use the same schema as `static_route` blocks.",
+				Computed:            true,
+				ElementType:         types.ObjectType{AttrTypes: staticRouteTypes},
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"static_route": schema.SetNestedBlock{
-				Description: "A collection of static routes for this router.",
+				Description: "A collection of user managed static routes for this router.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
@@ -111,6 +126,10 @@ func (r *routerResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 								validatorutil.NewFrameworkStringValidator(validation.IsCIDR),
 							},
 						},
+						"type": schema.StringAttribute{
+							Description: "Type of the route.",
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -125,10 +144,11 @@ func setValues(ctx context.Context, data *routerModel, router *upcloud.Router) d
 	data.ID = types.StringValue(router.UUID)
 	data.Type = types.StringValue(router.Type)
 
-	attachedNetworkUUIDs := make([]string, len(router.AttachedNetworks))
+	attachedNetworkUUIDs := make([]string, 0)
 	for _, network := range router.AttachedNetworks {
 		attachedNetworkUUIDs = append(attachedNetworkUUIDs, network.NetworkUUID)
 	}
+	sort.Strings(attachedNetworkUUIDs)
 
 	attachedNetworks, diags := types.ListValueFrom(ctx, types.StringType, utils.NilAsEmptyList(attachedNetworkUUIDs))
 	respDiagnostics.Append(diags...)
@@ -136,26 +156,38 @@ func setValues(ctx context.Context, data *routerModel, router *upcloud.Router) d
 
 	data.Labels, respDiagnostics = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(router.Labels))
 
-	staticRoutes := make([]staticRouteModel, len(router.StaticRoutes))
-	for i, route := range router.StaticRoutes {
-		staticRoutes[i].Name = types.StringValue(route.Name)
-		staticRoutes[i].Nexthop = types.StringValue(route.Nexthop)
-		staticRoutes[i].Route = types.StringValue(route.Route)
+	staticRoutes := make([]staticRouteModel, 0)
+	userStaticRoutes := make([]staticRouteModel, 0)
+	for _, route := range router.StaticRoutes {
+		r := staticRouteModel{
+			Name:    types.StringValue(route.Name),
+			Nexthop: types.StringValue(route.Nexthop),
+			Route:   types.StringValue(route.Route),
+			Type:    types.StringValue(string(route.Type)),
+		}
+		staticRoutes = append(staticRoutes, r)
+
+		if route.Type == upcloud.RouterStaticRouteTypeUser {
+			userStaticRoutes = append(userStaticRoutes, r)
+		}
 	}
 
 	data.StaticRoutes, diags = types.SetValueFrom(ctx, data.StaticRoutes.ElementType(ctx), staticRoutes)
 	respDiagnostics.Append(diags...)
 
+	data.UserStaticRoutes, diags = types.SetValueFrom(ctx, data.UserStaticRoutes.ElementType(ctx), userStaticRoutes)
+	respDiagnostics.Append(diags...)
+
 	return respDiagnostics
 }
 
-func buildStaticRoutes(ctx context.Context, dataStaticRoutes types.List) ([]upcloud.StaticRoute, diag.Diagnostics) {
-	var planStaticRoutes []staticRouteModel
-	respDiagnostics := dataStaticRoutes.ElementsAs(ctx, &planStaticRoutes, false)
+func buildStaticRoutes(ctx context.Context, dataUserStaticRoutes types.Set) ([]upcloud.StaticRoute, diag.Diagnostics) {
+	var planUserStaticRoutes []staticRouteModel
+	respDiagnostics := dataUserStaticRoutes.ElementsAs(ctx, &planUserStaticRoutes, false)
 
 	staticRoutes := make([]upcloud.StaticRoute, 0)
 
-	for _, route := range planStaticRoutes {
+	for _, route := range planUserStaticRoutes {
 		staticRoutes = append(staticRoutes, upcloud.StaticRoute{
 			Name:    route.Name.ValueString(),
 			Nexthop: route.Nexthop.ValueString(),
@@ -179,7 +211,7 @@ func (r *routerResource) Create(ctx context.Context, req resource.CreateRequest,
 		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
 	}
 
-	staticRoutes, diags := buildStaticRoutes(ctx, basetypes.ListValue(data.StaticRoutes))
+	staticRoutes, diags := buildStaticRoutes(ctx, data.UserStaticRoutes)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -247,7 +279,7 @@ func (r *routerResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 	labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
 
-	staticRoutes, diags := buildStaticRoutes(ctx, basetypes.ListValue(data.StaticRoutes))
+	staticRoutes, diags := buildStaticRoutes(ctx, data.UserStaticRoutes)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
