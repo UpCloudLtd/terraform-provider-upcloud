@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -15,9 +16,9 @@ import (
 
 func TestAccUpCloudRouter(t *testing.T) {
 	var router upcloud.Router
-	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
+	name := fmt.Sprintf("tf-acc-test-router-%s", acctest.RandString(10))
 
-	staticRoutes := []upcloud.StaticRoute{{Name: "my-example-route", Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
+	staticRoutes := []upcloud.StaticRoute{{Name: "test-route", Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
@@ -26,14 +27,19 @@ func TestAccUpCloudRouter(t *testing.T) {
 			{
 				Config: testAccRouterConfig(name, staticRoutes),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
+					testAccCheckRouterExists("upcloud_router.this", &router),
 					testAccCheckUpCloudRouterAttributes(&router, name),
-					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.my_example_router", "static_route.*", map[string]string{
-						"name":    "my-example-route",
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.this", "static_route.*", map[string]string{
+						"name":    "test-route",
 						"nexthop": "10.0.0.100",
 						"route":   "0.0.0.0/0",
 					}),
 				),
+			},
+			{
+				ResourceName:      "upcloud_router.this",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -41,11 +47,11 @@ func TestAccUpCloudRouter(t *testing.T) {
 
 func TestAccUpCloudRouter_update(t *testing.T) {
 	var router upcloud.Router
-	name := fmt.Sprintf("tf-test-%s", acctest.RandString(10))
-	updateName := fmt.Sprintf("tf-test-update-%s", acctest.RandString(10))
+	name := fmt.Sprintf("tf-acc-test-router-%s", acctest.RandString(10))
+	updateName := fmt.Sprintf("tf-acc-test-router-update-%s", acctest.RandString(10))
 
 	staticRoutes := []upcloud.StaticRoute{{Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
-	updateStaticRoutes := []upcloud.StaticRoute{{Name: "my-example-route-2", Nexthop: "10.0.0.101", Route: "0.0.0.0/0"}}
+	updateStaticRoutes := []upcloud.StaticRoute{{Name: "test-route-2", Nexthop: "10.0.0.101", Route: "0.0.0.0/0"}}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -55,9 +61,9 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 			{
 				Config: testAccRouterConfig(name, staticRoutes),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
+					testAccCheckRouterExists("upcloud_router.this", &router),
 					testAccCheckUpCloudRouterAttributes(&router, name),
-					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.my_example_router", "static_route.*", map[string]string{
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.this", "static_route.*", map[string]string{
 						"name":    "static-route-0",
 						"nexthop": "10.0.0.100",
 						"route":   "0.0.0.0/0",
@@ -67,10 +73,10 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 			{
 				Config: testAccRouterConfig(updateName, updateStaticRoutes),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
+					testAccCheckRouterExists("upcloud_router.this", &router),
 					testAccCheckUpCloudRouterAttributes(&router, updateName),
-					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.my_example_router", "static_route.*", map[string]string{
-						"name":    "my-example-route-2",
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.this", "static_route.*", map[string]string{
+						"name":    "test-route-2",
 						"nexthop": "10.0.0.101",
 						"route":   "0.0.0.0/0",
 					}),
@@ -80,30 +86,10 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 	})
 }
 
-func TestAccUpCloudRouter_import(t *testing.T) {
-	var router upcloud.Router
-	name := fmt.Sprintf("tf-test-import-%s", acctest.RandString(10))
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
-		CheckDestroy:             testAccCheckRouterDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccRouterConfig(name, nil),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterExists("upcloud_router.my_example_router", &router),
-				),
-			},
-			{
-				ResourceName:      "upcloud_router.my_example_router",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccUpCloudRouter_detach(t *testing.T) {
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_router/detach_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_router/detach_s2.tf")
+
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
@@ -112,56 +98,20 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
-				// first create network and router attached
-				Config: `
-					resource "upcloud_router" "terraform_test_router" {
-					  name = "testrouter"
-					}
-					
-					resource "upcloud_network" "terraform_test_network" {
-					  name = "testnetwork"
-					  zone = "fi-hel1"
-					
-					  router = upcloud_router.terraform_test_router.id
-					
-					  ip_network {
-						address            = "10.0.2.0/24"
-						dhcp               = true
-						family  = "IPv4"
-					  }
-					}
-					`,
+				Config: testDataStep1,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterExists("upcloud_router.terraform_test_router", &router),
-					testAccCheckNetworkExists("upcloud_network.terraform_test_network", &network),
+					testAccCheckRouterExists("upcloud_router.this", &router),
+					testAccCheckNetworkExists("upcloud_network.this", &network),
 					testAccRouterAttachedNetworksCount(&router, 1),
 					// make sure network and router are attached to each other
 					testAccNetworkRouterAttached(&network, &router),
 				),
 			},
 			{
-				// and then detach the router from network, eg. remove the router attribute
-				Config: `
-					resource "upcloud_router" "terraform_test_router" {
-					  name = "testrouter"
-					}
-					
-					resource "upcloud_network" "terraform_test_network" {
-					  name = "testnetwork"
-					  zone = "fi-hel1"
-					
-					  # router = upcloud_router.terraform_test_router.id 
-					
-					  ip_network {
-						address            = "10.0.2.0/24"
-						dhcp               = true
-						family  = "IPv4"
-					  }
-					}
-					`,
+				Config: testDataStep2,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterExists("upcloud_router.terraform_test_router", &router),
-					testAccCheckNetworkExists("upcloud_network.terraform_test_network", &network),
+					testAccCheckRouterExists("upcloud_router.this", &router),
+					testAccCheckNetworkExists("upcloud_network.this", &network),
 					testAccRouterAttachedNetworksCount(&router, 0),
 					// make sure network and router are NOT attached to each other
 					testAccNetworkRouterNotAttached(&network, &router),
@@ -172,6 +122,9 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_router/delete_attached_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_router/delete_attached_s2.tf")
+
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
@@ -180,58 +133,48 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
-				// first create network and router attached
-				Config: `
-					resource "upcloud_router" "terraform_test_router" {
-					  name = "testrouter"
-					}
-					
-					resource "upcloud_network" "terraform_test_network" {
-					  name = "testnetwork"
-					  zone = "fi-hel1"
-					
-					  router = upcloud_router.terraform_test_router.id
-					
-					  ip_network {
-						address            = "10.0.3.0/24"
-						dhcp               = true
-						family  = "IPv4"
-					  }
-					}
-					`,
+				Config: testDataStep1,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterExists("upcloud_router.terraform_test_router", &router),
-					testAccCheckNetworkExists("upcloud_network.terraform_test_network", &network),
+					testAccCheckRouterExists("upcloud_router.this", &router),
+					testAccCheckNetworkExists("upcloud_network.this", &network),
 					testAccRouterAttachedNetworksCount(&router, 1),
 					// make sure network and router are attached to each other
 					testAccNetworkRouterAttached(&network, &router),
 				),
 			},
 			{
-				// and then try to delete the router
-				Config: `
-					# resource "upcloud_router" "terraform_test_router" {
-					#   name = "testrouter"
-					# }
-					
-					resource "upcloud_network" "terraform_test_network" {
-					  name = "testnetwork"
-					  zone = "fi-hel1"
-					
-					  # router = upcloud_router.terraform_test_router.id
-					
-					  ip_network {
-						address            = "10.0.3.0/24"
-						dhcp               = true
-						family  = "IPv4"
-					  }
-					}
-					`,
+				Config: testDataStep2,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRouterDoesntExist("upcloud_router.terraform_test_router", &router),
-					testAccCheckNetworkExists("upcloud_network.terraform_test_network", &network),
+					testAccCheckRouterDoesntExist("upcloud_router.this", &router),
+					testAccCheckNetworkExists("upcloud_network.this", &network),
 					// make sure network has no attachment anymore
 					testAccNetworkNoRouterAttachment(&network),
+				),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudRouter_staticRoutes(t *testing.T) {
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_router/static_routes_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_router/static_routes_s2.tf")
+
+	router := "upcloud_router.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataStep1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(router, "static_route.#", "0"),
+				),
+			},
+			{
+				Config: testDataStep2,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(router, "static_route.#", "1"),
 				),
 			},
 		},
@@ -385,7 +328,7 @@ func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
 
 func testAccRouterConfig(name string, staticRoutes []upcloud.StaticRoute) string {
 	s := fmt.Sprintf(`
-resource "upcloud_router" "my_example_router" {
+resource "upcloud_router" "this" {
   name = "%s"
 `, name)
 
