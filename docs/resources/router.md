@@ -31,12 +31,13 @@ resource "upcloud_router" "my_example_router" {
 
 ### Blocks
 
-- `static_route` (Block Set) A collection of static routes for this router. (see [below for nested schema](#nestedblock--static_route))
+- `static_route` (Block Set) A collection of user managed static routes for this router. (see [below for nested schema](#nestedblock--static_route))
 
 ### Read-Only
 
 - `attached_networks` (List of String) List of UUIDs representing networks attached to this router.
 - `id` (String) UUID of the router.
+- `static_routes` (Set of Object) A collection of static routes for this router. This set includes both user and service defined static routes. The objects in this set use the same schema as `static_route` blocks. (see [below for nested schema](#nestedatt--static_routes))
 - `type` (String) Type of the router
 
 <a id="nestedblock--static_route"></a>
@@ -50,6 +51,21 @@ Required Attributes:
 Optional Attributes:
 
 - `name` (String) Name or description of the route.
+
+Read-Only:
+
+- `type` (String) Type of the route.
+
+
+<a id="nestedatt--static_routes"></a>
+### Nested Schema for `static_routes`
+
+Read-Only:
+
+- `name` (String)
+- `nexthop` (String)
+- `route` (String)
+- `type` (String)
 
 ## Import
 
