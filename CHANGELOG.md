@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_database_\*: support for labels.
+
 ## [5.8.1] - 2024-07-18
 
 ### Fixed

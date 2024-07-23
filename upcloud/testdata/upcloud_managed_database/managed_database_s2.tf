@@ -107,6 +107,11 @@ resource "upcloud_managed_database_mysql" "msql1" {
     type   = "private"
     uuid   = upcloud_network.msql1.id
   }
+
+  labels = {
+    test       = "terraform-provider-acceptance-test"
+    managed-by = "team-devex"
+  }
 }
 
 resource "upcloud_managed_database_logical_database" "logical_db_1" {
@@ -128,6 +133,10 @@ resource "upcloud_managed_database_redis" "r1" {
     uuid   = upcloud_network.r1.id
   }
 
+  labels = {
+    test       = ""
+    managed-by = "team-devex"
+  }
 }
 
 resource "upcloud_managed_database_user" "db_user_1" {

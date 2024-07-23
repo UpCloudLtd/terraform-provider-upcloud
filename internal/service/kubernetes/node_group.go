@@ -151,7 +151,7 @@ func ResourceNodeGroup() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-					string(upcloud.StorageEncryptionDataAtReset),
+					string(upcloud.StorageEncryptionDataAtRest),
 					string(upcloud.StorageEncryptionNone),
 				}, false)),
 			},

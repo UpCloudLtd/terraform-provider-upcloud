@@ -99,7 +99,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	diags := diag.Diagnostics{}
 
 	if d.HasChanges("plan", "title", "zone",
-		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network") {
+		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network", "labels") {
 		req := request.ModifyManagedDatabaseRequest{UUID: d.Id()}
 		req.Plan = d.Get("plan").(string)
 		req.Title = d.Get("title").(string)
@@ -107,6 +107,11 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		if d.HasChanges("maintenance_window_dow", "maintenance_window_time") {
 			req.Maintenance.DayOfWeek = d.Get("maintenance_window_dow").(string)
 			req.Maintenance.Time = d.Get("maintenance_window_time").(string)
+		}
+
+		if d.HasChange("labels") {
+			labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
+			req.Labels = &labels
 		}
 
 		if d.HasChange("properties.0") {
@@ -182,6 +187,7 @@ func buildManagedDatabaseRequestFromResourceData(d *schema.ResourceData) request
 		HostNamePrefix: d.Get("name").(string),
 		Plan:           d.Get("plan").(string),
 		Title:          d.Get("title").(string),
+		Labels:         utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
 		Type:           upcloud.ManagedDatabaseServiceType(d.Get("type").(string)),
 		Zone:           d.Get("zone").(string),
 	}
@@ -332,6 +338,9 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 	}
 
 	if err = d.Set("name", details.Name); err != nil {
+		return err
+	}
+	if err := d.Set("labels", utils.LabelsSliceToMap(details.Labels)); err != nil {
 		return err
 	}
 	if err = d.Set("components", components); err != nil {

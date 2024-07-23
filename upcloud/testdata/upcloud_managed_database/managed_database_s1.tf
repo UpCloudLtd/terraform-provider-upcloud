@@ -76,6 +76,10 @@ resource "upcloud_managed_database_postgresql" "pg2" {
     type   = "private"
     uuid   = upcloud_network.pg2.id
   }
+
+  labels = {
+    test = "terraform-provider-acceptance-test"
+  }
 }
 
 resource "upcloud_managed_database_mysql" "msql1" {
@@ -83,6 +87,11 @@ resource "upcloud_managed_database_mysql" "msql1" {
   plan  = "1x1xCPU-2GB-25GB"
   title = "${var.prefix}mysql-1"
   zone  = var.zone
+
+  labels = {
+    test       = ""
+    managed-by = "team-devex"
+  }
 }
 
 resource "upcloud_managed_database_logical_database" "logical_db_1" {
@@ -110,6 +119,10 @@ resource "upcloud_managed_database_opensearch" "o1" {
   plan  = "1x2xCPU-4GB-80GB-1D"
   title = "${var.prefix}opensearch-1"
   zone  = var.zone
+
+  labels = {
+    test = "terraform-provider-acceptance-test"
+  }
 }
 
 resource "upcloud_managed_database_user" "db_user_1" {
