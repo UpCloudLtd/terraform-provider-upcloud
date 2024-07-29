@@ -50,6 +50,22 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 							retention = 2
 						}
 					}
+
+					resource "upcloud_storage" "this-standard" {
+						encrypt = true
+						size    = 10
+						tier    = "standard"
+						title   = "tf-acc-test-storage-standard"
+						zone    = "pl-waw1"
+						filesystem_autoresize = false
+						delete_autoresize_backup = false
+
+						backup_rule {
+							interval = "daily"
+							time = "2200"
+							retention = 2
+						}
+					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -80,6 +96,10 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 						"upcloud_storage.this", "backup_rule.0.time", "2200"),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.this", "backup_rule.0.retention", "2"),
+
+					resource.TestCheckResourceAttrSet("upcloud_storage.this-standard", "tier"),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.this-standard", "tier", "standard"),
 				),
 			},
 			{
@@ -97,6 +117,22 @@ func TestAccUpcloudStorage_basic(t *testing.T) {
 							interval = "mon"
 							time = "2230"
 							retention = 5
+						}
+					}
+
+					resource "upcloud_storage" "this-standard" {
+						encrypt = true
+						size    = 10
+						tier    = "standard"
+						title   = "tf-acc-test-storage-standard"
+						zone    = "pl-waw1"
+						filesystem_autoresize = false
+						delete_autoresize_backup = false
+
+						backup_rule {
+							interval = "daily"
+							time = "2200"
+							retention = 2
 						}
 					}
 				`,
