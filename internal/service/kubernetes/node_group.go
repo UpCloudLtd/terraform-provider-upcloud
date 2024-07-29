@@ -2,470 +2,675 @@ package kubernetes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
+	"time"
 
+	planmodifierutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/planmodifier"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceNodeGroup() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents a node group in a Managed Kubernetes cluster.",
-		CreateContext: resourceNodeGroupCreate,
-		ReadContext:   resourceNodeGroupRead,
-		DeleteContext: resourceNodeGroupDelete,
-		UpdateContext: resourceNodeGroupUpdate,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"cluster": {
-				Description: idDescription,
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+var (
+	_ resource.Resource                = &kubernetesNodeGroupResource{}
+	_ resource.ResourceWithConfigure   = &kubernetesNodeGroupResource{}
+	_ resource.ResourceWithImportState = &kubernetesNodeGroupResource{}
+)
+
+func NewKubernetesNodeGroupResource() resource.Resource {
+	return &kubernetesNodeGroupResource{}
+}
+
+type kubernetesNodeGroupResource struct {
+	client *service.Service
+}
+
+func (r *kubernetesNodeGroupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_kubernetes_node_group"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *kubernetesNodeGroupResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type kubernetesNodeGroupModel struct {
+	AntiAffinity         types.Bool   `tfsdk:"anti_affinity"`
+	Cluster              types.String `tfsdk:"cluster"`
+	CustomPlan           types.List   `tfsdk:"custom_plan"`
+	KubeletArgs          types.Set    `tfsdk:"kubelet_args"`
+	ID                   types.String `tfsdk:"id"`
+	Labels               types.Map    `tfsdk:"labels"`
+	Name                 types.String `tfsdk:"name"`
+	NodeCount            types.Int64  `tfsdk:"node_count"`
+	Plan                 types.String `tfsdk:"plan"`
+	SSHKeys              types.Set    `tfsdk:"ssh_keys"`
+	StorageEncryption    types.String `tfsdk:"storage_encryption"`
+	Taint                types.Set    `tfsdk:"taint"`
+	UtilityNetworkAccess types.Bool   `tfsdk:"utility_network_access"`
+}
+
+type customPlanModel struct {
+	Cores       types.Int64  `tfsdk:"cores"`
+	Memory      types.Int64  `tfsdk:"memory"`
+	StorageSize types.Int64  `tfsdk:"storage_size"`
+	StorageTier types.String `tfsdk:"storage_tier"`
+}
+
+type kubeletArgModel struct {
+	Key   types.String `tfsdk:"key"`
+	Value types.String `tfsdk:"value"`
+}
+
+type taintModel struct {
+	Effect types.String `tfsdk:"effect"`
+	Key    types.String `tfsdk:"key"`
+	Value  types.String `tfsdk:"value"`
+}
+
+func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "This resource represents a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster.",
+		Attributes: map[string]schema.Attribute{
+			"anti_affinity": schema.BoolAttribute{
+				MarkdownDescription: "If set to true, nodes in this group will be placed on separate compute hosts. Please note that anti-affinity policy is considered 'best effort' and enabling it does not fully guarantee that the nodes will end up on different hardware.",
+				Computed:            true,
+				Optional:            true,
+				Default:             booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
-			"node_count": {
-				Description:  "Amount of nodes to provision in the node group.",
-				Type:         schema.TypeInt,
-				ValidateFunc: validation.IntAtLeast(0),
-				Required:     true,
+			"cluster": schema.StringAttribute{
+				MarkdownDescription: idDescription,
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"name": {
-				Description:      "The name of the node group. Needs to be unique within a cluster.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateResourceName,
-				ForceNew:         true,
+			"id": schema.StringAttribute{
+				MarkdownDescription: "Computed ID of the node group. This is a combination of the cluster UUID and the node group name, separated with a `/`.",
+				Computed:            true,
 			},
-			"plan": {
-				Description: "The server plan used for the node group. You can list available plans with `upctl server plans`",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+			"labels": utils.LabelsAttribute("node_group", mapplanmodifier.RequiresReplace()),
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the node group. Needs to be unique within a cluster.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtMost(resourceNameMaxLength),
+					stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name should only contain lowercase alphanumeric characters and dashes (a-z, 0-9, -). Name should not start or end with a dash. Regular expresion used to check validation: %s", resourceNameRegexp)),
+				},
 			},
-			"anti_affinity": {
-				Description: `If set to true, nodes in this group will be placed on separate compute hosts.
-				Please note that anti-affinity policy is considered "best effort" and enabling it does not fully guarantee that the nodes will end up on different hardware.`,
-				Type:     schema.TypeBool,
+			"node_count": schema.Int64Attribute{
+				MarkdownDescription: "Amount of nodes to provision in the node group.",
+				Required:            true,
+				Validators: []validator.Int64{
+					int64validator.AtLeast(0),
+				},
+			},
+			"plan": schema.StringAttribute{
+				MarkdownDescription: "The server plan used for the node group. You can list available plans with `upctl server plans`",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"ssh_keys": schema.SetAttribute{
+				MarkdownDescription: "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.",
+				ElementType:         types.StringType,
+				Optional:            true,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
+			},
+			"storage_encryption": schema.StringAttribute{
+				Computed: true,
 				Optional: true,
-				Default:  false,
-				ForceNew: true,
-			},
-			"labels": {
-				Description: "Key-value pairs to classify the node group.",
-				Type:        schema.TypeMap,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
-				Optional: true,
-				ForceNew: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.StorageEncryptionDataAtRest),
+						string(upcloud.StorageEncryptionNone),
+					),
+				},
 			},
-			"kubelet_args": {
-				Description: "Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				ForceNew:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"key": {
-							Description: "Kubelet argument key.",
-							Type:        schema.TypeString,
-							Required:    true,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9-]+$"), ""),
-							),
+			"utility_network_access": schema.BoolAttribute{
+				MarkdownDescription: "If set to false, nodes in this group will not have access to utility network.",
+				Computed:            true,
+				Optional:            true,
+				Default:             booldefault.StaticBool(true),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"custom_plan": schema.ListNestedBlock{
+				MarkdownDescription: "Resource properties for custom plan",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+					planmodifierutil.CustomPlanPlanModifier(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"cores": schema.Int64Attribute{
+							MarkdownDescription: "The number of CPU cores dedicated to individual node group nodes when using custom plan",
+							Required:            true,
+							PlanModifiers: []planmodifier.Int64{
+								int64planmodifier.RequiresReplace(),
+							},
+							Validators: []validator.Int64{
+								int64validator.Between(1, 20),
+							},
 						},
-						"value": {
-							Description:      "Kubelet argument value.",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 255)),
+						"memory": schema.Int64Attribute{
+							MarkdownDescription: "The amount of memory in megabytes to assign to individual node group node when using custom plan. Value needs to be divisible by 1024.",
+							Required:            true,
+							PlanModifiers: []planmodifier.Int64{
+								int64planmodifier.RequiresReplace(),
+							},
+							Validators: []validator.Int64{
+								int64validator.Between(2048, 131072),
+								validatorutil.DivisibleBy(1024),
+							},
+						},
+						"storage_size": schema.Int64Attribute{
+							MarkdownDescription: "The size of the storage device in gigabytes.",
+							Required:            true,
+							PlanModifiers: []planmodifier.Int64{
+								int64planmodifier.RequiresReplace(),
+							},
+							Validators: []validator.Int64{
+								int64validator.Between(25, 1024),
+							},
+						},
+						"storage_tier": schema.StringAttribute{
+							MarkdownDescription: fmt.Sprintf("The storage tier to use. Defaults to %s", upcloud.KubernetesStorageTierMaxIOPS),
+							Optional:            true,
+							Computed:            true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									string(upcloud.KubernetesStorageTierMaxIOPS),
+									string(upcloud.KubernetesStorageTierHDD),
+								),
+							},
 						},
 					},
 				},
 			},
-			"taint": {
-				Description: "Taints for the nodes in this group.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				ForceNew:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"effect": {
-							Description: "Taint effect.",
-							Type:        schema.TypeString,
-							Required:    true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-								string(upcloud.KubernetesClusterTaintEffectNoExecute),
-								string(upcloud.KubernetesClusterTaintEffectNoSchedule),
-								string(upcloud.KubernetesClusterTaintEffectPreferNoSchedule),
-							}, false)),
+			"kubelet_args": schema.SetNestedBlock{
+				MarkdownDescription: "Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args.",
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"key": schema.StringAttribute{
+							MarkdownDescription: "Kubelet argument key.",
+							Required:            true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9-]+$"), "needs to match regexp ^[a-zA-Z0-9-]+$"),
+							},
 						},
-						"key": {
-							Description: "Taint key.",
-							Type:        schema.TypeString,
-							Required:    true,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9-]+$"), ""),
-							),
-						},
-						"value": {
-							Description:      "Taint value.",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 255)),
+						"value": schema.StringAttribute{
+							MarkdownDescription: "Kubelet argument value.",
+							Required:            true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.LengthBetween(0, 255),
+							},
 						},
 					},
 				},
 			},
-			"ssh_keys": {
-				Description: "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				ForceNew:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+			"taint": schema.SetNestedBlock{
+				MarkdownDescription: "Taints for the nodes in this group.",
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
 				},
-			},
-			"utility_network_access": {
-				Description: `If set to false, nodes in this group will not have access to utility network.`,
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				ForceNew:    true,
-			},
-			"storage_encryption": {
-				Description: "Storage encryption strategy for the nodes in this group.",
-				Type:        schema.TypeString,
-				Computed:    true,
-				Optional:    true,
-				ForceNew:    true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-					string(upcloud.StorageEncryptionDataAtRest),
-					string(upcloud.StorageEncryptionNone),
-				}, false)),
-			},
-			"custom_plan": {
-				Description: "Resource properties for custom plan",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				ForceNew:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"memory": {
-							Description: "The amount of memory in megabytes to assign to individual node group node when using custom plan. Value needs to be divisible by 1024.",
-							Type:        schema.TypeInt,
-							ForceNew:    true,
-							Required:    true,
-							ValidateDiagFunc: validation.AllDiag(
-								validation.ToDiagFunc(validation.IntBetween(2048, 131072)),
-								validation.ToDiagFunc(validation.IntDivisibleBy(1024)),
-							),
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"effect": schema.StringAttribute{
+							MarkdownDescription: "Taint effect.",
+							Required:            true,
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									string(upcloud.KubernetesClusterTaintEffectNoExecute),
+									string(upcloud.KubernetesClusterTaintEffectNoSchedule),
+									string(upcloud.KubernetesClusterTaintEffectPreferNoSchedule),
+								),
+							},
 						},
-						"cores": {
-							Description:      "The number of CPU cores dedicated to individual node group nodes when using custom plan",
-							Type:             schema.TypeInt,
-							ForceNew:         true,
-							Required:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 20)),
+						"key": schema.StringAttribute{
+							MarkdownDescription: "Taint key.",
+							Required:            true,
+							Validators: []validator.String{
+								stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9-]+$"), "needs to match regexp ^[a-zA-Z0-9-]+$"),
+							},
 						},
-						"storage_size": {
-							Description:      "The size of the storage device in gigabytes.",
-							Type:             schema.TypeInt,
-							ForceNew:         true,
-							Required:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(25, 1024)),
-						},
-						"storage_tier": {
-							Description: fmt.Sprintf("The storage tier to use. Defaults to %s", upcloud.KubernetesStorageTierMaxIOPS),
-							Type:        schema.TypeString,
-							ForceNew:    true,
-							Optional:    true,
-							Computed:    true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-								string(upcloud.KubernetesStorageTierMaxIOPS),
-								string(upcloud.KubernetesStorageTierHDD),
-							}, false)),
+						"value": schema.StringAttribute{
+							MarkdownDescription: "Taint value.",
+							Required:            true,
+							Validators: []validator.String{
+								stringvalidator.LengthBetween(0, 255),
+							},
 						},
 					},
 				},
 			},
 		},
-		CustomizeDiff: customdiff.Sequence(validateCustomPlan, computeClusterLevelStorageEncryption),
 	}
 }
 
-func validateCustomPlan(_ context.Context, rd *schema.ResourceDiff, _ interface{}) error {
-	if plan, ok := rd.Get("plan").(string); ok {
-		_, customPlanOk := rd.GetOk("custom_plan")
-		if !customPlanOk && plan == "custom" {
-			return errors.New("`custom_plan` field is required when using custom server plan for the node group")
-		}
-		if customPlanOk && plan != "custom" {
-			return fmt.Errorf("defining `custom_plan` properties with %s plan is not supported, use `custom` plan instead", plan)
-		}
-	}
-	return nil
+func (r *kubernetesNodeGroupResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	diags := r.modifyPlanStorageEncryption(ctx, req, resp)
+	resp.Diagnostics.Append(diags...)
+
+	//diags = r.modifyPlanCustomPlan(ctx, req, resp)
+	//resp.Diagnostics.Append(diags...)
 }
 
-// computeClusterLevelStorageEncryption checks if cluster has storage encryption strategy set and applies that value to the node group when applicable.
-// Purpose for this is to make storage_encryption attribute known *before* apply if it's not defined.
-func computeClusterLevelStorageEncryption(ctx context.Context, rd *schema.ResourceDiff, meta interface{}) error {
-	clusterID, ok := rd.Get("cluster").(string)
-	if !ok || rd.NewValueKnown("storage_encryption") {
-		return nil
-	}
-	c, err := meta.(*service.Service).GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: clusterID})
-	if err == nil && c.StorageEncryption != "" {
-		return rd.SetNew("storage_encryption", c.StorageEncryption)
-	}
-	return nil
-}
+func (r *kubernetesNodeGroupResource) modifyPlanStorageEncryption(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) diag.Diagnostics {
+	// Checks if cluster has storage encryption strategy set and applies that value to the node group when applicable.
+	// Purpose for this is to make storage_encryption attribute known *before* apply if it's not defined.
 
-func resourceNodeGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	req := request.KubernetesNodeGroup{
-		Count:                d.Get("node_count").(int),
-		Name:                 d.Get("name").(string),
-		Plan:                 d.Get("plan").(string),
-		AntiAffinity:         d.Get("anti_affinity").(bool),
-		Labels:               []upcloud.Label{},
-		SSHKeys:              []string{},
-		Storage:              "",
-		KubeletArgs:          []upcloud.KubernetesKubeletArg{},
-		Taints:               []upcloud.KubernetesTaint{},
-		UtilityNetworkAccess: upcloud.BoolPtr(d.Get("utility_network_access").(bool)),
-	}
-	if v, ok := d.GetOk("labels"); ok {
-		for k, v := range v.(map[string]interface{}) {
-			req.Labels = append(req.Labels, upcloud.Label{
-				Key:   k,
-				Value: v.(string),
-			})
-		}
-	}
-	if v, ok := d.GetOk("kubelet_args"); ok {
-		for _, v := range v.(*schema.Set).List() {
-			arg := v.(map[string]interface{})
-			req.KubeletArgs = append(req.KubeletArgs, upcloud.KubernetesKubeletArg{
-				Key:   arg["key"].(string),
-				Value: arg["value"].(string),
-			})
-		}
-	}
-	if v, ok := d.GetOk("taint"); ok {
-		for _, taint := range v.(*schema.Set).List() {
-			taintData := taint.(map[string]interface{})
-			effectStr := taintData["effect"].(string)
-
-			req.Taints = append(req.Taints, upcloud.KubernetesTaint{
-				Effect: upcloud.KubernetesClusterTaintEffect(effectStr),
-				Key:    taintData["key"].(string),
-				Value:  taintData["value"].(string),
-			})
-		}
-	}
-	if v, ok := d.GetOk("ssh_keys"); ok {
-		for _, v := range v.(*schema.Set).List() {
-			req.SSHKeys = append(req.SSHKeys, v.(string))
-		}
+	var storageEncryption types.String
+	diags := req.Plan.GetAttribute(ctx, path.Root("storage_encryption"), &storageEncryption)
+	if diags.HasError() {
+		return diags
 	}
 
-	if v, ok := d.GetOk("storage_encryption"); ok {
-		req.StorageEncryption = upcloud.StorageEncryption(v.(string))
+	if !storageEncryption.IsUnknown() {
+		return diags
 	}
 
-	if v, ok := d.Get("custom_plan").([]interface{}); ok && len(v) > 0 {
-		req.CustomPlan = &upcloud.KubernetesNodeGroupCustomPlan{
-			Cores:       d.Get("custom_plan.0.cores").(int),
-			Memory:      d.Get("custom_plan.0.memory").(int),
-			StorageSize: d.Get("custom_plan.0.storage_size").(int),
-		}
-		if v, ok := d.Get("custom_plan.0.storage_tier").(string); ok && v != "" {
-			req.CustomPlan.StorageTier = upcloud.StorageTier(v)
-		}
+	var clusterUUID types.String
+	diags.Append(req.Plan.GetAttribute(ctx, path.Root("cluster"), &clusterUUID)...)
+	if diags.HasError() {
+		return diags
 	}
 
-	clusterID := d.Get("cluster").(string)
-	ng, err := svc.CreateKubernetesNodeGroup(ctx, &request.CreateKubernetesNodeGroupRequest{
-		ClusterUUID: clusterID,
-		NodeGroup:   req,
-	})
+	if clusterUUID.ValueString() == "" {
+		return diags
+	}
+
+	c, err := r.client.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: clusterUUID.ValueString()})
 	if err != nil {
-		return diag.FromErr(err)
-	}
-	d.SetId(utils.MarshalID(clusterID, ng.Name))
+		diags.AddError(
+			"Unable to get Kubernetes cluster",
+			utils.ErrorDiagnosticDetail(err),
+		)
 
-	ng, err = svc.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
-		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
-		ClusterUUID:  clusterID,
-		Name:         ng.Name,
-	})
-	if err != nil {
-		return diag.FromErr(err)
+		return diags
+
 	}
 
-	return setNodeGroupResourceData(d, clusterID, ng)
-}
-
-func resourceNodeGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var clusterID, name string
-	if err := utils.UnmarshalID(d.Id(), &clusterID, &name); err != nil {
-		return diag.FromErr(err)
-	}
-	ng, err := svc.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
-		ClusterUUID: clusterID,
-		Name:        name,
-	})
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
-	}
-	d.SetId(utils.MarshalID(clusterID, ng.Name))
-	return setNodeGroupResourceData(d, clusterID, &ng.KubernetesNodeGroup)
-}
-
-func resourceNodeGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	if !d.HasChange("node_count") {
-		return nil
-	}
-	svc := meta.(*service.Service)
-	var clusterID, name string
-	if err := utils.UnmarshalID(d.Id(), &clusterID, &name); err != nil {
-		return diag.FromErr(err)
-	}
-	ng, err := svc.ModifyKubernetesNodeGroup(ctx, &request.ModifyKubernetesNodeGroupRequest{
-		ClusterUUID: clusterID,
-		Name:        name,
-		NodeGroup: request.ModifyKubernetesNodeGroup{
-			Count: d.Get("node_count").(int),
-		},
-	})
-	if err != nil {
-		return diag.FromErr(err)
+	if c.StorageEncryption == "" {
+		return diags
 	}
 
-	ng, err = svc.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
-		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
-		ClusterUUID:  clusterID,
-		Name:         ng.Name,
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return setNodeGroupResourceData(d, clusterID, ng)
-}
-
-func resourceNodeGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var clusterID, name string
-	if err := utils.UnmarshalID(d.Id(), &clusterID, &name); err != nil {
-		return diag.FromErr(err)
-	}
-	err := svc.DeleteKubernetesNodeGroup(ctx, &request.DeleteKubernetesNodeGroupRequest{
-		ClusterUUID: clusterID,
-		Name:        name,
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// wait before continuing so that all nodes are destroyed
-	return diag.FromErr(waitForNodeGroupToBeDeleted(ctx, svc, clusterID, name))
-}
-
-func setNodeGroupResourceData(d *schema.ResourceData, clusterID string, ng *upcloud.KubernetesNodeGroup) (diags diag.Diagnostics) {
-	if err := d.Set("cluster", clusterID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("node_count", ng.Count); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("name", ng.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("plan", ng.Plan); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("ssh_keys", ng.SSHKeys); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("anti_affinity", ng.AntiAffinity); err != nil {
-		return diag.FromErr(err)
-	}
-
-	kubeletArgs := []map[string]string{}
-	for _, arg := range ng.KubeletArgs {
-		kubeletArgs = append(kubeletArgs, map[string]string{
-			"key":   arg.Key,
-			"value": arg.Value,
-		})
-	}
-	if err := d.Set("kubelet_args", kubeletArgs); err != nil {
-		return diag.FromErr(err)
-	}
-
-	labels := map[string]string{}
-	for _, lab := range ng.Labels {
-		labels[lab.Key] = lab.Value
-	}
-	if err := d.Set("labels", labels); err != nil {
-		return diag.FromErr(err)
-	}
-
-	taints := []map[string]string{}
-	for _, t := range ng.Taints {
-		taints = append(taints, map[string]string{
-			"effect": string(t.Effect),
-			"key":    t.Key,
-			"value":  t.Value,
-		})
-	}
-	if err := d.Set("taint", taints); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("utility_network_access", ng.UtilityNetworkAccess); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("storage_encryption", ng.StorageEncryption); err != nil {
-		return diag.FromErr(err)
-	}
-
-	var customPlan []map[string]interface{}
-	if ng.CustomPlan != nil {
-		customPlan = []map[string]interface{}{
-			{
-				"cores":        ng.CustomPlan.Cores,
-				"memory":       ng.CustomPlan.Memory,
-				"storage_size": ng.CustomPlan.StorageSize,
-				"storage_tier": ng.CustomPlan.StorageTier,
-			},
-		}
-	}
-	if err := d.Set("custom_plan", customPlan); err != nil {
-		return diag.FromErr(err)
-	}
+	resp.Plan.SetAttribute(
+		ctx,
+		path.Root("storage_encryption"),
+		types.StringValue(string(c.StorageEncryption)),
+	)
 
 	return diags
+}
+
+func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data kubernetesNodeGroupModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+
+	var sshKeys []string
+	if !data.SSHKeys.IsNull() && !data.SSHKeys.IsUnknown() {
+		resp.Diagnostics.Append(data.SSHKeys.ElementsAs(ctx, &sshKeys, false)...)
+	}
+
+	customPlan, diags := buildCustomPlan(ctx, data.CustomPlan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	kubeletArgs, diags := buildKubeletArgs(ctx, data.KubeletArgs)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	taints, diags := buildTaints(ctx, data.Taint)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiReq := request.CreateKubernetesNodeGroupRequest{
+		ClusterUUID: data.Cluster.ValueString(),
+		NodeGroup: request.KubernetesNodeGroup{
+			Count:                int(data.NodeCount.ValueInt64()),
+			Labels:               utils.LabelsMapToSlice(labels),
+			Name:                 data.Name.ValueString(),
+			Plan:                 data.Plan.ValueString(),
+			SSHKeys:              sshKeys,
+			Storage:              "",
+			KubeletArgs:          kubeletArgs,
+			Taints:               taints,
+			AntiAffinity:         data.AntiAffinity.ValueBool(),
+			UtilityNetworkAccess: data.UtilityNetworkAccess.ValueBoolPointer(),
+			CustomPlan:           customPlan,
+			StorageEncryption:    upcloud.StorageEncryption(data.StorageEncryption.ValueString()),
+		},
+	}
+
+	ng, err := r.client.CreateKubernetesNodeGroup(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create Kubernetes node group",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
+	}
+
+	ng, err = r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
+		ClusterUUID:  apiReq.ClusterUUID,
+		Name:         ng.Name,
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error while waiting for Kubernetes node group to be in running state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setNodeGroupValues(ctx, &data, ng)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *kubernetesNodeGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data kubernetesNodeGroupModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.Name.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	nodeGroup, err := r.client.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
+		ClusterUUID: data.Cluster.ValueString(),
+		Name:        data.Name.ValueString(),
+	})
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read Kubernetes node group details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
+	}
+
+	resp.Diagnostics.Append(setNodeGroupValues(ctx, &data, &nodeGroup.KubernetesNodeGroup)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data kubernetesNodeGroupModel
+	var nodeCountPlan, nodeCountState types.Int64
+	var clusterUUID, name types.String
+
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("node_count"), &nodeCountPlan)...)
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("cluster"), &clusterUUID)...)
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("name"), &name)...)
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("node_count"), &nodeCountState)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Compare node count attribute value between plan and prior state
+	if nodeCountPlan.Equal(nodeCountState) {
+		return
+	}
+
+	apiReq := &request.ModifyKubernetesNodeGroupRequest{
+		ClusterUUID: clusterUUID.ValueString(),
+		Name:        name.ValueString(),
+		NodeGroup: request.ModifyKubernetesNodeGroup{
+			Count: int(nodeCountPlan.ValueInt64()),
+		},
+	}
+
+	ng, err := r.client.ModifyKubernetesNodeGroup(ctx, apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify Kubernetes node group",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	ng, err = r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
+		ClusterUUID:  apiReq.ClusterUUID,
+		Name:         apiReq.Name,
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error while waiting for Kubernetes ng to be in running state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setNodeGroupValues(ctx, &data, ng)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *kubernetesNodeGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data kubernetesNodeGroupModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if err := r.client.DeleteKubernetesNodeGroup(ctx, &request.DeleteKubernetesNodeGroupRequest{
+		ClusterUUID: data.Cluster.ValueString(),
+		Name:        data.Name.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete Kubernetes node group",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	resp.Diagnostics.Append(waitForNodeGroupToBeDeleted(ctx, r.client, data.Cluster.ValueString(), data.Name.ValueString())...)
+
+	// If there was an error during while waiting for the node group to be deleted - just end the delete operation here
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Additionally wait some time so that all cleanup operations can finish
+	time.Sleep(time.Second * cleanupWaitTimeSeconds)
+}
+
+func (r *kubernetesNodeGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var cluster, name string
+	err := utils.UnmarshalID(req.ID, &cluster, &name)
+
+	if err != nil || cluster == "" || name == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: cluster/name. Got: %q", req.ID),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("cluster"), cluster)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
+}
+
+func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng *upcloud.KubernetesNodeGroup) diag.Diagnostics {
+	var diags, respDiagnostics diag.Diagnostics
+
+	data.AntiAffinity = types.BoolValue(ng.AntiAffinity)
+	data.Cluster = types.StringValue(data.Cluster.ValueString())
+
+	if ng.CustomPlan != nil {
+		customPlans := make([]customPlanModel, 1)
+		customPlans[0].Cores = types.Int64Value(int64(ng.CustomPlan.Cores))
+		customPlans[0].Memory = types.Int64Value(int64(ng.CustomPlan.Memory))
+		customPlans[0].StorageSize = types.Int64Value(int64(ng.CustomPlan.StorageSize))
+		customPlans[0].StorageTier = types.StringValue(string(ng.CustomPlan.StorageTier))
+
+		data.CustomPlan, diags = types.ListValueFrom(ctx, data.CustomPlan.ElementType(ctx), customPlans)
+		respDiagnostics.Append(diags...)
+	}
+
+	if ng.KubeletArgs != nil {
+		kubeletArgs := make([]kubeletArgModel, len(ng.KubeletArgs))
+		for i, arg := range ng.KubeletArgs {
+			kubeletArgs[i].Key = types.StringValue(arg.Key)
+			kubeletArgs[i].Value = types.StringValue(arg.Value)
+		}
+
+		data.KubeletArgs, diags = types.SetValueFrom(ctx, data.KubeletArgs.ElementType(ctx), kubeletArgs)
+	}
+
+	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(ng.Labels))
+	data.ID = types.StringValue(utils.MarshalID(data.Cluster.ValueString(), ng.Name))
+	data.Name = types.StringValue(ng.Name)
+	data.NodeCount = types.Int64Value(int64(ng.Count))
+	data.Plan = types.StringValue(ng.Plan)
+
+	data.SSHKeys, diags = types.SetValueFrom(ctx, types.StringType, ng.SSHKeys)
+	respDiagnostics.Append(diags...)
+
+	data.StorageEncryption = types.StringValue(string(ng.StorageEncryption))
+
+	if ng.Taints != nil {
+		taints := make([]taintModel, len(ng.Taints))
+		for i, taint := range ng.Taints {
+			taints[i].Effect = types.StringValue(string(taint.Effect))
+			taints[i].Key = types.StringValue(taint.Key)
+			taints[i].Value = types.StringValue(taint.Value)
+		}
+
+		data.Taint, diags = types.SetValueFrom(ctx, data.Taint.ElementType(ctx), taints)
+		respDiagnostics.Append(diags...)
+	}
+
+	data.UtilityNetworkAccess = types.BoolValue(ng.UtilityNetworkAccess)
+
+	return respDiagnostics
+}
+
+func buildCustomPlan(ctx context.Context, dataCustomPlans types.List) (*upcloud.KubernetesNodeGroupCustomPlan, diag.Diagnostics) {
+	var planCustomPlans []customPlanModel
+	respDiagnostics := dataCustomPlans.ElementsAs(ctx, &planCustomPlans, false)
+
+	if len(planCustomPlans) == 0 {
+		return nil, respDiagnostics
+	}
+
+	customPlan := upcloud.KubernetesNodeGroupCustomPlan{
+		Cores:       int(planCustomPlans[0].Cores.ValueInt64()),
+		Memory:      int(planCustomPlans[0].Memory.ValueInt64()),
+		StorageSize: int(planCustomPlans[0].StorageSize.ValueInt64()),
+	}
+
+	if !planCustomPlans[0].StorageTier.IsNull() {
+		customPlan.StorageTier = upcloud.StorageTier(planCustomPlans[0].StorageTier.ValueString())
+	}
+
+	return &customPlan, respDiagnostics
+}
+
+func buildKubeletArgs(ctx context.Context, dataKubeletArgs types.Set) ([]upcloud.KubernetesKubeletArg, diag.Diagnostics) {
+	var planKubeletArgs []kubeletArgModel
+	respDiagnostics := dataKubeletArgs.ElementsAs(ctx, &planKubeletArgs, false)
+
+	kubeletArgs := make([]upcloud.KubernetesKubeletArg, 0)
+
+	for _, kubeletArg := range planKubeletArgs {
+		kubeletArgs = append(kubeletArgs, upcloud.KubernetesKubeletArg{
+			Key:   kubeletArg.Key.ValueString(),
+			Value: kubeletArg.Value.ValueString(),
+		})
+	}
+
+	return kubeletArgs, respDiagnostics
+}
+
+func buildTaints(ctx context.Context, dataTaints types.Set) ([]upcloud.KubernetesTaint, diag.Diagnostics) {
+	var planTaints []taintModel
+	respDiagnostics := dataTaints.ElementsAs(ctx, &planTaints, false)
+
+	taints := make([]upcloud.KubernetesTaint, 0)
+
+	for _, taint := range planTaints {
+		taints = append(taints, upcloud.KubernetesTaint{
+			Effect: upcloud.KubernetesClusterTaintEffect(taint.Effect.ValueString()),
+			Key:    taint.Key.ValueString(),
+			Value:  taint.Value.ValueString(),
+		})
+	}
+
+	return taints, respDiagnostics
 }
 
 func getNodeGroupDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
@@ -477,6 +682,10 @@ func getNodeGroupDeleted(ctx context.Context, svc *service.Service, id ...string
 	return map[string]interface{}{"resource": "node-group", "name": c.Name, "state": c.State}, err
 }
 
-func waitForNodeGroupToBeDeleted(ctx context.Context, svc *service.Service, clusterID, name string) error {
-	return utils.WaitForResourceToBeDeleted(ctx, svc, getNodeGroupDeleted, clusterID, name)
+func waitForNodeGroupToBeDeleted(ctx context.Context, svc *service.Service, clusterUUID, name string) (diags diag.Diagnostics) {
+	err := utils.WaitForResourceToBeDeleted(ctx, svc, getNodeGroupDeleted, clusterUUID, name)
+	if err != nil {
+		diags.AddError("Error waiting for node group to be deleted", err.Error())
+	}
+	return
 }

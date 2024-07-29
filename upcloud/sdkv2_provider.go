@@ -17,7 +17,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
@@ -71,35 +70,35 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server":                                  server.ResourceServer(),
-			"upcloud_storage":                                 storage.ResourceStorage(),
 			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
-			"upcloud_tag":                                     tag.ResourceTag(),
 			"upcloud_gateway":                                 gateway.ResourceGateway(),
 			"upcloud_gateway_connection":                      gateway.ResourceConnection(),
 			"upcloud_gateway_connection_tunnel":               gateway.ResourceTunnel(),
-			"upcloud_object_storage":                          objectstorage.ResourceObjectStorage(),
-			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
-			"upcloud_managed_database_mysql":                  database.ResourceMySQL(),
-			"upcloud_managed_database_redis":                  database.ResourceRedis(),
-			"upcloud_managed_database_opensearch":             database.ResourceOpenSearch(),
-			"upcloud_managed_database_user":                   database.ResourceUser(),
+			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),
+			"upcloud_loadbalancer_backend":                    loadbalancer.ResourceBackend(),
+			"upcloud_loadbalancer_backend_tls_config":         loadbalancer.ResourceBackendTLSConfig(),
+			"upcloud_loadbalancer_dynamic_backend_member":     loadbalancer.ResourceDynamicBackendMember(),
+			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
+			"upcloud_loadbalancer_frontend_rule":              loadbalancer.ResourceFrontendRule(),
+			"upcloud_loadbalancer_frontend_tls_config":        loadbalancer.ResourceFrontendTLSConfig(),
+			"upcloud_loadbalancer_manual_certificate_bundle":  loadbalancer.ResourceManualCertificateBundle(),
+			"upcloud_loadbalancer_resolver":                   loadbalancer.ResourceResolver(),
+			"upcloud_loadbalancer_static_backend_member":      loadbalancer.ResourceStaticBackendMember(),
 			"upcloud_managed_database_logical_database":       database.ResourceLogicalDatabase(),
+			"upcloud_managed_database_mysql":                  database.ResourceMySQL(),
+			"upcloud_managed_database_opensearch":             database.ResourceOpenSearch(),
+			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
+			"upcloud_managed_database_redis":                  database.ResourceRedis(),
+			"upcloud_managed_database_user":                   database.ResourceUser(),
 			"upcloud_managed_object_storage":                  managedobjectstorage.ResourceManagedObjectStorage(),
 			"upcloud_managed_object_storage_policy":           managedobjectstorage.ResourceManagedObjectStoragePolicy(),
 			"upcloud_managed_object_storage_user":             managedobjectstorage.ResourceManagedObjectStorageUser(),
 			"upcloud_managed_object_storage_user_access_key":  managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
 			"upcloud_managed_object_storage_user_policy":      managedobjectstorage.ResourceManagedObjectStorageUserPolicy(),
-			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),
-			"upcloud_loadbalancer_resolver":                   loadbalancer.ResourceResolver(),
-			"upcloud_loadbalancer_backend":                    loadbalancer.ResourceBackend(),
-			"upcloud_loadbalancer_backend_tls_config":         loadbalancer.ResourceBackendTLSConfig(),
-			"upcloud_loadbalancer_static_backend_member":      loadbalancer.ResourceStaticBackendMember(),
-			"upcloud_loadbalancer_dynamic_backend_member":     loadbalancer.ResourceDynamicBackendMember(),
-			"upcloud_loadbalancer_frontend_rule":              loadbalancer.ResourceFrontendRule(),
-			"upcloud_loadbalancer_frontend_tls_config":        loadbalancer.ResourceFrontendTLSConfig(),
-			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
-			"upcloud_kubernetes_node_group":                   kubernetes.ResourceNodeGroup(),
+			"upcloud_object_storage":                          objectstorage.ResourceObjectStorage(),
+			"upcloud_server":                                  server.ResourceServer(),
+			"upcloud_storage":                                 storage.ResourceStorage(),
+			"upcloud_tag":                                     tag.ResourceTag(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
