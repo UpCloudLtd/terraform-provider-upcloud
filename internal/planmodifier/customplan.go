@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -31,19 +32,30 @@ func (d *customPlanPlanModifier) PlanModifyList(ctx context.Context, req planmod
 		return
 	}
 
-	if plan.ValueString() == "custom" && req.ConfigValue.IsNull() {
-		resp.Diagnostics.AddError(
+	diags = validateCustomPlan(plan.ValueString(), req.ConfigValue.IsNull())
+	resp.Diagnostics.Append(diags...)
+}
+
+func validateCustomPlan(plan string, emptyCustomPlan bool) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if plan == "custom" && emptyCustomPlan {
+		diags.AddError(
 			"`custom_plan` field is required when using custom server plan for the node group",
 			"add `custom_plan` block or change to a non-custom plan",
 		)
-		return
+
+		return diags
 	}
 
-	if plan.ValueString() != "custom" && !req.ConfigValue.IsNull() {
-		resp.Diagnostics.AddError(
+	if plan != "custom" && !emptyCustomPlan {
+		diags.AddError(
 			fmt.Sprintf("defining `custom_plan` block with %s plan is not supported", plan),
 			"use custom as the `plan` value or change to a non-custom plan",
 		)
-		return
+
+		return diags
 	}
+
+	return diags
 }

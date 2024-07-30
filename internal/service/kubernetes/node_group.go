@@ -308,7 +308,6 @@ func (r *kubernetesNodeGroupResource) ModifyPlan(ctx context.Context, req resour
 // modifyPlanStorageEncryption checks if cluster has storage encryption strategy set and applies that value to the node group when applicable.
 // Purpose for this is to make storage_encryption attribute known *before* apply if it's not defined.
 func (r *kubernetesNodeGroupResource) modifyPlanStorageEncryption(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) diag.Diagnostics {
-
 	var storageEncryption types.String
 	diags := req.Plan.GetAttribute(ctx, path.Root("storage_encryption"), &storageEncryption)
 	if diags.HasError() {
