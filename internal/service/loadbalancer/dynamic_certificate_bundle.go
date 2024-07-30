@@ -160,3 +160,9 @@ func setDynamicCertificateBundleResourceData(d *schema.ResourceData, b *upcloud.
 
 	return diags
 }
+
+func resourceCertificateBundleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+	svc := meta.(*service.Service)
+	tflog.Info(ctx, "deleting certificate bundle", map[string]interface{}{"name": d.Get("name").(string), "uuid": d.Id()})
+	return diag.FromErr(svc.DeleteLoadBalancerCertificateBundle(ctx, &request.DeleteLoadBalancerCertificateBundleRequest{UUID: d.Id()}))
+}
