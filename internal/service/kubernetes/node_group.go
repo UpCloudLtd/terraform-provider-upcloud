@@ -148,8 +148,9 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				},
 			},
 			"storage_encryption": schema.StringAttribute{
-				Computed: true,
-				Optional: true,
+				MarkdownDescription: "The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable.",
+				Computed:            true,
+				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -304,9 +305,9 @@ func (r *kubernetesNodeGroupResource) ModifyPlan(ctx context.Context, req resour
 	resp.Diagnostics.Append(diags...)
 }
 
+// modifyPlanStorageEncryption checks if cluster has storage encryption strategy set and applies that value to the node group when applicable.
+// Purpose for this is to make storage_encryption attribute known *before* apply if it's not defined.
 func (r *kubernetesNodeGroupResource) modifyPlanStorageEncryption(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) diag.Diagnostics {
-	// Checks if cluster has storage encryption strategy set and applies that value to the node group when applicable.
-	// Purpose for this is to make storage_encryption attribute known *before* apply if it's not defined.
 
 	var storageEncryption types.String
 	diags := req.Plan.GetAttribute(ctx, path.Root("storage_encryption"), &storageEncryption)
