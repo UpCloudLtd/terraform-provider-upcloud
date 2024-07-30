@@ -225,6 +225,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 								stringvalidator.OneOf(
 									string(upcloud.KubernetesStorageTierMaxIOPS),
 									string(upcloud.KubernetesStorageTierHDD),
+									string(upcloud.KubernetesStorageTierStandard),
 								),
 							},
 						},
