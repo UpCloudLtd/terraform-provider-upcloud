@@ -2,14 +2,12 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -51,24 +49,3 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id str
 	}
 	return
 }
-
-var validateResourceName = validation.ToDiagFunc(func(i interface{}, _ string) (warns []string, errs []error) {
-	val, ok := i.(string)
-	if !ok {
-		errs = append(errs, fmt.Errorf("provided value is not a string"))
-		return
-	}
-
-	if len(val) > resourceNameMaxLength {
-		errs = append(errs, fmt.Errorf("resource name (%s) too long, max allowed length is %d", val, resourceNameMaxLength))
-		return
-	}
-
-	nameValid := resourceNameRegexp.MatchString(val)
-	if !nameValid {
-		errs = append(errs, fmt.Errorf("name (%s) is not valid. Regular expresion used to check validation: %s", val, resourceNameRegexp))
-		return
-	}
-
-	return
-})

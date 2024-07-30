@@ -13,8 +13,7 @@ func CustomPlanPlanModifier() planmodifier.List {
 	return &customPlanPlanModifier{}
 }
 
-type customPlanPlanModifier struct {
-}
+type customPlanPlanModifier struct{}
 
 func (d *customPlanPlanModifier) Description(_ context.Context) string {
 	return "Ensures that custom_plan block is set if plan field's value is custom and vice versa."
@@ -47,5 +46,4 @@ func (d *customPlanPlanModifier) PlanModifyList(ctx context.Context, req planmod
 		)
 		return
 	}
-
 }

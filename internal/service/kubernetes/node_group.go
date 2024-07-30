@@ -302,9 +302,6 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 func (r *kubernetesNodeGroupResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	diags := r.modifyPlanStorageEncryption(ctx, req, resp)
 	resp.Diagnostics.Append(diags...)
-
-	//diags = r.modifyPlanCustomPlan(ctx, req, resp)
-	//resp.Diagnostics.Append(diags...)
 }
 
 func (r *kubernetesNodeGroupResource) modifyPlanStorageEncryption(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) diag.Diagnostics {
@@ -339,7 +336,6 @@ func (r *kubernetesNodeGroupResource) modifyPlanStorageEncryption(ctx context.Co
 		)
 
 		return diags
-
 	}
 
 	if c.StorageEncryption == "" {
@@ -497,7 +493,7 @@ func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.U
 		},
 	}
 
-	ng, err := r.client.ModifyKubernetesNodeGroup(ctx, apiReq)
+	_, err := r.client.ModifyKubernetesNodeGroup(ctx, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify Kubernetes node group",
@@ -506,7 +502,7 @@ func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	ng, err = r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+	ng, err := r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
 		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
 		ClusterUUID:  apiReq.ClusterUUID,
 		Name:         apiReq.Name,
@@ -589,9 +585,12 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 		}
 
 		data.KubeletArgs, diags = types.SetValueFrom(ctx, data.KubeletArgs.ElementType(ctx), kubeletArgs)
+		respDiagnostics.Append(diags...)
 	}
 
 	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(ng.Labels))
+	respDiagnostics.Append(diags...)
+
 	data.ID = types.StringValue(utils.MarshalID(data.Cluster.ValueString(), ng.Name))
 	data.Name = types.StringValue(ng.Name)
 	data.NodeCount = types.Int64Value(int64(ng.Count))
