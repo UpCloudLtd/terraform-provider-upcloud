@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -74,7 +73,6 @@ func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.S
 				MarkdownDescription: "Intermediate certificates within base64 string must be in PEM format.",
 				Optional:            true,
 				Computed:            true,
-				Default:             stringdefault.StaticString(""),
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the bundle must be unique within customer account.",
@@ -109,6 +107,7 @@ func setManualCertificateBundleValues(_ context.Context, data *manualCertificate
 
 	data.Certificate = types.StringValue(bundle.Certificate)
 	data.ID = types.StringValue(bundle.UUID)
+	data.Intermediates = types.StringValue(bundle.Intermediates)
 	data.Name = types.StringValue(bundle.Name)
 	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
 	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
