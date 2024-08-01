@@ -16,6 +16,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -26,6 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -143,6 +145,13 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				MarkdownDescription: "You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.",
 				ElementType:         types.StringType,
 				Optional:            true,
+				Computed:            true,
+				Default: setdefault.StaticValue(
+					types.SetValueMust(
+						types.StringType,
+						[]attr.Value{},
+					),
+				),
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
@@ -406,7 +415,7 @@ func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.C
 		},
 	}
 
-	ng, err := r.client.CreateKubernetesNodeGroup(ctx, &apiReq)
+	_, err := r.client.CreateKubernetesNodeGroup(ctx, &apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Kubernetes node group",
@@ -416,10 +425,10 @@ func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	ng, err = r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+	ng, err := r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
 		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
-		ClusterUUID:  apiReq.ClusterUUID,
-		Name:         ng.Name,
+		ClusterUUID:  data.Cluster.ValueString(),
+		Name:         data.Name.ValueString(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -534,6 +543,7 @@ func (r *kubernetesNodeGroupResource) Delete(ctx context.Context, req resource.D
 		)
 	}
 
+	// wait before continuing so that all nodes are destroyed
 	resp.Diagnostics.Append(waitForNodeGroupToBeDeleted(ctx, r.client, data.Cluster.ValueString(), data.Name.ValueString())...)
 
 	// If there was an error during while waiting for the node group to be deleted - just end the delete operation here
@@ -597,8 +607,10 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 	data.NodeCount = types.Int64Value(int64(ng.Count))
 	data.Plan = types.StringValue(ng.Plan)
 
-	data.SSHKeys, diags = types.SetValueFrom(ctx, types.StringType, ng.SSHKeys)
-	respDiagnostics.Append(diags...)
+	if ng.SSHKeys != nil {
+		data.SSHKeys, diags = types.SetValueFrom(ctx, types.StringType, ng.SSHKeys)
+		respDiagnostics.Append(diags...)
+	}
 
 	data.StorageEncryption = types.StringValue(string(ng.StorageEncryption))
 
@@ -620,20 +632,19 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 }
 
 func buildCustomPlan(ctx context.Context, dataCustomPlans types.List) (*upcloud.KubernetesNodeGroupCustomPlan, diag.Diagnostics) {
-	var planCustomPlans []customPlanModel
-	respDiagnostics := dataCustomPlans.ElementsAs(ctx, &planCustomPlans, false)
-
-	if len(planCustomPlans) == 0 {
-		return nil, respDiagnostics
+	if dataCustomPlans.IsNull() || dataCustomPlans.IsUnknown() {
+		return nil, nil
 	}
 
+	var planCustomPlans []customPlanModel
+	respDiagnostics := dataCustomPlans.ElementsAs(ctx, &planCustomPlans, false)
 	customPlan := upcloud.KubernetesNodeGroupCustomPlan{
 		Cores:       int(planCustomPlans[0].Cores.ValueInt64()),
 		Memory:      int(planCustomPlans[0].Memory.ValueInt64()),
 		StorageSize: int(planCustomPlans[0].StorageSize.ValueInt64()),
 	}
 
-	if !planCustomPlans[0].StorageTier.IsNull() {
+	if !planCustomPlans[0].StorageTier.IsNull() || !planCustomPlans[0].StorageTier.IsUnknown() {
 		customPlan.StorageTier = upcloud.StorageTier(planCustomPlans[0].StorageTier.ValueString())
 	}
 
@@ -641,9 +652,12 @@ func buildCustomPlan(ctx context.Context, dataCustomPlans types.List) (*upcloud.
 }
 
 func buildKubeletArgs(ctx context.Context, dataKubeletArgs types.Set) ([]upcloud.KubernetesKubeletArg, diag.Diagnostics) {
+	if dataKubeletArgs.IsNull() || dataKubeletArgs.IsUnknown() {
+		return nil, nil
+	}
+
 	var planKubeletArgs []kubeletArgModel
 	respDiagnostics := dataKubeletArgs.ElementsAs(ctx, &planKubeletArgs, false)
-
 	kubeletArgs := make([]upcloud.KubernetesKubeletArg, 0)
 
 	for _, kubeletArg := range planKubeletArgs {
@@ -657,9 +671,12 @@ func buildKubeletArgs(ctx context.Context, dataKubeletArgs types.Set) ([]upcloud
 }
 
 func buildTaints(ctx context.Context, dataTaints types.Set) ([]upcloud.KubernetesTaint, diag.Diagnostics) {
+	if dataTaints.IsNull() || dataTaints.IsUnknown() {
+		return nil, nil
+	}
+
 	var planTaints []taintModel
 	respDiagnostics := dataTaints.ElementsAs(ctx, &planTaints, false)
-
 	taints := make([]upcloud.KubernetesTaint, 0)
 
 	for _, taint := range planTaints {
