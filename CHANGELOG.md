@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_storage: add support for labels
+
+### Fixed
+
+- upcloud_storage: use `source_hash` to automatically verify the integrity of the imported data. Previously, the value was stored to state, but no validations were done
+
 ## [5.9.1] - 2024-08-05
 
 ### Added

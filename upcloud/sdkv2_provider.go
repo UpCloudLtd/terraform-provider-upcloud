@@ -72,7 +72,6 @@ func Provider() *schema.Provider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"upcloud_server":                                  server.ResourceServer(),
-			"upcloud_storage":                                 storage.ResourceStorage(),
 			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
 			"upcloud_tag":                                     tag.ResourceTag(),
 			"upcloud_gateway":                                 gateway.ResourceGateway(),

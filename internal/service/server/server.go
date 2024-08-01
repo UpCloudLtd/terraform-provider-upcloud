@@ -860,13 +860,12 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		if d.HasChange("template.0.size") && d.Get("template.0.filesystem_autoresize").(bool) {
-			diags = append(diags, storage.ResizeStoragePartitionAndFs(
+			diags = append(diags, utils.AsSDKv2Diags(storage.ResizeStoragePartitionAndFs(
 				ctx,
 				client,
 				storageDetails.UUID,
-				storageDetails.Title,
 				d.Get("template.0.delete_autoresize_backup").(bool),
-			)...)
+			))...)
 		}
 	}
 

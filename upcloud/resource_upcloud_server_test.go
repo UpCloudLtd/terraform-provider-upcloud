@@ -337,7 +337,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				// basic setup
 				Config: `
 					resource "upcloud_storage" "addon" {
-						title = "addon"
+						title = "tf-acc-test-server-storage-simple-backup-extra-disk"
 						size = 10
 						zone = "pl-waw1"
 						
@@ -377,7 +377,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				// replace additional storages backup rule with simple backup
 				Config: `
 					resource "upcloud_storage" "addon" {
-						title = "addon"
+						title = "tf-acc-test-server-storage-simple-backup-extra-disk"
 						size = 10
 						zone = "pl-waw1"
 					}

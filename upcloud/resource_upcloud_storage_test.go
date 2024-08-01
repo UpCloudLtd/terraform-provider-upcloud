@@ -28,7 +28,7 @@ const (
 	storageDescription = "tf-acc-test-storage"
 )
 
-func TestAccUpcloudStorage_basic(t *testing.T) {
+func TestAccUpCloudStorage_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
@@ -215,35 +215,58 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
-	if os.Getenv(resource.EnvTfAcc) != "" {
-		var storageDetails upcloud.StorageDetails
+	var storageDetails upcloud.StorageDetails
 
-		imagePath, sum, err := createTempImage()
-		if err != nil {
-			t.Logf("unable to create temp image: %v", err)
-			t.FailNow()
-		}
-		sha256sum := hex.EncodeToString((*sum).Sum(nil))
-
-		resource.ParallelTest(t, resource.TestCase{
-			PreCheck:                 func() { testAccPreCheck(t) },
-			ProtoV5ProviderFactories: testAccProviderFactories,
-			CheckDestroy:             testAccCheckStorageDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testUpcloudStorageInstanceConfigWithStorageImport(
-						"direct_upload",
-						imagePath),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
-						resource.TestCheckResourceAttr(
-							"upcloud_storage.this", "import.#", "1"),
-						resource.TestCheckResourceAttr("upcloud_storage.this", "import.0.sha256sum", sha256sum),
-					),
-				},
-			},
-		})
+	imagePath, sum, err := createTempImage()
+	if err != nil {
+		t.Logf("unable to create temp image: %v", err)
+		t.FailNow()
 	}
+	sha256sum := hex.EncodeToString((*sum).Sum(nil))
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testUpcloudStorageInstanceConfigWithStorageImport(
+					"direct_upload",
+					imagePath,
+					sha256sum+"  filename"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.this", "import.#", "1"),
+					resource.TestCheckResourceAttr("upcloud_storage.this", "import.0.sha256sum", sha256sum),
+				),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudStorage_StorageHashValidation(t *testing.T) {
+	imagePath, _, err := createTempImage()
+	if err != nil {
+		t.Logf("unable to create temp image: %v", err)
+		t.FailNow()
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testUpcloudStorageInstanceConfigWithStorageImport(
+					"direct_upload",
+					imagePath,
+					"this-is-not-the-right-hash",
+				),
+				ExpectError: regexp.MustCompile("imported storage's SHA256 sum does not match the source_hash:"),
+			},
+		},
+	})
 }
 
 func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
@@ -256,7 +279,7 @@ func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 				Config: testUpcloudStorageInstanceConfigWithStorageImport(
 					"gobbledigook",
 					"somewhere"),
-				ExpectError: regexp.MustCompile(`'source' value incorrect`),
+				ExpectError: regexp.MustCompile(`value must be one of: \["direct_upload" "http_import"\], got: ".*"`),
 			},
 		},
 	})
@@ -270,7 +293,7 @@ func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testUpcloudStorageInstanceConfigWithImportAndClone(),
-				ExpectError: regexp.MustCompile("conflicts with"),
+				ExpectError: regexp.MustCompile(`Attribute ".*" cannot be specified when ".*" is specified`),
 			},
 		},
 	})
@@ -381,7 +404,12 @@ func testUpcloudStorageInstanceConfig(size, tier, title, zone string, autoresize
 `, size, tier, title, zone, autoresize, deleteAutoresizeBackup)
 }
 
-func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation string) string {
+func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation string, sourceHash ...string) string {
+	sourceHashRow := ""
+	if len(sourceHash) > 0 {
+		sourceHashRow = fmt.Sprintf(`source_hash = "%s"`, sourceHash[0])
+	}
+
 	return fmt.Sprintf(`
 		resource "upcloud_storage" "this" {
 			size  = 10
@@ -392,9 +420,10 @@ func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation st
 			import {
 				source = "%s"
 				source_location = "%s"
+				%s
 			}
 		}
-`, source, sourceLocation)
+`, source, sourceLocation, sourceHashRow)
 }
 
 func testUpcloudStorageInstanceConfigWithImportAndClone() string {
