@@ -13,6 +13,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_managed_database_redis: `ignore_roles` property (supported by PostgreSQL only at the moment)
 - upcloud_storage: add `standard` as a supported storage tier
 
+### Fixed
+
+- upcloud_managed_object_storage: modifying `region` requires replacing the resource.
+
 ## [5.9.0] - 2024-07-29
 
 ### Added
