@@ -11,6 +11,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_managed_database_postgresql: `ignore_roles` property
 - upcloud_managed_database_postgresql: `max_prepared_statements` property
 - upcloud_managed_database_redis: `ignore_roles` property (supported by PostgreSQL only at the moment)
+- upcloud_storage: add `standard` as a supported storage tier
 
 ## [5.9.0] - 2024-07-29
 

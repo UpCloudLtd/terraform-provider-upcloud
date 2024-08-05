@@ -48,7 +48,7 @@ func ResourceStorage() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"hdd", "maxiops"}, false),
+				ValidateFunc: validation.StringInSlice([]string{upcloud.StorageTierHDD, upcloud.StorageTierMaxIOPS, upcloud.StorageTierStandard}, false),
 			},
 			"title": {
 				Description:  "A short, informative description",
