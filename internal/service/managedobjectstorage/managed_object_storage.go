@@ -69,6 +69,7 @@ func ResourceManagedObjectStorage() *schema.Resource {
 			"region": {
 				Description: "Region in which the service will be hosted, see `upcloud_managed_object_storage_regions` data source.",
 				Required:    true,
+				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
 			"updated_at": {
