@@ -6,12 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
@@ -25,7 +19,11 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func Provider() *schema.Provider {
@@ -81,7 +79,6 @@ func Provider() *schema.Provider {
 			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
 			"upcloud_loadbalancer_frontend_rule":              loadbalancer.ResourceFrontendRule(),
 			"upcloud_loadbalancer_frontend_tls_config":        loadbalancer.ResourceFrontendTLSConfig(),
-			"upcloud_loadbalancer_manual_certificate_bundle":  loadbalancer.ResourceManualCertificateBundle(),
 			"upcloud_loadbalancer_resolver":                   loadbalancer.ResourceResolver(),
 			"upcloud_loadbalancer_static_backend_member":      loadbalancer.ResourceStaticBackendMember(),
 			"upcloud_managed_database_logical_database":       database.ResourceLogicalDatabase(),
@@ -102,15 +99,15 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"upcloud_networks":     network.DataSourceNetworks(),
-			"upcloud_ip_addresses": ip.DataSourceIPAddresses(),
-			"upcloud_tags":         tag.DataSourceTags(),
-			"upcloud_storage":      storage.DataSourceStorage(),
-			"upcloud_managed_database_opensearch_indices":  database.DataSourceOpenSearchIndices(),
+			"upcloud_ip_addresses":                         ip.DataSourceIPAddresses(),
 			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
+			"upcloud_managed_database_opensearch_indices":  database.DataSourceOpenSearchIndices(),
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
 			"upcloud_managed_database_redis_sessions":      database.DataSourceSessionsRedis(),
 			"upcloud_managed_object_storage_policies":      managedobjectstorage.DataSourceManagedObjectStoragePolicies(),
+			"upcloud_networks":                             network.DataSourceNetworks(),
+			"upcloud_storage":                              storage.DataSourceStorage(),
+			"upcloud_tags":                                 tag.DataSourceTags(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
@@ -122,7 +119,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	requestTimeout := time.Duration(d.Get("request_timeout_sec").(int)) * time.Second
 
-	config := Config{
+	cfg := Config{
 		Username: d.Get("username").(string),
 		Password: d.Get("password").(string),
 	}
@@ -132,19 +129,19 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
 	httpClient.RetryMax = d.Get("retry_max").(int)
 
-	service := newUpCloudServiceConnection(
+	connection := newUpCloudServiceConnection(
 		d.Get("username").(string),
 		d.Get("password").(string),
 		httpClient.HTTPClient,
 		requestTimeout,
 	)
 
-	_, err := config.checkLogin(service)
+	_, err := cfg.checkLogin(connection)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
 
-	return service, diags
+	return connection, diags
 }
 
 func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration) *service.Service {
