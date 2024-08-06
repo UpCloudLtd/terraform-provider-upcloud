@@ -29,6 +29,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -160,6 +161,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				MarkdownDescription: "The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable.",
 				Computed:            true,
 				Optional:            true,
+				Default:             stringdefault.StaticString(""),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -324,7 +326,7 @@ func (r *kubernetesNodeGroupResource) modifyPlanStorageEncryption(ctx context.Co
 		return diags
 	}
 
-	if !storageEncryption.IsUnknown() {
+	if !storageEncryption.IsNull() || !storageEncryption.IsUnknown() {
 		return diags
 	}
 
@@ -484,6 +486,7 @@ func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.U
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("node_count"), &nodeCountPlan)...)
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("cluster"), &clusterUUID)...)
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("name"), &name)...)
+
 	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("node_count"), &nodeCountState)...)
 
 	if resp.Diagnostics.HasError() {
@@ -574,25 +577,33 @@ func (r *kubernetesNodeGroupResource) ImportState(ctx context.Context, req resou
 func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng *upcloud.KubernetesNodeGroup) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
+	isImport := data.ID.ValueString() == ""
+
 	data.AntiAffinity = types.BoolValue(ng.AntiAffinity)
 	data.Cluster = types.StringValue(data.Cluster.ValueString())
 
-	if ng.CustomPlan != nil {
-		customPlans := make([]customPlanModel, 1)
-		customPlans[0].Cores = types.Int64Value(int64(ng.CustomPlan.Cores))
-		customPlans[0].Memory = types.Int64Value(int64(ng.CustomPlan.Memory))
-		customPlans[0].StorageSize = types.Int64Value(int64(ng.CustomPlan.StorageSize))
-		customPlans[0].StorageTier = types.StringValue(string(ng.CustomPlan.StorageTier))
+	if isImport || !data.CustomPlan.IsNull() {
+		customPlans := make([]customPlanModel, 0)
+		if ng.CustomPlan != nil {
+			customPlans = append(customPlans, customPlanModel{
+				Cores:       types.Int64Value(int64(ng.CustomPlan.Cores)),
+				Memory:      types.Int64Value(int64(ng.CustomPlan.Memory)),
+				StorageSize: types.Int64Value(int64(ng.CustomPlan.StorageSize)),
+				StorageTier: types.StringValue(string(ng.CustomPlan.StorageTier)),
+			})
+		}
 
 		data.CustomPlan, diags = types.ListValueFrom(ctx, data.CustomPlan.ElementType(ctx), customPlans)
 		respDiagnostics.Append(diags...)
 	}
 
-	if ng.KubeletArgs != nil {
-		kubeletArgs := make([]kubeletArgModel, len(ng.KubeletArgs))
-		for i, arg := range ng.KubeletArgs {
-			kubeletArgs[i].Key = types.StringValue(arg.Key)
-			kubeletArgs[i].Value = types.StringValue(arg.Value)
+	if isImport || !data.KubeletArgs.IsNull() {
+		kubeletArgs := make([]kubeletArgModel, 0)
+		for _, arg := range ng.KubeletArgs {
+			kubeletArgs = append(kubeletArgs, kubeletArgModel{
+				Key:   types.StringValue(arg.Key),
+				Value: types.StringValue(arg.Value),
+			})
 		}
 
 		data.KubeletArgs, diags = types.SetValueFrom(ctx, data.KubeletArgs.ElementType(ctx), kubeletArgs)
@@ -607,19 +618,23 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 	data.NodeCount = types.Int64Value(int64(ng.Count))
 	data.Plan = types.StringValue(ng.Plan)
 
-	if ng.SSHKeys != nil {
+	if isImport || !data.SSHKeys.IsNull() {
 		data.SSHKeys, diags = types.SetValueFrom(ctx, types.StringType, ng.SSHKeys)
 		respDiagnostics.Append(diags...)
 	}
 
-	data.StorageEncryption = types.StringValue(string(ng.StorageEncryption))
+	if isImport || !data.StorageEncryption.IsNull() {
+		data.StorageEncryption = types.StringValue(string(ng.StorageEncryption))
+	}
 
-	if ng.Taints != nil {
-		taints := make([]taintModel, len(ng.Taints))
-		for i, taint := range ng.Taints {
-			taints[i].Effect = types.StringValue(string(taint.Effect))
-			taints[i].Key = types.StringValue(taint.Key)
-			taints[i].Value = types.StringValue(taint.Value)
+	if isImport || !data.Taint.IsNull() {
+		taints := make([]taintModel, 0)
+		for _, taint := range ng.Taints {
+			taints = append(taints, taintModel{
+				Effect: types.StringValue(string(taint.Effect)),
+				Key:    types.StringValue(taint.Key),
+				Value:  types.StringValue(taint.Value),
+			})
 		}
 
 		data.Taint, diags = types.SetValueFrom(ctx, data.Taint.ElementType(ctx), taints)
@@ -632,30 +647,31 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 }
 
 func buildCustomPlan(ctx context.Context, dataCustomPlans types.List) (*upcloud.KubernetesNodeGroupCustomPlan, diag.Diagnostics) {
-	if dataCustomPlans.IsNull() || dataCustomPlans.IsUnknown() {
-		return nil, nil
-	}
-
 	var planCustomPlans []customPlanModel
 	respDiagnostics := dataCustomPlans.ElementsAs(ctx, &planCustomPlans, false)
-	customPlan := upcloud.KubernetesNodeGroupCustomPlan{
-		Cores:       int(planCustomPlans[0].Cores.ValueInt64()),
-		Memory:      int(planCustomPlans[0].Memory.ValueInt64()),
-		StorageSize: int(planCustomPlans[0].StorageSize.ValueInt64()),
+
+	if len(planCustomPlans) == 0 {
+		return nil, respDiagnostics
 	}
 
-	if !planCustomPlans[0].StorageTier.IsNull() || !planCustomPlans[0].StorageTier.IsUnknown() {
-		customPlan.StorageTier = upcloud.StorageTier(planCustomPlans[0].StorageTier.ValueString())
+	customPlans := make([]upcloud.KubernetesNodeGroupCustomPlan, 0)
+	for _, plan := range planCustomPlans {
+		customPlan := upcloud.KubernetesNodeGroupCustomPlan{
+			Cores:       int(plan.Cores.ValueInt64()),
+			Memory:      int(plan.Memory.ValueInt64()),
+			StorageSize: int(plan.StorageSize.ValueInt64()),
+		}
+		if !plan.StorageTier.IsNull() || !plan.StorageTier.IsUnknown() {
+			customPlan.StorageTier = upcloud.StorageTier(plan.StorageTier.ValueString())
+		}
+
+		customPlans = append(customPlans, customPlan)
 	}
 
-	return &customPlan, respDiagnostics
+	return &customPlans[0], respDiagnostics
 }
 
 func buildKubeletArgs(ctx context.Context, dataKubeletArgs types.Set) ([]upcloud.KubernetesKubeletArg, diag.Diagnostics) {
-	if dataKubeletArgs.IsNull() || dataKubeletArgs.IsUnknown() {
-		return nil, nil
-	}
-
 	var planKubeletArgs []kubeletArgModel
 	respDiagnostics := dataKubeletArgs.ElementsAs(ctx, &planKubeletArgs, false)
 	kubeletArgs := make([]upcloud.KubernetesKubeletArg, 0)
@@ -671,10 +687,6 @@ func buildKubeletArgs(ctx context.Context, dataKubeletArgs types.Set) ([]upcloud
 }
 
 func buildTaints(ctx context.Context, dataTaints types.Set) ([]upcloud.KubernetesTaint, diag.Diagnostics) {
-	if dataTaints.IsNull() || dataTaints.IsUnknown() {
-		return nil, nil
-	}
-
 	var planTaints []taintModel
 	respDiagnostics := dataTaints.ElementsAs(ctx, &planTaints, false)
 	taints := make([]upcloud.KubernetesTaint, 0)
