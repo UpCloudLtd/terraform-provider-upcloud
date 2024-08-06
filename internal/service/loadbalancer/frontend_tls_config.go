@@ -2,153 +2,261 @@ package loadbalancer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceFrontendTLSConfig() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents frontend TLS config",
-		CreateContext: resourceFrontendTLSConfigCreate,
-		ReadContext:   resourceFrontendTLSConfigRead,
-		UpdateContext: resourceFrontendTLSConfigUpdate,
-		DeleteContext: resourceFrontendTLSConfigDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"frontend": {
-				Description: "ID of the load balancer frontend to which the TLS config is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+var (
+	_ resource.Resource                = &frontendTLSConfigResource{}
+	_ resource.ResourceWithConfigure   = &frontendTLSConfigResource{}
+	_ resource.ResourceWithImportState = &frontendTLSConfigResource{}
+)
+
+func NewFrontendTLSConfigResource() resource.Resource {
+	return &frontendTLSConfigResource{}
+}
+
+type frontendTLSConfigResource struct {
+	client *service.Service
+}
+
+func (r *frontendTLSConfigResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_loadbalancer_frontend_tls_config"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *frontendTLSConfigResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type frontendTLSConfigModel struct {
+	Frontend          types.String `tfsdk:"frontend"`
+	CertificateBundle types.String `tfsdk:"certificate_bundle"`
+	ID                types.String `tfsdk:"id"`
+	Name              types.String `tfsdk:"name"`
+}
+
+func (r *frontendTLSConfigResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "This resource represents frontend TLS config",
+		Attributes: map[string]schema.Attribute{
+			"frontend": schema.StringAttribute{
+				MarkdownDescription: "ID of the load balancer frontend to which the TLS config is connected.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"name": {
-				Description:      "The name of the TLS config must be unique within service frontend.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateNameDiagFunc,
+			"certificate_bundle": schema.StringAttribute{
+				MarkdownDescription: "Reference to certificate bundle ID.",
+				Required:            true,
 			},
-			"certificate_bundle": {
-				Description: "Reference to certificate bundle ID.",
-				Type:        schema.TypeString,
-				Required:    true,
+			"id": schema.StringAttribute{
+				MarkdownDescription: "The UUID of the TLS config.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the TLS config. Must be unique within customer account.",
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(validNameRegexp, validNameMessage),
+				},
 			},
 		},
 	}
 }
 
-func resourceFrontendTLSConfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, feName string
-	if err := utils.UnmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
-		return diag.FromErr(err)
+func setFrontendTLSConfigValues(_ context.Context, data *frontendTLSConfigModel, tlsConfig *upcloud.LoadBalancerFrontendTLSConfig) diag.Diagnostics {
+	var respDiagnostics diag.Diagnostics
+
+	data.Name = types.StringValue(tlsConfig.Name)
+	data.CertificateBundle = types.StringValue(tlsConfig.CertificateBundleUUID)
+
+	return respDiagnostics
+}
+
+func (r *frontendTLSConfigResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data frontendTLSConfigModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var loadbalancer, frontendName string
+	err := utils.UnmarshalID(data.Frontend.ValueString(), &loadbalancer, &frontendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
-	t, err := svc.CreateLoadBalancerFrontendTLSConfig(ctx, &request.CreateLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
+
+	apiReq := request.CreateLoadBalancerFrontendTLSConfigRequest{
+		ServiceUUID:  loadbalancer,
+		FrontendName: frontendName,
 		Config: request.LoadBalancerFrontendTLSConfig{
-			Name:                  d.Get("name").(string),
-			CertificateBundleUUID: d.Get("certificate_bundle").(string),
+			Name:                  data.Name.ValueString(),
+			CertificateBundleUUID: data.CertificateBundle.ValueString(),
 		},
-	})
+	}
+
+	tlsConfig, err := r.client.CreateLoadBalancerFrontendTLSConfig(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer frontend TLS config",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, feName, t.Name))
+	data.Frontend = types.StringValue(utils.MarshalID(loadbalancer, frontendName))
+	data.ID = types.StringValue(utils.MarshalID(loadbalancer, frontendName, tlsConfig.Name))
 
-	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "frontend TLS config created", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "fe_name": feName})
-	return diags
+	resp.Diagnostics.Append(setFrontendTLSConfigValues(ctx, &data, tlsConfig)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFrontendTLSConfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendTLSConfigResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data frontendTLSConfigModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	t, err := svc.GetLoadBalancerFrontendTLSConfig(ctx, &request.GetLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
-		Name:         name,
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	var loadbalancer, frontendName string
+	err := utils.UnmarshalID(data.Frontend.ValueString(), &loadbalancer, &frontendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
+	}
+
+	tlsConfig, err := r.client.GetLoadBalancerFrontendTLSConfig(ctx, &request.GetLoadBalancerFrontendTLSConfigRequest{
+		ServiceUUID:  loadbalancer,
+		FrontendName: frontendName,
+		Name:         data.Name.ValueString(),
 	})
 	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read loadbalancer frontend TLS config details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
 	}
 
-	if err = d.Set("frontend", utils.MarshalID(serviceID, feName)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
-		return diags
-	}
-
-	return diags
+	resp.Diagnostics.Append(setFrontendTLSConfigValues(ctx, &data, tlsConfig)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFrontendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendTLSConfigResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data frontendTLSConfigModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var loadbalancer, frontendName string
+	err := utils.UnmarshalID(data.Frontend.ValueString(), &loadbalancer, &frontendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
-	t, err := svc.ModifyLoadBalancerFrontendTLSConfig(ctx, &request.ModifyLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
-		Name:         name,
+
+	apiReq := &request.ModifyLoadBalancerFrontendTLSConfigRequest{
+		ServiceUUID:  loadbalancer,
+		FrontendName: frontendName,
+		Name:         data.Name.ValueString(),
 		Config: request.LoadBalancerFrontendTLSConfig{
-			Name:                  d.Get("name").(string),
-			CertificateBundleUUID: d.Get("certificate_bundle").(string),
+			Name:                  data.Name.ValueString(),
+			CertificateBundleUUID: data.CertificateBundle.ValueString(),
 		},
-	})
+	}
+
+	tlsConfig, err := r.client.ModifyLoadBalancerFrontendTLSConfig(ctx, apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer frontend TLS config",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, feName, t.Name))
-
-	if diags = setFrontendTLSConfigResourceData(d, t); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "frontend TLS config updated", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "fe_name": feName})
-	return diags
+	resp.Diagnostics.Append(setFrontendTLSConfigValues(ctx, &data, tlsConfig)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFrontendTLSConfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendTLSConfigResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data frontendTLSConfigModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	var loadbalancer, frontendName string
+	err := utils.UnmarshalID(data.Frontend.ValueString(), &loadbalancer, &frontendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
-	tflog.Info(ctx, "deleting frontend TLS config", map[string]interface{}{"name": name, "service_uuid": serviceID, "fe_name": feName})
-	return diag.FromErr(svc.DeleteLoadBalancerFrontendTLSConfig(ctx, &request.DeleteLoadBalancerFrontendTLSConfigRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
-		Name:         name,
-	}))
+
+	if err := r.client.DeleteLoadBalancerFrontendTLSConfig(ctx, &request.DeleteLoadBalancerFrontendTLSConfigRequest{
+		ServiceUUID:  loadbalancer,
+		FrontendName: frontendName,
+		Name:         data.Name.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer frontend TLS config",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 }
 
-func setFrontendTLSConfigResourceData(d *schema.ResourceData, t *upcloud.LoadBalancerFrontendTLSConfig) (diags diag.Diagnostics) {
-	if err := d.Set("name", t.Name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendTLSConfigResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var loadbalancer, frontendName, name string
+	err := utils.UnmarshalID(req.ID, &loadbalancer, &frontendName, &name)
+
+	if err != nil || loadbalancer == "" || frontendName == "" || name == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: loadbalancer/frontend_name/name. Got: %q", req.ID),
+		)
+		return
 	}
 
-	if err := d.Set("certificate_bundle", t.CertificateBundleUUID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("frontend"), utils.MarshalID(loadbalancer, frontendName))...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
 }
