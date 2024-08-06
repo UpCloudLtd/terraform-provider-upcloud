@@ -480,6 +480,8 @@ func (r *kubernetesNodeGroupResource) Read(ctx context.Context, req resource.Rea
 
 func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data kubernetesNodeGroupModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
 	var nodeCountPlan, nodeCountState types.Int64
 	var clusterUUID, name types.String
 
