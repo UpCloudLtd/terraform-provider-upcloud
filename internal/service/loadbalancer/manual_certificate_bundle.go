@@ -59,23 +59,23 @@ func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.S
 		MarkdownDescription: "This resource represents manual certificate bundle",
 		Attributes: map[string]schema.Attribute{
 			"certificate": schema.StringAttribute{
-				MarkdownDescription: "Certificate within base64 string must be in PEM format.",
+				MarkdownDescription: "Certificate as base64 encoded string. Must be in PEM format.",
 				Required:            true,
 			},
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Computed ID of the resource.",
+				MarkdownDescription: "The UUID of the certificate bundle.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"intermediates": schema.StringAttribute{
-				MarkdownDescription: "Intermediate certificates within base64 string must be in PEM format.",
+				MarkdownDescription: "Intermediate certificates as base64 encoded string. Must be in PEM format.",
 				Optional:            true,
 				Computed:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "The name of the bundle must be unique within customer account.",
+				MarkdownDescription: "The name of the certificate bundle. Must be unique within customer account.",
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(validNameRegexp, validNameMessage),
@@ -94,7 +94,7 @@ func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.S
 				Computed:            true,
 			},
 			"private_key": schema.StringAttribute{
-				MarkdownDescription: "Private key within base64 string must be in PEM format.",
+				MarkdownDescription: "Private key as base64 encoded string. Must be in PEM format.",
 				Required:            true,
 				Sensitive:           true,
 			},
