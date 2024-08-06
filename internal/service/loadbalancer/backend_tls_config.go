@@ -2,153 +2,261 @@ package loadbalancer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceBackendTLSConfig() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents backend TLS config",
-		CreateContext: resourceBackendTLSConfigCreate,
-		ReadContext:   resourceBackendTLSConfigRead,
-		UpdateContext: resourceBackendTLSConfigUpdate,
-		DeleteContext: resourceBackendTLSConfigDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"backend": {
-				Description: "ID of the load balancer backend to which the TLS config is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+var (
+	_ resource.Resource                = &backendTLSConfigResource{}
+	_ resource.ResourceWithConfigure   = &backendTLSConfigResource{}
+	_ resource.ResourceWithImportState = &backendTLSConfigResource{}
+)
+
+func NewBackendTLSConfigResource() resource.Resource {
+	return &backendTLSConfigResource{}
+}
+
+type backendTLSConfigResource struct {
+	client *service.Service
+}
+
+func (r *backendTLSConfigResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_loadbalancer_backend_tls_config"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *backendTLSConfigResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type backendTLSConfigModel struct {
+	Backend           types.String `tfsdk:"backend"`
+	CertificateBundle types.String `tfsdk:"certificate_bundle"`
+	ID                types.String `tfsdk:"id"`
+	Name              types.String `tfsdk:"name"`
+}
+
+func (r *backendTLSConfigResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "This resource represents backend TLS config",
+		Attributes: map[string]schema.Attribute{
+			"backend": schema.StringAttribute{
+				MarkdownDescription: "ID of the load balancer backend to which the TLS config is connected.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"name": {
-				Description:      "The name of the TLS config must be unique within service backend.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateNameDiagFunc,
+			"certificate_bundle": schema.StringAttribute{
+				MarkdownDescription: "Reference to certificate bundle ID.",
+				Required:            true,
 			},
-			"certificate_bundle": {
-				Description: "Reference to certificate bundle ID.",
-				Type:        schema.TypeString,
-				Required:    true,
+			"id": schema.StringAttribute{
+				MarkdownDescription: "The UUID of the TLS config.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the TLS config. Must be unique within customer account.",
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(validNameRegexp, validNameMessage),
+				},
 			},
 		},
 	}
 }
 
-func resourceBackendTLSConfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, beName string
-	if err := utils.UnmarshalID(d.Get("backend").(string), &serviceID, &beName); err != nil {
-		return diag.FromErr(err)
+func setBackendTLSConfigValues(_ context.Context, data *backendTLSConfigModel, tlsConfig *upcloud.LoadBalancerBackendTLSConfig) diag.Diagnostics {
+	var respDiagnostics diag.Diagnostics
+
+	data.Name = types.StringValue(tlsConfig.Name)
+	data.CertificateBundle = types.StringValue(tlsConfig.CertificateBundleUUID)
+
+	return respDiagnostics
+}
+
+func (r *backendTLSConfigResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data backendTLSConfigModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var loadbalancer, backendName string
+	err := utils.UnmarshalID(data.Backend.ValueString(), &loadbalancer, &backendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer backend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
-	t, err := svc.CreateLoadBalancerBackendTLSConfig(ctx, &request.CreateLoadBalancerBackendTLSConfigRequest{
-		ServiceUUID: serviceID,
-		BackendName: beName,
+
+	apiReq := request.CreateLoadBalancerBackendTLSConfigRequest{
+		ServiceUUID: loadbalancer,
+		BackendName: backendName,
 		Config: request.LoadBalancerBackendTLSConfig{
-			Name:                  d.Get("name").(string),
-			CertificateBundleUUID: d.Get("certificate_bundle").(string),
+			Name:                  data.Name.ValueString(),
+			CertificateBundleUUID: data.CertificateBundle.ValueString(),
 		},
-	})
+	}
+
+	tlsConfig, err := r.client.CreateLoadBalancerBackendTLSConfig(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer backend TLS config",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, beName, t.Name))
+	data.Backend = types.StringValue(utils.MarshalID(loadbalancer, backendName))
+	data.ID = types.StringValue(utils.MarshalID(loadbalancer, backendName, tlsConfig.Name))
 
-	if diags = setBackendTLSConfigResourceData(d, t); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "backend TLS config created", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "be_name": beName})
-	return diags
+	resp.Diagnostics.Append(setBackendTLSConfigValues(ctx, &data, tlsConfig)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceBackendTLSConfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, beName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *backendTLSConfigResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data backendTLSConfigModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	t, err := svc.GetLoadBalancerBackendTLSConfig(ctx, &request.GetLoadBalancerBackendTLSConfigRequest{
-		ServiceUUID: serviceID,
-		BackendName: beName,
-		Name:        name,
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	var loadbalancer, backendName string
+	err := utils.UnmarshalID(data.Backend.ValueString(), &loadbalancer, &backendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer backend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
+	}
+
+	tlsConfig, err := r.client.GetLoadBalancerBackendTLSConfig(ctx, &request.GetLoadBalancerBackendTLSConfigRequest{
+		ServiceUUID: loadbalancer,
+		BackendName: backendName,
+		Name:        data.Name.ValueString(),
 	})
 	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read loadbalancer backend TLS config details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
 	}
 
-	if err = d.Set("backend", utils.MarshalID(serviceID, beName)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if diags = setBackendTLSConfigResourceData(d, t); len(diags) > 0 {
-		return diags
-	}
-
-	return diags
+	resp.Diagnostics.Append(setBackendTLSConfigValues(ctx, &data, tlsConfig)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceBackendTLSConfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, beName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *backendTLSConfigResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data backendTLSConfigModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var loadbalancer, backendName string
+	err := utils.UnmarshalID(data.Backend.ValueString(), &loadbalancer, &backendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer backend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
-	t, err := svc.ModifyLoadBalancerBackendTLSConfig(ctx, &request.ModifyLoadBalancerBackendTLSConfigRequest{
-		ServiceUUID: serviceID,
-		BackendName: beName,
-		Name:        name,
+
+	apiReq := &request.ModifyLoadBalancerBackendTLSConfigRequest{
+		ServiceUUID: loadbalancer,
+		BackendName: backendName,
+		Name:        data.Name.ValueString(),
 		Config: request.LoadBalancerBackendTLSConfig{
-			Name:                  d.Get("name").(string),
-			CertificateBundleUUID: d.Get("certificate_bundle").(string),
+			Name:                  data.Name.ValueString(),
+			CertificateBundleUUID: data.CertificateBundle.ValueString(),
 		},
-	})
+	}
+
+	tlsConfig, err := r.client.ModifyLoadBalancerBackendTLSConfig(ctx, apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer backend TLS config",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, beName, t.Name))
-
-	if diags = setBackendTLSConfigResourceData(d, t); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "backend TLS config updated", map[string]interface{}{"name": t.Name, "service_uuid": serviceID, "be_name": beName})
-	return diags
+	resp.Diagnostics.Append(setBackendTLSConfigValues(ctx, &data, tlsConfig)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceBackendTLSConfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, beName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &beName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *backendTLSConfigResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data backendTLSConfigModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	var loadbalancer, backendName string
+	err := utils.UnmarshalID(data.Backend.ValueString(), &loadbalancer, &backendName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer backend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
-	tflog.Info(ctx, "deleting backend TLS config", map[string]interface{}{"name": name, "service_uuid": serviceID, "be_name": beName})
-	return diag.FromErr(svc.DeleteLoadBalancerBackendTLSConfig(ctx, &request.DeleteLoadBalancerBackendTLSConfigRequest{
-		ServiceUUID: serviceID,
-		BackendName: beName,
-		Name:        name,
-	}))
+
+	if err := r.client.DeleteLoadBalancerBackendTLSConfig(ctx, &request.DeleteLoadBalancerBackendTLSConfigRequest{
+		ServiceUUID: loadbalancer,
+		BackendName: backendName,
+		Name:        data.Name.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer backend TLS config",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 }
 
-func setBackendTLSConfigResourceData(d *schema.ResourceData, t *upcloud.LoadBalancerBackendTLSConfig) (diags diag.Diagnostics) {
-	if err := d.Set("name", t.Name); err != nil {
-		return diag.FromErr(err)
+func (r *backendTLSConfigResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var loadbalancer, backendName, name string
+	err := utils.UnmarshalID(req.ID, &loadbalancer, &backendName, &name)
+
+	if err != nil || loadbalancer == "" || backendName == "" || name == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: loadbalancer/backend_name/name. Got: %q", req.ID),
+		)
+		return
 	}
 
-	if err := d.Set("certificate_bundle", t.CertificateBundleUUID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("backend"), utils.MarshalID(loadbalancer, backendName))...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
 }
