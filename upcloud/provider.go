@@ -16,7 +16,8 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/networkpeering"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/router"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/servergroup"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -110,7 +111,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	requestTimeout := time.Duration(withInt64Default(model.RequestTimeoutSec, 120)) * time.Second
-	config := Config{
+	cfg := Config{
 		Username: withEnvDefault(model.Username, "UPCLOUD_USERNAME"),
 		Password: withEnvDefault(model.Password, "UPCLOUD_PASSWORD"),
 	}
@@ -120,28 +121,29 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	httpClient.RetryWaitMax = time.Duration(withInt64Default(model.RetryWaitMaxSec, 30)) * time.Second
 	httpClient.RetryMax = int(withInt64Default(model.RetryMax, 4))
 
-	service := newUpCloudServiceConnection(
-		config.Username,
-		config.Password,
+	connection := newUpCloudServiceConnection(
+		cfg.Username,
+		cfg.Password,
 		httpClient.HTTPClient,
 		requestTimeout,
 	)
 
-	_, err := config.checkLogin(service)
+	_, err := cfg.checkLogin(connection)
 	if err != nil {
 		resp.Diagnostics.AddError("Authentication failed", "Failed to authenticate to UpCloud API with given credentials")
 	}
 
 	tflog.Info(ctx, "UpCloud service connection configured for plugin framework provider", map[string]interface{}{"http_client": fmt.Sprintf("%#v", httpClient), "request_timeout": requestTimeout})
 
-	resp.ResourceData = service
-	resp.DataSourceData = service
+	resp.ResourceData = connection
+	resp.DataSourceData = connection
 }
 
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
+		kubernetes.NewKubernetesNodeGroupResource,
 		loadbalancer.NewFrontendResource,
 		loadbalancer.NewManualCertificateBundleResource,
 		network.NewNetworkResource,
@@ -156,7 +158,7 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 		cloud.NewHostsDataSource,
 		cloud.NewZoneDataSource,
 		cloud.NewZonesDataSource,
-		managedobjectstorage.NewRegionsDataSource,
 		kubernetes.NewKubernetesClusterDataSource,
+		managedobjectstorage.NewRegionsDataSource,
 	}
 }

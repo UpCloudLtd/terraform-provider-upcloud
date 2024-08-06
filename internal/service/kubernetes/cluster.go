@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -159,7 +160,7 @@ func (r *kubernetesClusterResource) Schema(_ context.Context, _ resource.SchemaR
 	}
 }
 
-func setValues(ctx context.Context, data *kubernetesClusterModel, cluster *upcloud.KubernetesCluster) diag.Diagnostics {
+func setClusterValues(ctx context.Context, data *kubernetesClusterModel, cluster *upcloud.KubernetesCluster) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
 	nodeGroupNames := make([]string, len(cluster.NodeGroups))
@@ -247,7 +248,7 @@ func (r *kubernetesClusterResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, cluster)...)
+	resp.Diagnostics.Append(setClusterValues(ctx, &data, cluster)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -280,7 +281,7 @@ func (r *kubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, cluster)...)
+	resp.Diagnostics.Append(setClusterValues(ctx, &data, cluster)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -326,7 +327,7 @@ func (r *kubernetesClusterResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, cluster)...)
+	resp.Diagnostics.Append(setClusterValues(ctx, &data, cluster)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 

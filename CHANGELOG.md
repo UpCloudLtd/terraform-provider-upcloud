@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## Added
+
+- upcloud_kubernetes_node_group: `standard` storage tier when using a custom plan
+
 ## [5.9.1] - 2024-08-05
 
 ### Added
