@@ -33,17 +33,17 @@ resource "upcloud_loadbalancer_manual_certificate_bundle" "lb_cb_m1" {
 
 ### Required Attributes
 
-- `certificate` (String) Certificate within base64 string must be in PEM format.
-- `name` (String) The name of the bundle must be unique within customer account.
-- `private_key` (String, Sensitive) Private key within base64 string must be in PEM format.
+- `certificate` (String) Certificate as base64 encoded string. Must be in PEM format.
+- `name` (String) The name of the certificate bundle. Must be unique within customer account.
+- `private_key` (String, Sensitive) Private key as base64 encoded string. Must be in PEM format.
 
 ### Optional Attributes
 
-- `intermediates` (String) Intermediate certificates within base64 string must be in PEM format.
+- `intermediates` (String) Intermediate certificates as base64 encoded string. Must be in PEM format.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The UUID of the certificate bundle.
 - `not_after` (String) The time after which a certificate is no longer valid.
 - `not_before` (String) The time on which a certificate becomes valid.
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
