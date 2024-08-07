@@ -145,6 +145,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		kubernetes.NewKubernetesClusterResource,
 		loadbalancer.NewFrontendResource,
 		loadbalancer.NewManualCertificateBundleResource,
+		managedobjectstorage.NewManagedObjectStoragePolicyResource,
 		network.NewNetworkResource,
 		networkpeering.NewNetworkPeeringResource,
 		router.NewRouterResource,

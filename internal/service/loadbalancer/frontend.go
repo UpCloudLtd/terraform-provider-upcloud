@@ -316,7 +316,6 @@ func (r *frontendResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	if data.ID.ValueString() == "" {
 		resp.State.RemoveResource(ctx)
-
 		return
 	}
 
