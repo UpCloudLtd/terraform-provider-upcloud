@@ -66,7 +66,7 @@ func (r *backendTLSConfigResource) Schema(_ context.Context, _ resource.SchemaRe
 				Required:            true,
 			},
 			"id": schema.StringAttribute{
-				MarkdownDescription: "The UUID of the TLS config.",
+				MarkdownDescription: "ID of the TLS config. ID is in `{load balancer UUID}/{backend name}/{TLS config name}` format.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
