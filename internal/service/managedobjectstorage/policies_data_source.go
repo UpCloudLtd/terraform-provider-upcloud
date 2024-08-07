@@ -10,6 +10,65 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func schemaPolicy() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"arn": {
+			Description: "Policy ARN.",
+			Computed:    true,
+			Type:        schema.TypeString,
+		},
+		"attachment_count": {
+			Description: "Attachment count.",
+			Computed:    true,
+			Type:        schema.TypeInt,
+		},
+		"created_at": {
+			Description: "Creation time.",
+			Computed:    true,
+			Type:        schema.TypeString,
+		},
+		"default_version_id": {
+			Description: "Default version id.",
+			Computed:    true,
+			Type:        schema.TypeString,
+		},
+		"description": {
+			Description: "Description of the policy.",
+			Optional:    true,
+			ForceNew:    true,
+			Type:        schema.TypeString,
+		},
+		"document": {
+			Description: "Policy document, URL-encoded compliant with RFC 3986.",
+			Required:    true,
+			ForceNew:    true,
+			Type:        schema.TypeString,
+		},
+		"name": {
+			Description: "Policy name.",
+			Required:    true,
+			ForceNew:    true,
+			Type:        schema.TypeString,
+		},
+		"service_uuid": {
+			Description: "Managed Object Storage service UUID.",
+			Required:    true,
+			ForceNew:    true,
+			Type:        schema.TypeString,
+		},
+		"system": {
+			Description: "Defines whether the policy was set up by the system.",
+			Computed:    true,
+			Type:        schema.TypeBool,
+		},
+		"updated_at": {
+			Description: "Update time.",
+			Computed:    true,
+			Type:        schema.TypeString,
+		},
+	}
+}
+
 func DataSourceManagedObjectStoragePolicies() *schema.Resource {
 	return &schema.Resource{
 		Description: "Policies available for a Managed Object Storage resource. See `managed_object_storage_user_policy` for attaching to a user.",

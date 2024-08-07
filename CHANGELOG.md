@@ -9,9 +9,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_storage: add support for labels
 
+### Changed
+
+- upcloud_managed_object_storage_policy: store configured value instead of the value returned by the API in the Terraform state. The provider will raise an error if these documents do not match
+
 ### Fixed
 
 - upcloud_storage: use `source_hash` to automatically verify the integrity of the imported data. Previously, the value was stored to state, but no validations were done
+- upcloud_managed_object_storage_policy: ignore whitespace and unnecessary escapes when determining if policy document has changed
 
 ## [5.9.1] - 2024-08-05
 
