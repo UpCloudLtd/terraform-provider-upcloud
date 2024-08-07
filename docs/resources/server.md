@@ -188,14 +188,11 @@ Optional Attributes:
 
 Blocks:
 
-- `backup_rule` (Block List, Max: 1) The criteria to backup the storage  
-		Please keep in mind that it's not possible to have a server with backup_rule attached to a server with simple_backup specified.
-		Such configurations will throw errors during execution.  
-		Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, 
-		it is advised to never switch between simple_backup on the server and individual storages backup_rules in one apply.
-		If you want to switch from using server simple backup to per-storage defined backup rules, 
-		please first remove simple_backup block from a server, run 'terraform apply', 
-		then add 'backup_rule' to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--template--backup_rule))
+- `backup_rule` (Block List, Max: 1) The criteria to backup the storage.
+
+	Please keep in mind that it's not possible to have a storage with `backup_rule` attached to a server with `simple_backup` specified. Such configurations will throw errors during execution.
+
+	Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, it is advised to never switch between `simple_backup` on the server and individual storages `backup_rules` in one apply. If you want to switch from using server simple backup to per-storage defined backup rules,  please first remove simple_backup block from a server, run `terraform apply`, then add `backup_rule` to desired storages and run `terraform apply` again. (see [below for nested schema](#nestedblock--template--backup_rule))
 
 Read-Only:
 
