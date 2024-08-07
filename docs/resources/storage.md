@@ -108,36 +108,32 @@ resource "upcloud_server" "example_server" {
 
 ### Required Attributes
 
-- `size` (Number) The size of the storage in gigabytes
-- `title` (String) A short, informative description
-- `zone` (String) The zone in which the storage will be created, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
+- `size` (Number) The size of the storage in gigabytes.
+- `title` (String) A short, informative description.
+- `zone` (String) The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
 
 - `delete_autoresize_backup` (Boolean) If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.
-- `encrypt` (Boolean) Sets if the storage is encrypted at rest
-- `filesystem_autoresize` (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes.
-				Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used
-				to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
+- `encrypt` (Boolean) Sets if the storage is encrypted at rest.
+- `filesystem_autoresize` (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes. Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless `delete_autoresize_backup` option is set to true).
 				Taking and keeping backups incure costs.
-- `tier` (String) The storage tier to use
+- `labels` (Map of String) Key-value pairs to classify the storage.
+- `tier` (String) The tier of the storage.
 
 ### Blocks
 
-- `backup_rule` (Block List, Max: 1) The criteria to backup the storage  
-		Please keep in mind that it's not possible to have a server with backup_rule attached to a server with simple_backup specified.
-		Such configurations will throw errors during execution.  
-		Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, 
-		it is advised to never switch between simple_backup on the server and individual storages backup_rules in one apply.
-		If you want to switch from using server simple backup to per-storage defined backup rules, 
-		please first remove simple_backup block from a server, run 'terraform apply', 
-		then add 'backup_rule' to desired storages and run 'terraform apply' again. (see [below for nested schema](#nestedblock--backup_rule))
-- `clone` (Block Set, Max: 1) Block defining another storage/template to clone to storage (see [below for nested schema](#nestedblock--clone))
-- `import` (Block Set, Max: 1) Block defining external data to import to storage (see [below for nested schema](#nestedblock--import))
+- `backup_rule` (Block List) The criteria to backup the storage.
+
+	Please keep in mind that it's not possible to have a storage with `backup_rule` attached to a server with `simple_backup` specified. Such configurations will throw errors during execution.
+
+	Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, it is advised to never switch between `simple_backup` on the server and individual storages `backup_rules` in one apply. If you want to switch from using server simple backup to per-storage defined backup rules,  please first remove simple_backup block from a server, run `terraform apply`, then add `backup_rule` to desired storages and run `terraform apply` again. (see [below for nested schema](#nestedblock--backup_rule))
+- `clone` (Block Set) Block defining another storage/template to clone to storage. (see [below for nested schema](#nestedblock--clone))
+- `import` (Block Set) Block defining external data to import to storage (see [below for nested schema](#nestedblock--import))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) UUID of the storage.
 
 <a id="nestedblock--backup_rule"></a>
 ### Nested Schema for `backup_rule`
@@ -154,7 +150,7 @@ Required Attributes:
 
 Required Attributes:
 
-- `id` (String) The unique identifier of the storage/template to clone
+- `id` (String) The unique identifier of the storage/template to clone.
 
 
 <a id="nestedblock--import"></a>
@@ -167,7 +163,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `source_hash` (String) For `direct_upload`; an optional hash of the file to upload.
+- `source_hash` (String) SHA256 hash of the source content. This hash is used to verify the integrity of the imported data by comparing it to `sha256sum` after the import has completed. Possible filename is automatically removed from the hash before comparison.
 
 Read-Only:
 
