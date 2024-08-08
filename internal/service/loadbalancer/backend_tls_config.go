@@ -147,8 +147,8 @@ func (r *backendTLSConfigResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	var loadbalancer, backendName string
-	err := utils.UnmarshalID(data.Backend.ValueString(), &loadbalancer, &backendName)
+	var loadbalancer, backendName, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadbalancer, &backendName, &name)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to unmarshal loadbalancer backend name",
@@ -161,7 +161,7 @@ func (r *backendTLSConfigResource) Read(ctx context.Context, req resource.ReadRe
 	tlsConfig, err := r.client.GetLoadBalancerBackendTLSConfig(ctx, &request.GetLoadBalancerBackendTLSConfigRequest{
 		ServiceUUID: loadbalancer,
 		BackendName: backendName,
-		Name:        data.Name.ValueString(),
+		Name:        name,
 	})
 	if err != nil {
 		if utils.IsNotFoundError(err) {
@@ -183,8 +183,8 @@ func (r *backendTLSConfigResource) Update(ctx context.Context, req resource.Upda
 	var data backendTLSConfigModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	var loadbalancer, backendName string
-	err := utils.UnmarshalID(data.Backend.ValueString(), &loadbalancer, &backendName)
+	var loadbalancer, backendName, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadbalancer, &backendName, &name)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to unmarshal loadbalancer backend name",
@@ -197,7 +197,7 @@ func (r *backendTLSConfigResource) Update(ctx context.Context, req resource.Upda
 	apiReq := &request.ModifyLoadBalancerBackendTLSConfigRequest{
 		ServiceUUID: loadbalancer,
 		BackendName: backendName,
-		Name:        data.Name.ValueString(),
+		Name:        name,
 		Config: request.LoadBalancerBackendTLSConfig{
 			Name:                  data.Name.ValueString(),
 			CertificateBundleUUID: data.CertificateBundle.ValueString(),
@@ -212,6 +212,8 @@ func (r *backendTLSConfigResource) Update(ctx context.Context, req resource.Upda
 		)
 		return
 	}
+
+	data.ID = types.StringValue(utils.MarshalID(loadbalancer, backendName, tlsConfig.Name))
 
 	resp.Diagnostics.Append(setBackendTLSConfigValues(ctx, &data, tlsConfig)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -258,5 +260,4 @@ func (r *backendTLSConfigResource) ImportState(ctx context.Context, req resource
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("backend"), utils.MarshalID(loadbalancer, backendName))...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
 }
