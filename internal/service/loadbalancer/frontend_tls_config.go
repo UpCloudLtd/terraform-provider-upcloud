@@ -147,8 +147,8 @@ func (r *frontendTLSConfigResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	var loadbalancer, frontendName string
-	err := utils.UnmarshalID(data.Frontend.ValueString(), &loadbalancer, &frontendName)
+	var loadbalancer, frontendName, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadbalancer, &frontendName, &name)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to unmarshal loadbalancer frontend name",
@@ -161,7 +161,7 @@ func (r *frontendTLSConfigResource) Read(ctx context.Context, req resource.ReadR
 	tlsConfig, err := r.client.GetLoadBalancerFrontendTLSConfig(ctx, &request.GetLoadBalancerFrontendTLSConfigRequest{
 		ServiceUUID:  loadbalancer,
 		FrontendName: frontendName,
-		Name:         data.Name.ValueString(),
+		Name:         name,
 	})
 	if err != nil {
 		if utils.IsNotFoundError(err) {
@@ -183,8 +183,8 @@ func (r *frontendTLSConfigResource) Update(ctx context.Context, req resource.Upd
 	var data frontendTLSConfigModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	var loadbalancer, frontendName string
-	err := utils.UnmarshalID(data.Frontend.ValueString(), &loadbalancer, &frontendName)
+	var loadbalancer, frontendName, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadbalancer, &frontendName, &name)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to unmarshal loadbalancer frontend name",
@@ -197,7 +197,7 @@ func (r *frontendTLSConfigResource) Update(ctx context.Context, req resource.Upd
 	apiReq := &request.ModifyLoadBalancerFrontendTLSConfigRequest{
 		ServiceUUID:  loadbalancer,
 		FrontendName: frontendName,
-		Name:         data.Name.ValueString(),
+		Name:         name,
 		Config: request.LoadBalancerFrontendTLSConfig{
 			Name:                  data.Name.ValueString(),
 			CertificateBundleUUID: data.CertificateBundle.ValueString(),
@@ -212,6 +212,8 @@ func (r *frontendTLSConfigResource) Update(ctx context.Context, req resource.Upd
 		)
 		return
 	}
+
+	data.ID = types.StringValue(utils.MarshalID(loadbalancer, frontendName, tlsConfig.Name))
 
 	resp.Diagnostics.Append(setFrontendTLSConfigValues(ctx, &data, tlsConfig)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -258,5 +260,4 @@ func (r *frontendTLSConfigResource) ImportState(ctx context.Context, req resourc
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("frontend"), utils.MarshalID(loadbalancer, frontendName))...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
 }
