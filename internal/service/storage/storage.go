@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -24,6 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var (
@@ -59,12 +61,18 @@ type storageModel struct {
 	Import                 types.Set    `tfsdk:"import"`
 	Labels                 types.Map    `tfsdk:"labels"`
 	Size                   types.Int64  `tfsdk:"size"`
+	Templatize             types.Object `tfsdk:"templatize"`
 	Tier                   types.String `tfsdk:"tier"`
 	Title                  types.String `tfsdk:"title"`
+	Type                   types.String `tfsdk:"type"`
 	Zone                   types.String `tfsdk:"zone"`
 }
 
 type cloneModel struct {
+	ID types.String `tfsdk:"id"`
+}
+
+type templatizeModel struct {
 	ID types.String `tfsdk:"id"`
 }
 
@@ -140,6 +148,13 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 					stringvalidator.LengthBetween(1, 255),
 				},
 			},
+			"type": schema.StringAttribute{
+				MarkdownDescription: "The type of the storage.",
+				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 255),
+				},
+			},
 			"zone": schema.StringAttribute{
 				Description: "The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
 				Required:    true,
@@ -163,7 +178,7 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 					},
 				},
 				Validators: []validator.Set{
-					setvalidator.ConflictsWith(path.MatchRoot("import")),
+					setvalidator.ConflictsWith(path.MatchRoot("import"), path.MatchRoot("templatize")),
 					setvalidator.SizeBetween(0, 1),
 				},
 			},
@@ -218,11 +233,26 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 					setplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.Set{
-					setvalidator.ConflictsWith(path.MatchRoot("clone")),
+					setvalidator.ConflictsWith(path.MatchRoot("clone"), path.MatchRoot("templatize")),
 					setvalidator.SizeBetween(0, 1),
 				},
 			},
 			"backup_rule": BackupRuleBlock(),
+			"templatize": schema.SingleNestedBlock{
+				Description: "Block defining an existing storage to templatize.",
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Description: "The unique identifier of the storage to templatize.",
+						Required:    true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+					},
+				},
+				Validators: []validator.Object{
+					objectvalidator.ConflictsWith(path.MatchRoot("clone"), path.MatchRoot("import")),
+				},
+			},
 		},
 	}
 }
@@ -235,6 +265,7 @@ func setValues(ctx context.Context, data *storageModel, storage *upcloud.Storage
 	data.Size = types.Int64Value(int64(storage.Size))
 	data.Tier = types.StringValue(storage.Tier)
 	data.Title = types.StringValue(storage.Title)
+	data.Type = types.StringValue(storage.Type)
 	data.Zone = types.StringValue(storage.Zone)
 
 	data.Labels, respDiagnostics = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(storage.Labels))
@@ -290,13 +321,55 @@ func (r *storageResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	var labels map[string]string
+	var labelsMap map[string]string
 	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
-		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
 	}
+	labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labelsMap))
 
 	var storage *upcloud.StorageDetails
-	if data.Clone.IsNull() {
+	if !data.Clone.IsNull() {
+		var planClone []cloneModel
+		resp.Diagnostics.Append(data.Clone.ElementsAs(ctx, &planClone, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		backupRule, diags := buildBackupRule(ctx, data.BackupRule)
+		resp.Diagnostics.Append(diags...)
+
+		storage, diags = cloneStorage(ctx, r.client, request.CloneStorageRequest{
+			Encrypted: upcloudBoolean(data.Encrypt),
+			Tier:      data.Tier.ValueString(),
+			Title:     data.Title.ValueString(),
+			UUID:      planClone[0].ID.ValueString(),
+			Zone:      data.Zone.ValueString(),
+		}, request.ModifyStorageRequest{
+			BackupRule: backupRule,
+			Labels:     &labels,
+			Size:       int(data.Size.ValueInt64()),
+		})
+		resp.Diagnostics.Append(diags...)
+	} else if !data.Templatize.IsNull() {
+		var templatize templatizeModel
+		resp.Diagnostics.Append(data.Templatize.As(ctx, &templatize, basetypes.ObjectAsOptions{
+			UnhandledNullAsEmpty:    true,
+			UnhandledUnknownAsEmpty: false,
+		})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		var diags diag.Diagnostics
+		storage, diags = templatizeStorage(ctx, r.client, request.TemplatizeStorageRequest{
+			Title: data.Title.ValueString(),
+			UUID:  templatize.ID.ValueString(),
+		}, request.ModifyStorageRequest{
+			Labels: &labels,
+		})
+		resp.Diagnostics.Append(diags...)
+
+	} else {
 		var importReq *request.CreateStorageImportRequest
 		if !data.Import.IsNull() {
 			var planImport []importModel
@@ -322,31 +395,8 @@ func (r *storageResource) Create(ctx context.Context, req resource.CreateRequest
 			Size:       int(data.Size.ValueInt64()),
 			Tier:       data.Tier.ValueString(),
 			Zone:       data.Zone.ValueString(),
-			Labels:     utils.NilAsEmptyList(utils.LabelsMapToSlice(labels)),
+			Labels:     labels,
 		}, importReq)
-		resp.Diagnostics.Append(diags...)
-	} else {
-		var planClone []cloneModel
-		resp.Diagnostics.Append(data.Clone.ElementsAs(ctx, &planClone, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		backupRule, diags := buildBackupRule(ctx, data.BackupRule)
-		resp.Diagnostics.Append(diags...)
-
-		labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
-		storage, diags = cloneStorage(ctx, r.client, request.CloneStorageRequest{
-			Encrypted: upcloudBoolean(data.Encrypt),
-			Tier:      data.Tier.ValueString(),
-			Title:     data.Title.ValueString(),
-			UUID:      planClone[0].ID.ValueString(),
-			Zone:      data.Zone.ValueString(),
-		}, request.ModifyStorageRequest{
-			BackupRule: backupRule,
-			Labels:     &labels,
-			Size:       int(data.Size.ValueInt64()),
-		})
 		resp.Diagnostics.Append(diags...)
 	}
 
