@@ -191,7 +191,7 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 	})
 }
 
-func TestAccUpCloudStorage_StorageImport(t *testing.T) {
+func TestAccUpCloudStorage_ImportAndTemplatize(t *testing.T) {
 	var storageDetails upcloud.StorageDetails
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -202,11 +202,13 @@ func TestAccUpCloudStorage_StorageImport(t *testing.T) {
 			{
 				Config: testUpcloudStorageInstanceConfigWithStorageImport(
 					"http_import",
-					AlpineURL),
+					AlpineURL) + testUpcloudStorageTemplateConfig("upcloud_storage.this.id"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.this", "import.#", "1"),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage_template.this", "type", "template"),
 					resource.TestCheckResourceAttr("upcloud_storage.this", "import.0.sha256sum", AlpineHash),
 				),
 			},
@@ -424,6 +426,15 @@ func testUpcloudStorageInstanceConfigWithStorageImport(source, sourceLocation st
 			}
 		}
 `, source, sourceLocation, sourceHashRow)
+}
+
+func testUpcloudStorageTemplateConfig(idReference string) string {
+	return fmt.Sprintf(`
+		resource "upcloud_storage_template" "this" {
+			source_storage = %s
+			title = "tf-acc-test-storage-template"
+		}
+`, idReference)
 }
 
 func testUpcloudStorageInstanceConfigWithImportAndClone() string {

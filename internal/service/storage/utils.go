@@ -127,6 +127,75 @@ func cloneStorage(
 	return storage, diags
 }
 
+func templatizeStorage(
+	ctx context.Context,
+	client *service.Service,
+	templatizeReq request.TemplatizeStorageRequest,
+	modifyReq request.ModifyStorageRequest,
+) (*upcloud.StorageDetails, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	_, err := client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+		UUID:         templatizeReq.UUID,
+		DesiredState: upcloud.StorageStateOnline,
+	})
+	if err != nil {
+		diags.AddError(
+			"Source storage did not reach online state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, diags
+	}
+
+	storage, err := client.TemplatizeStorage(ctx, &templatizeReq)
+	if err != nil {
+		diags.AddError(
+			"Unable to templatize storage",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return storage, diags
+	}
+
+	storage, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+		UUID:         storage.UUID,
+		DesiredState: upcloud.StorageStateOnline,
+	})
+	if err != nil {
+		diags.AddError(
+			"Cloned storage did not reach online state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return storage, diags
+	}
+
+	// If the storage specified does not match the cloned storage, modify it so that it does.
+	if modifyReq.Labels != nil && len(*modifyReq.Labels) > 0 || modifyReq.BackupRule != nil {
+		modifyReq.UUID = storage.UUID
+		storage, err = client.ModifyStorage(ctx, &modifyReq)
+		if err != nil {
+			diags.AddError(
+				"Unable to modify the cloned storage",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return storage, diags
+		}
+
+		storage, err = client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+			UUID:         storage.UUID,
+			DesiredState: upcloud.StorageStateOnline,
+		})
+		if err != nil {
+			diags.AddError(
+				"Cloned storage did not reach online state",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return storage, diags
+		}
+	}
+
+	return storage, diags
+}
+
 func createStorage(
 	ctx context.Context,
 	client *service.Service,
