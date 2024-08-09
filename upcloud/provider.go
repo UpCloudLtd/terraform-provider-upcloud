@@ -151,6 +151,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		router.NewRouterResource,
 		servergroup.NewServerGroupResource,
 		storage.NewStorageResource,
+		storage.NewStorageTemplateResource,
 	}
 }
 

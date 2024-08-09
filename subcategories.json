@@ -20,6 +20,7 @@
     "server.md": "Servers",
     "server_group.md": "Servers",
     "storage.md": "Storage",
+    "storage_template.md": "Storage",
     "floating_ip_address.md": "Network",
     "gateway.md": "Network",
     "gateway_connection.md": "Network",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -20,7 +21,11 @@ import (
 var labelKeyRegExp = regexp.MustCompile("^([a-zA-Z0-9])+([a-zA-Z0-9_-])*$")
 
 func labelsDescription(resource string) string {
-	return fmt.Sprintf("Key-value pairs to classify the %s.", resource)
+	return fmt.Sprintf("User defined key-value pairs to classify the %s.", resource)
+}
+
+func systemLabelsDescription(resource string) string {
+	return fmt.Sprintf("System defined key-value pairs to classify the %s. The keys of system defined labels are prefixed with underscore and can not be modified by the user.", resource)
 }
 
 var _ planmodifier.Map = unconfiguredAsEmpty{}
@@ -63,6 +68,18 @@ func LabelsAttribute(resource string) schema.Attribute {
 	}
 }
 
+func SystemLabelsAttribute(resource string) schema.Attribute {
+	description := systemLabelsDescription(resource)
+	return &schema.MapAttribute{
+		ElementType: types.StringType,
+		Computed:    true,
+		Description: description,
+		PlanModifiers: []planmodifier.Map{
+			mapplanmodifier.UseStateForUnknown(),
+		},
+	}
+}
+
 func LabelsSchema(resource string) *sdkv2_schema.Schema {
 	description := labelsDescription(resource)
 	return &sdkv2_schema.Schema{
@@ -90,14 +107,34 @@ func LabelsMapToSlice[T any](m map[string]T) []upcloud.Label {
 	return labels
 }
 
-func LabelsSliceToMap(s []upcloud.Label) map[string]string {
+type labelType string
+
+var (
+	labelTypeSystem labelType = "system"
+	labelTypeUser   labelType = "user"
+)
+
+func labelsSliceToMap(s []upcloud.Label, t labelType) map[string]string {
 	labels := make(map[string]string)
 
 	for _, l := range s {
-		labels[l.Key] = l.Value
+		if t == labelTypeSystem && strings.HasPrefix(l.Key, "_") {
+			labels[l.Key] = l.Value
+		}
+		if t == labelTypeUser && !strings.HasPrefix(l.Key, "_") {
+			labels[l.Key] = l.Value
+		}
 	}
 
 	return labels
+}
+
+func LabelsSliceToMap(s []upcloud.Label) map[string]string {
+	return labelsSliceToMap(s, labelTypeUser)
+}
+
+func LabelsSliceToSystemLabelsMap(s []upcloud.Label) map[string]string {
+	return labelsSliceToMap(s, labelTypeSystem)
 }
 
 var ValidateLabelsDiagFunc = validation.AllDiag(
