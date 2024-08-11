@@ -417,7 +417,7 @@ func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.C
 		},
 	}
 
-	_, err := r.client.CreateKubernetesNodeGroup(ctx, &apiReq)
+	ng, err := r.client.CreateKubernetesNodeGroup(ctx, &apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Kubernetes node group",
@@ -427,10 +427,12 @@ func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	ng, err := r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+	data.ID = types.StringValue(utils.MarshalID(data.Cluster.ValueString(), ng.Name))
+
+	ng, err = r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
 		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
 		ClusterUUID:  data.Cluster.ValueString(),
-		Name:         data.Name.ValueString(),
+		Name:         ng.Name,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -452,15 +454,26 @@ func (r *kubernetesNodeGroupResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	if data.Name.ValueString() == "" {
+	if data.ID.ValueString() == "" {
 		resp.State.RemoveResource(ctx)
 
 		return
 	}
 
+	var cluster, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &cluster, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal Kubernetes node group name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
+	}
+
 	nodeGroup, err := r.client.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
-		ClusterUUID: data.Cluster.ValueString(),
-		Name:        data.Name.ValueString(),
+		ClusterUUID: cluster,
+		Name:        name,
 	})
 	if err != nil {
 		if utils.IsNotFoundError(err) {
@@ -482,12 +495,7 @@ func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.U
 	var data kubernetesNodeGroupModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	var nodeCountPlan, nodeCountState types.Int64
-	var clusterUUID, name types.String
-
-	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("node_count"), &nodeCountPlan)...)
-	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("cluster"), &clusterUUID)...)
-	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("name"), &name)...)
+	var nodeCountState types.Int64
 
 	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("node_count"), &nodeCountState)...)
 
@@ -496,19 +504,19 @@ func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.U
 	}
 
 	// Compare node count attribute value between plan and prior state
-	if nodeCountPlan.Equal(nodeCountState) {
+	if data.NodeCount.Equal(nodeCountState) {
 		return
 	}
 
 	apiReq := &request.ModifyKubernetesNodeGroupRequest{
-		ClusterUUID: clusterUUID.ValueString(),
-		Name:        name.ValueString(),
+		ClusterUUID: data.Cluster.ValueString(),
+		Name:        data.Name.ValueString(),
 		NodeGroup: request.ModifyKubernetesNodeGroup{
-			Count: int(nodeCountPlan.ValueInt64()),
+			Count: int(data.NodeCount.ValueInt64()),
 		},
 	}
 
-	_, err := r.client.ModifyKubernetesNodeGroup(ctx, apiReq)
+	ng, err := r.client.ModifyKubernetesNodeGroup(ctx, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify Kubernetes node group",
@@ -517,10 +525,12 @@ func (r *kubernetesNodeGroupResource) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	ng, err := r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
+	data.ID = types.StringValue(utils.MarshalID(data.Cluster.ValueString(), ng.Name))
+
+	ng, err = r.client.WaitForKubernetesNodeGroupState(ctx, &request.WaitForKubernetesNodeGroupStateRequest{
 		DesiredState: upcloud.KubernetesNodeGroupStateRunning,
-		ClusterUUID:  apiReq.ClusterUUID,
-		Name:         apiReq.Name,
+		ClusterUUID:  data.Cluster.ValueString(),
+		Name:         ng.Name,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -561,28 +571,25 @@ func (r *kubernetesNodeGroupResource) Delete(ctx context.Context, req resource.D
 }
 
 func (r *kubernetesNodeGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	var cluster, name string
-	err := utils.UnmarshalID(req.ID, &cluster, &name)
-
-	if err != nil || cluster == "" || name == "" {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: cluster/name. Got: %q", req.ID),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("cluster"), cluster)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng *upcloud.KubernetesNodeGroup) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
-	isImport := data.ID.ValueString() == ""
+	isImport := data.Cluster.ValueString() == ""
+
+	var cluster, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &cluster, &name)
+	if err != nil {
+		respDiagnostics.AddError(
+			"Unable to unmarshal Kubernetes node group name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 
 	data.AntiAffinity = types.BoolValue(ng.AntiAffinity)
-	data.Cluster = types.StringValue(data.Cluster.ValueString())
+	data.Cluster = types.StringValue(cluster)
 
 	if isImport || !data.CustomPlan.IsNull() {
 		customPlans := make([]customPlanModel, 0)
@@ -615,7 +622,6 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(ng.Labels))
 	respDiagnostics.Append(diags...)
 
-	data.ID = types.StringValue(utils.MarshalID(data.Cluster.ValueString(), ng.Name))
 	data.Name = types.StringValue(ng.Name)
 	data.NodeCount = types.Int64Value(int64(ng.Count))
 	data.Plan = types.StringValue(ng.Plan)
