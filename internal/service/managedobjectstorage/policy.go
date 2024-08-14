@@ -92,7 +92,7 @@ func policySchema(_ int64) schema.Schema {
 				},
 			},
 			"document": schema.StringAttribute{
-				Description: "Policy document, URL-encoded compliant with RFC 3986. The document is stored in state without extra whitespace or escapes.",
+				Description: "Policy document, URL-encoded compliant with RFC 3986. Extra whitespace and escapes are ignored when determining if the document has changed.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIf(
