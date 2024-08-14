@@ -6,49 +6,9 @@ import (
 	"strings"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-func validateHostnameDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
-	return func(v interface{}, path cty.Path) diag.Diagnostics {
-		var diags diag.Diagnostics
-		val, ok := v.(string)
-		if !ok {
-			diags = append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       "Bad type",
-				Detail:        "expected type to be string",
-				AttributePath: path,
-			})
-			return diags
-		}
-
-		if len(val) < min || len(val) > max {
-			diags = append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       "Hostname length validation failed",
-				Detail:        fmt.Sprintf("expected hostname length to be in the range (%d - %d), got %d", min, max, len(val)),
-				AttributePath: path,
-			})
-			return diags
-		}
-
-		if err := validator.ValidateDomainName(val); err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       "Hostname validation failed",
-				Detail:        err.Error(),
-				AttributePath: path,
-			})
-		}
-
-		return diags
-	}
-}
 
 func validatePlan(ctx context.Context, service *service.Service, plan string) error {
 	if plan == "" {
