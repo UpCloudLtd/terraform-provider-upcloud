@@ -32,7 +32,7 @@ resource "upcloud_managed_object_storage_policy" "this" {
 
 ### Required Attributes
 
-- `document` (String) Policy document, URL-encoded compliant with RFC 3986.
+- `document` (String) Policy document, URL-encoded compliant with RFC 3986. Extra whitespace and escapes are ignored when determining if the document has changed.
 - `name` (String) Policy name.
 - `service_uuid` (String) Managed Object Storage service UUID.
 
@@ -46,6 +46,6 @@ resource "upcloud_managed_object_storage_policy" "this" {
 - `attachment_count` (Number) Attachment count.
 - `created_at` (String) Creation time.
 - `default_version_id` (String) Default version id.
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the policy. ID is in {object storage UUID}/{policy name} format.
 - `system` (Boolean) Defines whether the policy was set up by the system.
 - `updated_at` (String) Update time.
