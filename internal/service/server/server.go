@@ -20,6 +20,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 )
 
 const serverTitleLength int = 255
@@ -36,10 +37,15 @@ func ResourceServer() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"hostname": {
-				Description:      "A valid domain name",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateHostnameDiagFunc(1, 128),
+				Description: "A valid domain name",
+				Type:        schema.TypeString,
+				Required:    true,
+				ValidateDiagFunc: validation.AllDiag(
+					validation.ToDiagFunc(
+						validation.StringLenBetween(1, 128),
+					),
+					validator.ValidateDomainNameDiag,
+				),
 			},
 			"title": {
 				Description:  "A short, informational description",
