@@ -24,14 +24,19 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(policy, "name", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(userAccessKey, "username", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-iam-objsto"),
+					resource.TestCheckResourceAttr(policy, "name", "get-user-policy"),
+					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-iam-user"),
+					resource.TestCheckResourceAttr(userAccessKey, "username", "tf-acc-test-objstov2-iam-user"),
 					resource.TestCheckResourceAttr(userAccessKey, "status", "Active"),
-					resource.TestCheckResourceAttr(userPolicy, "username", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(userPolicy, "name", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(userPolicy, "username", "tf-acc-test-objstov2-iam-user"),
+					resource.TestCheckResourceAttr(userPolicy, "name", "get-user-policy"),
 				),
+			},
+			{
+				// Validate that there are no changes planned (to e.g. policy document because of server side formatting changes)
+				Config:   testDataS1,
+				PlanOnly: true,
 			},
 			{
 				Config:            testDataS1,
@@ -61,10 +66,10 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(policy, "name", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-user"),
-					resource.TestCheckResourceAttr(userAccessKey, "username", "tf-acc-test-objstov2-user"),
+					resource.TestCheckResourceAttr(storage, "name", "tf-acc-test-objstov2-iam-objsto"),
+					resource.TestCheckResourceAttr(policy, "name", "get-user-policy"),
+					resource.TestCheckResourceAttr(user, "username", "tf-acc-test-objstov2-iam-user"),
+					resource.TestCheckResourceAttr(userAccessKey, "username", "tf-acc-test-objstov2-iam-user"),
 					resource.TestCheckResourceAttr(userAccessKey, "status", "Inactive"),
 				),
 			},

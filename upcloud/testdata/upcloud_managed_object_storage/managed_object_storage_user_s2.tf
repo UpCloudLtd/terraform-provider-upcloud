@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "tf-acc-test-objstov2-"
+  default = "tf-acc-test-objstov2-iam-"
   type    = string
 }
 
@@ -9,15 +9,42 @@ variable "region" {
 }
 
 resource "upcloud_managed_object_storage" "user" {
-  name              = "${var.prefix}user"
+  name              = "${var.prefix}objsto"
   region            = var.region
   configured_status = "started"
 }
 
 resource "upcloud_managed_object_storage_policy" "user" {
-  description  = "${var.prefix}user-desc"
-  name         = "${var.prefix}user"
-  document     = "%7B%22Version%22%3A%222012-10-17%22%2C%22Statement%22%3A%5B%7B%22Action%22%3A%5B%22iam%3AGetUser%22%5D%2C%22Resource%22%3A%22*%22%2C%22Effect%22%3A%22Allow%22%2C%22Sid%22%3A%22editor%22%7D%5D%7D"
+  description  = "Allow get access to the users."
+  name         = "get-user-policy"
+  document     = urlencode(jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["iam:GetUser"]
+        Resource = "*"
+        Effect   = "Allow"
+        Sid      = "ReadUser"
+      }
+    ]
+  }))
+  service_uuid = upcloud_managed_object_storage.user.id
+}
+
+resource "upcloud_managed_object_storage_policy" "escape" {
+  description  = "Allow write access to bucket."
+  name         = "put-object-policy"
+  document     = urlencode(jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["s3:PutObject"]
+        Resource = "arn:aws:s3:::bucket/*"
+        Effect   = "Allow"
+        Sid      = "WriteObject"
+      }
+    ]
+  }))
   service_uuid = upcloud_managed_object_storage.user.id
 }
 
