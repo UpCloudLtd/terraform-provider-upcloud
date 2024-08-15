@@ -144,9 +144,13 @@ Optional Attributes:
 Blocks:
 
 - `auth_failure_listeners` (Block List, Max: 1) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
+- `azure_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--azure_migration))
+- `gcs_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--gcs_migration))
+- `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
 - `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
 - `opensearch_dashboards` (Block List, Max: 1) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
+- `s3_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--s3_migration))
 - `saml` (Block List, Max: 1) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
 
 <a id="nestedblock--properties--auth_failure_listeners"></a>
@@ -183,6 +187,47 @@ Optional Attributes:
 - `time_window_seconds` (Number) The window of time in which the value for `allowed_tries` is enforced.
 - `type` (String) The type of rate limiting.
 
+
+
+<a id="nestedblock--properties--azure_migration"></a>
+### Nested Schema for `properties.azure_migration`
+
+Optional Attributes:
+
+- `account` (String) Account name. Azure account name.
+- `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
+- `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
+- `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
+- `container` (String) Azure container name. Azure container name.
+- `endpoint_suffix` (String) Endpoint suffix. Defines the DNS suffix for Azure Storage endpoints.
+- `key` (String) Account secret key. Azure account secret key. One of key or sas_token should be specified.
+- `sas_token` (String) SAS token. A shared access signatures (SAS) token. One of key or sas_token should be specified.
+- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
+
+
+<a id="nestedblock--properties--gcs_migration"></a>
+### Nested Schema for `properties.gcs_migration`
+
+Optional Attributes:
+
+- `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
+- `bucket` (String) The path to the repository data within its container. Google Cloud Storage bucket name.
+- `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
+- `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
+- `credentials` (String) Credentials. Google Cloud Storage credentials file content.
+- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
+
+
+<a id="nestedblock--properties--index_rollup"></a>
+### Nested Schema for `properties.index_rollup`
+
+Optional Attributes:
+
+- `rollup_dashboards_enabled` (Boolean) plugins.rollup.dashboards.enabled. Whether rollups are enabled in OpenSearch Dashboards. Defaults to true.
+- `rollup_enabled` (Boolean) plugins.rollup.enabled. Whether the rollup plugin is enabled. Defaults to true.
+- `rollup_search_backoff_count` (Number) plugins.rollup.search.backoff_count. How many retries the plugin should attempt for failed rollup jobs. Defaults to 5.
+- `rollup_search_backoff_millis` (Number) plugins.rollup.search.backoff_millis. The backoff time between retries for failed rollup jobs. Defaults to 1000ms.
+- `rollup_search_search_all_jobs` (Boolean) plugins.rollup.search.all_jobs. Whether OpenSearch should return all jobs that match all specified search terms. If disabled, OpenSearch returns just one, as opposed to all, of the jobs that matches the search terms. Defaults to false.
 
 
 <a id="nestedblock--properties--index_template"></a>
@@ -222,6 +267,23 @@ Optional Attributes:
 - `enabled` (Boolean) Enable or disable OpenSearch Dashboards.
 - `max_old_space_size` (Number) Limits the maximum amount of memory (in MiB) the OpenSearch Dashboards process can use. This sets the max_old_space_size option of the nodejs running the OpenSearch Dashboards. Note: the memory reserved by OpenSearch Dashboards is not available for OpenSearch.
 - `opensearch_request_timeout` (Number) Timeout in milliseconds for requests made by OpenSearch Dashboards towards OpenSearch.
+
+
+<a id="nestedblock--properties--s3_migration"></a>
+### Nested Schema for `properties.s3_migration`
+
+Optional Attributes:
+
+- `access_key` (String) AWS Access key. AWS Access key.
+- `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
+- `bucket` (String) S3 bucket name. S3 bucket name.
+- `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
+- `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
+- `endpoint` (String) The S3 service endpoint to connect. The S3 service endpoint to connect to. If you are using an S3-compatible service then you should set this to the service’s endpoint.
+- `region` (String) S3 region. S3 region.
+- `secret_key` (String) AWS secret key. AWS secret key.
+- `server_side_encryption` (Boolean) Server side encryption. When set to true files are encrypted on server side.
+- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
 
 
 <a id="nestedblock--properties--saml"></a>
