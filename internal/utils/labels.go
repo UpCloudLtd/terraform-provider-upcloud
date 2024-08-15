@@ -52,7 +52,7 @@ func (lm unconfiguredAsEmpty) PlanModifyMap(ctx context.Context, req planmodifie
 
 func LabelsAttribute(resource string) schema.Attribute {
 	description := labelsDescription(resource)
-	return &schema.MapAttribute{
+	return schema.MapAttribute{
 		ElementType: types.StringType,
 		Computed:    true,
 		Optional:    true,
@@ -70,7 +70,7 @@ func LabelsAttribute(resource string) schema.Attribute {
 
 func SystemLabelsAttribute(resource string) schema.Attribute {
 	description := systemLabelsDescription(resource)
-	return &schema.MapAttribute{
+	return schema.MapAttribute{
 		ElementType: types.StringType,
 		Computed:    true,
 		Description: description,

@@ -9,7 +9,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -17,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
@@ -72,7 +70,7 @@ type importModel struct {
 }
 
 func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+	s := schema.Schema{
 		Description: "Manages UpCloud [Block Storage](https://upcloud.com/products/block-storage) devices.",
 		Attributes: map[string]schema.Attribute{
 			"delete_autoresize_backup": schema.BoolAttribute{
@@ -81,74 +79,12 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Optional:    true,
 				Default:     booldefault.StaticBool(false),
 			},
-			"encrypt": schema.BoolAttribute{
-				MarkdownDescription: "Sets if the storage is encrypted at rest.",
-				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-					boolplanmodifier.RequiresReplace(),
-				},
-			},
 			"filesystem_autoresize": schema.BoolAttribute{
 				MarkdownDescription: `If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes. Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless ` + "`" + `delete_autoresize_backup` + "`" + ` option is set to true).
 				Taking and keeping backups incure costs.`,
 				Computed: true,
 				Optional: true,
 				Default:  booldefault.StaticBool(false),
-			},
-			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "UUID of the storage.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"labels":        utils.LabelsAttribute("storage"),
-			"system_labels": utils.SystemLabelsAttribute("storage"),
-			"size": schema.Int64Attribute{
-				MarkdownDescription: "The size of the storage in gigabytes.",
-				Required:            true,
-				Validators: []validator.Int64{
-					int64validator.Between(1, 4096),
-				},
-			},
-			"tier": schema.StringAttribute{
-				MarkdownDescription: "The tier of the storage.",
-				Computed:            true,
-				Optional:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					stringvalidator.OneOf(
-						upcloud.StorageTierMaxIOPS,
-						upcloud.StorageTierStandard,
-						upcloud.StorageTierHDD,
-					),
-				},
-			},
-			"title": schema.StringAttribute{
-				MarkdownDescription: "A short, informative description.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.LengthBetween(1, 255),
-				},
-			},
-			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the storage.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"zone": schema.StringAttribute{
-				Description: "The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -228,6 +164,12 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"backup_rule": BackupRuleBlock(),
 		},
 	}
+
+	for key, attribute := range commonAttributes() {
+		s.Attributes[key] = attribute
+	}
+
+	resp.Schema = s
 }
 
 func setStorageValues(ctx context.Context, data *storageModel, storage *upcloud.StorageDetails) diag.Diagnostics {

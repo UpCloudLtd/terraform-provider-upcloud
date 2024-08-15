@@ -11,8 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -49,72 +47,26 @@ type storageTemplateModel struct {
 }
 
 func (r *storageTemplateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+	attributes := commonAttributes()
+	attributes["labels"] = utils.LabelsAttribute("storage template")
+	attributes["system_labels"] = utils.SystemLabelsAttribute("storage template")
+
+	s := schema.Schema{
 		Description: "Manages UpCloud storage templates.",
-		Attributes: map[string]schema.Attribute{
-			"encrypt": schema.BoolAttribute{
-				MarkdownDescription: "Sets if the storage is encrypted at rest.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "UUID of the storage.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"labels":        utils.LabelsAttribute("storage"),
-			"system_labels": utils.SystemLabelsAttribute("storage"),
-			"size": schema.Int64Attribute{
-				MarkdownDescription: "The size of the storage in gigabytes.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
-			},
-			"source_storage": schema.StringAttribute{
-				MarkdownDescription: "The source storage that is used as a base for this storage template.",
-				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					stringvalidator.LengthBetween(1, 255),
-				},
-			},
-			"tier": schema.StringAttribute{
-				MarkdownDescription: "The tier of the storage.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"title": schema.StringAttribute{
-				MarkdownDescription: "A short, informative description.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.LengthBetween(1, 255),
-				},
-			},
-			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the storage.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"zone": schema.StringAttribute{
-				Description: "The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
+		Attributes:  utils.ReadonlyAttributes(attributes, "title", "labels"),
+	}
+	s.Attributes["source_storage"] = schema.StringAttribute{
+		MarkdownDescription: "The source storage that is used as a base for this storage template.",
+		Required:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.RequiresReplace(),
+		},
+		Validators: []validator.String{
+			stringvalidator.LengthBetween(1, 255),
 		},
 	}
+
+	resp.Schema = s
 }
 
 func (r *storageTemplateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
