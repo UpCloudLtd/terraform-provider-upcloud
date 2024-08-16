@@ -2,7 +2,6 @@ package loadbalancer
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
@@ -86,6 +85,22 @@ func (r *frontendTLSConfigResource) Schema(_ context.Context, _ resource.SchemaR
 func setFrontendTLSConfigValues(_ context.Context, data *frontendTLSConfigModel, tlsConfig *upcloud.LoadBalancerFrontendTLSConfig) diag.Diagnostics {
 	var respDiagnostics diag.Diagnostics
 
+	isImport := data.Frontend.ValueString() == ""
+
+	if isImport || !data.Frontend.IsNull() {
+		var loadbalancer, frontendName, name string
+
+		err := utils.UnmarshalID(data.ID.ValueString(), &loadbalancer, &frontendName, &name)
+		if err != nil {
+			respDiagnostics.AddError(
+				"Unable to unmarshal loadbalancer frontend name",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+
+		data.Frontend = types.StringValue(utils.MarshalID(loadbalancer, frontendName))
+	}
+
 	data.Name = types.StringValue(tlsConfig.Name)
 	data.CertificateBundle = types.StringValue(tlsConfig.CertificateBundleUUID)
 
@@ -126,7 +141,6 @@ func (r *frontendTLSConfigResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	data.Frontend = types.StringValue(utils.MarshalID(loadbalancer, frontendName))
 	data.ID = types.StringValue(utils.MarshalID(loadbalancer, frontendName, tlsConfig.Name))
 
 	resp.Diagnostics.Append(setFrontendTLSConfigValues(ctx, &data, tlsConfig)...)
@@ -247,17 +261,5 @@ func (r *frontendTLSConfigResource) Delete(ctx context.Context, req resource.Del
 }
 
 func (r *frontendTLSConfigResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	var loadbalancer, frontendName, name string
-	err := utils.UnmarshalID(req.ID, &loadbalancer, &frontendName, &name)
-
-	if err != nil || loadbalancer == "" || frontendName == "" || name == "" {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: loadbalancer/frontend_name/name. Got: %q", req.ID),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("frontend"), utils.MarshalID(loadbalancer, frontendName))...)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
