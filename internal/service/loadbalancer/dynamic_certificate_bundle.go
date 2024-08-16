@@ -112,7 +112,6 @@ func setDynamicCertificateBundleValues(ctx context.Context, data *dynamicCertifi
 	data.Hostnames, diags = types.ListValueFrom(ctx, data.Hostnames.ElementType(ctx), bundle.Hostnames)
 	respDiagnostics.Append(diags...)
 
-	data.ID = types.StringValue(bundle.UUID)
 	data.KeyType = types.StringValue(bundle.KeyType)
 	data.Name = types.StringValue(bundle.Name)
 	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
@@ -151,6 +150,8 @@ func (r *dynamicCertificateBundleResource) Create(ctx context.Context, req resou
 
 		return
 	}
+
+	data.ID = types.StringValue(bundle.UUID)
 
 	resp.Diagnostics.Append(setDynamicCertificateBundleValues(ctx, &data, bundle)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
