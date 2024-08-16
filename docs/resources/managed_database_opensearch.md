@@ -49,7 +49,7 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 
 - `access_control` (Boolean) Enables users access control for OpenSearch service. User access control rules will only be enforced if this attribute is enabled.
 - `extended_access_control` (Boolean) Grant access to top-level `_mget`, `_msearch` and `_bulk` APIs. Users are limited to perform operations on indices based on the user-specific access control rules.
-- `labels` (Map of String) Key-value pairs to classify the managed database.
+- `labels` (Map of String) User defined key-value pairs to classify the managed database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service

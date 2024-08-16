@@ -51,7 +51,7 @@ resource "upcloud_server_group" "main" {
 	Plese also note that anti-affinity policies are only applied on server start. This means that if anti-affinity
 	policies in server group are not met, you need to manually restart the servers in said group,
 	for example via API, UpCloud Control Panel or upctl (UpCloud CLI)
-- `labels` (Map of String) Key-value pairs to classify the server group.
+- `labels` (Map of String) User defined key-value pairs to classify the server group.
 - `members` (Set of String) UUIDs of the servers that are members of this group. Servers can also be attached to the server group via `server_group` property of `upcloud_server`. See also `track_members` property.
 - `track_members` (Boolean) Controls if members of the server group are being tracked in this resource. Set to `false` when using `server_group` property of `upcloud_server` to attach servers to the server group to avoid delayed state updates.
 

@@ -109,7 +109,7 @@ resource "upcloud_server" "example_server" {
 ### Required Attributes
 
 - `size` (Number) The size of the storage in gigabytes.
-- `title` (String) A short, informative description.
+- `title` (String) The title of the storage.
 - `zone` (String) The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
@@ -118,7 +118,7 @@ resource "upcloud_server" "example_server" {
 - `encrypt` (Boolean) Sets if the storage is encrypted at rest.
 - `filesystem_autoresize` (Boolean) If set to true, provider will attempt to resize partition and filesystem when the size of the storage changes. Please note that before the resize attempt is made, backup of the storage will be taken. If the resize attempt fails, the backup will be used to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless `delete_autoresize_backup` option is set to true).
 				Taking and keeping backups incure costs.
-- `labels` (Map of String) Key-value pairs to classify the storage.
+- `labels` (Map of String) User defined key-value pairs to classify the storage.
 - `tier` (String) The tier of the storage.
 
 ### Blocks
@@ -134,6 +134,8 @@ resource "upcloud_server" "example_server" {
 ### Read-Only
 
 - `id` (String) UUID of the storage.
+- `system_labels` (Map of String) System defined key-value pairs to classify the storage. The keys of system defined labels are prefixed with underscore and can not be modified by the user.
+- `type` (String) The type of the storage.
 
 <a id="nestedblock--backup_rule"></a>
 ### Nested Schema for `backup_rule`

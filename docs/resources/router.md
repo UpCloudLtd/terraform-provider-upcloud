@@ -27,7 +27,7 @@ resource "upcloud_router" "my_example_router" {
 
 ### Optional Attributes
 
-- `labels` (Map of String) Key-value pairs to classify the router.
+- `labels` (Map of String) User defined key-value pairs to classify the router.
 
 ### Blocks
 
