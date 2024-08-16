@@ -19,8 +19,8 @@ This resource represents backend TLS config
 
 - `backend` (String) ID of the load balancer backend to which the TLS config is connected.
 - `certificate_bundle` (String) Reference to certificate bundle ID.
-- `name` (String) The name of the TLS config must be unique within service backend.
+- `name` (String) The name of the TLS config. Must be unique within customer account.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the TLS config. ID is in `{load balancer UUID}/{backend name}/{TLS config name}` format.

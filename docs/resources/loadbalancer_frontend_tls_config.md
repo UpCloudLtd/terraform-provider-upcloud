@@ -69,8 +69,8 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 - `certificate_bundle` (String) Reference to certificate bundle ID.
 - `frontend` (String) ID of the load balancer frontend to which the TLS config is connected.
-- `name` (String) The name of the TLS config must be unique within service frontend.
+- `name` (String) The name of the TLS config. Must be unique within customer account.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the TLS config. ID is in `{load balancer UUID}/{frontend name}/{TLS config name}` format.
