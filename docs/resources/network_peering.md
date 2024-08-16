@@ -54,7 +54,7 @@ resource "upcloud_network_peering" "this" {
 ### Optional Attributes
 
 - `configured_status` (String) Configured status of the network peering.
-- `labels` (Map of String) Key-value pairs to classify the network peering.
+- `labels` (Map of String) User defined key-value pairs to classify the network peering.
 
 ### Blocks
 

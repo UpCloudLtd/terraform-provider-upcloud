@@ -65,7 +65,7 @@ resource "upcloud_gateway" "this" {
 ### Optional Attributes
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
-- `labels` (Map of String) Key-value pairs to classify the network gateway.
+- `labels` (Map of String) User defined key-value pairs to classify the network gateway.
 - `plan` (String) Gateway pricing plan.
 
 ### Blocks

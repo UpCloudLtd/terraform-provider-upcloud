@@ -61,7 +61,7 @@ resource "upcloud_managed_object_storage" "this" {
 
 ### Optional Attributes
 
-- `labels` (Map of String) Key-value pairs to classify the managed object storage.
+- `labels` (Map of String) User defined key-value pairs to classify the managed object storage.
 
 ### Blocks
 

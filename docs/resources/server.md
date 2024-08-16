@@ -62,7 +62,7 @@ resource "upcloud_server" "example" {
 - `cpu` (Number) The number of CPU for the server
 - `firewall` (Boolean) Are firewall rules active for the server
 - `host` (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
-- `labels` (Map of String) Key-value pairs to classify the server.
+- `labels` (Map of String) User defined key-value pairs to classify the server.
 - `mem` (Number) The size of memory for the server (in megabytes)
 - `metadata` (Boolean) Is the metadata service active for the server
 - `nic_model` (String) The model of the server's network interfaces
