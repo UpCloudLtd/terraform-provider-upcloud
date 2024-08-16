@@ -50,18 +50,13 @@ func (r *storageResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 type storageModel struct {
-	BackupRule             types.List   `tfsdk:"backup_rule"`
-	Clone                  types.Set    `tfsdk:"clone"`
-	DeleteAutoresizeBackup types.Bool   `tfsdk:"delete_autoresize_backup"`
-	Encrypt                types.Bool   `tfsdk:"encrypt"`
-	FilesystemAutoresize   types.Bool   `tfsdk:"filesystem_autoresize"`
-	ID                     types.String `tfsdk:"id"`
-	Import                 types.Set    `tfsdk:"import"`
-	Labels                 types.Map    `tfsdk:"labels"`
-	Size                   types.Int64  `tfsdk:"size"`
-	Tier                   types.String `tfsdk:"tier"`
-	Title                  types.String `tfsdk:"title"`
-	Zone                   types.String `tfsdk:"zone"`
+	storageCommonModel
+
+	BackupRule             types.List `tfsdk:"backup_rule"`
+	Clone                  types.Set  `tfsdk:"clone"`
+	DeleteAutoresizeBackup types.Bool `tfsdk:"delete_autoresize_backup"`
+	FilesystemAutoresize   types.Bool `tfsdk:"filesystem_autoresize"`
+	Import                 types.Set  `tfsdk:"import"`
 }
 
 type cloneModel struct {
@@ -78,16 +73,16 @@ type importModel struct {
 
 func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages UpCloud [Block Storage](https://upcloud.com/products/block-storage) devices.",
+		MarkdownDescription: "Manages UpCloud [Block Storage](https://upcloud.com/products/block-storage) devices.",
 		Attributes: map[string]schema.Attribute{
 			"delete_autoresize_backup": schema.BoolAttribute{
-				Description: "If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.",
-				Computed:    true,
-				Optional:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "If set to true, the backup taken before the partition and filesystem resize attempt will be deleted immediately after success.",
+				Computed:            true,
+				Optional:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"encrypt": schema.BoolAttribute{
-				MarkdownDescription: "Sets if the storage is encrypted at rest.",
+				MarkdownDescription: encryptDescription,
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
@@ -104,21 +99,22 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "UUID of the storage.",
+				MarkdownDescription: uuidDescription,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"labels": utils.LabelsAttribute("storage"),
+			"labels":        utils.LabelsAttribute("storage"),
+			"system_labels": utils.SystemLabelsAttribute("storage"),
 			"size": schema.Int64Attribute{
-				MarkdownDescription: "The size of the storage in gigabytes.",
+				MarkdownDescription: sizeDescription,
 				Required:            true,
 				Validators: []validator.Int64{
 					int64validator.Between(1, 4096),
 				},
 			},
 			"tier": schema.StringAttribute{
-				MarkdownDescription: "The tier of the storage.",
+				MarkdownDescription: tierDescription,
 				Computed:            true,
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
@@ -134,15 +130,22 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 			},
 			"title": schema.StringAttribute{
-				MarkdownDescription: "A short, informative description.",
+				MarkdownDescription: titleDescription,
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 255),
 				},
 			},
+			"type": schema.StringAttribute{
+				MarkdownDescription: typeDescription,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"zone": schema.StringAttribute{
-				Description: "The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
-				Required:    true,
+				MarkdownDescription: "The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -150,12 +153,12 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 		},
 		Blocks: map[string]schema.Block{
 			"clone": schema.SetNestedBlock{
-				Description: "Block defining another storage/template to clone to storage.",
+				MarkdownDescription: "Block defining another storage/template to clone to storage.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Description: "The unique identifier of the storage/template to clone.",
-							Required:    true,
+							MarkdownDescription: "The unique identifier of the storage/template to clone.",
+							Required:            true,
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
 							},
@@ -168,7 +171,7 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 			},
 			"import": schema.SetNestedBlock{
-				Description: "Block defining external data to import to storage",
+				MarkdownDescription: "Block defining external data to import to storage",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"source": schema.StringAttribute{
@@ -199,15 +202,15 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							},
 						},
 						"sha256sum": schema.StringAttribute{
-							Description: "sha256 sum of the imported data",
-							Computed:    true,
+							MarkdownDescription: "sha256 sum of the imported data",
+							Computed:            true,
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.UseStateForUnknown(),
 							},
 						},
 						"written_bytes": schema.Int64Attribute{
-							Description: "Number of bytes imported",
-							Computed:    true,
+							MarkdownDescription: "Number of bytes imported",
+							Computed:            true,
 							PlanModifiers: []planmodifier.Int64{
 								int64planmodifier.UseStateForUnknown(),
 							},
@@ -227,17 +230,8 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 	}
 }
 
-func setValues(ctx context.Context, data *storageModel, storage *upcloud.StorageDetails) diag.Diagnostics {
-	var respDiagnostics diag.Diagnostics
-
-	data.ID = types.StringValue(storage.UUID)
-	data.Encrypt = types.BoolValue(storage.Encrypted.Bool())
-	data.Size = types.Int64Value(int64(storage.Size))
-	data.Tier = types.StringValue(storage.Tier)
-	data.Title = types.StringValue(storage.Title)
-	data.Zone = types.StringValue(storage.Zone)
-
-	data.Labels, respDiagnostics = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(storage.Labels))
+func setStorageValues(ctx context.Context, data *storageModel, storage *upcloud.StorageDetails) diag.Diagnostics {
+	respDiagnostics := setCommonValues(ctx, &data.storageCommonModel, storage)
 
 	if !data.BackupRule.IsNull() && storage.BackupRule != nil {
 		backupRule := []BackupRuleModel{{
@@ -290,13 +284,36 @@ func (r *storageResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	var labels map[string]string
+	var labelsMap map[string]string
 	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
-		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
 	}
+	labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labelsMap))
 
 	var storage *upcloud.StorageDetails
-	if data.Clone.IsNull() {
+	if !data.Clone.IsNull() {
+		var planClone []cloneModel
+		resp.Diagnostics.Append(data.Clone.ElementsAs(ctx, &planClone, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		backupRule, diags := buildBackupRule(ctx, data.BackupRule)
+		resp.Diagnostics.Append(diags...)
+
+		storage, diags = cloneStorage(ctx, r.client, request.CloneStorageRequest{
+			Encrypted: upcloudBoolean(data.Encrypt),
+			Tier:      data.Tier.ValueString(),
+			Title:     data.Title.ValueString(),
+			UUID:      planClone[0].ID.ValueString(),
+			Zone:      data.Zone.ValueString(),
+		}, request.ModifyStorageRequest{
+			BackupRule: backupRule,
+			Labels:     &labels,
+			Size:       int(data.Size.ValueInt64()),
+		})
+		resp.Diagnostics.Append(diags...)
+	} else {
 		var importReq *request.CreateStorageImportRequest
 		if !data.Import.IsNull() {
 			var planImport []importModel
@@ -322,31 +339,8 @@ func (r *storageResource) Create(ctx context.Context, req resource.CreateRequest
 			Size:       int(data.Size.ValueInt64()),
 			Tier:       data.Tier.ValueString(),
 			Zone:       data.Zone.ValueString(),
-			Labels:     utils.NilAsEmptyList(utils.LabelsMapToSlice(labels)),
+			Labels:     labels,
 		}, importReq)
-		resp.Diagnostics.Append(diags...)
-	} else {
-		var planClone []cloneModel
-		resp.Diagnostics.Append(data.Clone.ElementsAs(ctx, &planClone, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		backupRule, diags := buildBackupRule(ctx, data.BackupRule)
-		resp.Diagnostics.Append(diags...)
-
-		labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
-		storage, diags = cloneStorage(ctx, r.client, request.CloneStorageRequest{
-			Encrypted: upcloudBoolean(data.Encrypt),
-			Tier:      data.Tier.ValueString(),
-			Title:     data.Title.ValueString(),
-			UUID:      planClone[0].ID.ValueString(),
-			Zone:      data.Zone.ValueString(),
-		}, request.ModifyStorageRequest{
-			BackupRule: backupRule,
-			Labels:     &labels,
-			Size:       int(data.Size.ValueInt64()),
-		})
 		resp.Diagnostics.Append(diags...)
 	}
 
@@ -354,7 +348,7 @@ func (r *storageResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, storage)...)
+	resp.Diagnostics.Append(setStorageValues(ctx, &data, storage)...)
 
 	if !data.Import.IsNull() {
 		importDetails, err := r.client.GetStorageImportDetails(ctx, &request.GetStorageImportDetailsRequest{
@@ -415,7 +409,7 @@ func (r *storageResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, storage)...)
+	resp.Diagnostics.Append(setStorageValues(ctx, &data, storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -497,7 +491,7 @@ func (r *storageResource) Update(ctx context.Context, req resource.UpdateRequest
 		}
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, storage)...)
+	resp.Diagnostics.Append(setStorageValues(ctx, &data, storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
