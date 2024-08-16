@@ -6,12 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
@@ -25,7 +19,11 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func Provider() *schema.Provider {
@@ -70,29 +68,29 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_server":                                  server.ResourceServer(),
-			"upcloud_firewall_rules":                          firewall.ResourceFirewallRules(),
-			"upcloud_tag":                                     tag.ResourceTag(),
-			"upcloud_gateway":                                 gateway.ResourceGateway(),
-			"upcloud_gateway_connection":                      gateway.ResourceConnection(),
-			"upcloud_gateway_connection_tunnel":               gateway.ResourceTunnel(),
-			"upcloud_object_storage":                          objectstorage.ResourceObjectStorage(),
-			"upcloud_managed_database_postgresql":             database.ResourcePostgreSQL(),
-			"upcloud_managed_database_mysql":                  database.ResourceMySQL(),
-			"upcloud_managed_database_redis":                  database.ResourceRedis(),
-			"upcloud_managed_database_opensearch":             database.ResourceOpenSearch(),
-			"upcloud_managed_database_user":                   database.ResourceUser(),
-			"upcloud_managed_database_logical_database":       database.ResourceLogicalDatabase(),
-			"upcloud_managed_object_storage":                  managedobjectstorage.ResourceManagedObjectStorage(),
-			"upcloud_managed_object_storage_user":             managedobjectstorage.ResourceManagedObjectStorageUser(),
-			"upcloud_managed_object_storage_user_access_key":  managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
-			"upcloud_managed_object_storage_user_policy":      managedobjectstorage.ResourceManagedObjectStorageUserPolicy(),
-			"upcloud_loadbalancer":                            loadbalancer.ResourceLoadBalancer(),
-			"upcloud_loadbalancer_resolver":                   loadbalancer.ResourceResolver(),
-			"upcloud_loadbalancer_backend":                    loadbalancer.ResourceBackend(),
-			"upcloud_loadbalancer_static_backend_member":      loadbalancer.ResourceStaticBackendMember(),
-			"upcloud_loadbalancer_dynamic_backend_member":     loadbalancer.ResourceDynamicBackendMember(),
-			"upcloud_loadbalancer_frontend_rule":              loadbalancer.ResourceFrontendRule(),
+			"upcloud_server":                                 server.ResourceServer(),
+			"upcloud_firewall_rules":                         firewall.ResourceFirewallRules(),
+			"upcloud_tag":                                    tag.ResourceTag(),
+			"upcloud_gateway":                                gateway.ResourceGateway(),
+			"upcloud_gateway_connection":                     gateway.ResourceConnection(),
+			"upcloud_gateway_connection_tunnel":              gateway.ResourceTunnel(),
+			"upcloud_object_storage":                         objectstorage.ResourceObjectStorage(),
+			"upcloud_managed_database_postgresql":            database.ResourcePostgreSQL(),
+			"upcloud_managed_database_mysql":                 database.ResourceMySQL(),
+			"upcloud_managed_database_redis":                 database.ResourceRedis(),
+			"upcloud_managed_database_opensearch":            database.ResourceOpenSearch(),
+			"upcloud_managed_database_user":                  database.ResourceUser(),
+			"upcloud_managed_database_logical_database":      database.ResourceLogicalDatabase(),
+			"upcloud_managed_object_storage":                 managedobjectstorage.ResourceManagedObjectStorage(),
+			"upcloud_managed_object_storage_user":            managedobjectstorage.ResourceManagedObjectStorageUser(),
+			"upcloud_managed_object_storage_user_access_key": managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
+			"upcloud_managed_object_storage_user_policy":     managedobjectstorage.ResourceManagedObjectStorageUserPolicy(),
+			"upcloud_loadbalancer":                           loadbalancer.ResourceLoadBalancer(),
+			"upcloud_loadbalancer_resolver":                  loadbalancer.ResourceResolver(),
+			"upcloud_loadbalancer_backend":                   loadbalancer.ResourceBackend(),
+			"upcloud_loadbalancer_static_backend_member":     loadbalancer.ResourceStaticBackendMember(),
+			"upcloud_loadbalancer_dynamic_backend_member":    loadbalancer.ResourceDynamicBackendMember(),
+			"upcloud_loadbalancer_frontend_rule":             loadbalancer.ResourceFrontendRule(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
