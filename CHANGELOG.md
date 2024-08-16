@@ -8,7 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - upcloud_storage: add support for labels
-- upcloud_storage_template: add support creating custom templates
+- upcloud_storage_template: add support for creating custom templates
 
 ### Changed
 
