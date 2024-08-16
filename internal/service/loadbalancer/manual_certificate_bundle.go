@@ -106,7 +106,6 @@ func setManualCertificateBundleValues(_ context.Context, data *manualCertificate
 	var respDiagnostics diag.Diagnostics
 
 	data.Certificate = types.StringValue(bundle.Certificate)
-	data.ID = types.StringValue(bundle.UUID)
 	data.Intermediates = types.StringValue(bundle.Intermediates)
 	data.Name = types.StringValue(bundle.Name)
 	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
@@ -141,6 +140,8 @@ func (r *manualCertificateBundleResource) Create(ctx context.Context, req resour
 
 		return
 	}
+
+	data.ID = types.StringValue(bundle.UUID)
 
 	resp.Diagnostics.Append(setManualCertificateBundleValues(ctx, &data, bundle)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
