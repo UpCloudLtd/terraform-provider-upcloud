@@ -50,17 +50,20 @@ func (lm unconfiguredAsEmpty) PlanModifyMap(ctx context.Context, req planmodifie
 	}
 }
 
-func LabelsAttribute(resource string) schema.Attribute {
+func LabelsAttribute(resource string, additionalPlanModifiers ...planmodifier.Map) schema.Attribute {
 	description := labelsDescription(resource)
+	planModifiers := []planmodifier.Map{
+		unconfiguredAsEmpty{},
+		mapplanmodifier.UseStateForUnknown(),
+	}
+	planModifiers = append(planModifiers, additionalPlanModifiers...)
+
 	return &schema.MapAttribute{
-		ElementType: types.StringType,
-		Computed:    true,
-		Optional:    true,
-		Description: description,
-		PlanModifiers: []planmodifier.Map{
-			unconfiguredAsEmpty{},
-			mapplanmodifier.UseStateForUnknown(),
-		},
+		ElementType:   types.StringType,
+		Computed:      true,
+		Optional:      true,
+		Description:   description,
+		PlanModifiers: planModifiers,
 		Validators: []validator.Map{
 			mapvalidator.KeysAre(stringvalidator.LengthBetween(2, 32), stringvalidator.RegexMatches(labelKeyRegExp, "")),
 			mapvalidator.ValueStringsAre(stringvalidator.LengthBetween(0, 255)),

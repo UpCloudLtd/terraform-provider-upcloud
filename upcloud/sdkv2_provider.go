@@ -17,7 +17,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
@@ -97,7 +96,6 @@ func Provider() *schema.Provider {
 			"upcloud_loadbalancer_frontend_rule":              loadbalancer.ResourceFrontendRule(),
 			"upcloud_loadbalancer_frontend_tls_config":        loadbalancer.ResourceFrontendTLSConfig(),
 			"upcloud_loadbalancer_dynamic_certificate_bundle": loadbalancer.ResourceDynamicCertificateBundle(),
-			"upcloud_kubernetes_node_group":                   kubernetes.ResourceNodeGroup(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

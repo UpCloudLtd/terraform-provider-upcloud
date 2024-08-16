@@ -9,14 +9,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_storage: add support for labels
 - upcloud_storage_template: add support for creating custom templates
-
-### Changed
-
-- System defined labels (i.e. labels prefixed with `_`) are filtered out from the `labels` maps.
+- upcloud_kubernetes_node_group: `standard` storage tier when using a custom plan
 
 ### Changed
 
 - upcloud_managed_object_storage_policy: store configured value instead of the value returned by the API in the Terraform state. The provider will raise an error if these documents do not match
+- System defined labels (i.e. labels prefixed with `_`) are filtered out from the `labels` maps.
 
 ### Fixed
 
