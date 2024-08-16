@@ -3,12 +3,12 @@
 page_title: "upcloud_kubernetes_node_group Resource - terraform-provider-upcloud"
 subcategory: Kubernetes
 description: |-
-  This resource represents a node group in a Managed Kubernetes cluster.
+  This resource represents a Managed Kubernetes https://upcloud.com/products/managed-kubernetes cluster.
 ---
 
 # upcloud_kubernetes_node_group (Resource)
 
-This resource represents a node group in a Managed Kubernetes cluster.
+This resource represents a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster.
 
 ## Example Usage
 
@@ -70,22 +70,21 @@ resource "upcloud_kubernetes_node_group" "group" {
 
 ### Optional Attributes
 
-- `anti_affinity` (Boolean) If set to true, nodes in this group will be placed on separate compute hosts.
-				Please note that anti-affinity policy is considered "best effort" and enabling it does not fully guarantee that the nodes will end up on different hardware.
-- `labels` (Map of String) Key-value pairs to classify the node group.
+- `anti_affinity` (Boolean) If set to true, nodes in this group will be placed on separate compute hosts. Please note that anti-affinity policy is considered 'best effort' and enabling it does not fully guarantee that the nodes will end up on different hardware.
+- `labels` (Map of String) User defined key-value pairs to classify the node_group.
 - `ssh_keys` (Set of String) You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.
-- `storage_encryption` (String) Storage encryption strategy for the nodes in this group.
+- `storage_encryption` (String) The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable.
 - `utility_network_access` (Boolean) If set to false, nodes in this group will not have access to utility network.
 
 ### Blocks
 
-- `custom_plan` (Block List, Max: 1) Resource properties for custom plan (see [below for nested schema](#nestedblock--custom_plan))
+- `custom_plan` (Block List) Resource properties for custom plan (see [below for nested schema](#nestedblock--custom_plan))
 - `kubelet_args` (Block Set) Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args. (see [below for nested schema](#nestedblock--kubelet_args))
 - `taint` (Block Set) Taints for the nodes in this group. (see [below for nested schema](#nestedblock--taint))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Computed ID of the node group. This is a combination of the cluster UUID and the node group name, separated with a `/`.
 
 <a id="nestedblock--custom_plan"></a>
 ### Nested Schema for `custom_plan`
