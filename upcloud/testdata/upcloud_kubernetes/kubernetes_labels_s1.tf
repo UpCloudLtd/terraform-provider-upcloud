@@ -4,7 +4,7 @@ variable "basename" {
 }
 
 variable "zone" {
-  default = "de-fra1"
+  default = "pl-waw1"
   type    = string
 }
 
