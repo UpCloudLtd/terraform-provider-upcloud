@@ -10,6 +10,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_storage: add support for labels
 - upcloud_storage_template: add support for creating custom templates
 - upcloud_kubernetes_node_group: `standard` storage tier when using a custom plan
+- upcloud_managed_database_opensearch: `azure_migration`, `gcs_migration`, `index_rollup`, and `s3_migration` properties.
 
 ### Changed
 
