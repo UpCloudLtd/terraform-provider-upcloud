@@ -106,7 +106,7 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(cluster, "control_plane_ip_filter.*", "0.0.0.0/0"),
 					resource.TestCheckResourceAttr(cluster, "name", "tf-acc-test-k8s-labels-cluster"),
-					resource.TestCheckResourceAttr(cluster, "zone", "de-fra1"),
+					resource.TestCheckResourceAttr(cluster, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(cluster, "labels.%", "1"),
 					resource.TestCheckResourceAttr(cluster, "labels.test", "terraform-provider-acceptance-test"),
 					resource.TestCheckResourceAttr(cluster, "storage_encryption", "data-at-rest"),
