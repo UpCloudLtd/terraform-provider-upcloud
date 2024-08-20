@@ -29,7 +29,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -161,8 +160,8 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				MarkdownDescription: "The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable.",
 				Computed:            true,
 				Optional:            true,
-				Default:             stringdefault.StaticString(""),
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
@@ -310,57 +309,6 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 			},
 		},
 	}
-}
-
-func (r *kubernetesNodeGroupResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	diags := r.modifyPlanStorageEncryption(ctx, req, resp)
-	resp.Diagnostics.Append(diags...)
-}
-
-// modifyPlanStorageEncryption checks if cluster has storage encryption strategy set and applies that value to the node group when applicable.
-// Purpose for this is to make storage_encryption attribute known *before* apply if it's not defined.
-func (r *kubernetesNodeGroupResource) modifyPlanStorageEncryption(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) diag.Diagnostics {
-	var storageEncryption types.String
-	diags := req.Plan.GetAttribute(ctx, path.Root("storage_encryption"), &storageEncryption)
-	if diags.HasError() {
-		return diags
-	}
-
-	if !storageEncryption.IsNull() || !storageEncryption.IsUnknown() {
-		return diags
-	}
-
-	var clusterUUID types.String
-	diags.Append(req.Plan.GetAttribute(ctx, path.Root("cluster"), &clusterUUID)...)
-	if diags.HasError() {
-		return diags
-	}
-
-	if clusterUUID.ValueString() == "" {
-		return diags
-	}
-
-	c, err := r.client.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: clusterUUID.ValueString()})
-	if err != nil {
-		diags.AddError(
-			"Unable to get Kubernetes cluster",
-			utils.ErrorDiagnosticDetail(err),
-		)
-
-		return diags
-	}
-
-	if c.StorageEncryption == "" {
-		return diags
-	}
-
-	resp.Plan.SetAttribute(
-		ctx,
-		path.Root("storage_encryption"),
-		types.StringValue(string(c.StorageEncryption)),
-	)
-
-	return diags
 }
 
 func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -631,9 +579,7 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 		respDiagnostics.Append(diags...)
 	}
 
-	if isImport || !data.StorageEncryption.IsNull() {
-		data.StorageEncryption = types.StringValue(string(ng.StorageEncryption))
-	}
+	data.StorageEncryption = types.StringValue(string(ng.StorageEncryption))
 
 	if isImport || !data.Taint.IsNull() {
 		taints := make([]taintModel, 0)

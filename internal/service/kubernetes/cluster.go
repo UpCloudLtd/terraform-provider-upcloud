@@ -138,7 +138,16 @@ func (r *kubernetesClusterResource) Schema(_ context.Context, _ resource.SchemaR
 				MarkdownDescription: stateDescription,
 				Computed:            true,
 			},
-			"storage_encryption": StorageEncryptionAttribute(clusterStorageEncryptionDescription, false),
+			"storage_encryption": schema.StringAttribute{
+				Description: clusterStorageEncryptionDescription,
+				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(string(upcloud.StorageEncryptionDataAtRest)),
+				},
+			},
 			"version": schema.StringAttribute{
 				MarkdownDescription: versionDescription,
 				Computed:            true,

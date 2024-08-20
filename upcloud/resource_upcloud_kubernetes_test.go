@@ -131,3 +131,42 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 		},
 	})
 }
+
+func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_storage_encryption_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_storage_encryption_s2.tf")
+	nodeGroup := "upcloud_kubernetes_node_group.main"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(nodeGroup, "storage_encryption", "data-at-rest"),
+				),
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      nodeGroup,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config:             testDataS2,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(nodeGroup, "storage_encryption", "data-at-rest"),
+				),
+			},
+			{
+				Config:            testDataS2,
+				ResourceName:      nodeGroup,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
