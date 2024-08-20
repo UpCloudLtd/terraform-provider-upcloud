@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.10.1] - 2024-08-21
+
 ### Fixed
 
 - upcloud_kubernetes_node_group: do not set default value for `storage_encryption` in the provider implementation. Instead, use value returned from the API when updating the node group state. This fixes data consistency error when creating node group without defining value for `storage_encryption` and does not try to replace node group when running apply after updating provider to `v5.10.0`.
@@ -729,7 +731,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.10.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.10.1...HEAD
+[5.10.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.10.0...v5.10.1
 [5.10.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.9.1...v5.10.0
 [5.9.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.9.0...v5.9.1
 [5.9.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.8.1...v5.9.0
