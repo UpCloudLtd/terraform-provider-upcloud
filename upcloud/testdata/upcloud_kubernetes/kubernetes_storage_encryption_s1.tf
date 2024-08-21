@@ -1,10 +1,10 @@
 variable "basename" {
-  default = "tf-acc-test-k8s-labels-"
+  default = "tf-acc-test-k8s-storage-encryption-"
   type    = string
 }
 
 variable "zone" {
-  default = "pl-waw1"
+  default = "es-mad1"
   type    = string
 }
 
@@ -13,26 +13,28 @@ resource "upcloud_router" "main" {
 }
 
 resource "upcloud_network" "main" {
-  name   = "${var.basename}net"
+  name   = "${var.basename}network"
   zone   = var.zone
   router = upcloud_router.main.id
 
   ip_network {
-    address = "172.23.8.0/24"
+    address = "172.23.9.0/24"
     dhcp    = true
     family  = "IPv4"
   }
 }
 
 resource "upcloud_kubernetes_cluster" "main" {
-  control_plane_ip_filter = ["0.0.0.0/0"]
   name                    = "${var.basename}cluster"
   network                 = upcloud_network.main.id
-  zone                    = var.zone
   storage_encryption      = "data-at-rest"
+  zone                    = var.zone
+  control_plane_ip_filter = ["0.0.0.0/0"]
+}
 
-  labels = {
-    test       = "terraform-provider-acceptance-test"
-    managed-by = "terraform"
-  }
+resource "upcloud_kubernetes_node_group" "main" {
+  cluster    = resource.upcloud_kubernetes_cluster.main.id
+  node_count = 1
+  name       = "small"
+  plan       = "1xCPU-1GB"
 }

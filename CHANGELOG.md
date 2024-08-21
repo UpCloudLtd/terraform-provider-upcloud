@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_kubernetes_node_group: do not set default value for `storage_encryption` in the provider implementation. Instead, use value returned from the API when updating the node group state. This fixes data consistency error when creating node group without defining value for `storage_encryption` and does not try to replace node group when running apply after updating provider to `v5.10.0`.
+- upcloud_network_peering: add errors to diagnostics correctly, if fetching peering details fails while waiting for peering state, instead of crashing due to a segfault.
+
 ## [5.10.0] - 2024-08-19
 
 ### Added

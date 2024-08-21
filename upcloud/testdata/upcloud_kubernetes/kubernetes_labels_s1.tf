@@ -29,9 +29,9 @@ resource "upcloud_kubernetes_cluster" "main" {
   name                    = "${var.basename}cluster"
   network                 = upcloud_network.main.id
   zone                    = var.zone
+  storage_encryption      = "data-at-rest"
 
   labels = {
     test = "terraform-provider-acceptance-test"
   }
-  storage_encryption = "data-at-rest"
 }

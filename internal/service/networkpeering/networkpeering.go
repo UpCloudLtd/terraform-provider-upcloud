@@ -296,14 +296,20 @@ func waitForPeeringToLeaveProvisionedState(ctx context.Context, svc *service.Ser
 	for {
 		select {
 		case <-ctx.Done():
-			diags.AddError("Context cancelled", ctx.Err().Error())
+			diags.AddError(
+				"Context cancelled",
+				utils.ErrorDiagnosticDetail(ctx.Err()),
+			)
 			return
 		default:
 			peering, err := svc.GetNetworkPeering(ctx, &request.GetNetworkPeeringRequest{
 				UUID: uuid,
 			})
 			if err != nil {
-				diags.AddError("Unable to get network peering details", ctx.Err().Error())
+				diags.AddError(
+					"Unable to get network peering details",
+					utils.ErrorDiagnosticDetail(err),
+				)
 				return
 			}
 			if peering.State != upcloud.NetworkPeeringStateProvisioning {
