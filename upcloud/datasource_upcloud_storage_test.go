@@ -28,12 +28,14 @@ func TestAccDataSourceUpCloudStorage(t *testing.T) {
 			{
 				Config: dataSourceUpCloudStorageTestConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_storage.hel1", "title", "hel1"),
-					resource.TestCheckResourceAttr("upcloud_storage.hel2", "title", "hel2"),
-					resource.TestCheckResourceAttr("data.upcloud_storage.most_recent", "title", "hel2"),
-					resource.TestCheckResourceAttr("data.upcloud_storage.name", "title", "hel1"),
-					resource.TestCheckResourceAttr("data.upcloud_storage.zone", "title", "hel1"),
-					resource.TestCheckResourceAttr("data.upcloud_storage.most_recent_private", "title", "hel2"),
+					resource.TestCheckResourceAttr("upcloud_storage.hel1", "title", "tf-acc-test-storage-data-hel1"),
+					resource.TestCheckResourceAttr("upcloud_storage.hel2", "title", "tf-acc-test-storage-data-hel2"),
+					resource.TestCheckResourceAttr("data.upcloud_storage.most_recent", "title", "tf-acc-test-storage-data-hel2"),
+					resource.TestCheckResourceAttr("data.upcloud_storage.title", "title", "tf-acc-test-storage-data-hel1"),
+					resource.TestCheckResourceAttr("data.upcloud_storage.id", "title", "tf-acc-test-storage-data-hel2"),
+					resource.TestCheckResourceAttr("data.upcloud_storage.name", "title", "tf-acc-test-storage-data-hel1"),
+					resource.TestCheckResourceAttr("data.upcloud_storage.zone", "title", "tf-acc-test-storage-data-hel1"),
+					resource.TestCheckResourceAttr("data.upcloud_storage.most_recent_private", "title", "tf-acc-test-storage-data-hel2"),
 				),
 			},
 		},
@@ -59,21 +61,36 @@ func dataSourceUpCloudStorageTestConfig() string {
 	resource "upcloud_storage" "hel1" {
 		size  = 10
 		tier  = "maxiops"
-		title = "hel1"
+		title = "tf-acc-test-storage-data-hel1"
 		zone  = "fi-hel1"
 	}
 	resource "upcloud_storage" "hel2" {
 		size  = 10
 		tier  = "maxiops"
-		title = "hel2"
+		title = "tf-acc-test-storage-data-hel2"
 		zone  = "fi-hel2"
-		# depend on hel1 to put more time between 'created' time to test 'most_recent' filter
+
+		# Depend on hel1 to put more time between 'created' time to test 'most_recent' filter.
 		depends_on = [upcloud_storage.hel1]
+	}
+	# use title
+	data "upcloud_storage" "title" {
+		title = "tf-acc-test-storage-data-hel1"
+		depends_on = [
+			upcloud_storage.hel1,
+		]
+	}
+	# use id
+	data "upcloud_storage" "id" {
+		id = upcloud_storage.hel2.id
+		depends_on = [
+			upcloud_storage.hel2,
+		]
 	}
 	# most recent storage
 	data "upcloud_storage" "most_recent" {
 		type = "normal"
-		name_regex = "^hel"
+		name_regex = "^tf-acc-test-storage-data-hel"
 		most_recent = true
 		depends_on = [
 			upcloud_storage.hel1,
@@ -83,7 +100,7 @@ func dataSourceUpCloudStorageTestConfig() string {
 	# use exact name
 	data "upcloud_storage" "name" {
 		type = "normal"
-		name = "hel1"
+		name = "tf-acc-test-storage-data-hel1"
 		depends_on = [
 			upcloud_storage.hel1,
 			upcloud_storage.hel2
@@ -92,7 +109,7 @@ func dataSourceUpCloudStorageTestConfig() string {
 	# most recent storage per zone
 	data "upcloud_storage" "zone" {
 		type = "normal"
-		name_regex = "^hel"
+		name_regex = "^tf-acc-test-storage-data-hel"
 		most_recent = true
 		zone = "fi-hel1"
 		depends_on = [
@@ -100,7 +117,7 @@ func dataSourceUpCloudStorageTestConfig() string {
 			upcloud_storage.hel2
 		]
 	}
-	# most recent prive disk
+	# most recent private disk
 	data "upcloud_storage" "most_recent_private" {
 		type = "normal"
 		name_regex = ".*"

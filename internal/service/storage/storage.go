@@ -231,7 +231,7 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 }
 
 func setStorageValues(ctx context.Context, data *storageModel, storage *upcloud.StorageDetails) diag.Diagnostics {
-	respDiagnostics := setCommonValues(ctx, &data.storageCommonModel, storage)
+	respDiagnostics := setCommonValues(ctx, &data.storageCommonModel, &storage.Storage)
 
 	if !data.BackupRule.IsNull() && storage.BackupRule != nil {
 		backupRule := []BackupRuleModel{{

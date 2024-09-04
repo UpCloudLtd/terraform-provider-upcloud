@@ -30,7 +30,7 @@ type storageCommonModel struct {
 	Zone         types.String `tfsdk:"zone"`
 }
 
-func setCommonValues(ctx context.Context, data *storageCommonModel, storage *upcloud.StorageDetails) diag.Diagnostics {
+func setCommonValues(ctx context.Context, data *storageCommonModel, storage *upcloud.Storage) diag.Diagnostics {
 	var respDiagnostics diag.Diagnostics
 
 	data.ID = types.StringValue(storage.UUID)
