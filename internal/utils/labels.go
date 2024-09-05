@@ -50,6 +50,15 @@ func (lm unconfiguredAsEmpty) PlanModifyMap(ctx context.Context, req planmodifie
 	}
 }
 
+func ReadOnlyLabelsAttribute(resource string) schema.Attribute {
+	description := labelsDescription(resource)
+	return &schema.MapAttribute{
+		ElementType: types.StringType,
+		Computed:    true,
+		Description: description,
+	}
+}
+
 func LabelsAttribute(resource string, additionalPlanModifiers ...planmodifier.Map) schema.Attribute {
 	description := labelsDescription(resource)
 	planModifiers := []planmodifier.Map{

@@ -16,7 +16,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/server"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
@@ -97,7 +96,6 @@ func Provider() *schema.Provider {
 			"upcloud_networks":     network.DataSourceNetworks(),
 			"upcloud_ip_addresses": ip.DataSourceIPAddresses(),
 			"upcloud_tags":         tag.DataSourceTags(),
-			"upcloud_storage":      storage.DataSourceStorage(),
 			"upcloud_managed_database_opensearch_indices":  database.DataSourceOpenSearchIndices(),
 			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),

@@ -5,6 +5,19 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_storage (data source): `encrypt`, `labels` and `system_labels` read-only fields.
+
+### Changed
+
+- upcloud_storage (data source): allow using `id` and `title` fields to find the storage.
+- upcloud_storage (data source): make `type` field optional.
+
+### Deprecated
+
+- upcloud_storage (data source): `name`, `name_regex` and `most_recent` fields.
+
 ## [5.10.1] - 2024-08-21
 
 ### Fixed

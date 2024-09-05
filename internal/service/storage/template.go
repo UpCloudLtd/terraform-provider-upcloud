@@ -143,7 +143,7 @@ func (r *storageTemplateResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, storage)...)
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &storage.Storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -175,7 +175,7 @@ func (r *storageTemplateResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, storage)...)
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &storage.Storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -217,7 +217,7 @@ func (r *storageTemplateResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, storage)...)
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &storage.Storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
