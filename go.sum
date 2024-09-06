@@ -6,6 +6,10 @@ github.com/ProtonMail/go-crypto v1.1.0-alpha.0 h1:nHGfwXmFvJrSR9xu8qL7BkO4DqTHXE
 github.com/ProtonMail/go-crypto v1.1.0-alpha.0/go.mod h1:rA3QumHc/FZ8pAHreoekgiAbzpNsfQAosU5td4SnOrE=
 github.com/UpCloudLtd/upcloud-go-api/v8 v8.7.1 h1:KcJX6Hwt9D/0DK0A05wtqJmfFtQynBslnG/kH91QQEk=
 github.com/UpCloudLtd/upcloud-go-api/v8 v8.7.1/go.mod h1:/BL9bYxio0GCdotzBvZjkpm1fSDtD0+0z6PtNMew9HU=
+github.com/UpCloudLtd/upcloud-go-api/v8 v8.7.2-0.20240906104140-b81a4e5c610c h1:S47qazbhpcsj5J6FaNXl7GwYiWEx5eN3lQYM9SxttqM=
+github.com/UpCloudLtd/upcloud-go-api/v8 v8.7.2-0.20240906104140-b81a4e5c610c/go.mod h1:/BL9bYxio0GCdotzBvZjkpm1fSDtD0+0z6PtNMew9HU=
+github.com/UpCloudLtd/upcloud-go-api/v8 v8.7.2-0.20240906111146-bbda58fd64d9 h1:W8vDxnM4lxUfjyoUPyVpFfVBTC2bYOMcqeOxYonTI/o=
+github.com/UpCloudLtd/upcloud-go-api/v8 v8.7.2-0.20240906111146-bbda58fd64d9/go.mod h1:/BL9bYxio0GCdotzBvZjkpm1fSDtD0+0z6PtNMew9HU=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
 github.com/agext/levenshtein v1.2.3/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/apparentlymart/go-textseg/v12 v12.0.0/go.mod h1:S/4uRK2UtaQttw1GenVJEynmyUenKwP++x/+DdGV/Ec=
