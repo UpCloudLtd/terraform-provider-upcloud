@@ -3,6 +3,7 @@
     "storage.md": "Storage",
     "ip_addresses.md": "Network",
     "networks.md": "Network",
+    "load_balancer_dns_challenge_domain.md": "Load Balancer",
     "managed_object_storage_regions.md": "Object Storage",
     "managed_object_storage_policies.md": "Object Storage",
     "managed_database_mysql_sessions.md": "Databases",
