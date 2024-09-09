@@ -62,6 +62,20 @@ resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
   }
 }
 
+resource "upcloud_loadbalancer_frontend" "lb_fe_2" {
+  loadbalancer         = resource.upcloud_loadbalancer.lb.id
+  name                 = "lb-fe-2-test"
+  mode                 = "http"
+  port                 = 9090
+  default_backend_name = resource.upcloud_loadbalancer_backend.lb_be_2.name
+
+  networks {
+    name = "public"
+  }
+
+  properties {}
+}
+
 resource "upcloud_loadbalancer_resolver" "lb_dns_1" {
   loadbalancer = resource.upcloud_loadbalancer.lb.id
   # change: name lb-resolver-1-test to lb-resolver-1-test-1
@@ -109,6 +123,8 @@ resource "upcloud_loadbalancer_dynamic_backend_member" "lb_be_1_dm_1" {
 resource "upcloud_loadbalancer_backend" "lb_be_2" {
   loadbalancer = resource.upcloud_loadbalancer.lb.id
   name         = "lb-be-2-test"
+
+  properties {}
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_be_2_sm_1" {

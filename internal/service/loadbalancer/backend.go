@@ -4,366 +4,506 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceBackend() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents load balancer backend service",
-		CreateContext: resourceBackendCreate,
-		ReadContext:   resourceBackendRead,
-		UpdateContext: resourceBackendUpdate,
-		DeleteContext: resourceBackendDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"loadbalancer": {
-				Description: "ID of the load balancer to which the backend is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"name": {
-				Description:      "The name of the backend must be unique within the load balancer service.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validateNameDiagFunc,
-			},
-			"resolver_name": {
-				Description: "Domain Name Resolver used with dynamic type members.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"members": {
-				Description: "Backend members receive traffic dispatched from the frontends",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+var (
+	_ resource.Resource                = &backendResource{}
+	_ resource.ResourceWithConfigure   = &backendResource{}
+	_ resource.ResourceWithImportState = &backendResource{}
+	_ resource.ResourceWithModifyPlan  = &backendResource{}
+)
+
+func NewBackendResource() resource.Resource {
+	return &backendResource{}
+}
+
+type backendResource struct {
+	client *service.Service
+}
+
+func (r *backendResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_loadbalancer_backend"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *backendResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type backendModel struct {
+	ID           types.String `tfsdk:"id"`
+	LoadBalancer types.String `tfsdk:"loadbalancer"`
+	Members      types.List   `tfsdk:"members"`
+	Name         types.String `tfsdk:"name"`
+	Properties   types.List   `tfsdk:"properties"`
+	ResolverName types.String `tfsdk:"resolver_name"`
+	TLSConfigs   types.List   `tfsdk:"tls_configs"`
+}
+
+type backendPropertiesModel struct {
+	HealthCheckExpectedStatus types.Int64  `tfsdk:"health_check_expected_status"`
+	HealthCheckFall           types.Int64  `tfsdk:"health_check_fall"`
+	HealthCheckInterval       types.Int64  `tfsdk:"health_check_interval"`
+	HealthCheckRise           types.Int64  `tfsdk:"health_check_rise"`
+	HealthCheckTLSVerify      types.Bool   `tfsdk:"health_check_tls_verify"`
+	HealthCheckType           types.String `tfsdk:"health_check_type"`
+	HealthCheckURL            types.String `tfsdk:"health_check_url"`
+	HTTP2Enabled              types.Bool   `tfsdk:"http2_enabled"`
+	OutboundProxyProtocol     types.String `tfsdk:"outbound_proxy_protocol"`
+	StickySessionCookieName   types.String `tfsdk:"sticky_session_cookie_name"`
+	TimeoutServer             types.Int64  `tfsdk:"timeout_server"`
+	TimeoutTunnel             types.Int64  `tfsdk:"timeout_tunnel"`
+	TLSEnabled                types.Bool   `tfsdk:"tls_enabled"`
+	TLSUseSystemCA            types.Bool   `tfsdk:"tls_use_system_ca"`
+	TLSVerify                 types.Bool   `tfsdk:"tls_verify"`
+}
+
+func (r *backendResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "This resource represents load balancer backend service.",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "ID of the backend. ID is in `{load balancer UUID}/{backend name}` format.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"properties": {
-				Description: "Backend properties. Properties can set back to defaults by defining empty `properties {}` block.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: schemaBackendProperties(),
+			"loadbalancer": schema.StringAttribute{
+				MarkdownDescription: "UUID of the load balancer to which the backend is connected.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"tls_configs": {
-				Description: "Set of TLS config names",
-				Type:        schema.TypeList,
+			"members": schema.ListAttribute{
+				Description: "Backend member server UUIDs. Members receive traffic dispatched from the frontends.",
 				Computed:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				ElementType: types.StringType,
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the backend. Must be unique within the load balancer service.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					nameValidator,
+				},
+			},
+			"resolver_name": schema.StringAttribute{
+				MarkdownDescription: "Domain name resolver used with dynamic type members.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(""),
+			},
+			"tls_configs": schema.ListAttribute{
+				Description: "Set of TLS config names.",
+				Computed:    true,
+				ElementType: types.StringType,
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"properties": schema.ListNestedBlock{
+				MarkdownDescription: "Backend properties. Properties can be set back to defaults by defining an empty `properties {}` block. For `terraform import`, an empty or non-empty block is also required.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"health_check_expected_status": schema.Int64Attribute{
+							MarkdownDescription: "Expected HTTP status code returned by the customer application to mark server as healthy. Ignored for `tcp` `health_check_type`.",
+							Optional:            true,
+							Computed:            true,
+							Default:             int64default.StaticInt64(200),
+							Validators: []validator.Int64{
+								int64validator.Between(100, 599),
+							},
+						},
+						"health_check_fall": schema.Int64Attribute{
+							MarkdownDescription: "Sets how many failed health checks are allowed until the backend member is taken off from the rotation.",
+							Optional:            true,
+							Computed:            true,
+							Default:             int64default.StaticInt64(3),
+							Validators: []validator.Int64{
+								int64validator.Between(1, 100),
+							},
+						},
+						"health_check_interval": schema.Int64Attribute{
+							MarkdownDescription: "Interval between health checks in seconds.",
+							Optional:            true,
+							Computed:            true,
+							Default:             int64default.StaticInt64(10),
+							Validators: []validator.Int64{
+								int64validator.Between(1, 86400),
+							},
+						},
+						"health_check_rise": schema.Int64Attribute{
+							MarkdownDescription: "Sets how many successful health checks are required to put the backend member back into rotation.",
+							Optional:            true,
+							Computed:            true,
+							Default:             int64default.StaticInt64(3),
+							Validators: []validator.Int64{
+								int64validator.Between(1, 100),
+							},
+						},
+						"health_check_tls_verify": schema.BoolAttribute{
+							MarkdownDescription: "Enables certificate verification with the system CA certificate bundle. Works with https scheme in health_check_url, otherwise ignored.",
+							Optional:            true,
+							Computed:            true,
+							Default:             booldefault.StaticBool(false),
+						},
+						"health_check_type": schema.StringAttribute{
+							MarkdownDescription: "Health check type.",
+							Optional:            true,
+							Computed:            true,
+							Default:             stringdefault.StaticString(string(upcloud.LoadBalancerHealthCheckTypeTCP)),
+							Validators: []validator.String{
+								stringvalidator.OneOf(string(upcloud.LoadBalancerHealthCheckTypeTCP), string(upcloud.LoadBalancerHealthCheckTypeHTTP)),
+							},
+						},
+						"health_check_url": schema.StringAttribute{
+							MarkdownDescription: "Target path for health check HTTP GET requests. Ignored for `tcp` `health_check_type`.",
+							Optional:            true,
+							Computed:            true,
+							Default:             stringdefault.StaticString("/"),
+							Validators: []validator.String{
+								stringvalidator.LengthBetween(1, 255),
+							},
+						},
+						"http2_enabled": schema.BoolAttribute{
+							MarkdownDescription: "Allow HTTP/2 connections to backend members by utilizing ALPN extension of TLS protocol, therefore it can only be enabled when tls_enabled is set to true. Note: members should support HTTP/2 for this setting to work.",
+							Optional:            true,
+							Computed:            true,
+							Default:             booldefault.StaticBool(false),
+						},
+						"outbound_proxy_protocol": schema.StringAttribute{
+							MarkdownDescription: "Enable outbound proxy protocol by setting the desired version. Defaults to empty string. Empty string disables proxy protocol.",
+							Optional:            true,
+							Computed:            true,
+							Default:             stringdefault.StaticString(""),
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									"",
+									string(upcloud.LoadBalancerProxyProtocolVersion1),
+									string(upcloud.LoadBalancerProxyProtocolVersion2),
+								),
+							},
+						},
+						"sticky_session_cookie_name": schema.StringAttribute{
+							MarkdownDescription: "Sets sticky session cookie name. Empty string disables sticky session.",
+							Optional:            true,
+							Computed:            true,
+							Default:             stringdefault.StaticString(""),
+							Validators: []validator.String{
+								stringvalidator.LengthBetween(0, 64),
+							},
+						},
+						"timeout_server": schema.Int64Attribute{
+							MarkdownDescription: "Backend server timeout in seconds.",
+							Optional:            true,
+							Computed:            true,
+							Default:             int64default.StaticInt64(10),
+							Validators: []validator.Int64{
+								int64validator.Between(1, 86400),
+							},
+						},
+						"timeout_tunnel": schema.Int64Attribute{
+							MarkdownDescription: "Maximum inactivity time on the client and server side for tunnels in seconds.",
+							Optional:            true,
+							Computed:            true,
+							Default:             int64default.StaticInt64(3600),
+							Validators: []validator.Int64{
+								int64validator.Between(1, 3024000),
+							},
+						},
+						"tls_enabled": schema.BoolAttribute{
+							MarkdownDescription: "Enables TLS connection from the load balancer to backend servers.",
+							Optional:            true,
+							Computed:            true,
+							Default:             booldefault.StaticBool(false),
+						},
+						"tls_use_system_ca": schema.BoolAttribute{
+							MarkdownDescription: "If enabled, then the system CA certificate bundle will be used for the certificate verification.",
+							Optional:            true,
+							Computed:            true,
+							Default:             booldefault.StaticBool(false),
+						},
+						"tls_verify": schema.BoolAttribute{
+							MarkdownDescription: "Enables backend servers certificate verification. Please make sure that TLS config with the certificate bundle of type authority attached to the backend or `tls_use_system_ca` enabled. Note: `tls_verify` has preference over `health_check_tls_verify` when `tls_enabled` in true.",
+							Optional:            true,
+							Computed:            true,
+							Default:             booldefault.StaticBool(false),
+						},
+					},
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 1),
 				},
 			},
 		},
+		Version: 1,
 	}
 }
 
-func resourceBackendCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	serviceID := d.Get("loadbalancer").(string)
+func (r *backendResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var p []backendPropertiesModel
+	diags := req.Config.GetAttribute(ctx, path.Root("properties"), &p)
 
-	be, err := svc.CreateLoadBalancerBackend(ctx, &request.CreateLoadBalancerBackendRequest{
-		ServiceUUID: serviceID,
-		Backend: request.LoadBalancerBackend{
-			Name:       d.Get("name").(string),
-			Resolver:   d.Get("resolver_name").(string),
-			Members:    []request.LoadBalancerBackendMember{},
-			TLSConfigs: []request.LoadBalancerBackendTLSConfig{},
-			Properties: backendPropertiesFromResourceData(d),
-		},
-	})
+	resp.Diagnostics.Append(diags...)
+}
+
+func setBackendValues(ctx context.Context, data *backendModel, backend *upcloud.LoadBalancerBackend) diag.Diagnostics {
+	var diags, respDiagnostics diag.Diagnostics
+
+	isImport := data.LoadBalancer.ValueString() == ""
+
+	var loadBalancer, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &name)
 	if err != nil {
-		return diag.FromErr(err)
+		diags.AddError(
+			"Unable to unmarshal loadbalancer backend ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
 
-	d.SetId(utils.MarshalID(serviceID, be.Name))
+	data.LoadBalancer = types.StringValue(loadBalancer)
+	data.Name = types.StringValue(data.Name.ValueString())
 
-	if diags = setBackendResourceData(d, be); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "backend created", map[string]interface{}{"name": be.Name, "service_uuid": serviceID})
-	return diags
-}
-
-func resourceBackendRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
-		return diag.FromErr(err)
-	}
-	be, err := svc.GetLoadBalancerBackend(ctx, &request.GetLoadBalancerBackendRequest{
-		ServiceUUID: serviceID,
-		Name:        name,
-	})
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
-	}
-
-	d.SetId(utils.MarshalID(serviceID, be.Name))
-
-	if err = d.Set("loadbalancer", serviceID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if diags = setBackendResourceData(d, be); len(diags) > 0 {
-		return diags
-	}
-
-	return diags
-}
-
-func resourceBackendUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	be, err := svc.ModifyLoadBalancerBackend(ctx, &request.ModifyLoadBalancerBackendRequest{
-		ServiceUUID: serviceID,
-		Name:        name,
-		Backend: request.ModifyLoadBalancerBackend{
-			Name:       d.Get("name").(string),
-			Resolver:   upcloud.StringPtr(d.Get("resolver_name").(string)),
-			Properties: backendPropertiesFromResourceData(d),
-		},
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(utils.MarshalID(d.Get("loadbalancer").(string), be.Name))
-
-	if diags = setBackendResourceData(d, be); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "backend updated", map[string]interface{}{"name": be.Name, "service_uuid": serviceID})
-	return diags
-}
-
-func resourceBackendDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
-		return diag.FromErr(err)
-	}
-	tflog.Info(ctx, "deleting backend", map[string]interface{}{"name": name, "service_uuid": serviceID})
-	return diag.FromErr(svc.DeleteLoadBalancerBackend(ctx, &request.DeleteLoadBalancerBackendRequest{
-		ServiceUUID: serviceID,
-		Name:        name,
-	}))
-}
-
-func setBackendResourceData(d *schema.ResourceData, be *upcloud.LoadBalancerBackend) (diags diag.Diagnostics) {
-	if err := d.Set("name", be.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("resolver_name", be.Resolver); err != nil {
-		return diag.FromErr(err)
-	}
-
-	var members []string
-	for _, m := range be.Members {
+	members := make([]string, 0)
+	for _, m := range backend.Members {
 		members = append(members, m.Name)
 	}
 
-	if err := d.Set("members", members); err != nil {
-		return diag.FromErr(err)
+	data.Members, diags = types.ListValueFrom(ctx, types.StringType, members)
+	respDiagnostics.Append(diags...)
+
+	data.Name = types.StringValue(backend.Name)
+
+	if !data.Properties.IsNull() || isImport {
+		properties := make([]backendPropertiesModel, 1)
+		properties[0].HealthCheckExpectedStatus = types.Int64Value(int64(backend.Properties.HealthCheckExpectedStatus))
+		properties[0].HealthCheckFall = types.Int64Value(int64(backend.Properties.HealthCheckFall))
+		properties[0].HealthCheckInterval = types.Int64Value(int64(backend.Properties.HealthCheckInterval))
+		properties[0].HealthCheckRise = types.Int64Value(int64(backend.Properties.HealthCheckRise))
+		properties[0].HealthCheckTLSVerify = types.BoolValue(*backend.Properties.HealthCheckTLSVerify)
+		properties[0].HealthCheckType = types.StringValue(string(backend.Properties.HealthCheckType))
+		properties[0].HealthCheckURL = types.StringValue(backend.Properties.HealthCheckURL)
+		properties[0].HTTP2Enabled = types.BoolValue(*backend.Properties.HTTP2Enabled)
+		properties[0].OutboundProxyProtocol = types.StringValue(string(backend.Properties.OutboundProxyProtocol))
+		properties[0].StickySessionCookieName = types.StringValue(backend.Properties.StickySessionCookieName)
+		properties[0].TimeoutServer = types.Int64Value(int64(backend.Properties.TimeoutServer))
+		properties[0].TimeoutTunnel = types.Int64Value(int64(backend.Properties.TimeoutTunnel))
+		properties[0].TLSEnabled = types.BoolValue(*backend.Properties.TLSEnabled)
+		properties[0].TLSUseSystemCA = types.BoolValue(*backend.Properties.TLSUseSystemCA)
+		properties[0].TLSVerify = types.BoolValue(*backend.Properties.TLSVerify)
+
+		data.Properties, diags = types.ListValueFrom(ctx, data.Properties.ElementType(ctx), properties)
+		respDiagnostics.Append(diags...)
 	}
 
-	var tlsConfigs []string
+	data.ResolverName = types.StringValue(backend.Resolver)
 
-	for _, t := range be.TLSConfigs {
+	tlsConfigs := make([]string, 0)
+	for _, t := range backend.TLSConfigs {
 		tlsConfigs = append(tlsConfigs, t.Name)
 	}
 
-	if err := d.Set("tls_configs", tlsConfigs); err != nil {
-		return diag.FromErr(err)
-	}
+	data.TLSConfigs, diags = types.ListValueFrom(ctx, types.StringType, tlsConfigs)
+	respDiagnostics.Append(diags...)
 
-	if be.Properties != nil {
-		props := []map[string]interface{}{{
-			"timeout_server":               be.Properties.TimeoutServer,
-			"timeout_tunnel":               be.Properties.TimeoutTunnel,
-			"health_check_type":            be.Properties.HealthCheckType,
-			"health_check_interval":        be.Properties.HealthCheckInterval,
-			"health_check_fall":            be.Properties.HealthCheckFall,
-			"health_check_rise":            be.Properties.HealthCheckRise,
-			"health_check_url":             be.Properties.HealthCheckURL,
-			"health_check_tls_verify":      be.Properties.HealthCheckTLSVerify,
-			"health_check_expected_status": be.Properties.HealthCheckExpectedStatus,
-			"sticky_session_cookie_name":   be.Properties.StickySessionCookieName,
-			"outbound_proxy_protocol":      be.Properties.OutboundProxyProtocol,
-			"tls_enabled":                  be.Properties.TLSEnabled,
-			"tls_verify":                   be.Properties.TLSVerify,
-			"tls_use_system_ca":            be.Properties.TLSUseSystemCA,
-			"http2_enabled":                be.Properties.HTTP2Enabled,
-		}}
-		if err := d.Set("properties", props); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	return diags
+	return respDiagnostics
 }
 
-func backendPropertiesFromResourceData(d *schema.ResourceData) *upcloud.LoadBalancerBackendProperties {
-	if props, ok := d.GetOk("properties.0"); !ok || props == nil {
-		return nil
+func buildBackendProperties(ctx context.Context, dataProperties types.List) (*upcloud.LoadBalancerBackendProperties, diag.Diagnostics) {
+	if dataProperties.IsNull() {
+		return nil, nil
 	}
+
+	var planProperties []backendPropertiesModel
+	diags := dataProperties.ElementsAs(ctx, &planProperties, false)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	if len(planProperties) != 1 {
+		return nil, nil
+	}
+
+	properties := planProperties[0]
 	return &upcloud.LoadBalancerBackendProperties{
-		TimeoutServer:             d.Get("properties.0.timeout_server").(int),
-		TimeoutTunnel:             d.Get("properties.0.timeout_tunnel").(int),
-		HealthCheckType:           upcloud.LoadBalancerHealthCheckType(d.Get("properties.0.health_check_type").(string)),
-		HealthCheckInterval:       d.Get("properties.0.health_check_interval").(int),
-		HealthCheckFall:           d.Get("properties.0.health_check_fall").(int),
-		HealthCheckRise:           d.Get("properties.0.health_check_rise").(int),
-		HealthCheckURL:            d.Get("properties.0.health_check_url").(string),
-		HealthCheckTLSVerify:      upcloud.BoolPtr(d.Get("properties.0.health_check_tls_verify").(bool)),
-		HealthCheckExpectedStatus: d.Get("properties.0.health_check_expected_status").(int),
-		StickySessionCookieName:   d.Get("properties.0.sticky_session_cookie_name").(string),
-		OutboundProxyProtocol:     upcloud.LoadBalancerProxyProtocolVersion(d.Get("properties.0.outbound_proxy_protocol").(string)),
-		TLSEnabled:                upcloud.BoolPtr(d.Get("properties.0.tls_enabled").(bool)),
-		TLSVerify:                 upcloud.BoolPtr(d.Get("properties.0.tls_verify").(bool)),
-		TLSUseSystemCA:            upcloud.BoolPtr(d.Get("properties.0.tls_use_system_ca").(bool)),
-		HTTP2Enabled:              upcloud.BoolPtr(d.Get("properties.0.http2_enabled").(bool)),
+		TimeoutServer:             int(properties.TimeoutServer.ValueInt64()),
+		TimeoutTunnel:             int(properties.TimeoutTunnel.ValueInt64()),
+		HealthCheckTLSVerify:      properties.HealthCheckTLSVerify.ValueBoolPointer(),
+		HealthCheckType:           upcloud.LoadBalancerHealthCheckType(properties.HealthCheckType.ValueString()),
+		HealthCheckInterval:       int(properties.HealthCheckInterval.ValueInt64()),
+		HealthCheckFall:           int(properties.HealthCheckFall.ValueInt64()),
+		HealthCheckRise:           int(properties.HealthCheckRise.ValueInt64()),
+		HealthCheckURL:            properties.HealthCheckURL.ValueString(),
+		HealthCheckExpectedStatus: int(properties.HealthCheckExpectedStatus.ValueInt64()),
+		StickySessionCookieName:   properties.StickySessionCookieName.ValueString(),
+		OutboundProxyProtocol:     upcloud.LoadBalancerProxyProtocolVersion(properties.OutboundProxyProtocol.ValueString()),
+		TLSEnabled:                properties.TLSEnabled.ValueBoolPointer(),
+		TLSVerify:                 properties.TLSVerify.ValueBoolPointer(),
+		TLSUseSystemCA:            properties.TLSUseSystemCA.ValueBoolPointer(),
+		HTTP2Enabled:              properties.HTTP2Enabled.ValueBoolPointer(),
+	}, diags
+}
+
+func (r *backendResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data backendModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	properties, diags := buildBackendProperties(ctx, data.Properties)
+	resp.Diagnostics.Append(diags...)
+
+	data.ID = types.StringValue(utils.MarshalID(data.LoadBalancer.ValueString(), data.Name.ValueString()))
+
+	apiReq := request.CreateLoadBalancerBackendRequest{
+		ServiceUUID: data.LoadBalancer.ValueString(),
+		Backend: request.LoadBalancerBackend{
+			Name:       data.Name.ValueString(),
+			Resolver:   data.ResolverName.ValueString(),
+			Properties: properties,
+			Members:    []request.LoadBalancerBackendMember{},
+			TLSConfigs: []request.LoadBalancerBackendTLSConfig{},
+		},
+	}
+
+	backend, err := r.client.CreateLoadBalancerBackend(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer backend",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setBackendValues(ctx, &data, backend)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *backendResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data backendModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	var loadBalancer, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer backend ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	backend, err := r.client.GetLoadBalancerBackend(ctx, &request.GetLoadBalancerBackendRequest{
+		ServiceUUID: loadBalancer,
+		Name:        name,
+	})
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read loadbalancer backend details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
+	}
+
+	resp.Diagnostics.Append(setBackendValues(ctx, &data, backend)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *backendResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data backendModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var loadBalancer, name string
+	if err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &name); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer backend ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	properties, diags := buildBackendProperties(ctx, data.Properties)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiReq := request.ModifyLoadBalancerBackendRequest{
+		ServiceUUID: loadBalancer,
+		Name:        name,
+		Backend: request.ModifyLoadBalancerBackend{
+			Name:       data.Name.ValueString(),
+			Resolver:   data.ResolverName.ValueStringPointer(),
+			Properties: properties,
+		},
+	}
+
+	network, err := r.client.ModifyLoadBalancerBackend(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer backend",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setBackendValues(ctx, &data, network)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *backendResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data backendModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if err := r.client.DeleteLoadBalancerBackend(ctx, &request.DeleteLoadBalancerBackendRequest{
+		ServiceUUID: data.LoadBalancer.ValueString(),
+		Name:        data.Name.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer backend",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
 }
 
-func schemaBackendProperties() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"timeout_server": {
-			Description:      "Backend server timeout in seconds.",
-			Type:             schema.TypeInt,
-			Optional:         true,
-			Default:          10,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 86400)),
-		},
-		"timeout_tunnel": {
-			Description:      "Maximum inactivity time on the client and server side for tunnels in seconds.",
-			Type:             schema.TypeInt,
-			Optional:         true,
-			Default:          3600,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 3024000)),
-		},
-		"health_check_type": {
-			Description: "Health check type.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Default:     "tcp",
-			ValidateDiagFunc: validation.ToDiagFunc(
-				validation.StringInSlice([]string{
-					string(upcloud.LoadBalancerHealthCheckTypeTCP),
-					string(upcloud.LoadBalancerHealthCheckTypeHTTP),
-				}, false),
-			),
-		},
-		"health_check_interval": {
-			Description:      "Interval between health checks.",
-			Type:             schema.TypeInt,
-			Optional:         true,
-			Default:          10,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 86400)),
-		},
-		"health_check_fall": {
-			Description:      "Sets how many failed health checks are allowed until the backend member is taken off from the rotation.",
-			Type:             schema.TypeInt,
-			Optional:         true,
-			Default:          3,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 100)),
-		},
-		"health_check_rise": {
-			Description:      "Sets how many passing checks there must be before returning the backend member to the rotation.",
-			Type:             schema.TypeInt,
-			Optional:         true,
-			Default:          3,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 100)),
-		},
-		"health_check_url": {
-			Description:      "Target path for health check HTTP GET requests. Ignored for tcp type.",
-			Type:             schema.TypeString,
-			Optional:         true,
-			Default:          "/",
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(1, 255)),
-		},
-		"health_check_tls_verify": {
-			Description: "Enables certificate verification with the system CA certificate bundle. Works with https scheme in health_check_url, otherwise ignored.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"health_check_expected_status": {
-			Description:      "Expected HTTP status code returned by the customer application to mark server as healthy. Ignored for tcp type.",
-			Type:             schema.TypeInt,
-			Optional:         true,
-			Default:          200,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(100, 599)),
-		},
-		"sticky_session_cookie_name": {
-			Description:      "Sets sticky session cookie name. Empty string disables sticky session.",
-			Type:             schema.TypeString,
-			Optional:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 64)),
-		},
-		"outbound_proxy_protocol": {
-			Description: "Enable outbound proxy protocol by setting the desired version. Empty string disables proxy protocol.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			ValidateDiagFunc: validation.ToDiagFunc(
-				validation.StringInSlice([]string{
-					"",
-					string(upcloud.LoadBalancerProxyProtocolVersion1),
-					string(upcloud.LoadBalancerProxyProtocolVersion2),
-				}, false),
-			),
-		},
-		"tls_configs": {
-			Description: "Set of TLS config names",
-			Type:        schema.TypeList,
-			Computed:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
-		"tls_enabled": {
-			Description: "Enables TLS connection from the load balancer to backend servers.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"tls_verify": {
-			Description: "Enables backend servers certificate verification. Please make sure that TLS config with the certificate bundle of type authority attached to the backend or `tls_use_system_ca` enabled. Note: `tls_verify` has preference over `health_check_tls_verify` when `tls_enabled` in true.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"tls_use_system_ca": {
-			Description: "If enabled, then the system CA certificate bundle will be used for the certificate verification.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"http2_enabled": {
-			Description: "Allow HTTP/2 connections to backend members by utilizing ALPN extension of TLS protocol, therefore it can only be enabled when tls_enabled is set to true. Note: members should support HTTP/2 for this setting to work.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-	}
+func (r *backendResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
