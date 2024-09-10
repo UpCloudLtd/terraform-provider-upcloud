@@ -188,7 +188,7 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							},
 						},
 						"source_location": schema.StringAttribute{
-							MarkdownDescription: "The location of the file to import. For `http_import` an accessible URL for `direct_upload` a local file.",
+							MarkdownDescription: "The location of the file to import. For `http_import` an accessible URL. For `direct_upload` a local file. When direct uploading a compressed image, `Content-Type` header of the PUT request is set automatically based on the file extension (`.gz` or `.xz`, case-insensitive).",
 							Required:            true,
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
