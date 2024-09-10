@@ -20,6 +20,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_storage (data source): `name`, `name_regex` and `most_recent` fields.
 
+### Fixed
+
+- upcloud_storage: when uploading compressed image, set `Content-Type` header based on the file-extension of the path defined in `source_location`.
+
 ### Removed
 
 - upcloud_loadbalancer_backend: `tls_configs` removed from properties. The computed field exists on main level of the resource.
