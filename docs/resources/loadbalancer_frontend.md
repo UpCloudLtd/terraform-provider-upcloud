@@ -77,7 +77,7 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 ### Blocks
 
 - `networks` (Block Set) Networks that frontend will be listening. Networks are required if load balancer has `networks` defined. This field will be required when deprecated field `network` is removed from load balancer resource. (see [below for nested schema](#nestedblock--networks))
-- `properties` (Block List) Frontend properties. Properties can set back to defaults by defining empty `properties {}` block. (see [below for nested schema](#nestedblock--properties))
+- `properties` (Block List) Frontend properties. Properties can be set back to defaults by defining an empty `properties {}` block. For `terraform import`, an empty or non-empty block is also required. (see [below for nested schema](#nestedblock--properties))
 
 ### Read-Only
 
