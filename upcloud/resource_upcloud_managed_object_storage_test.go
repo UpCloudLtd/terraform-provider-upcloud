@@ -33,8 +33,21 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 				),
 			},
 			{
-				Config:            testDataS2,
-				ImportStateVerify: true,
+				Config:                  testDataS1,
+				ResourceName:            this,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"operational_state"},
+			},
+			{
+				Config:                  testDataS1,
+				ResourceName:            minimal,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"operational_state"},
+			},
+			{
+				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(minimal, "name", "tf-acc-test-objstov2-renamed"),
 					resource.TestCheckResourceAttr(this, "configured_status", "started"),
@@ -84,5 +97,42 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccProviderFactories,
 		Steps:                    steps,
+	})
+}
+
+func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
+	// The test does not configure the required DNS settings for the custom domain to work. This will cause the object storage instance to be stuck in a pending state and thus it cannot be modified as any modification will cause the provider to wait until the instance reaches running state.
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s3.tf")
+
+	customDomain := "upcloud_managed_object_storage_custom_domain.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(customDomain, "domain_name", "objects.example.com"),
+				),
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      customDomain,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: testDataS2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(customDomain, "domain_name", "obj.example.com"),
+				),
+			},
+			{
+				Config: testDataS3,
+			},
+		},
 	})
 }

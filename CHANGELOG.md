@@ -8,6 +8,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - upcloud_storage (data source): `encrypt`, `labels` and `system_labels` read-only fields.
+- upcloud_managed_object_storage_custom_domain resource for managing custom domains for managed object storage end-points.
+- upcloud_load_balancer_dns_challenge_domain data source for configuring DNS settings required for validating certificates.
 
 ### Changed
 

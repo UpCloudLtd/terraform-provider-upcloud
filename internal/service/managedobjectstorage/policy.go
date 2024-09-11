@@ -57,9 +57,8 @@ type policyModel struct {
 	UpdatedAt        types.String `tfsdk:"updated_at"`
 }
 
-func policySchema(_ int64) schema.Schema {
-	return schema.Schema{
-		// Version:     version,
+func (r *managedObjectStoragePolicyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "This resource represents an UpCloud Managed Object Storage policy.",
 		Attributes: map[string]schema.Attribute{
 			"arn": schema.StringAttribute{
@@ -136,10 +135,6 @@ func policySchema(_ int64) schema.Schema {
 			},
 		},
 	}
-}
-
-func (r *managedObjectStoragePolicyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = policySchema(1)
 }
 
 func setPolicyValues(_ context.Context, data *policyModel, policy *upcloud.ManagedObjectStoragePolicy) diag.Diagnostics {

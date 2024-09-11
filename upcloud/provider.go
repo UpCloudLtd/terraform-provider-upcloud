@@ -150,6 +150,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		loadbalancer.NewFrontendResource,
 		loadbalancer.NewFrontendTLSConfigResource,
 		loadbalancer.NewManualCertificateBundleResource,
+		managedobjectstorage.NewManagedObjectStorageCustomDomainResource,
 		managedobjectstorage.NewManagedObjectStoragePolicyResource,
 		network.NewNetworkResource,
 		networkpeering.NewNetworkPeeringResource,
@@ -165,8 +166,9 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 		cloud.NewHostsDataSource,
 		cloud.NewZoneDataSource,
 		cloud.NewZonesDataSource,
-		managedobjectstorage.NewRegionsDataSource,
 		kubernetes.NewKubernetesClusterDataSource,
+		loadbalancer.NewDNSChallengeDomainDataSource,
+		managedobjectstorage.NewRegionsDataSource,
 		storage.NewStorageDataSource,
 	}
 }
