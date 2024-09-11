@@ -28,7 +28,6 @@ var (
 	_ resource.Resource                = &backendResource{}
 	_ resource.ResourceWithConfigure   = &backendResource{}
 	_ resource.ResourceWithImportState = &backendResource{}
-	_ resource.ResourceWithModifyPlan  = &backendResource{}
 )
 
 func NewBackendResource() resource.Resource {
@@ -259,13 +258,6 @@ func (r *backendResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 		},
 		Version: 1,
 	}
-}
-
-func (r *backendResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	var p []backendPropertiesModel
-	diags := req.Config.GetAttribute(ctx, path.Root("properties"), &p)
-
-	resp.Diagnostics.Append(diags...)
 }
 
 func setBackendValues(ctx context.Context, data *backendModel, backend *upcloud.LoadBalancerBackend) diag.Diagnostics {
