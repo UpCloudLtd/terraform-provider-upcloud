@@ -161,7 +161,7 @@ Required Attributes:
 Required Attributes:
 
 - `source` (String) The mode of the import task. One of `http_import` or `direct_upload`.
-- `source_location` (String) The location of the file to import. For `http_import` an accessible URL for `direct_upload` a local file.
+- `source_location` (String) The location of the file to import. For `http_import` an accessible URL. For `direct_upload` a local file. When direct uploading a compressed image, `Content-Type` header of the PUT request is set automatically based on the file extension (`.gz` or `.xz`, case-insensitive).
 
 Optional Attributes:
 
