@@ -8,6 +8,7 @@ import (
 	"hash"
 	"math/rand"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"testing"
@@ -240,6 +241,44 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 					testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.this", "import.#", "1"),
+					resource.TestCheckResourceAttr("upcloud_storage.this", "import.0.sha256sum", sha256sum),
+				),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudStorage_StorageImportDirectCompressed(t *testing.T) {
+	var storageDetails upcloud.StorageDetails
+
+	imagePath, sum, err := createTempImage()
+	if err != nil {
+		t.Logf("unable to create temp image: %v", err)
+		t.FailNow()
+	}
+	sha256sum := hex.EncodeToString((*sum).Sum(nil))
+
+	err = exec.Command("xz", imagePath).Run()
+	if err != nil {
+		t.Logf("unable to compress temp image: %v", err)
+		t.FailNow()
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testUpcloudStorageInstanceConfigWithStorageImport(
+					"direct_upload",
+					imagePath+".xz",
+					sha256sum),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckStorageExists("upcloud_storage.this", &storageDetails),
+					resource.TestCheckResourceAttr(
+						"upcloud_storage.this", "import.#", "1"),
+					// The SHA256 sum should match the original file, not the compressed one.
 					resource.TestCheckResourceAttr("upcloud_storage.this", "import.0.sha256sum", sha256sum),
 				),
 			},

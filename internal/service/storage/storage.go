@@ -188,7 +188,7 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							},
 						},
 						"source_location": schema.StringAttribute{
-							MarkdownDescription: "The location of the file to import. For `http_import` an accessible URL for `direct_upload` a local file.",
+							MarkdownDescription: "The location of the file to import. For `http_import` an accessible URL. For `direct_upload` a local file. When direct uploading a compressed image, `Content-Type` header of the PUT request is set automatically based on the file extension (`.gz` or `.xz`, case-insensitive).",
 							Required:            true,
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
@@ -276,6 +276,17 @@ func upcloudBoolean(b types.Bool) upcloud.Boolean {
 	return upcloud.FromBool(b.ValueBool())
 }
 
+func getContentType(sourceLocation string) string {
+	lower := strings.ToLower(sourceLocation)
+	if strings.HasSuffix(lower, ".gz") {
+		return "application/gzip"
+	}
+	if strings.HasSuffix(lower, ".xz") {
+		return "application/x-xz"
+	}
+	return ""
+}
+
 func (r *storageResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data storageModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -323,9 +334,12 @@ func (r *storageResource) Create(ctx context.Context, req resource.CreateRequest
 			}
 
 			if len(planImport) == 1 {
+				sourceLocation := planImport[0].SourceLocation.ValueString()
+
 				importReq = &request.CreateStorageImportRequest{
 					Source:         planImport[0].Source.ValueString(),
-					SourceLocation: planImport[0].SourceLocation.ValueString(),
+					SourceLocation: sourceLocation,
+					ContentType:    getContentType(sourceLocation),
 				}
 			}
 		}
