@@ -145,7 +145,7 @@ func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"properties": schema.ListNestedBlock{
-				MarkdownDescription: "Frontend properties. Properties can set back to defaults by defining empty `properties {}` block.",
+				MarkdownDescription: "Frontend properties. Properties can be set back to defaults by defining an empty `properties {}` block. For `terraform import`, an empty or non-empty block is also required.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"timeout_client": schema.Int64Attribute{
@@ -179,12 +179,23 @@ func (r *frontendResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 	}
 }
 
-func setValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadBalancerFrontend) diag.Diagnostics {
+func setFrontendValues(ctx context.Context, data *frontendModel, frontend *upcloud.LoadBalancerFrontend) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
 	isImport := data.LoadBalancer.ValueString() == ""
 
-	data.Name = types.StringValue(frontend.Name)
+	var loadBalancer, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &name)
+	if err != nil {
+		diags.AddError(
+			"Unable to unmarshal loadbalancer frontend ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	data.LoadBalancer = types.StringValue(loadBalancer)
+	data.Name = types.StringValue(name)
+
 	data.Mode = types.StringValue(string(frontend.Mode))
 	data.Port = types.Int64Value(int64(frontend.Port))
 	data.DefaultBackendName = types.StringValue(frontend.DefaultBackend)
@@ -281,6 +292,7 @@ func (r *frontendResource) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(diags...)
 
 	data.ID = types.StringValue(utils.MarshalID(data.LoadBalancer.ValueString(), data.Name.ValueString()))
+
 	apiReq := request.CreateLoadBalancerFrontendRequest{
 		ServiceUUID: data.LoadBalancer.ValueString(),
 		Frontend: request.LoadBalancerFrontend{
@@ -302,7 +314,7 @@ func (r *frontendResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, frontend)...)
+	resp.Diagnostics.Append(setFrontendValues(ctx, &data, frontend)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -329,7 +341,7 @@ func (r *frontendResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	network, err := r.client.GetLoadBalancerFrontend(ctx, &request.GetLoadBalancerFrontendRequest{
+	frontend, err := r.client.GetLoadBalancerFrontend(ctx, &request.GetLoadBalancerFrontendRequest{
 		ServiceUUID: loadBalancer,
 		Name:        name,
 	})
@@ -345,11 +357,7 @@ func (r *frontendResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, network)...)
-
-	data.LoadBalancer = types.StringValue(loadBalancer)
-	data.Name = types.StringValue(name)
-
+	resp.Diagnostics.Append(setFrontendValues(ctx, &data, frontend)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -398,7 +406,7 @@ func (r *frontendResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	resp.Diagnostics.Append(setValues(ctx, &data, network)...)
+	resp.Diagnostics.Append(setFrontendValues(ctx, &data, network)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 

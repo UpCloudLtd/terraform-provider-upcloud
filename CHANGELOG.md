@@ -20,6 +20,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_storage (data source): `name`, `name_regex` and `most_recent` fields.
 
+### Removed
+
+- upcloud_loadbalancer_backend: `tls_configs` removed from properties. The computed field exists on main level of the resource.
+
 ## [5.10.1] - 2024-08-21
 
 ### Fixed

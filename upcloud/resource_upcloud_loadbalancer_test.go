@@ -25,6 +25,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	fe1Name := "upcloud_loadbalancer_frontend.lb_fe_1"
 	fe1Rule1Name := "upcloud_loadbalancer_frontend_rule.lb_fe_1_r1"
 	fe1TLS1Name := "upcloud_loadbalancer_frontend_tls_config.lb_fe_1_tls1"
+	fe2Name := "upcloud_loadbalancer_frontend.lb_fe_2"
 	cbd1Name := "upcloud_loadbalancer_dynamic_certificate_bundle.lb_cb_d1"
 	cbm1Name := "upcloud_loadbalancer_manual_certificate_bundle.lb_cb_m1"
 
@@ -74,6 +75,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),
 					resource.TestCheckResourceAttr(be2Name, "name", "lb-be-2-test"),
 					resource.TestCheckResourceAttr(be2Name, "resolver_name", ""),
+					resource.TestCheckResourceAttr(be2Name, "properties.#", "1"),
 					resource.TestCheckResourceAttr(be1sm1Name, "name", "lb-be-1-sm-1-test"),
 					resource.TestCheckResourceAttr(be1sm1Name, "ip", "10.0.0.10"),
 					resource.TestCheckResourceAttr(be1sm1Name, "port", "8000"),
@@ -136,6 +138,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.payload", "UmVzb3VyY2Ugbm90IGZvdW5kIQ=="),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.tcp_reject.0.active", "true"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.set_forwarded_headers.0.active", "true"),
+					resource.TestCheckResourceAttr(fe2Name, "properties.#", "1"),
 					resource.TestCheckResourceAttr(cbd1Name, "name", "tf-acc-test-lb-dynamic-cert"),
 					resource.TestCheckResourceAttr(cbd1Name, "key_type", "rsa"),
 					resource.TestCheckResourceAttr(cbd1Name, "hostnames.0", "example.com"),
