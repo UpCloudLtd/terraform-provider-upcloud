@@ -249,6 +249,15 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 }
 
 func TestAccUpCloudStorage_StorageImportDirectCompressed(t *testing.T) {
+	// Do not prepare the testdata, if the test will be skipped by resource.ParallelTest
+	if os.Getenv(resource.EnvTfAcc) == "" {
+		t.Skipf(
+			"Acceptance tests skipped unless env '%s' set",
+			resource.EnvTfAcc,
+		)
+		return
+	}
+
 	var storageDetails upcloud.StorageDetails
 
 	imagePath, sum, err := createTempImage()
