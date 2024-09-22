@@ -85,7 +85,6 @@ func Provider() *schema.Provider {
 			"upcloud_managed_object_storage_user":            managedobjectstorage.ResourceManagedObjectStorageUser(),
 			"upcloud_managed_object_storage_user_access_key": managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
 			"upcloud_managed_object_storage_user_policy":     managedobjectstorage.ResourceManagedObjectStorageUserPolicy(),
-			"upcloud_loadbalancer":                           loadbalancer.ResourceLoadBalancer(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
