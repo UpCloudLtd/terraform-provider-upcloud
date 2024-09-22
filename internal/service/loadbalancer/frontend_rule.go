@@ -2,208 +2,637 @@ package loadbalancer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-func ResourceFrontendRule() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents load balancer frontend rule",
-		CreateContext: resourceFrontendRuleCreate,
-		ReadContext:   resourceFrontendRuleRead,
-		UpdateContext: resourceFrontendRuleUpdate,
-		DeleteContext: resourceFrontendRuleDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		CustomizeDiff: customdiff.All(
-			// Validate http_redirect fields here, because ExactlyOneOf does not work when MaxItems > 1
-			validateHTTPRedirectChange,
-			validateActionsNotEmpty,
-		),
-		Schema: map[string]*schema.Schema{
-			"frontend": {
-				Description: "ID of the load balancer frontend to which the rule is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"name": {
-				Description:      "The name of the frontend rule must be unique within the load balancer service.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateNameDiagFunc,
-			},
-			"priority": {
-				Description:      "Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.",
-				Type:             schema.TypeInt,
-				Required:         true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 100)),
-			},
-			"matchers": {
-				Description: "Set of rule matchers. if rule doesn't have matchers, then action applies to all incoming requests.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				ForceNew:    true,
-				Elem: &schema.Resource{
-					Schema: frontendRuleMatchersSchema(),
+var (
+	_ resource.Resource                = &frontendRuleResource{}
+	_ resource.ResourceWithConfigure   = &frontendRuleResource{}
+	_ resource.ResourceWithImportState = &frontendRuleResource{}
+)
+
+func NewFrontendRuleResource() resource.Resource {
+	return &frontendRuleResource{}
+}
+
+type frontendRuleResource struct {
+	client *service.Service
+}
+
+func (r *frontendRuleResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_loadbalancer_frontend_rule"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *frontendRuleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type frontendRuleModel struct {
+	ID       types.String `tfsdk:"id"`
+	Frontend types.String `tfsdk:"frontend"`
+	Name     types.String `tfsdk:"name"`
+	Priority types.Int64  `tfsdk:"priority"`
+	Matchers types.List   `tfsdk:"matchers"`
+	Actions  types.List   `tfsdk:"actions"`
+}
+
+func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "This resource represents load balancer frontend rule.",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "ID of the frontend rule. ID is in `{load balancer UUID}/{frontend name}/{frontend rule name}` format.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"actions": {
-				Description: "Set of rule actions.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				ForceNew:    true,
-				Elem: &schema.Resource{
-					Schema: frontendRuleActionsSchema(),
+			"frontend": schema.StringAttribute{
+				MarkdownDescription: "ID of the load balancer frontend to which the frontend rule is connected.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the frontend rule. Must be unique within the frontend.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					nameValidator,
+				},
+			},
+			"priority": schema.Int64Attribute{
+				MarkdownDescription: "Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.",
+				Required:            true,
+				Validators: []validator.Int64{
+					int64validator.Between(0, 100),
+				},
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"actions": schema.ListNestedBlock{
+				MarkdownDescription: "Rule actions.",
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"http_redirect": schema.ListNestedBlock{
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"location": schema.StringAttribute{
+										MarkdownDescription: "Target location.",
+										Optional:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+										Validators: []validator.String{
+											stringvalidator.LengthAtLeast(1),
+											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("scheme")),
+										},
+									},
+									"scheme": schema.StringAttribute{
+										MarkdownDescription: "Target scheme.",
+										Optional:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+										Validators: []validator.String{
+											stringvalidator.OneOf(
+												string(upcloud.LoadBalancerActionHTTPRedirectSchemeHTTP),
+												string(upcloud.LoadBalancerActionHTTPRedirectSchemeHTTPS),
+											),
+											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("location")),
+										},
+									},
+								},
+							},
+						},
+						"http_return": schema.ListNestedBlock{
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"content_type": schema.StringAttribute{
+										MarkdownDescription: "Content type.",
+										Required:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+									},
+									"status": schema.Int64Attribute{
+										MarkdownDescription: "HTTP status code.",
+										Required:            true,
+										PlanModifiers: []planmodifier.Int64{
+											int64planmodifier.RequiresReplace(),
+										},
+										Validators: []validator.Int64{
+											int64validator.Between(100, 599),
+										},
+									},
+									"payload": schema.StringAttribute{
+										MarkdownDescription: "The payload.",
+										Required:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(1, 4096),
+										},
+									},
+								},
+							},
+						},
+						"set_forwarded_headers": schema.ListNestedBlock{
+							MarkdownDescription: "Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"active": schema.BoolAttribute{
+										Optional: true,
+										Computed: true,
+										Default:  booldefault.StaticBool(true),
+									},
+								},
+							},
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"tcp_reject": schema.ListNestedBlock{
+							MarkdownDescription: "Terminates a connection.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"active": schema.BoolAttribute{
+										MarkdownDescription: "Indicates if the rule is active.",
+										Optional:            true,
+										Computed:            true,
+										Default:             booldefault.StaticBool(true),
+										PlanModifiers: []planmodifier.Bool{
+											boolplanmodifier.RequiresReplace(),
+										},
+									},
+								},
+							},
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"use_backend": schema.ListNestedBlock{
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"backend_name": schema.StringAttribute{
+										MarkdownDescription: "The name of the backend where traffic will be routed.",
+										Required:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+									},
+								},
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+						},
+					},
+				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 1),
+				},
+			},
+			"matchers": schema.ListNestedBlock{
+				MarkdownDescription: "Set of rule matchers. If rule doesn't have matchers, then action applies to all incoming requests.",
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"body_size": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by HTTP request body size.",
+							NestedObject:        frontendRuleMatcherIntegerSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"body_size_range": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by range of HTTP request body sizes.",
+							NestedObject:        frontendRuleMatcherRangeSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"cookie": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by HTTP cookie value. Cookie name must be provided.",
+							NestedObject:        frontendRuleMatcherStringWithArgumentSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"header": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by HTTP header value. Header name must be provided.",
+							NestedObject:        frontendRuleMatcherStringWithArgumentSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"host": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by hostname. Header extracted from HTTP Headers or from TLS certificate in case of secured connection.",
+							NestedObject:        frontendRuleMatcherHostSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"http_method": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by HTTP method.",
+							NestedObject:        frontendRuleMatcherHTTPMethodSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"num_members_up": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by number of healthy backend members.",
+							NestedObject:        frontendRuleMatcherBackendSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"path": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by URL path.",
+							NestedObject:        frontendRuleMatcherStringSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"src_ip": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by source IP address.",
+							NestedObject:        frontendRuleMatcherIPSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"src_port": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by source port number.",
+							NestedObject:        frontendRuleMatcherIntegerSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"src_port_range": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by range of source port numbers.",
+							NestedObject:        frontendRuleMatcherRangeSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"url": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by URL without schema, e.g. `example.com/dashboard`.",
+							NestedObject:        frontendRuleMatcherStringSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"url_param": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by URL query parameter value. Query parameter name must be provided",
+							NestedObject:        frontendRuleMatcherStringWithArgumentSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"url_query": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by URL query string.",
+							NestedObject:        frontendRuleMatcherStringSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+					},
+				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 1),
 				},
 			},
 		},
 	}
 }
 
-func resourceFrontendRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	matchers, err := loadBalancerMatchersFromResourceData(d)
+func setFrontendRuleValues(ctx context.Context, data *frontendRuleModel, frontendRule *upcloud.LoadBalancerFrontendRule, blocks map[string]schema.ListNestedBlock) diag.Diagnostics {
+	var respDiagnostics diag.Diagnostics
+
+	isImport := data.Frontend.ValueString() == ""
+
+	var loadBalancer, frontendName, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &frontendName, &name)
 	if err != nil {
-		return diag.FromErr(err)
+		respDiagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend rule ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
 
-	actions, err := loadBalancerActionsFromResourceData(d)
+	data.Frontend = types.StringValue(utils.MarshalID(loadBalancer, frontendName))
+	data.Name = types.StringValue(name)
+	data.Priority = types.Int64Value(int64(frontendRule.Priority))
+
+	if !data.Actions.IsNull() || isImport {
+		respDiagnostics.Append(setFrontendRuleActionsValues(ctx, data, frontendRule, blocks)...)
+	}
+
+	if !data.Matchers.IsNull() || isImport {
+		respDiagnostics.Append(setFrontendRuleMatchersValues(ctx, data, frontendRule, blocks)...)
+	}
+
+	return respDiagnostics
+}
+
+func (r *frontendRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data frontendRuleModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var loadbalancer, frontendName string
+	err := utils.UnmarshalID(data.Frontend.ValueString(), &loadbalancer, &frontendName)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
 
-	var serviceID, feName string
-	if err := utils.UnmarshalID(d.Get("frontend").(string), &serviceID, &feName); err != nil {
-		return diag.FromErr(err)
-	}
+	matchers, diags := buildFrontendRuleMatchers(ctx, data.Matchers)
+	resp.Diagnostics.Append(diags...)
 
-	rule, err := svc.CreateLoadBalancerFrontendRule(ctx, &request.CreateLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
+	actions, diags := buildFrontendRuleActions(ctx, data.Actions)
+	resp.Diagnostics.Append(diags...)
+
+	apiReq := request.CreateLoadBalancerFrontendRuleRequest{
+		ServiceUUID:  loadbalancer,
+		FrontendName: frontendName,
 		Rule: request.LoadBalancerFrontendRule{
-			Name:     d.Get("name").(string),
-			Priority: d.Get("priority").(int),
+			Name:     data.Name.ValueString(),
+			Priority: int(data.Priority.ValueInt64()),
 			Matchers: matchers,
 			Actions:  actions,
 		},
-	})
+	}
+
+	frontendRule, err := r.client.CreateLoadBalancerFrontendRule(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer frontend rule",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, feName, rule.Name))
+	data.ID = types.StringValue(utils.MarshalID(data.Frontend.ValueString(), data.Name.ValueString()))
 
-	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
-		return diags
+	blocks := make(map[string]schema.ListNestedBlock)
+	for k, v := range req.Config.Schema.GetBlocks() {
+		block, ok := v.(schema.ListNestedBlock)
+		if !ok {
+			continue
+		}
+
+		blocks[k] = block
 	}
 
-	tflog.Info(ctx, "frontend rule created", map[string]interface{}{"name": rule.Name, "service_uuid": serviceID, "fe_name": feName})
-	return diags
+	resp.Diagnostics.Append(setFrontendRuleValues(ctx, &data, frontendRule, blocks)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFrontendRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data frontendRuleModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	rule, err := svc.GetLoadBalancerFrontendRule(ctx, &request.GetLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	var loadbalancer, frontendName, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadbalancer, &frontendName, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend rule ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	frontendRule, err := r.client.GetLoadBalancerFrontendRule(ctx, &request.GetLoadBalancerFrontendRuleRequest{
+		FrontendName: frontendName,
 		Name:         name,
+		ServiceUUID:  loadbalancer,
 	})
 	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read loadbalancer frontend rule details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, feName, rule.Name))
+	blocks := make(map[string]schema.ListNestedBlock)
+	for k, v := range req.State.Schema.GetBlocks() {
+		block, ok := v.(schema.ListNestedBlock)
+		if !ok {
+			continue
+		}
 
-	if err = d.Set("frontend", utils.MarshalID(serviceID, feName)); err != nil {
-		return diag.FromErr(err)
+		blocks[k] = block
 	}
 
-	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
-		return diags
-	}
-
-	return diags
+	resp.Diagnostics.Append(setFrontendRuleValues(ctx, &data, frontendRule, blocks)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFrontendRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data frontendRuleModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	var loadBalancer, frontendName, name string
+	if err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &frontendName, &name); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend rule ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
-	// name and priority fields doesn't force replacement and can be updated in-place
-	rule, err := svc.ModifyLoadBalancerFrontendRule(ctx, &request.ModifyLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiReq := request.ModifyLoadBalancerFrontendRuleRequest{
+		ServiceUUID:  loadBalancer,
+		FrontendName: frontendName,
 		Name:         name,
 		Rule: request.ModifyLoadBalancerFrontendRule{
-			Name:     d.Get("name").(string),
-			Priority: upcloud.IntPtr(d.Get("priority").(int)),
+			Name:     data.Name.ValueString(),
+			Priority: upcloud.IntPtr(int(data.Priority.ValueInt64())),
 		},
-	},
-	)
+	}
+
+	frontendRule, err := r.client.ModifyLoadBalancerFrontendRule(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer frontend rule",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, feName, rule.Name))
+	blocks := make(map[string]schema.ListNestedBlock)
+	for k, v := range req.Config.Schema.GetBlocks() {
+		block, ok := v.(schema.ListNestedBlock)
+		if !ok {
+			continue
+		}
 
-	if diags = setFrontendRuleResourceData(d, rule); len(diags) > 0 {
-		return diags
+		blocks[k] = block
 	}
 
-	tflog.Info(ctx, "frontend rule updated", map[string]interface{}{"name": rule.Name, "service_uuid": serviceID, "fe_name": feName})
-	return diags
+	resp.Diagnostics.Append(setFrontendRuleValues(ctx, &data, frontendRule, blocks)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceFrontendRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, feName, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &feName, &name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data frontendRuleModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	var loadBalancer, frontendName, name string
+	if err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &frontendName, &name); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer frontend rule ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	tflog.Info(ctx, "deleting frontend rule", map[string]interface{}{"name": name, "service_uuid": serviceID, "fe_name": feName})
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	return diag.FromErr(svc.DeleteLoadBalancerFrontendRule(ctx, &request.DeleteLoadBalancerFrontendRuleRequest{
-		ServiceUUID:  serviceID,
-		FrontendName: feName,
+	if err := r.client.DeleteLoadBalancerFrontendRule(ctx, &request.DeleteLoadBalancerFrontendRuleRequest{
+		ServiceUUID:  loadBalancer,
+		FrontendName: frontendName,
 		Name:         name,
-	}))
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer frontend rule",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 }
 
-func setFrontendRuleResourceData(d *schema.ResourceData, rule *upcloud.LoadBalancerFrontendRule) (diags diag.Diagnostics) {
-	if err := d.Set("name", rule.Name); err != nil {
-		return diag.FromErr(err)
+func (r *frontendRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func elementTypesByKey(k string, blocks map[string]schema.ListNestedBlock) (map[string]basetypes.ObjectTypable, error) {
+	topLevel, ok := blocks[k]
+	if !ok {
+		return nil, fmt.Errorf("block by key %s not found", k)
 	}
 
-	if err := d.Set("priority", rule.Priority); err != nil {
-		return diag.FromErr(err)
+	elementTypes := make(map[string]basetypes.ObjectTypable)
+
+	for blockName, b := range topLevel.NestedObject.Blocks {
+		block, ok := b.(schema.ListNestedBlock)
+		if !ok {
+			continue
+		}
+
+		elementTypes[blockName] = block.NestedObject.Type()
 	}
 
-	if err := setFrontendRuleMatchersResourceData(d, rule); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := setFrontendRuleActionsResourceData(d, rule); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+	return elementTypes, nil
 }
