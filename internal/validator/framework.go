@@ -43,3 +43,39 @@ func NewFrameworkStringValidator(validate schema.SchemaValidateFunc) validator.S
 		validateFunc: validate,
 	}
 }
+
+type frameworkInt64Validator struct {
+	validateFunc schema.SchemaValidateFunc //nolint:staticcheck // Load balancer validators use the deprecated schema.SchemaValidateFunc
+}
+
+func (v *frameworkInt64Validator) Description(_ context.Context) string {
+	return ""
+}
+
+func (v *frameworkInt64Validator) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+func (v *frameworkInt64Validator) ValidateInt64(_ context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	warnings, errors := v.validateFunc(int(req.ConfigValue.ValueInt64()), req.Path.String())
+
+	for _, warning := range warnings {
+		resp.Diagnostics = append(resp.Diagnostics, diag.NewWarningDiagnostic(warning, ""))
+	}
+
+	for _, err := range errors {
+		resp.Diagnostics = append(resp.Diagnostics, diag.NewErrorDiagnostic(err.Error(), ""))
+	}
+}
+
+var _ validator.Int64 = &frameworkInt64Validator{}
+
+func NewFrameworkInt64Validator(validate schema.SchemaValidateFunc) validator.Int64 { //nolint:staticcheck // Load balancers validators use the deprecated schema.SchemaValidateFunc
+	return &frameworkInt64Validator{
+		validateFunc: validate,
+	}
+}
