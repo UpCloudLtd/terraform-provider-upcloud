@@ -2,239 +2,334 @@ package loadbalancer
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
-	"regexp"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceLoadBalancer() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents [Managed Load Balancer](https://upcloud.com/products/managed-load-balancer) service.",
-		CreateContext: resourceLoadBalancerCreate,
-		ReadContext:   resourceLoadBalancerRead,
-		UpdateContext: resourceLoadBalancerUpdate,
-		DeleteContext: resourceLoadBalancerDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description:      "The name of the service must be unique within customer account.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateNameDiagFunc,
+var (
+	_ resource.Resource                = &loadBalancerResource{}
+	_ resource.ResourceWithConfigure   = &loadBalancerResource{}
+	_ resource.ResourceWithImportState = &loadBalancerResource{}
+)
+
+func NewLoadBalancerResource() resource.Resource {
+	return &loadBalancerResource{}
+}
+
+type loadBalancerResource struct {
+	client *service.Service
+}
+
+func (r *loadBalancerResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_loadbalancer"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *loadBalancerResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type loadBalancerModel struct {
+	Backends         types.List   `tfsdk:"backends"`
+	ConfiguredStatus types.String `tfsdk:"configured_status"`
+	DNSName          types.String `tfsdk:"dns_name"`
+	Frontends        types.List   `tfsdk:"frontends"`
+	ID               types.String `tfsdk:"id"`
+	Labels           types.Map    `tfsdk:"labels"`
+	MaintenanceDOW   types.String `tfsdk:"maintenance_dow"`
+	MaintenanceTime  types.String `tfsdk:"maintenance_time"`
+	Name             types.String `tfsdk:"name"`
+	Network          types.String `tfsdk:"network"`
+	Networks         types.List   `tfsdk:"networks"`
+	Nodes            types.List   `tfsdk:"nodes"`
+	OperationalState types.String `tfsdk:"operational_state"`
+	Plan             types.String `tfsdk:"plan"`
+	Resolvers        types.List   `tfsdk:"resolvers"`
+	Zone             types.String `tfsdk:"zone"`
+}
+
+type loadbalancerNetworkModel struct {
+	Name    types.String `tfsdk:"name"`
+	Type    types.String `tfsdk:"type"`
+	Family  types.String `tfsdk:"family"`
+	Network types.String `tfsdk:"network"`
+	DNSName types.String `tfsdk:"dns_name"`
+	ID      types.String `tfsdk:"id"`
+}
+
+type loadbalancerNodeModel struct {
+	OperationalState types.String `tfsdk:"operational_state"`
+	Networks         types.List   `tfsdk:"networks"`
+}
+
+type loadbalancerNodeNetworkModel struct {
+	Name        types.String `tfsdk:"name"`
+	Type        types.String `tfsdk:"type"`
+	IPAddresses types.List   `tfsdk:"ip_addresses"`
+}
+
+type loadBalancerNodeNetworkIPAddressModel struct {
+	Address types.String `tfsdk:"address"`
+	Listen  types.Bool   `tfsdk:"listen"`
+}
+
+func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "This resource represents load balancer service.",
+		Attributes: map[string]schema.Attribute{
+			"backends": schema.ListAttribute{
+				MarkdownDescription: "Backends are groups of customer servers whose traffic should be balanced.",
+				ElementType:         types.StringType,
+				Computed:            true,
 			},
-			"plan": {
-				Description: "Plan which the service will have. You can list available load balancer plans with `upctl loadbalancer plans`",
-				Type:        schema.TypeString,
-				Required:    true,
+			"configured_status": schema.StringAttribute{
+				MarkdownDescription: "The service configured status indicates the service's current intended status. Managed by the customer.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(string(upcloud.LoadBalancerConfiguredStatusStarted)),
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.LoadBalancerConfiguredStatusStarted),
+						string(upcloud.LoadBalancerConfiguredStatusStopped),
+					),
+				},
 			},
-			"zone": {
+			"dns_name": schema.StringAttribute{
+				DeprecationMessage:  "Use 'networks' to get network DNS name",
+				MarkdownDescription: "DNS name of the load balancer",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"frontends": schema.ListAttribute{
+				MarkdownDescription: "Frontends receive the traffic before dispatching it to the backends.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"id": schema.StringAttribute{
+				MarkdownDescription: "The unique identifier of the load balancer.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"labels": utils.LabelsAttribute("load balancer"),
+			"maintenance_dow": schema.StringAttribute{
+				MarkdownDescription: "The day of the week on which maintenance will be performed. If not provided, we will randomly select a weekend day. Valid values `monday|tuesday|wednesday|thursday|friday|saturday|sunday`.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"maintenance_time": schema.StringAttribute{
+				MarkdownDescription: "The time at which the maintenance will begin in UTC. A 2-hour timeframe has been allocated for maintenance. During this period, the multi-node production plans will not experience any downtime, while the one-node plans will have a downtime of 1-2 minutes. If not provided, we will randomly select an off-peak time. Needs to be a valid time format in UTC HH:MM:SSZ, for example `20:01:01Z`.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the service. Must be unique within customer account.",
+				Required:            true,
+				Validators: []validator.String{
+					nameValidator,
+				},
+			},
+			"network": schema.StringAttribute{
+				DeprecationMessage:  "Use 'networks' to define networks attached to load balancer",
+				MarkdownDescription: "Private network UUID where traffic will be routed. Must reside in load balancer zone.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			// See https://developer.hashicorp.com/terraform/plugin/framework/migrating/attributes-blocks/blocks-computed#framework
+			/*
+				"nodes": schema.ListAttribute{
+					MarkdownDescription: "Nodes are instances running load balancer service",
+					Computed:            true,
+					ElementType: types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"operational_state": types.StringType,
+							"networks": types.ListType{
+								ElemType: types.ObjectType{
+									AttrTypes: map[string]attr.Type{
+										"name": types.StringType,
+										"type": types.StringType,
+										"ip_addresses": types.ListType{
+											ElemType: types.ObjectType{
+												AttrTypes: map[string]attr.Type{
+													"address": types.StringType,
+													"listen":  types.BoolType,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			*/
+			"operational_state": schema.StringAttribute{
+				MarkdownDescription: "The service operational state indicates the service's current operational, effective state. Managed by the system.",
+				Computed:            true,
+			},
+			"plan": schema.StringAttribute{
+				MarkdownDescription: "Plan which the service will have. You can list available load balancer plans with `upctl loadbalancer plans`",
+				Required:            true,
+			},
+			"resolvers": schema.ListAttribute{
+				MarkdownDescription: "Domain Name Resolvers.",
+				ElementType:         types.StringType,
+				Computed:            true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"zone": schema.StringAttribute{
 				Description: "Zone in which the service will be hosted, e.g. `fi-hel1`. You can list available zones with `upctl zone list`.",
-				Type:        schema.TypeString,
 				Required:    true,
-			},
-			"networks": {
-				ExactlyOneOf: []string{"network"},
-				Description:  "Attached Networks from where traffic consumed and routed. Private networks must reside in loadbalancer zone.",
-				Type:         schema.TypeList,
-				Optional:     true,
-				MaxItems:     8,
-				MinItems:     1,
-				Elem: &schema.Resource{
-					Schema: loadBalancerNetworkSchema(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"configured_status": {
-				Description: "The service configured status indicates the service's current intended status. Managed by the customer.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     string(upcloud.LoadBalancerConfiguredStatusStarted),
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.StringInSlice([]string{
-						string(upcloud.LoadBalancerConfiguredStatusStarted),
-						string(upcloud.LoadBalancerConfiguredStatusStarted),
-					}, false),
-				),
-			},
-			"frontends": {
-				Description: "Frontends receive the traffic before dispatching it to the backends.",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"backends": {
-				Description: "Backends are groups of customer servers whose traffic should be balanced.",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"resolvers": {
-				Description: "Domain Name Resolvers must be configured in case of customer uses dynamic type members",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"operational_state": {
-				Description: "The service operational state indicates the service's current operational, effective state. Managed by the system.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"nodes": {
-				Description: "Nodes are instances running load balancer service",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: loadBalancerNodeSchema(),
-				},
-			},
-			"network": {
-				Deprecated:  "Use 'networks' to define networks attached to load balancer",
-				Description: "Private network UUID where traffic will be routed. Must reside in load balancer zone.",
-				Type:        schema.TypeString,
-				ForceNew:    true,
-				Optional:    true,
-			},
-			"dns_name": {
-				Deprecated:  "Use 'networks' to get network DNS name",
-				Description: "DNS name of the load balancer",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"labels": utils.LabelsSchema("load balancer"),
-			"maintenance_dow": {
-				Description: "The day of the week on which maintenance will be performed. If not provided, we will randomly select a weekend day. Valid values `monday|tuesday|wednesday|thursday|friday|saturday|sunday`.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"maintenance_time": {
-				Description: "The time at which the maintenance will begin in UTC. A 2-hour timeframe has been allocated for maintenance. During this period, the multi-node production plans will not experience any downtime, while the one-node plans will have a downtime of 1-2 minutes. If not provided, we will randomly select an off-peak time. Needs to be a valid time format in UTC HH:MM:SSZ, for example `20:01:01Z`.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
 		},
-		CustomizeDiff: customdiff.ForceNewIfChange("networks.#", func(_ context.Context, old, new, _ interface{}) bool {
-			return new.(int) != old.(int)
-		}),
-	}
-}
-
-func loadBalancerNetworkSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"name": {
-			Description: "The name of the network must be unique within the service.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.All(
-				validation.StringLenBetween(0, 65),
-				validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), ""),
-			)),
-		},
-		"type": {
-			Description: "The type of the network. Only one public network can be attached and at least one private network must be attached.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
-			ValidateDiagFunc: validation.ToDiagFunc(
-				validation.StringInSlice([]string{
-					string(upcloud.LoadBalancerNetworkTypePrivate),
-					string(upcloud.LoadBalancerNetworkTypePublic),
-				}, false),
-			),
-		},
-		"family": {
-			Description: "Network family. Currently only `IPv4` is supported.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
-			ValidateDiagFunc: validation.ToDiagFunc(
-				validation.StringInSlice([]string{
-					string(upcloud.LoadBalancerAddressFamilyIPv4),
-				}, false),
-			),
-		},
-		"network": {
-			Description: "Private network UUID. Required for private networks and must reside in loadbalancer zone. For public network the field should be omitted.",
-			Type:        schema.TypeString,
-			ForceNew:    true,
-			Optional:    true,
-		},
-		"dns_name": {
-			Description: "DNS name of the load balancer network",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"id": {
-			Description: "Network identifier.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-	}
-}
-
-func loadBalancerNodeSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"operational_state": {
-			Description: "Node's operational state. Managed by the system.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"networks": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Elem: &schema.Resource{
-				Schema: loadBalancerNodeNetworkSchema(),
-			},
-		},
-	}
-}
-
-func loadBalancerNodeNetworkSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"name": {
-			Description: "The name of the network.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"type": {
-			Description: "The type of the network.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"ip_addresses": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"address": {
-						Description: "Node's IP address.",
-						Type:        schema.TypeString,
-						Computed:    true,
+		Blocks: map[string]schema.Block{
+			"networks": schema.ListNestedBlock{
+				MarkdownDescription: "Attached Networks from where traffic consumed and routed. Private networks must reside in loadbalancer zone.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"dns_name": schema.StringAttribute{
+							MarkdownDescription: "DNS name of the load balancer network",
+							Computed:            true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
+						},
+						"family": schema.StringAttribute{
+							Description: "Network family. Currently only `IPv4` is supported.",
+							Required:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									string(upcloud.LoadBalancerAddressFamilyIPv4),
+								),
+							},
+						},
+						"id": schema.StringAttribute{
+							MarkdownDescription: "The unique identifier of the network.",
+							Computed:            true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
+						},
+						"name": schema.StringAttribute{
+							MarkdownDescription: "The name of the network. Must be unique within the service.",
+							Required:            true,
+							Validators: []validator.String{
+								nameValidator,
+								stringvalidator.LengthBetween(0, 65),
+							},
+						},
+						"network": schema.StringAttribute{
+							MarkdownDescription: "Private network UUID. Required for private networks and must reside in loadbalancer zone. For public network the field should be omitted.",
+							Optional:            true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+						},
+						"type": schema.StringAttribute{
+							MarkdownDescription: "The type of the network. Only one public network can be attached and at least one private network must be attached.",
+							Required:            true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									string(upcloud.LoadBalancerNetworkTypePrivate),
+									string(upcloud.LoadBalancerNetworkTypePublic),
+								),
+							},
+						},
 					},
-					"listen": {
-						Description: "Does IP address listen network connections.",
-						Type:        schema.TypeBool,
-						Computed:    true,
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 8),
+					listvalidator.ExactlyOneOf(
+						path.Expressions{
+							path.MatchRoot("network"),
+						}...,
+					),
+				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+			},
+			"nodes": schema.ListNestedBlock{
+				MarkdownDescription: "Nodes are instances running load balancer service",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"operational_state": schema.StringAttribute{
+							MarkdownDescription: "Node's operational state. Managed by the system.",
+							Computed:            true,
+						},
+					},
+					Blocks: map[string]schema.Block{
+						"networks": schema.ListNestedBlock{
+							MarkdownDescription: "Networks attached to the node",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"name": schema.StringAttribute{
+										MarkdownDescription: "The name of the network",
+										Computed:            true,
+									},
+									"type": schema.StringAttribute{
+										MarkdownDescription: "The type of the network",
+										Computed:            true,
+									},
+								},
+								Blocks: map[string]schema.Block{
+									"ip_addresses": schema.ListNestedBlock{
+										MarkdownDescription: "IP addresses attached to the network",
+										NestedObject: schema.NestedBlockObject{
+											Attributes: map[string]schema.Attribute{
+												"address": schema.StringAttribute{
+													MarkdownDescription: "Node's IP address",
+													Computed:            true,
+												},
+												"listen": schema.BoolAttribute{
+													MarkdownDescription: "Whether the node listens to the traffic",
+													Computed:            true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -242,304 +337,325 @@ func loadBalancerNodeNetworkSchema() map[string]*schema.Schema {
 	}
 }
 
-func resourceLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	networks, err := loadBalancerNetworksFromResourceData(d)
-	if err != nil {
-		return diag.FromErr(err)
+func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data loadBalancerModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	req := &request.CreateLoadBalancerRequest{
-		Name:             d.Get("name").(string),
-		Plan:             d.Get("plan").(string),
-		Zone:             d.Get("zone").(string),
-		NetworkUUID:      d.Get("network").(string),
-		ConfiguredStatus: upcloud.LoadBalancerConfiguredStatus(d.Get("configured_status").(string)),
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labelsMap))
+
+	var networks []request.LoadBalancerNetwork
+	if !data.Networks.IsNull() && !data.Networks.IsUnknown() {
+		var networkModels []loadbalancerNetworkModel
+		resp.Diagnostics.Append(data.Networks.ElementsAs(ctx, &networkModels, false)...)
+
+		for i, n := range networkModels {
+			network := request.LoadBalancerNetwork{
+				Name:   n.Name.ValueString(),
+				Type:   upcloud.LoadBalancerNetworkType(n.Type.ValueString()),
+				Family: upcloud.LoadBalancerAddressFamily(n.Family.ValueString()),
+				UUID:   n.Network.ValueString(),
+			}
+			if network.Type == upcloud.LoadBalancerNetworkTypePrivate && network.UUID == "" {
+				resp.Diagnostics.AddError("load balancer's private network ID is required", fmt.Sprintf("#%d", i))
+			}
+			if network.Type == upcloud.LoadBalancerNetworkTypePublic && network.UUID != "" {
+				resp.Diagnostics.AddError("\"setting load balancer's public network (#%d) ID is not supported", fmt.Sprintf("#%d", i))
+			}
+			networks = append(networks, network)
+		}
+	}
+
+	apiReq := request.CreateLoadBalancerRequest{
+		Name:             data.Name.ValueString(),
+		Plan:             data.Plan.ValueString(),
+		Zone:             data.Zone.ValueString(),
+		NetworkUUID:      data.Network.ValueString(),
+		Networks:         networks,
+		ConfiguredStatus: upcloud.LoadBalancerConfiguredStatus(data.ConfiguredStatus.ValueString()),
 		Frontends:        []request.LoadBalancerFrontend{},
 		Backends:         []request.LoadBalancerBackend{},
 		Resolvers:        []request.LoadBalancerResolver{},
-		Networks:         networks,
-		Labels:           utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
-		MaintenanceDOW:   upcloud.LoadBalancerMaintenanceDOW(d.Get("maintenance_dow").(string)),
-		MaintenanceTime:  d.Get("maintenance_time").(string),
+		Labels:           labels,
+		MaintenanceDOW:   upcloud.LoadBalancerMaintenanceDOW(data.MaintenanceDOW.ValueString()),
+		MaintenanceTime:  data.MaintenanceTime.ValueString(),
 	}
-	lb, err := svc.CreateLoadBalancer(ctx, req)
+
+	loadBalancer, err := r.client.CreateLoadBalancer(ctx, &apiReq)
 	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(lb.UUID)
+	data.ID = types.StringValue(loadBalancer.UUID)
 
-	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
-		return diags
+	blocks := make(map[string]schema.ListNestedBlock)
+	for k, v := range req.Config.Schema.GetBlocks() {
+		block, ok := v.(schema.ListNestedBlock)
+		if !ok {
+			continue
+		}
+
+		blocks[k] = block
 	}
 
-	tflog.Info(ctx, "load balancer created", map[string]interface{}{"name": lb.Name, "uuid": lb.UUID})
-	return diags
+	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer, blocks)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceLoadBalancerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	var err error
-	svc := meta.(*service.Service)
-	lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{UUID: d.Id()})
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbalancer *upcloud.LoadBalancer, blocks map[string]schema.ListNestedBlock) diag.Diagnostics {
+	var diags, respDiagnostics diag.Diagnostics
+
+	backendNames := []string{}
+	for _, backend := range loadbalancer.Backends {
+		backendNames = append(backendNames, backend.Name)
 	}
+	data.Backends, diags = types.ListValueFrom(ctx, types.StringType, backendNames)
+	respDiagnostics.Append(diags...)
 
-	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
-		return diags
+	data.ConfiguredStatus = types.StringValue(string(loadbalancer.ConfiguredStatus))
+	data.DNSName = types.StringValue(loadbalancer.DNSName)
+
+	frontendNames := []string{}
+	for _, frontend := range loadbalancer.Frontends {
+		frontendNames = append(frontendNames, frontend.Name)
 	}
+	data.Frontends, diags = types.ListValueFrom(ctx, types.StringType, frontendNames)
+	respDiagnostics.Append(diags...)
 
-	return diags
-}
+	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(loadbalancer.Labels))
+	respDiagnostics.Append(diags...)
 
-func resourceLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+	data.MaintenanceDOW = types.StringValue(string(loadbalancer.MaintenanceDOW))
+	data.MaintenanceTime = types.StringValue(loadbalancer.MaintenanceTime)
+	data.Name = types.StringValue(loadbalancer.Name)
+	if loadbalancer.NetworkUUID != "" {
+		data.Network = types.StringValue(loadbalancer.NetworkUUID)
+	} else {
+		networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
+		for i, network := range loadbalancer.Networks {
+			dataNetwork := loadbalancerNetworkModel{
+				Name:    types.StringValue(network.Name),
+				Type:    types.StringValue(string(network.Type)),
+				Family:  types.StringValue(string(network.Family)),
+				DNSName: types.StringValue(network.DNSName),
+				ID:      types.StringValue(utils.MarshalID(loadbalancer.UUID, network.Name)),
+			}
+			if network.Type == upcloud.LoadBalancerNetworkTypePrivate {
+				dataNetwork.Network = types.StringValue(network.UUID)
+			}
+			networks[i] = dataNetwork
+		}
 
-	// handle network renaming before modifying load balancer so that new network names are present in `lb` before setting state
-	if diags = resourceLoadBalancerNetworkUpdate(ctx, d, svc); len(diags) > 0 {
-		return diags
+		data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
+		respDiagnostics.Append(diags...)
 	}
+	data.Nodes = types.ListNull(blocks["nodes"].NestedObject.Type())
 
-	req := &request.ModifyLoadBalancerRequest{
-		UUID:             d.Id(),
-		Name:             d.Get("name").(string),
-		Plan:             d.Get("plan").(string),
-		ConfiguredStatus: d.Get("configured_status").(string),
-	}
+	if len(loadbalancer.Nodes) > 0 {
+		ipAddressElementType := blocks["nodes"].NestedObject.Blocks["networks"].(schema.ListNestedBlock).NestedObject.Blocks["ip_addresses"].(schema.ListNestedBlock).NestedObject.Type()
+		networkElementType := blocks["nodes"].NestedObject.Blocks["networks"].(schema.ListNestedBlock).NestedObject.Type()
+		nodeElementType := blocks["nodes"].NestedObject.Type()
 
-	if d.HasChange("labels") {
-		labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
-		req.Labels = &labels
-	}
-
-	if d.HasChange("maintenance_dow") {
-		req.MaintenanceDOW = upcloud.LoadBalancerMaintenanceDOW(d.Get("maintenance_dow").(string))
-	}
-	if d.HasChange("maintenance_time") {
-		req.MaintenanceTime = d.Get("maintenance_time").(string)
-	}
-
-	lb, err := svc.ModifyLoadBalancer(ctx, req)
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
-	}
-
-	if diags = setLoadBalancerResourceData(d, lb); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "load balancer updated", map[string]interface{}{"name": lb.Name, "uuid": lb.UUID})
-	return diags
-}
-
-func resourceLoadBalancerNetworkUpdate(ctx context.Context, d *schema.ResourceData, svc *service.Service) (diags diag.Diagnostics) {
-	if !d.HasChange("networks") {
-		return nil
-	}
-	if nets, ok := d.GetOk("networks"); ok {
-		for i := range nets.([]interface{}) {
-			key := fmt.Sprintf("networks.%d.name", i)
-			if d.HasChange(key) {
-				if name, ok := d.Get(key).(string); ok {
-					var serviceID, networkName, id string
-					idKey := fmt.Sprintf("networks.%d.id", i)
-					if id, ok = d.Get(idKey).(string); !ok {
-						return diag.FromErr(fmt.Errorf("unable to determine network ID %s", idKey))
-					}
-					if err := utils.UnmarshalID(id, &serviceID, &networkName); err != nil {
-						return diag.FromErr(err)
-					}
-					req := &request.ModifyLoadBalancerNetworkRequest{
-						ServiceUUID: serviceID,
-						Name:        networkName,
-						Network:     request.ModifyLoadBalancerNetwork{Name: name},
-					}
-					if _, err := svc.ModifyLoadBalancerNetwork(ctx, req); err != nil {
-						return diag.FromErr(err)
+		nodes := make([]loadbalancerNodeModel, len(loadbalancer.Nodes))
+		for i, n := range loadbalancer.Nodes {
+			networkData := make([]loadbalancerNodeNetworkModel, len(n.Networks))
+			for j, network := range n.Networks {
+				ipAddressData := make([]loadBalancerNodeNetworkIPAddressModel, len(network.IPAddresses))
+				for k, ip := range network.IPAddresses {
+					ipAddressData[k] = loadBalancerNodeNetworkIPAddressModel{
+						Address: types.StringValue(ip.Address),
+						Listen:  types.BoolValue(ip.Listen),
 					}
 				}
+				networkData[j] = loadbalancerNodeNetworkModel{
+					Name: types.StringValue(network.Name),
+					Type: types.StringValue(string(network.Type)),
+				}
+				ipAddress, diags := types.ListValueFrom(ctx, ipAddressElementType, ipAddressData)
+				respDiagnostics.Append(diags...)
+				networkData[j].IPAddresses = ipAddress
 			}
-		}
-	}
-	return diags
-}
-
-func resourceLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	svc := meta.(*service.Service)
-	if err := svc.DeleteLoadBalancer(ctx, &request.DeleteLoadBalancerRequest{UUID: d.Id()}); err != nil {
-		return diag.FromErr(err)
-	}
-	tflog.Info(ctx, "load balancer deleted", map[string]interface{}{"name": d.Get("name").(string), "uuid": d.Id()})
-
-	// Wait load balancer to shutdown before continuing so that e.g. network can be deleted (if needed)
-	return diag.FromErr(waitLoadBalancerToShutdown(ctx, svc, d.Id()))
-}
-
-func setLoadBalancerResourceData(d *schema.ResourceData, lb *upcloud.LoadBalancer) (diags diag.Diagnostics) {
-	if err := d.Set("name", lb.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("plan", lb.Plan); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("zone", lb.Zone); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("configured_status", lb.ConfiguredStatus); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("operational_state", lb.OperationalState); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("dns_name", lb.DNSName); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("labels", utils.LabelsSliceToMap(lb.Labels)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("maintenance_dow", lb.MaintenanceDOW); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("maintenance_time", lb.MaintenanceTime); err != nil {
-		return diag.FromErr(err)
-	}
-
-	var frontends, backends, resolvers []string
-
-	for _, f := range lb.Frontends {
-		frontends = append(frontends, f.Name)
-	}
-
-	if err := d.Set("frontends", frontends); err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, b := range lb.Backends {
-		backends = append(backends, b.Name)
-	}
-
-	if err := d.Set("backends", backends); err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, r := range lb.Resolvers {
-		resolvers = append(resolvers, r.Name)
-	}
-
-	if err := d.Set("resolvers", resolvers); err != nil {
-		return diag.FromErr(err)
-	}
-
-	nodes := make([]map[string]interface{}, 0)
-	for _, n := range lb.Nodes {
-		node := map[string]interface{}{
-			"operational_state": n.OperationalState,
-		}
-		networks := make([]map[string]interface{}, 0)
-		for _, net := range n.Networks {
-			ips := make([]map[string]interface{}, 0)
-			for _, ip := range net.IPAddresses {
-				ips = append(ips, map[string]interface{}{
-					"address": ip.Address,
-					"listen":  ip.Listen,
-				})
+			nodeData := loadbalancerNodeModel{
+				OperationalState: types.StringValue(string(n.OperationalState)),
 			}
-			networks = append(networks, map[string]interface{}{
-				"name":         net.Name,
-				"type":         net.Type,
-				"ip_addresses": ips,
-			})
+			networks, diags := types.ListValueFrom(ctx, networkElementType, networkData)
+			respDiagnostics.Append(diags...)
+			nodeData.Networks = networks
+			nodes[i] = nodeData
 		}
-		node["networks"] = networks
-		nodes = append(nodes, node)
+
+		data.Nodes, diags = types.ListValueFrom(ctx, nodeElementType, nodes)
+		respDiagnostics.Append(diags...)
 	}
-	if err := d.Set("nodes", nodes); err != nil {
-		return diag.FromErr(err)
+
+	data.OperationalState = types.StringValue(string(loadbalancer.OperationalState))
+	data.Plan = types.StringValue(loadbalancer.Plan)
+
+	resolverNames := []string{}
+	for _, resolver := range loadbalancer.Resolvers {
+		resolverNames = append(resolverNames, resolver.Name)
 	}
-	return setLoadBalancerNetworkResourceData(d, lb)
+	data.Resolvers, diags = types.ListValueFrom(ctx, types.StringType, resolverNames)
+	respDiagnostics.Append(diags...)
+
+	data.Zone = types.StringValue(loadbalancer.Zone)
+
+	return respDiagnostics
 }
 
-func setLoadBalancerNetworkResourceData(d *schema.ResourceData, lb *upcloud.LoadBalancer) (diags diag.Diagnostics) {
-	// If legacy network UUID is set do not populate state with autogenerated network objects
-	if lb.NetworkUUID != "" {
-		if err := d.Set("networks", nil); err != nil {
-			return diag.FromErr(err)
-		}
-		if err := d.Set("network", lb.NetworkUUID); err != nil {
-			return diag.FromErr(err)
+func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data loadBalancerModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	loadBalancer, err := r.client.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{
+		UUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read loadbalancer details",
+				utils.ErrorDiagnosticDetail(err),
+			)
 		}
 		return
 	}
 
-	// network objects are in use, reset network field
-	if err := d.Set("network", nil); err != nil {
-		return diag.FromErr(err)
+	blocks := make(map[string]schema.ListNestedBlock)
+	for k, v := range req.State.Schema.GetBlocks() {
+		block, ok := v.(schema.ListNestedBlock)
+		if !ok {
+			continue
+		}
+
+		blocks[k] = block
 	}
-	networks := make([]map[string]string, 0)
-	for _, net := range lb.Networks {
-		networks = append(networks, map[string]string{
-			"name":     net.Name,
-			"type":     string(net.Type),
-			"family":   string(net.Family),
-			"network":  net.UUID,
-			"dns_name": net.DNSName,
-			"id":       utils.MarshalID(lb.UUID, net.Name),
-		})
-	}
-	if err := d.Set("networks", networks); err != nil {
-		return diag.FromErr(err)
-	}
-	return diags
+
+	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer, blocks)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func waitLoadBalancerToShutdown(ctx context.Context, svc *service.Service, id string) error {
-	const maxRetries int = 100
-	for i := 0; i <= maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{UUID: id})
-			if err != nil {
-				if svcErr, ok := err.(*upcloud.Problem); ok && svcErr.Status == http.StatusNotFound {
-					return nil
+func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data, state loadBalancerModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Ensure network renaming is handled before modifying the load balancer
+	if !data.Networks.Equal(state.Networks) {
+		var dataNetworks []request.LoadBalancerNetwork
+		resp.Diagnostics.Append(data.Networks.ElementsAs(ctx, &dataNetworks, false)...)
+
+		var stateNetworks []request.LoadBalancerNetwork
+		resp.Diagnostics.Append(state.Networks.ElementsAs(ctx, &stateNetworks, false)...)
+
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		for i, network := range dataNetworks {
+			if network.Name != stateNetworks[i].Name {
+				networkAPIReq := request.ModifyLoadBalancerNetworkRequest{
+					ServiceUUID: data.ID.ValueString(),
+					Name:        stateNetworks[i].Name,
+					Network: request.ModifyLoadBalancerNetwork{
+						Name: network.Name,
+					},
 				}
-				return err
+				if _, err := r.client.ModifyLoadBalancerNetwork(ctx, &networkAPIReq); err != nil {
+					resp.Diagnostics.AddError(
+						"Unable to modify loadbalancer network",
+						utils.ErrorDiagnosticDetail(err),
+					)
+
+					return
+				}
 			}
-			tflog.Info(ctx, "waiting load balancer to shutdown", map[string]interface{}{"name": lb.Name, "state": lb.OperationalState})
 		}
-		time.Sleep(5 * time.Second)
 	}
-	return errors.New("max retries reached while waiting for load balancer instance to shutdown")
+
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labelsMap))
+
+	apiReq := request.ModifyLoadBalancerRequest{
+		UUID:             data.ID.ValueString(),
+		Name:             data.Name.ValueString(),
+		Plan:             data.Plan.ValueString(),
+		ConfiguredStatus: data.ConfiguredStatus.ValueString(),
+		Labels:           &labels,
+		MaintenanceDOW:   upcloud.LoadBalancerMaintenanceDOW(data.MaintenanceDOW.ValueString()),
+		MaintenanceTime:  data.MaintenanceTime.ValueString(),
+	}
+
+	loadBalancer, err := r.client.ModifyLoadBalancer(ctx, &apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	data.ID = types.StringValue(loadBalancer.UUID)
+
+	blocks := make(map[string]schema.ListNestedBlock)
+	for k, v := range req.Config.Schema.GetBlocks() {
+		block, ok := v.(schema.ListNestedBlock)
+		if !ok {
+			continue
+		}
+
+		blocks[k] = block
+	}
+
+	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer, blocks)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func loadBalancerNetworksFromResourceData(d *schema.ResourceData) ([]request.LoadBalancerNetwork, error) {
-	req := make([]request.LoadBalancerNetwork, 0)
-	if nets, ok := d.GetOk("networks"); ok {
-		for i, n := range nets.([]interface{}) {
-			n := n.(map[string]interface{})
-			r := request.LoadBalancerNetwork{
-				Name:   n["name"].(string),
-				Type:   upcloud.LoadBalancerNetworkType(n["type"].(string)),
-				Family: upcloud.LoadBalancerAddressFamily(n["family"].(string)),
-				UUID:   n["network"].(string),
-			}
-			if r.Type == upcloud.LoadBalancerNetworkTypePrivate && r.UUID == "" {
-				return req, fmt.Errorf("load balancer's private network (#%d) ID is required", i)
-			}
-			if r.Type == upcloud.LoadBalancerNetworkTypePublic && r.UUID != "" {
-				return req, fmt.Errorf("setting load balancer's public network (#%d) ID is not supported", i)
-			}
-			req = append(req, r)
-		}
+func (r *loadBalancerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data loadBalancerModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	return req, nil
+
+	if err := r.client.DeleteLoadBalancer(ctx, &request.DeleteLoadBalancerRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+}
+
+func (r *loadBalancerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
