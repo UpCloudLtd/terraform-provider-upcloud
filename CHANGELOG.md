@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- dependencies: bump `github.com/UpCloudLtd/upcloud-go-api` to `v8.8.1`
+
 ## [5.11.0] - 2024-09-11
 
 ### Added

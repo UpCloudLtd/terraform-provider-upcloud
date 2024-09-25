@@ -1,9 +1,11 @@
 module github.com/UpCloudLtd/terraform-provider-upcloud
 
-go 1.21
+go 1.22
+
+toolchain go1.22.5
 
 require (
-	github.com/UpCloudLtd/upcloud-go-api/v8 v8.8.0
+	github.com/UpCloudLtd/upcloud-go-api/v8 v8.8.1
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-uuid v1.0.3
@@ -14,7 +16,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.15.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.33.0
 	github.com/minio/minio-go/v7 v7.0.10
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -59,6 +61,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rs/xid v1.3.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
