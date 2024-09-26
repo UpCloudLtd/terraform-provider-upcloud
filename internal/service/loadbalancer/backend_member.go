@@ -55,7 +55,7 @@ func backendMemberSchema() schema.Schema {
 				Default:             booldefault.StaticBool(true),
 			},
 			"id": schema.StringAttribute{
-				MarkdownDescription: "ID of the TLS config. ID is in `{load balancer UUID}/{backend name}/{member name}` format.",
+				MarkdownDescription: "ID of the backend member. ID is in `{load balancer UUID}/{backend name}/{member name}` format.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
