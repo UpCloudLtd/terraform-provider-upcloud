@@ -25,9 +25,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &backendResource{}
-	_ resource.ResourceWithConfigure   = &backendResource{}
-	_ resource.ResourceWithImportState = &backendResource{}
+	_ resource.Resource                 = &backendResource{}
+	_ resource.ResourceWithConfigure    = &backendResource{}
+	_ resource.ResourceWithImportState  = &backendResource{}
+	_ resource.ResourceWithUpgradeState = &backendResource{}
 )
 
 func NewBackendResource() resource.Resource {
@@ -76,7 +77,18 @@ type backendPropertiesModel struct {
 }
 
 func (r *backendResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+	resp.Schema = backendSchemaV1()
+}
+
+func backendSchemaV1() schema.Schema {
+	s := backendSchemaV0()
+	s.Version = 1
+
+	return s
+}
+
+func backendSchemaV0() schema.Schema {
+	return schema.Schema{
 		Description: "This resource represents load balancer backend service.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -256,7 +268,27 @@ func (r *backendResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 			},
 		},
-		Version: 1,
+		Version: 0,
+	}
+}
+
+func (r *backendResource) UpgradeState(_ context.Context) map[int64]resource.StateUpgrader {
+	schemaV0 := backendSchemaV0()
+	return map[int64]resource.StateUpgrader{
+		// State upgrade implementation from 0 to 1
+		0: {
+			PriorSchema: &schemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				// No changes in the schema nor state
+				var priorStateData backendModel
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, priorStateData)...)
+			},
+		},
 	}
 }
 
