@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
@@ -24,6 +25,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+const userAgentEnvKey = "UPCLOUD_TERRAFORM_PROVIDER_USER_AGENT"
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
@@ -145,6 +148,10 @@ func newUpCloudServiceConnection(username, password string, httpClient *http.Cli
 	)
 
 	providerClient.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
+
+	if userAgent := os.Getenv(userAgentEnvKey); userAgent != "" {
+		providerClient.UserAgent = userAgent
+	}
 
 	return service.New(providerClient)
 }

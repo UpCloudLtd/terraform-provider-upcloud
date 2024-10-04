@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- provider: UPCLOUD_TERRAFORM_PROVIDER_USER_AGENT environment variable to set the User-Agent header
+
 ## [5.11.1] - 2024-09-25
 
 ### Changed
