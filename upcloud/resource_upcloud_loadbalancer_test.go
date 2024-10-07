@@ -266,6 +266,26 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 	})
 }
 
+func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
+	testdata := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"http": {
+				VersionConstraint: "~> 3.4",
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: testdata,
+				// Validations are done in the config with http data source and post conditions.
+			},
+		},
+	})
+}
+
 func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 	testData := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_minimal.tf")
 

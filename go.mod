@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.5
 
 require (
-	github.com/UpCloudLtd/upcloud-go-api/v8 v8.8.1
+	github.com/UpCloudLtd/upcloud-go-api/v8 v8.9.0
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-uuid v1.0.3

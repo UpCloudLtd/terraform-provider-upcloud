@@ -77,9 +77,10 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 }
 
 resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
-  frontend = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
-  name     = "lb-fe-1-r1-test"
-  priority = 10
+  frontend           = resource.upcloud_loadbalancer_frontend.lb_fe_1.id
+  name               = "lb-fe-1-r1-test"
+  priority           = 10
+  matching_condition = "or"
 
   matchers {
     src_port {
