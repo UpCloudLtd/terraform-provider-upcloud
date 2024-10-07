@@ -3,12 +3,12 @@
 page_title: "upcloud_loadbalancer_resolver Resource - terraform-provider-upcloud"
 subcategory: Load Balancer
 description: |-
-  This resource represents service's domain name resolver
+  This resource represents load balancer resolver.
 ---
 
 # upcloud_loadbalancer_resolver (Resource)
 
-This resource represents service's domain name resolver
+This resource represents load balancer resolver.
 
 ## Example Usage
 
@@ -56,13 +56,12 @@ resource "upcloud_loadbalancer_resolver" "lb_resolver_1" {
 - `cache_invalid` (Number) Time in seconds to cache invalid results.
 - `cache_valid` (Number) Time in seconds to cache valid results.
 - `loadbalancer` (String) ID of the load balancer to which the resolver is connected.
-- `name` (String) The name of the resolver must be unique within the service.
-- `nameservers` (List of String) List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. 
-				Port is optional, if missing then default 53 will be used.
+- `name` (String) The name of the resolver. Must be unique within the service.
+- `nameservers` (List of String) List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. Port is optional, if missing then default 53 will be used.
 - `retries` (Number) Number of retries on failure.
 - `timeout` (Number) Timeout for the query in seconds.
 - `timeout_retry` (Number) Timeout for the query retries in seconds.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the resolver. ID is in `{load balancer UUID}/{resolver name}` format.
