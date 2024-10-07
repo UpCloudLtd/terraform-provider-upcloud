@@ -11,7 +11,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
@@ -84,7 +83,6 @@ func Provider() *schema.Provider {
 			"upcloud_managed_object_storage_user":            managedobjectstorage.ResourceManagedObjectStorageUser(),
 			"upcloud_managed_object_storage_user_access_key": managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
 			"upcloud_managed_object_storage_user_policy":     managedobjectstorage.ResourceManagedObjectStorageUserPolicy(),
-			"upcloud_loadbalancer":                           loadbalancer.ResourceLoadBalancer(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
