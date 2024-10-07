@@ -244,22 +244,22 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testDataE1,
-				ExpectError: regexp.MustCompile("actions block should contain at least one action"),
+				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
 				PlanOnly:    true,
 			},
 			{
 				Config:      testDataE2,
-				ExpectError: regexp.MustCompile("either location or scheme should be defined for http_redirect"),
+				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
 				PlanOnly:    true,
 			},
 			{
 				Config:      testDataE3,
-				ExpectError: regexp.MustCompile(`Error: expected .*scheme to be one of \["http" "https"\], got invalid`),
+				ExpectError: regexp.MustCompile(`Invalid Attribute Value Match`),
 				PlanOnly:    true,
 			},
 			{
 				Config:      testDataE4,
-				ExpectError: regexp.MustCompile(`only either location or scheme should be defined at a time for http_redirect`),
+				ExpectError: regexp.MustCompile(`Invalid Attribute Combination`),
 				PlanOnly:    true,
 			},
 		},

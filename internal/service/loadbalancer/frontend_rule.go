@@ -59,6 +59,19 @@ type frontendRuleModel struct {
 	Actions  types.List   `tfsdk:"actions"`
 }
 
+func validateAtLeastOneAction(action string) validator.List {
+	fields := []string{"http_redirect", "http_return", "set_forwarded_headers", "tcp_reject", "use_backend"}
+	expressions := []path.Expression{}
+
+	for _, field := range fields {
+		if field != action {
+			expressions = append(expressions, path.MatchRelative().AtParent().AtName(field))
+		}
+	}
+
+	return listvalidator.AtLeastOneOf(expressions...)
+}
+
 func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "This resource represents load balancer frontend rule.",
@@ -112,7 +125,7 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 										},
 										Validators: []validator.String{
 											stringvalidator.LengthAtLeast(1),
-											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("scheme")),
+											stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().AtName("scheme")),
 										},
 									},
 									"scheme": schema.StringAttribute{
@@ -126,10 +139,12 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 												string(upcloud.LoadBalancerActionHTTPRedirectSchemeHTTP),
 												string(upcloud.LoadBalancerActionHTTPRedirectSchemeHTTPS),
 											),
-											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("location")),
 										},
 									},
 								},
+							},
+							Validators: []validator.List{
+								validateAtLeastOneAction("http_redirect"),
 							},
 						},
 						"http_return": schema.ListNestedBlock{
