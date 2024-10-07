@@ -4,241 +4,320 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceResolver() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents service's domain name resolver",
-		CreateContext: resourceResolverCreate,
-		ReadContext:   resourceResolverRead,
-		UpdateContext: resourceResolverUpdate,
-		DeleteContext: resourceResolverDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: map[string]*schema.Schema{
-			"loadbalancer": {
-				Description: "ID of the load balancer to which the resolver is connected.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"name": {
-				Description:      "The name of the resolver must be unique within the service.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateNameDiagFunc,
-			},
-			"nameservers": {
-				Description: `List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. 
-				Port is optional, if missing then default 53 will be used.`,
-				Type:     schema.TypeList,
-				MinItems: 1,
-				MaxItems: 10,
-				Required: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+var (
+	_ resource.Resource                = &resolverResource{}
+	_ resource.ResourceWithConfigure   = &resolverResource{}
+	_ resource.ResourceWithImportState = &resolverResource{}
+)
+
+func NewResolverResource() resource.Resource {
+	return &resolverResource{}
+}
+
+type resolverResource struct {
+	client *service.Service
+}
+
+func (r *resolverResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_loadbalancer_resolver"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *resolverResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type resolverModel struct {
+	CacheInvalid types.Int64  `tfsdk:"cache_invalid"`
+	CacheValid   types.Int64  `tfsdk:"cache_valid"`
+	ID           types.String `tfsdk:"id"`
+	LoadBalancer types.String `tfsdk:"loadbalancer"`
+	Name         types.String `tfsdk:"name"`
+	Nameservers  types.List   `tfsdk:"nameservers"`
+	Retries      types.Int64  `tfsdk:"retries"`
+	Timeout      types.Int64  `tfsdk:"timeout"`
+	TimeoutRetry types.Int64  `tfsdk:"timeout_retry"`
+}
+
+func (r *resolverResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "This resource represents load balancer resolver.",
+		Attributes: map[string]schema.Attribute{
+			"cache_invalid": schema.Int64Attribute{
+				MarkdownDescription: "Time in seconds to cache invalid results.",
+				Required:            true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int64{
+					int64validator.Between(1, 86400),
 				},
 			},
-			"retries": {
-				Description: "Number of retries on failure.",
-				Type:        schema.TypeInt,
-				Required:    true,
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.IntBetween(1, 10),
-				),
+			"cache_valid": schema.Int64Attribute{
+				MarkdownDescription: "Time in seconds to cache valid results.",
+				Required:            true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int64{
+					int64validator.Between(1, 86400),
+				},
 			},
-			"timeout": {
-				Description: "Timeout for the query in seconds.",
-				Type:        schema.TypeInt,
-				Required:    true,
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.IntBetween(1, 60),
-				),
+			"id": schema.StringAttribute{
+				MarkdownDescription: "ID of the resolver. ID is in `{load balancer UUID}/{resolver name}` format.",
+				Computed:            true,
 			},
-			"timeout_retry": {
-				Description: "Timeout for the query retries in seconds.",
-				Type:        schema.TypeInt,
-				Required:    true,
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.IntBetween(1, 60),
-				),
+			"loadbalancer": schema.StringAttribute{
+				MarkdownDescription: "ID of the load balancer to which the resolver is connected.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"cache_valid": {
-				Description: "Time in seconds to cache valid results.",
-				Type:        schema.TypeInt,
-				Required:    true,
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.IntBetween(1, 86400),
-				),
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the resolver. Must be unique within the service.",
+				Required:            true,
+				Validators: []validator.String{
+					nameValidator,
+				},
 			},
-			"cache_invalid": {
-				Description: "Time in seconds to cache invalid results.",
-				Type:        schema.TypeInt,
-				Required:    true,
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.IntBetween(1, 86400),
-				),
+			"nameservers": schema.ListAttribute{
+				MarkdownDescription: `List of nameserver IP addresses. Nameserver can reside in public internet or in customer private network. Port is optional, if missing then default 53 will be used.`,
+				Required:            true,
+				ElementType:         types.StringType,
+				Validators: []validator.List{
+					listvalidator.SizeBetween(1, 10),
+				},
+			},
+			"retries": schema.Int64Attribute{
+				MarkdownDescription: "Number of retries on failure.",
+				Required:            true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 10),
+				},
+			},
+			"timeout": schema.Int64Attribute{
+				MarkdownDescription: "Timeout for the query in seconds.",
+				Required:            true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 60),
+				},
+			},
+			"timeout_retry": schema.Int64Attribute{
+				MarkdownDescription: "Timeout for the query retries in seconds.",
+				Required:            true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 60),
+				},
 			},
 		},
 	}
 }
 
-func resourceResolverCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	nameservers := make([]string, 0)
-	if ns, ok := d.GetOk("nameservers"); ok {
-		for _, s := range ns.([]interface{}) {
-			nameservers = append(nameservers, s.(string))
-		}
+func setResolverValues(ctx context.Context, data *resolverModel, resolver *upcloud.LoadBalancerResolver) diag.Diagnostics {
+	var diags, respDiagnostics diag.Diagnostics
+
+	var loadBalancer, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadBalancer, &name)
+	if err != nil {
+		respDiagnostics.AddError(
+			"Unable to unmarshal loadbalancer resolver ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
 
-	serviceID := d.Get("loadbalancer").(string)
+	data.LoadBalancer = types.StringValue(loadBalancer)
+	data.Name = types.StringValue(name)
 
-	rs, err := svc.CreateLoadBalancerResolver(ctx, &request.CreateLoadBalancerResolverRequest{
-		ServiceUUID: serviceID,
+	data.CacheInvalid = types.Int64Value(int64(resolver.CacheInvalid))
+	data.CacheValid = types.Int64Value(int64(resolver.CacheValid))
+
+	data.Nameservers, diags = types.ListValueFrom(ctx, types.StringType, resolver.Nameservers)
+	respDiagnostics.Append(diags...)
+
+	data.Retries = types.Int64Value(int64(resolver.Retries))
+	data.Timeout = types.Int64Value(int64(resolver.Timeout))
+	data.TimeoutRetry = types.Int64Value(int64(resolver.TimeoutRetry))
+
+	return respDiagnostics
+}
+
+func (r *resolverResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data resolverModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var nameservers []string
+	if !data.Nameservers.IsNull() && !data.Nameservers.IsUnknown() {
+		resp.Diagnostics.Append(data.Nameservers.ElementsAs(ctx, &nameservers, false)...)
+	}
+
+	apiReq := request.CreateLoadBalancerResolverRequest{
+		ServiceUUID: data.LoadBalancer.ValueString(),
 		Resolver: request.LoadBalancerResolver{
-			Name:         d.Get("name").(string),
+			Name:         data.Name.ValueString(),
 			Nameservers:  nameservers,
-			Retries:      d.Get("retries").(int),
-			Timeout:      d.Get("timeout").(int),
-			TimeoutRetry: d.Get("timeout_retry").(int),
-			CacheValid:   d.Get("cache_valid").(int),
-			CacheInvalid: d.Get("cache_invalid").(int),
+			Retries:      int(data.Retries.ValueInt64()),
+			Timeout:      int(data.Timeout.ValueInt64()),
+			TimeoutRetry: int(data.TimeoutRetry.ValueInt64()),
+			CacheValid:   int(data.CacheValid.ValueInt64()),
+			CacheInvalid: int(data.CacheInvalid.ValueInt64()),
 		},
-	})
+	}
+
+	resolver, err := r.client.CreateLoadBalancerResolver(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer resolver",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, rs.Name))
+	data.ID = types.StringValue(utils.MarshalID(data.LoadBalancer.ValueString(), data.Name.ValueString()))
 
-	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "resolver created", map[string]interface{}{"name": rs.Name, "service_uuid": serviceID})
-	return diags
+	resp.Diagnostics.Append(setResolverValues(ctx, &data, resolver)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceResolverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	var serviceID, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
-		return diag.FromErr(err)
+func (r *resolverResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data resolverModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	rs, err := svc.GetLoadBalancerResolver(ctx, &request.GetLoadBalancerResolverRequest{
-		ServiceUUID: serviceID,
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	var loadbalancer, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &loadbalancer, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer resolver ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resolver, err := r.client.GetLoadBalancerResolver(ctx, &request.GetLoadBalancerResolverRequest{
 		Name:        name,
+		ServiceUUID: loadbalancer,
 	})
 	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read loadbalancer resolver details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
 	}
 
-	d.SetId(utils.MarshalID(serviceID, rs.Name))
-
-	if err = d.Set("loadbalancer", serviceID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
-		return diags
-	}
-
-	return diags
+	resp.Diagnostics.Append(setResolverValues(ctx, &data, resolver)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceResolverUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	nameservers := make([]string, 0)
-	if ns, ok := d.GetOk("nameservers"); ok {
-		for _, s := range ns.([]interface{}) {
-			nameservers = append(nameservers, s.(string))
-		}
+func (r *resolverResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data resolverModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	var serviceID, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
-		return diag.FromErr(err)
+	var id string
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("id"), &id)...)
+
+	var loadbalancer, name string
+	err := utils.UnmarshalID(id, &loadbalancer, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal loadbalancer resolver ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
-	rs, err := svc.ModifyLoadBalancerResolver(ctx, &request.ModifyLoadBalancerResolverRequest{
-		ServiceUUID: serviceID,
+
+	var nameservers []string
+	if !data.Nameservers.IsNull() && !data.Nameservers.IsUnknown() {
+		resp.Diagnostics.Append(data.Nameservers.ElementsAs(ctx, &nameservers, false)...)
+	}
+
+	apiReq := request.ModifyLoadBalancerResolverRequest{
+		ServiceUUID: loadbalancer,
 		Name:        name,
 		Resolver: request.LoadBalancerResolver{
-			Name:         d.Get("name").(string),
+			Name:         data.Name.ValueString(),
 			Nameservers:  nameservers,
-			Retries:      d.Get("retries").(int),
-			Timeout:      d.Get("timeout").(int),
-			TimeoutRetry: d.Get("timeout_retry").(int),
-			CacheValid:   d.Get("cache_valid").(int),
-			CacheInvalid: d.Get("cache_invalid").(int),
+			Retries:      int(data.Retries.ValueInt64()),
+			Timeout:      int(data.Timeout.ValueInt64()),
+			TimeoutRetry: int(data.TimeoutRetry.ValueInt64()),
+			CacheValid:   int(data.CacheValid.ValueInt64()),
+			CacheInvalid: int(data.CacheInvalid.ValueInt64()),
 		},
-	})
+	}
+
+	resolver, err := r.client.ModifyLoadBalancerResolver(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer resolver",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(utils.MarshalID(d.Get("loadbalancer").(string), rs.Name))
+	data.ID = types.StringValue(utils.MarshalID(loadbalancer, resolver.Name))
 
-	if diags = setResolverResourceData(d, rs); len(diags) > 0 {
-		return diags
-	}
-
-	tflog.Info(ctx, "resolver updated", map[string]interface{}{"name": rs.Name, "service_uuid": serviceID})
-	return diags
+	resp.Diagnostics.Append(setResolverValues(ctx, &data, resolver)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceResolverDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	svc := meta.(*service.Service)
-	var serviceID, name string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
-		return diag.FromErr(err)
+func (r *resolverResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data resolverModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	tflog.Info(ctx, "deleting resolver", map[string]interface{}{"name": name, "service_uuid": serviceID})
-	return diag.FromErr(
-		svc.DeleteLoadBalancerResolver(ctx, &request.DeleteLoadBalancerResolverRequest{
-			ServiceUUID: serviceID,
-			Name:        name,
-		}),
-	)
+	if err := r.client.DeleteLoadBalancerResolver(ctx, &request.DeleteLoadBalancerResolverRequest{
+		ServiceUUID: data.LoadBalancer.ValueString(),
+		Name:        data.Name.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer resolver",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 }
 
-func setResolverResourceData(d *schema.ResourceData, rs *upcloud.LoadBalancerResolver) (diags diag.Diagnostics) {
-	if err := d.Set("name", rs.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("nameservers", rs.Nameservers); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("retries", rs.Retries); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("timeout", rs.Timeout); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("timeout_retry", rs.TimeoutRetry); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("cache_valid", rs.CacheValid); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("cache_invalid", rs.CacheInvalid); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+func (r *resolverResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
