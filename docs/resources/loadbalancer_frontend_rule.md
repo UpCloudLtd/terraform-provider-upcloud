@@ -3,12 +3,12 @@
 page_title: "upcloud_loadbalancer_frontend_rule Resource - terraform-provider-upcloud"
 subcategory: Load Balancer
 description: |-
-  This resource represents load balancer frontend rule
+  This resource represents load balancer frontend rule.
 ---
 
 # upcloud_loadbalancer_frontend_rule (Resource)
 
-This resource represents load balancer frontend rule
+This resource represents load balancer frontend rule.
 
 ## Example Usage
 
@@ -73,29 +73,29 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Required Attributes
 
-- `frontend` (String) ID of the load balancer frontend to which the rule is connected.
-- `name` (String) The name of the frontend rule must be unique within the load balancer service.
+- `frontend` (String) ID of the load balancer frontend to which the frontend rule is connected.
+- `name` (String) The name of the frontend rule. Must be unique within the frontend.
 - `priority` (Number) Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.
 
 ### Blocks
 
-- `actions` (Block List, Max: 1) Set of rule actions. (see [below for nested schema](#nestedblock--actions))
-- `matchers` (Block List, Max: 1) Set of rule matchers. if rule doesn't have matchers, then action applies to all incoming requests. (see [below for nested schema](#nestedblock--matchers))
+- `actions` (Block List) Rule actions. (see [below for nested schema](#nestedblock--actions))
+- `matchers` (Block List) Set of rule matchers. If rule doesn't have matchers, then action applies to all incoming requests. (see [below for nested schema](#nestedblock--matchers))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the frontend rule. ID is in `{load balancer UUID}/{frontend name}/{frontend rule name}` format.
 
 <a id="nestedblock--actions"></a>
 ### Nested Schema for `actions`
 
 Blocks:
 
-- `http_redirect` (Block List, Max: 100) Redirects HTTP requests to specified location or URL scheme. Only either location or scheme can be defined at a time. (see [below for nested schema](#nestedblock--actions--http_redirect))
-- `http_return` (Block List, Max: 100) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
-- `set_forwarded_headers` (Block List, Max: 100) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
-- `tcp_reject` (Block List, Max: 100) Terminates a connection. (see [below for nested schema](#nestedblock--actions--tcp_reject))
-- `use_backend` (Block List, Max: 100) Routes traffic to specified `backend`. (see [below for nested schema](#nestedblock--actions--use_backend))
+- `http_redirect` (Block List) Redirects HTTP requests to specified location or URL scheme. Only either location or scheme can be defined at a time. (see [below for nested schema](#nestedblock--actions--http_redirect))
+- `http_return` (Block List) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
+- `set_forwarded_headers` (Block List) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
+- `tcp_reject` (Block List) Terminates a connection. (see [below for nested schema](#nestedblock--actions--tcp_reject))
+- `use_backend` (Block List) Routes traffic to specified `backend`. (see [below for nested schema](#nestedblock--actions--use_backend))
 
 <a id="nestedblock--actions--http_redirect"></a>
 ### Nested Schema for `actions.http_redirect`
@@ -129,7 +129,7 @@ Optional Attributes:
 
 Optional Attributes:
 
-- `active` (Boolean)
+- `active` (Boolean) Indicates if the rule is active.
 
 
 <a id="nestedblock--actions--use_backend"></a>
@@ -146,20 +146,20 @@ Required Attributes:
 
 Blocks:
 
-- `body_size` (Block List, Max: 100) Matches by HTTP request body size. (see [below for nested schema](#nestedblock--matchers--body_size))
-- `body_size_range` (Block List, Max: 100) Matches by range of HTTP request body sizes (see [below for nested schema](#nestedblock--matchers--body_size_range))
-- `cookie` (Block List, Max: 100) Matches by HTTP cookie value. Cookie name must be provided. (see [below for nested schema](#nestedblock--matchers--cookie))
-- `header` (Block List, Max: 100) Matches by HTTP header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--header))
-- `host` (Block List, Max: 100) Matches by hostname. Header extracted from HTTP Headers or from TLS certificate in case of secured connection. (see [below for nested schema](#nestedblock--matchers--host))
-- `http_method` (Block List, Max: 100) Matches by HTTP method. (see [below for nested schema](#nestedblock--matchers--http_method))
-- `num_members_up` (Block List, Max: 100) Matches by number of healthy backend members. (see [below for nested schema](#nestedblock--matchers--num_members_up))
-- `path` (Block List, Max: 100) Matches by URL path. (see [below for nested schema](#nestedblock--matchers--path))
-- `src_ip` (Block List, Max: 100) Matches by source IP address. (see [below for nested schema](#nestedblock--matchers--src_ip))
-- `src_port` (Block List, Max: 100) Matches by source port number. (see [below for nested schema](#nestedblock--matchers--src_port))
-- `src_port_range` (Block List, Max: 100) Matches by range of source port numbers (see [below for nested schema](#nestedblock--matchers--src_port_range))
-- `url` (Block List, Max: 100) Matches by URL without schema, e.g. `example.com/dashboard`. (see [below for nested schema](#nestedblock--matchers--url))
-- `url_param` (Block List, Max: 100) Matches by URL query parameter value. Query parameter name must be provided (see [below for nested schema](#nestedblock--matchers--url_param))
-- `url_query` (Block List, Max: 100) Matches by URL query string. (see [below for nested schema](#nestedblock--matchers--url_query))
+- `body_size` (Block List) Matches by HTTP request body size. (see [below for nested schema](#nestedblock--matchers--body_size))
+- `body_size_range` (Block List) Matches by range of HTTP request body sizes. (see [below for nested schema](#nestedblock--matchers--body_size_range))
+- `cookie` (Block List) Matches by HTTP cookie value. Cookie name must be provided. (see [below for nested schema](#nestedblock--matchers--cookie))
+- `header` (Block List) Matches by HTTP header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--header))
+- `host` (Block List) Matches by hostname. Header extracted from HTTP Headers or from TLS certificate in case of secured connection. (see [below for nested schema](#nestedblock--matchers--host))
+- `http_method` (Block List) Matches by HTTP method. (see [below for nested schema](#nestedblock--matchers--http_method))
+- `num_members_up` (Block List) Matches by number of healthy backend members. (see [below for nested schema](#nestedblock--matchers--num_members_up))
+- `path` (Block List) Matches by URL path. (see [below for nested schema](#nestedblock--matchers--path))
+- `src_ip` (Block List) Matches by source IP address. (see [below for nested schema](#nestedblock--matchers--src_ip))
+- `src_port` (Block List) Matches by source port number. (see [below for nested schema](#nestedblock--matchers--src_port))
+- `src_port_range` (Block List) Matches by range of source port numbers. (see [below for nested schema](#nestedblock--matchers--src_port_range))
+- `url` (Block List) Matches by URL without schema, e.g. `example.com/dashboard`. (see [below for nested schema](#nestedblock--matchers--url))
+- `url_param` (Block List) Matches by URL query parameter value. Query parameter name must be provided (see [below for nested schema](#nestedblock--matchers--url_param))
+- `url_query` (Block List) Matches by URL query string. (see [below for nested schema](#nestedblock--matchers--url_query))
 
 <a id="nestedblock--matchers--body_size"></a>
 ### Nested Schema for `matchers.body_size`
@@ -171,7 +171,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--body_size_range"></a>
@@ -184,7 +184,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--cookie"></a>
@@ -197,8 +197,8 @@ Required Attributes:
 
 Optional Attributes:
 
-- `ignore_case` (Boolean) Ignore case, default `false`.
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -212,8 +212,8 @@ Required Attributes:
 
 Optional Attributes:
 
-- `ignore_case` (Boolean) Ignore case, default `false`.
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -226,7 +226,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--http_method"></a>
@@ -238,7 +238,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--num_members_up"></a>
@@ -246,13 +246,13 @@ Optional Attributes:
 
 Required Attributes:
 
-- `backend_name` (String) The name of the `backend` which members will be monitored.
+- `backend_name` (String) The name of the `backend`.
 - `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
 - `value` (Number) Integer value.
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--path"></a>
@@ -264,8 +264,8 @@ Required Attributes:
 
 Optional Attributes:
 
-- `ignore_case` (Boolean) Ignore case, default `false`.
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -278,7 +278,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--src_port"></a>
@@ -291,7 +291,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--src_port_range"></a>
@@ -304,7 +304,7 @@ Required Attributes:
 
 Optional Attributes:
 
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
 <a id="nestedblock--matchers--url"></a>
@@ -316,8 +316,8 @@ Required Attributes:
 
 Optional Attributes:
 
-- `ignore_case` (Boolean) Ignore case, default `false`.
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -331,8 +331,8 @@ Required Attributes:
 
 Optional Attributes:
 
-- `ignore_case` (Boolean) Ignore case, default `false`.
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 - `value` (String) String value.
 
 
@@ -345,6 +345,6 @@ Required Attributes:
 
 Optional Attributes:
 
-- `ignore_case` (Boolean) Ignore case, default `false`.
-- `inverse` (Boolean) Sets if the condition should be inverted. Works similar to logical NOT operator.
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 - `value` (String) String value.
