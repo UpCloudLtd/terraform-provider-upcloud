@@ -1,11 +1,53 @@
 package validator
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
+
+var _ validator.String = isDomainNameValidator{}
+
+// isDomainNameValidator validates that the value of an int64 attribute is divisible by a given divisor.
+type isDomainNameValidator struct {
+	divisor int64
+}
+
+// Description describes the validation.
+func (v isDomainNameValidator) Description(_ context.Context) string {
+	return fmt.Sprintf("value must be divisible by %d", v.divisor)
+}
+
+// MarkdownDescription describes the validation in Markdown.
+func (v isDomainNameValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (v isDomainNameValidator) ValidateString(ctx context.Context, request validator.StringRequest, response *validator.StringResponse) {
+	if request.ConfigValue.IsNull() || request.ConfigValue.IsUnknown() {
+		return
+	}
+
+	err := ValidateDomainName(request.ConfigValue.ValueString())
+	if err != nil {
+		response.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
+			request.Path,
+			v.Description(ctx),
+			request.ConfigValue.ValueString(),
+		))
+	}
+}
+
+// IsDomainName returns an AttributeValidator to validate that the value is divisible by the given divisor.
+//
+// Null (unconfigured) and unknown (known after apply) values are skipped.
+func IsDomainName() validator.String {
+	return isDomainNameValidator{}
+}
 
 func ValidateDomainName(name string) error {
 	const (
