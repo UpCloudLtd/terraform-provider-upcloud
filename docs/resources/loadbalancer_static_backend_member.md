@@ -3,12 +3,12 @@
 page_title: "upcloud_loadbalancer_static_backend_member Resource - terraform-provider-upcloud"
 subcategory: Load Balancer
 description: |-
-  This resource represents load balancer's static backend member
+  This resource represents load balancer static backend member
 ---
 
 # upcloud_loadbalancer_static_backend_member (Resource)
 
-This resource represents load balancer's static backend member
+This resource represents load balancer static backend member
 
 ## Example Usage
 
@@ -58,18 +58,16 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_be_1_sm_1" {
 ### Required Attributes
 
 - `backend` (String) ID of the load balancer backend to which the member is connected.
-- `ip` (String) Server IP address in the customer private network.
 - `max_sessions` (Number) Maximum number of sessions before queueing.
-- `name` (String) The name of the member must be unique within the load balancer backend service.
-- `port` (Number) Server port.
-- `weight` (Number) Used to adjust the server's weight relative to other servers. 
-				All servers will receive a load proportional to their weight relative to the sum of all weights, so the higher the weight, the higher the load. 
-				A value of 0 means the server will not participate in load balancing but will still accept persistent connections.
+- `name` (String) The name of the member. Must be unique within within the load balancer backend.
+- `weight` (Number) Weight of the member. The higher the weight, the more traffic the member receives.
 
 ### Optional Attributes
 
 - `enabled` (Boolean) Indicates if the member is enabled. Disabled members are excluded from load balancing.
+- `ip` (String) Optional fallback IP address in case of failure on DNS resolving.
+- `port` (Number) Server port. Port is optional and can be specified in DNS SRV record.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the backend member. ID is in `{load balancer UUID}/{backend name}/{member name}` format.
