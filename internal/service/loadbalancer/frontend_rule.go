@@ -101,6 +101,7 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 				NestedObject: schema.NestedBlockObject{
 					Blocks: map[string]schema.Block{
 						"http_redirect": schema.ListNestedBlock{
+							MarkdownDescription: "Redirects HTTP requests to specified location or URL scheme. Only either location or scheme can be defined at a time.",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"location": schema.StringAttribute{
@@ -132,6 +133,7 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 							},
 						},
 						"http_return": schema.ListNestedBlock{
+							MarkdownDescription: "Returns HTTP response with specified HTTP status.",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"content_type": schema.StringAttribute{
@@ -205,6 +207,7 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 							},
 						},
 						"use_backend": schema.ListNestedBlock{
+							MarkdownDescription: "Routes traffic to specified `backend`.",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"backend_name": schema.StringAttribute{
