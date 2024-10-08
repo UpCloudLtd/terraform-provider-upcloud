@@ -30,6 +30,7 @@
     "network_peering.md": "Network",
     "router.md": "Network",
     "managed_object_storage.md": "Object Storage",
+    "managed_object_storage_bucket.md": "Object Storage",
     "managed_object_storage_custom_domain.md": "Object Storage",
     "managed_object_storage_policy.md": "Object Storage",
     "managed_object_storage_user.md": "Object Storage",
