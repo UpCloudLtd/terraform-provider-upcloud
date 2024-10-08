@@ -9,6 +9,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -116,7 +117,10 @@ func (r *routerResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 							Description: "Next hop address. NOTE: For static route to be active the next hop has to be an address of a reachable running Cloud Server in one of the Private Networks attached to the router.",
 							Required:    true,
 							Validators: []validator.String{
-								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsIPv4Address, validation.IsIPv6Address)),
+								stringvalidator.Any(
+									validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsIPv4Address, validation.IsIPv6Address)),
+									stringvalidator.OneOf("no-nexthop"),
+								),
 							},
 						},
 						"route": schema.StringAttribute{
