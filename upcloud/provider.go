@@ -155,6 +155,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		loadbalancer.NewFrontendTLSConfigResource,
 		loadbalancer.NewManualCertificateBundleResource,
 		loadbalancer.NewResolverResource,
+		managedobjectstorage.NewManagedObjectStorageBucketResource,
 		managedobjectstorage.NewManagedObjectStorageCustomDomainResource,
 		managedobjectstorage.NewManagedObjectStoragePolicyResource,
 		network.NewNetworkResource,
