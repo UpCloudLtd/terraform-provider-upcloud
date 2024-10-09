@@ -98,7 +98,7 @@ func (d *ipAddressesDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 						},
 						"zone": schema.StringAttribute{
 							Computed:            true,
-							MarkdownDescription: "Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
+							MarkdownDescription: "Zone of the IP address.",
 						},
 					},
 				},
