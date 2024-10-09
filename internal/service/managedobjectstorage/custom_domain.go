@@ -7,7 +7,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -106,17 +105,6 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-func unmarshalID(id string) (serviceUUID, domainName string, diags diag.Diagnostics) {
-	err := utils.UnmarshalID(id, &serviceUUID, &domainName)
-	if err != nil {
-		diags.AddError(
-			"Unable to unmarshal managed object storage custom domain ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
-	}
-	return
 }
 
 func (r *managedObjectStorageCustomDomainResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
