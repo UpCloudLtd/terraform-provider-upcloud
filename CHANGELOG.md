@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer_frontend_rule: added `matching_condition` field.
+
 ## [5.11.3] - 2024-10-09
 
 ### Changed

@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -51,12 +52,13 @@ func (r *frontendRuleResource) Configure(_ context.Context, req resource.Configu
 }
 
 type frontendRuleModel struct {
-	ID       types.String `tfsdk:"id"`
-	Frontend types.String `tfsdk:"frontend"`
-	Name     types.String `tfsdk:"name"`
-	Priority types.Int64  `tfsdk:"priority"`
-	Matchers types.List   `tfsdk:"matchers"`
-	Actions  types.List   `tfsdk:"actions"`
+	ID                types.String `tfsdk:"id"`
+	Frontend          types.String `tfsdk:"frontend"`
+	Name              types.String `tfsdk:"name"`
+	Priority          types.Int64  `tfsdk:"priority"`
+	MatchingCondition types.String `tfsdk:"matching_condition"`
+	Matchers          types.List   `tfsdk:"matchers"`
+	Actions           types.List   `tfsdk:"actions"`
 }
 
 func validateAtLeastOneAction(action string) validator.List {
@@ -88,6 +90,18 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"matching_condition": schema.StringAttribute{
+				MarkdownDescription: "Defines boolean operator used to combine multiple matchers. Defaults to `and`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(string(upcloud.LoadBalancerMatchingConditionAnd)),
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.LoadBalancerMatchingConditionAnd),
+						string(upcloud.LoadBalancerMatchingConditionOr),
+					),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -424,6 +438,7 @@ func setFrontendRuleValues(ctx context.Context, data *frontendRuleModel, fronten
 	data.Frontend = types.StringValue(utils.MarshalID(loadBalancer, frontendName))
 	data.Name = types.StringValue(name)
 	data.Priority = types.Int64Value(int64(frontendRule.Priority))
+	data.MatchingCondition = types.StringValue(string(frontendRule.MatchingCondition))
 
 	if !data.Actions.IsNull() || isImport {
 		respDiagnostics.Append(setFrontendRuleActionsValues(ctx, data, frontendRule, blocks)...)
@@ -465,10 +480,11 @@ func (r *frontendRuleResource) Create(ctx context.Context, req resource.CreateRe
 		ServiceUUID:  loadbalancer,
 		FrontendName: frontendName,
 		Rule: request.LoadBalancerFrontendRule{
-			Name:     data.Name.ValueString(),
-			Priority: int(data.Priority.ValueInt64()),
-			Matchers: matchers,
-			Actions:  actions,
+			Name:              data.Name.ValueString(),
+			Priority:          int(data.Priority.ValueInt64()),
+			MatchingCondition: upcloud.LoadBalancerMatchingCondition(data.MatchingCondition.ValueString()),
+			Matchers:          matchers,
+			Actions:           actions,
 		},
 	}
 
@@ -574,8 +590,9 @@ func (r *frontendRuleResource) Update(ctx context.Context, req resource.UpdateRe
 		FrontendName: frontendName,
 		Name:         name,
 		Rule: request.ModifyLoadBalancerFrontendRule{
-			Name:     data.Name.ValueString(),
-			Priority: upcloud.IntPtr(int(data.Priority.ValueInt64())),
+			Name:              data.Name.ValueString(),
+			Priority:          upcloud.IntPtr(int(data.Priority.ValueInt64())),
+			MatchingCondition: upcloud.LoadBalancerMatchingCondition(data.MatchingCondition.ValueString()),
 		},
 	}
 
