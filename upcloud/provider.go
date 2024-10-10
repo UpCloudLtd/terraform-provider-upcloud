@@ -42,12 +42,22 @@ type upcloudProviderModel struct {
 	RequestTimeoutSec types.Int64  `tfsdk:"request_timeout_sec"`
 }
 
-type upcloudProvider struct{}
+type upcloudProvider struct {
+	userAgent string
+}
 
 var _ provider.Provider = New()
 
 func New() provider.Provider {
-	return &upcloudProvider{}
+	return &upcloudProvider{
+		userAgent: defaultUserAgent(),
+	}
+}
+
+func NewWithUserAgent(userAgent string) provider.Provider {
+	return &upcloudProvider{
+		userAgent: userAgent,
+	}
 }
 
 func (p *upcloudProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -127,6 +137,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 		config.Password,
 		httpClient.HTTPClient,
 		requestTimeout,
+		p.userAgent,
 	)
 
 	_, err := config.checkLogin(service)

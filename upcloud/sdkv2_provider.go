@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
@@ -20,7 +21,7 @@ import (
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -98,16 +99,20 @@ func Provider() *schema.Provider {
 			"upcloud_managed_object_storage_policies":      managedobjectstorage.DataSourceManagedObjectStoragePolicies(),
 		},
 
-		ConfigureContextFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigureWithDefaultUserAgent,
 	}
 }
 
-func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigureWithDefaultUserAgent(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	return ProviderConfigure(ctx, d, defaultUserAgent())
+}
+
+func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...string) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	requestTimeout := time.Duration(d.Get("request_timeout_sec").(int)) * time.Second
 
-	config := Config{
+	cfg := Config{
 		Username: d.Get("username").(string),
 		Password: d.Get("password").(string),
 	}
@@ -117,22 +122,23 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
 	httpClient.RetryMax = d.Get("retry_max").(int)
 
-	service := newUpCloudServiceConnection(
+	svc := newUpCloudServiceConnection(
 		d.Get("username").(string),
 		d.Get("password").(string),
 		httpClient.HTTPClient,
 		requestTimeout,
+		userAgents...,
 	)
 
-	_, err := config.checkLogin(service)
+	_, err := cfg.checkLogin(svc)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
 
-	return service, diags
+	return svc, diags
 }
 
-func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration) *service.Service {
+func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration, userAgents ...string) *service.Service {
 	providerClient := client.New(
 		username,
 		password,
@@ -140,7 +146,14 @@ func newUpCloudServiceConnection(username, password string, httpClient *http.Cli
 		client.WithTimeout(requestTimeout),
 	)
 
-	providerClient.UserAgent = fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
+	if len(userAgents) == 0 {
+		userAgents = []string{defaultUserAgent()}
+	}
+	providerClient.UserAgent = strings.Join(userAgents, " ")
 
 	return service.New(providerClient)
+}
+
+func defaultUserAgent() string {
+	return fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
 }
