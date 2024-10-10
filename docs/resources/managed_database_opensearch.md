@@ -93,7 +93,7 @@ Optional Attributes:
 - `action_destructive_requires_name` (Boolean) Require explicit index names when deleting.
 - `automatic_utility_network_ip_filter` (Boolean) Automatic utility network IP Filter. Automatically allow connections from servers in the utility network within the same zone.
 - `cluster_max_shards_per_node` (Number) Controls the number of shards allowed in the cluster per data node.
-- `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to 2.
+- `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to node cpu count * 2.
 - `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name.
 - `email_sender_name` (String) Sender name placeholder to be used in Opensearch Dashboards and Opensearch keystore. This should be identical to the Sender name defined in Opensearch dashboards.
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
@@ -144,13 +144,13 @@ Optional Attributes:
 Blocks:
 
 - `auth_failure_listeners` (Block List, Max: 1) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
-- `azure_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--azure_migration))
-- `gcs_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--gcs_migration))
+- `azure_migration` (Block List, Max: 1) Azure migration settings. (see [below for nested schema](#nestedblock--properties--azure_migration))
+- `gcs_migration` (Block List, Max: 1) Google Cloud Storage migration settings. (see [below for nested schema](#nestedblock--properties--gcs_migration))
 - `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
 - `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
 - `opensearch_dashboards` (Block List, Max: 1) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
-- `s3_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--s3_migration))
+- `s3_migration` (Block List, Max: 1) AWS S3 / AWS S3 compatible migration settings. (see [below for nested schema](#nestedblock--properties--s3_migration))
 - `saml` (Block List, Max: 1) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
 
 <a id="nestedblock--properties--auth_failure_listeners"></a>
@@ -200,6 +200,7 @@ Optional Attributes:
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `container` (String) Azure container name. Azure container name.
 - `endpoint_suffix` (String) Endpoint suffix. Defines the DNS suffix for Azure Storage endpoints.
+- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported. By default, a restore operation includes all data streams and indices in the snapshot. If this argument is provided, the restore operation only includes the data streams and indices that you specify.
 - `key` (String) Account secret key. Azure account secret key. One of key or sas_token should be specified.
 - `sas_token` (String) SAS token. A shared access signatures (SAS) token. One of key or sas_token should be specified.
 - `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
@@ -215,6 +216,7 @@ Optional Attributes:
 - `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `credentials` (String) Credentials. Google Cloud Storage credentials file content.
+- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported. By default, a restore operation includes all data streams and indices in the snapshot. If this argument is provided, the restore operation only includes the data streams and indices that you specify.
 - `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
 
 
@@ -280,6 +282,7 @@ Optional Attributes:
 - `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `endpoint` (String) The S3 service endpoint to connect. The S3 service endpoint to connect to. If you are using an S3-compatible service then you should set this to the service’s endpoint.
+- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported. By default, a restore operation includes all data streams and indices in the snapshot. If this argument is provided, the restore operation only includes the data streams and indices that you specify.
 - `region` (String) S3 region. S3 region.
 - `secret_key` (String) AWS secret key. AWS secret key.
 - `server_side_encryption` (Boolean) Server side encryption. When set to true files are encrypted on server side.
