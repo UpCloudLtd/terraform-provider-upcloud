@@ -7,6 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
+- upcloud_loadbalancer_frontend_rule: added `matching_condition` field.
 - provider: UPCLOUD_TERRAFORM_PROVIDER_USER_AGENT environment variable to set the User-Agent header
 
 ## [5.11.3] - 2024-10-09

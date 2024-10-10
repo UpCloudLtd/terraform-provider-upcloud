@@ -77,6 +77,10 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 - `name` (String) The name of the frontend rule. Must be unique within the frontend.
 - `priority` (Number) Rule with the higher priority goes first. Rules with the same priority processed in alphabetical order.
 
+### Optional Attributes
+
+- `matching_condition` (String) Defines boolean operator used to combine multiple matchers. Defaults to `and`.
+
 ### Blocks
 
 - `actions` (Block List) Rule actions. (see [below for nested schema](#nestedblock--actions))
