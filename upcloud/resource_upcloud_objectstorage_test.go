@@ -55,9 +55,9 @@ func init() {
 
 			requestTimeout := 120 * time.Second
 
-			service := newUpCloudServiceConnection(username, password, client.HTTPClient, requestTimeout)
+			svc := newUpCloudServiceConnection(username, password, client.HTTPClient, requestTimeout)
 
-			objectStorages, err := service.GetObjectStorages(context.Background())
+			objectStorages, err := svc.GetObjectStorages(context.Background())
 			if err != nil {
 				return err
 			}
@@ -67,7 +67,7 @@ func init() {
 					continue
 				}
 
-				err = service.DeleteObjectStorage(
+				err = svc.DeleteObjectStorage(
 					context.Background(),
 					&request.DeleteObjectStorageRequest{
 						UUID: objectStorage.UUID,
