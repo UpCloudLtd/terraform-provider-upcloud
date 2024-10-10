@@ -133,6 +133,9 @@ func (r *routerResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 						"type": schema.StringAttribute{
 							Description: "Type of the route.",
 							Computed:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 						},
 					},
 				},

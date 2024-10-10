@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_loadbalancer_frontend_rule: added `matching_condition` field.
 
+### Fixed
+
+- upcloud_router: use state for unknown `static_route.type` value as user defined routes always have `user` as type.
+
 ## [5.11.3] - 2024-10-09
 
 ### Changed
