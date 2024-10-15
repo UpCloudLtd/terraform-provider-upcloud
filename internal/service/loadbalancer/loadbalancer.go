@@ -92,7 +92,7 @@ type loadBalancerNodeNetworkIPAddressModel struct {
 
 func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This resource represents load balancer service.",
+		Description: "This resource represents [Managed Load Balancer](https://upcloud.com/products/managed-load-balancer) service.",
 		Attributes: map[string]schema.Attribute{
 			"backends": schema.ListAttribute{
 				MarkdownDescription: "Backends are groups of customer servers whose traffic should be balanced.",
@@ -163,34 +163,6 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			// See https://developer.hashicorp.com/terraform/plugin/framework/migrating/attributes-blocks/blocks-computed#framework
-			/*
-				"nodes": schema.ListAttribute{
-					MarkdownDescription: "Nodes are instances running load balancer service",
-					Computed:            true,
-					ElementType: types.ObjectType{
-						AttrTypes: map[string]attr.Type{
-							"operational_state": types.StringType,
-							"networks": types.ListType{
-								ElemType: types.ObjectType{
-									AttrTypes: map[string]attr.Type{
-										"name": types.StringType,
-										"type": types.StringType,
-										"ip_addresses": types.ListType{
-											ElemType: types.ObjectType{
-												AttrTypes: map[string]attr.Type{
-													"address": types.StringType,
-													"listen":  types.BoolType,
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			*/
 			"operational_state": schema.StringAttribute{
 				MarkdownDescription: "The service operational state indicates the service's current operational, effective state. Managed by the system.",
 				Computed:            true,
@@ -286,6 +258,7 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 				},
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
+					getNetworksPlanModifier(),
 				},
 			},
 			"nodes": schema.ListNestedBlock{
