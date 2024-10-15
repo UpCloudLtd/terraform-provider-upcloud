@@ -2,8 +2,6 @@ package loadbalancer
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -328,18 +326,12 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 		var networkModels []loadbalancerNetworkModel
 		resp.Diagnostics.Append(data.Networks.ElementsAs(ctx, &networkModels, false)...)
 
-		for i, n := range networkModels {
+		for _, n := range networkModels {
 			network := request.LoadBalancerNetwork{
 				Name:   n.Name.ValueString(),
 				Type:   upcloud.LoadBalancerNetworkType(n.Type.ValueString()),
 				Family: upcloud.LoadBalancerAddressFamily(n.Family.ValueString()),
 				UUID:   n.Network.ValueString(),
-			}
-			if network.Type == upcloud.LoadBalancerNetworkTypePrivate && network.UUID == "" {
-				resp.Diagnostics.AddError("load balancer's private network ID is required", fmt.Sprintf("#%d", i))
-			}
-			if network.Type == upcloud.LoadBalancerNetworkTypePublic && network.UUID != "" {
-				resp.Diagnostics.AddError("\"setting load balancer's public network (#%d) ID is not supported", fmt.Sprintf("#%d", i))
 			}
 			networks = append(networks, network)
 		}
