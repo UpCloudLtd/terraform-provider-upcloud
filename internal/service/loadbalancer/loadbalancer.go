@@ -2,6 +2,7 @@ package loadbalancer
 
 import (
 	"context"
+
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
