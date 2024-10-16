@@ -35,16 +35,13 @@ func validateNetworks(networkModels []loadbalancerNetworkModel) diag.Diagnostics
 	var diags diag.Diagnostics
 
 	for i, n := range networkModels {
-		t := upcloud.LoadBalancerNetworkType(n.Type.ValueString())
-		emptyID := n.ID.ValueString() == ""
-
-		switch t {
+		switch upcloud.LoadBalancerNetworkType(n.Type.ValueString()) {
 		case upcloud.LoadBalancerNetworkTypePrivate:
-			if emptyID {
+			if n.Network.IsNull() {
 				diags.AddError("load balancer's private network ID is required", fmt.Sprintf("#%d", i))
 			}
 		case upcloud.LoadBalancerNetworkTypePublic:
-			if !emptyID {
+			if !n.Network.IsNull() {
 				diags.AddError("setting load balancer's public network ID is not supported", fmt.Sprintf("#%d", i))
 			}
 		}
