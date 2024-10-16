@@ -20,7 +20,6 @@ func TestValidateNetworks(t *testing.T) {
 			networkModels: []loadbalancerNetworkModel{
 				{
 					Type: types.StringValue(string(upcloud.LoadBalancerNetworkTypePrivate)),
-					ID:   types.StringValue(""),
 				},
 			},
 			expectedDiags: diag.Diagnostics{
@@ -31,8 +30,8 @@ func TestValidateNetworks(t *testing.T) {
 			name: "Public network ID not supported",
 			networkModels: []loadbalancerNetworkModel{
 				{
-					Type: types.StringValue(string(upcloud.LoadBalancerNetworkTypePublic)),
-					ID:   types.StringValue("not-an-empty-string"),
+					Network: types.StringValue("not-an-empty-string"),
+					Type:    types.StringValue(string(upcloud.LoadBalancerNetworkTypePublic)),
 				},
 			},
 			expectedDiags: diag.Diagnostics{
@@ -43,12 +42,11 @@ func TestValidateNetworks(t *testing.T) {
 			name: "No errors with valid network models",
 			networkModels: []loadbalancerNetworkModel{
 				{
-					Type: types.StringValue(string(upcloud.LoadBalancerNetworkTypePrivate)),
-					ID:   types.StringValue("not-an-empty-string"),
+					Network: types.StringValue("not-an-empty-string"),
+					Type:    types.StringValue(string(upcloud.LoadBalancerNetworkTypePrivate)),
 				},
 				{
 					Type: types.StringValue(string(upcloud.LoadBalancerNetworkTypePublic)),
-					ID:   types.StringValue(""),
 				},
 			},
 			expectedDiags: diag.Diagnostics{},
