@@ -191,6 +191,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", "v2"),
 					resource.TestCheckResourceAttr(be2sm1Name, "weight", "0"),
 				),
+				// tfprotov5 does not support computed nested blocks, so a new value for .nodes is allowed here
+				ExpectError: regexp.MustCompile(`unexpected new value: .nodes: block count changed from`),
 			},
 			{
 				Config: testDataS3,
@@ -219,6 +221,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.url_param.0.inverse", "true"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.num_members_up.0.inverse", "true"),
 				),
+				// tfprotov5 does not support computed nested blocks, so planned state modification of `nodes` in refresh is accepted
+				ExpectError: regexp.MustCompile(`- nodes {`),
 			},
 			{
 				Config: testDataS4,
@@ -228,6 +232,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-b"),
 					resource.TestCheckResourceAttr(lbName, "networks.1.type", "private"),
 				),
+				// tfprotov5 does not support computed nested blocks, so planned state modification of `nodes` in refresh is accepted
+				ExpectError: regexp.MustCompile(`- nodes {`),
 			},
 		},
 	})

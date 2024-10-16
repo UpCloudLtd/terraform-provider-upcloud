@@ -158,6 +158,8 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 				DeprecationMessage:  "Use 'networks' to define networks attached to load balancer",
 				MarkdownDescription: "Private network UUID where traffic will be routed. Must reside in load balancer zone.",
 				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(""),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -404,27 +406,25 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 	data.MaintenanceDOW = types.StringValue(string(loadbalancer.MaintenanceDOW))
 	data.MaintenanceTime = types.StringValue(loadbalancer.MaintenanceTime)
 	data.Name = types.StringValue(loadbalancer.Name)
-	if loadbalancer.NetworkUUID != "" {
-		data.Network = types.StringValue(loadbalancer.NetworkUUID)
-	} else {
-		networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
-		for i, network := range loadbalancer.Networks {
-			dataNetwork := loadbalancerNetworkModel{
-				Name:    types.StringValue(network.Name),
-				Type:    types.StringValue(string(network.Type)),
-				Family:  types.StringValue(string(network.Family)),
-				DNSName: types.StringValue(network.DNSName),
-				ID:      types.StringValue(utils.MarshalID(loadbalancer.UUID, network.Name)),
-			}
-			if network.Type == upcloud.LoadBalancerNetworkTypePrivate {
-				dataNetwork.Network = types.StringValue(network.UUID)
-			}
-			networks[i] = dataNetwork
-		}
+	data.Network = types.StringValue(loadbalancer.NetworkUUID)
 
-		data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
-		respDiagnostics.Append(diags...)
+	networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
+	for i, network := range loadbalancer.Networks {
+		dataNetwork := loadbalancerNetworkModel{
+			Name:    types.StringValue(network.Name),
+			Type:    types.StringValue(string(network.Type)),
+			Family:  types.StringValue(string(network.Family)),
+			DNSName: types.StringValue(network.DNSName),
+			ID:      types.StringValue(utils.MarshalID(loadbalancer.UUID, network.Name)),
+		}
+		if network.Type == upcloud.LoadBalancerNetworkTypePrivate {
+			dataNetwork.Network = types.StringValue(network.UUID)
+		}
+		networks[i] = dataNetwork
 	}
+
+	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
+	respDiagnostics.Append(diags...)
 	data.Nodes = types.ListNull(blocks["nodes"].NestedObject.Type())
 
 	if len(loadbalancer.Nodes) > 0 {
@@ -620,8 +620,27 @@ func (r *loadBalancerResource) Delete(ctx context.Context, req resource.DeleteRe
 			utils.ErrorDiagnosticDetail(err),
 		)
 	}
+
+	// wait before continuing so that all components destroyed
+	resp.Diagnostics.Append(waitForLoadBalancerToBeDeleted(ctx, r.client, data.ID.ValueString())...)
 }
 
 func (r *loadBalancerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func getLoadBalancerDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	c, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{
+		UUID: id[0],
+	})
+
+	return map[string]interface{}{"resource": "loadbalancer", "name": c.Name, "state": c.OperationalState}, err
+}
+
+func waitForLoadBalancerToBeDeleted(ctx context.Context, svc *service.Service, uuid string) (diags diag.Diagnostics) {
+	err := utils.WaitForResourceToBeDeleted(ctx, svc, getLoadBalancerDeleted, uuid)
+	if err != nil {
+		diags.AddError("Error waiting for loadbalancer to be deleted", err.Error())
+	}
+	return
 }
