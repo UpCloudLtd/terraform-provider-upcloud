@@ -7,15 +7,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 var (
-	validNameRegexp      = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
-	validNameMessage     = "should contain only alphanumeric characters, underscores and dashes"
-	nameValidator        = stringvalidator.RegexMatches(validNameRegexp, validNameMessage)
-	portValidator        = int64validator.Between(1, 65535)
-	validateNameDiagFunc = validation.ToDiagFunc(validation.StringMatch(validNameRegexp, validNameMessage))
+	validNameRegexp  = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
+	validNameMessage = "should contain only alphanumeric characters, underscores and dashes"
+	nameValidator    = stringvalidator.RegexMatches(validNameRegexp, validNameMessage)
+	portValidator    = int64validator.Between(1, 65535)
 )
 
 func asBool(p *bool) basetypes.BoolValue {

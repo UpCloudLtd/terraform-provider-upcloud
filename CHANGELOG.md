@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_loadbalancer: allow `stopped` value to be set for `configured_status` field.
+
 ## [5.12.0] - 2024-10-10
 
 ### Added

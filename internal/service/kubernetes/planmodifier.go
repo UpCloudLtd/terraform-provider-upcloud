@@ -1,4 +1,4 @@
-package planmodifier
+package kubernetes
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func CustomPlanPlanModifier() planmodifier.List {
+func getCustomPlanPlanModifier() planmodifier.List {
 	return &customPlanPlanModifier{}
 }
 

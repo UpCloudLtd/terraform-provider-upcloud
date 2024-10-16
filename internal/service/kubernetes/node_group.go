@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"time"
 
-	planmodifierutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/planmodifier"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 
@@ -186,7 +185,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				MarkdownDescription: "Resource properties for custom plan",
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
-					planmodifierutil.CustomPlanPlanModifier(),
+					getCustomPlanPlanModifier(),
 				},
 				Validators: []validator.List{
 					listvalidator.SizeAtMost(1),
