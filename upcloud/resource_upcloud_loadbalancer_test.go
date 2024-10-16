@@ -289,6 +289,8 @@ func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
 			{
 				Config: testdata,
 				// Validations are done in the config with http data source and post conditions.
+				// tfprotov5 does not support computed nested blocks, so planned state modification of `nodes` in refresh is accepted
+				ExpectError: regexp.MustCompile(`- nodes {`),
 			},
 		},
 	})
