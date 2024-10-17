@@ -125,7 +125,8 @@ Optional Attributes:
 - `interactive_timeout` (Number) The number of seconds the server waits for activity on an interactive connection before closing it.
 - `internal_tmp_mem_storage_engine` (String) The storage engine for in-memory internal temporary tables.
 - `ip_filter` (List of String) IP filter. Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'.
-- `long_query_time` (Number) The slow_query_logs work as SQL statements that take more than long_query_time seconds to execute. Default is 10s.
+- `log_output` (String) The slow log output destination when slow_query_log is ON. To enable MySQL AI Insights, choose INSIGHTS. To use MySQL AI Insights and the mysql.slow_log table at the same time, choose INSIGHTS,TABLE. To only use the mysql.slow_log table, choose TABLE. To silence slow logs, choose NONE.
+- `long_query_time` (Number) The slow_query_logs work as SQL statements that take more than long_query_time seconds to execute.
 - `max_allowed_packet` (Number) Size of the largest message in bytes that can be received by the server. Default is 67108864 (64M).
 - `max_heap_table_size` (Number) Limits the size of internal in-memory tables. Also set tmp_table_size. Default is 16777216 (16M).
 - `net_buffer_length` (Number) Start sizes of connection buffer and result buffer. Default is 16384 (16K). Changing this parameter will lead to a restart of the MySQL service.
@@ -133,7 +134,7 @@ Optional Attributes:
 - `net_write_timeout` (Number) The number of seconds to wait for a block to be written to a connection before aborting the write.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
-- `slow_query_log` (Boolean) Slow query log enables capturing of slow queries. Setting slow_query_log to false also truncates the mysql.slow_log table. Default is off.
+- `slow_query_log` (Boolean) Slow query log enables capturing of slow queries. Setting slow_query_log to false also truncates the mysql.slow_log table.
 - `sort_buffer_size` (Number) Sort buffer size in bytes for ORDER BY optimization. Default is 262144 (256K).
 - `sql_mode` (String) Global SQL mode. Set to empty to use MySQL server defaults. When creating a new service and not setting this field Aiven default SQL mode (strict, SQL standard compliant) will be assigned.
 - `sql_require_primary_key` (Boolean) Require primary key to be defined for new tables or old tables modified with ALTER TABLE and fail if missing. It is recommended to always have primary keys because various functionality may break if any large table is missing them.
