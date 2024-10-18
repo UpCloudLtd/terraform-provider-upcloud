@@ -21,20 +21,20 @@ data "upcloud_ip_addresses" "all_ip_addresses" {}
 
 ### Read-Only
 
-- `addresses` (Set of Object) (see [below for nested schema](#nestedatt--addresses))
-- `id` (String) The ID of this resource.
+- `addresses` (Block Set) (see [below for nested schema](#nestedblock--addresses))
+- `id` (String) ID of the resource.
 
-<a id="nestedatt--addresses"></a>
+<a id="nestedblock--addresses"></a>
 ### Nested Schema for `addresses`
 
 Read-Only:
 
-- `access` (String)
-- `address` (String)
-- `family` (String)
-- `floating` (Boolean)
-- `mac` (String)
-- `part_of_plan` (Boolean)
-- `ptr_record` (String)
-- `server` (String)
-- `zone` (String)
+- `access` (String) Is address for utility or public network
+- `address` (String) An UpCloud assigned IP Address
+- `family` (String) IP address family
+- `floating` (Boolean) Does the IP Address represents a floating IP Address
+- `mac` (String) MAC address of server interface to assign address to
+- `part_of_plan` (Boolean) Is the address a part of a plan
+- `ptr_record` (String) A reverse DNS record entry
+- `server` (String) The unique identifier for a server
+- `zone` (String) Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
