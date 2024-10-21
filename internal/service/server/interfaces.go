@@ -12,8 +12,35 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData, reqs []request.CreateNetworkInterfaceRequest) error {
-	// assert server is stopped
+func findInterface(ifaces []upcloud.ServerInterface, index int, ip string) *upcloud.ServerInterface {
+	for _, i := range ifaces {
+		if i.Index == index {
+			return &i
+		}
+	}
+	for _, i := range ifaces {
+		if len(i.IPAddresses) > 0 && i.IPAddresses[0].Address == ip {
+			return &i
+		}
+	}
+	return nil
+}
+
+func canModifyInterface(plan map[string]interface{}, prev *upcloud.ServerInterface) bool {
+	if prev.Type != plan["type"].(string) {
+		return false
+	}
+	if prev.Network != plan["network"].(string) {
+		return false
+	}
+	if len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Family != plan["ip_address_family"].(string) {
+		return false
+	}
+	return true
+}
+
+func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData) error {
+	// Assert server is stopped
 	s, err := svc.GetServerDetails(ctx, &request.GetServerDetailsRequest{
 		UUID: d.Id(),
 	})
@@ -24,103 +51,160 @@ func reconfigureServerNetworkInterfaces(ctx context.Context, svc *service.Servic
 		return errors.New("server needs to be stopped to alter networks")
 	}
 
-	// Try to preserve public (IPv4 or IPv6) and utility network interfaces so that IPs doesn't change
-	preserveInterfaces := make(map[int]bool, 0)
-	// flush interfaces
-	for i, n := range s.Networking.Interfaces {
-		if (n.Type == upcloud.NetworkTypePublic || n.Type == upcloud.NetworkTypeUtility) && len(reqs) > i && interfacesEquals(n, reqs[i]) {
-			preserveInterfaces[n.Index] = true
-			continue
-		}
-		if err := svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-			ServerUUID: d.Id(),
-			Index:      n.Index,
-		}); err != nil {
-			return fmt.Errorf("unable to delete interface #%d; %w", n.Index, err)
-		}
+	indicesToKeep := map[int]bool{}
+	n, ok := d.Get("network_interface.#").(int)
+	if !ok {
+		return errors.New("unable to read network_interface count")
 	}
-	// apply interfaces from state
-	for _, r := range reqs {
-		if _, ok := preserveInterfaces[r.Index]; ok && (r.Type == upcloud.NetworkTypePublic || r.Type == upcloud.NetworkTypeUtility) {
+	for i := 0; i < n; i++ {
+		key := fmt.Sprintf("network_interface.%d", i)
+		indicesToKeep[d.Get(key+".index").(int)] = true
+
+		if !d.HasChange(key) {
 			continue
 		}
-		if _, err := svc.CreateNetworkInterface(ctx, &r); err != nil {
-			return fmt.Errorf("unable to create interface #%d; %w", r.Index, err)
+
+		val, ok := d.Get(key).(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unable to read '%s' value", key)
+		}
+		index := val["index"].(int)
+
+		addresses, err := addressesFromResourceData(ctx, svc, d, key)
+		if err != nil {
+			return err
+		}
+
+		t := val["type"].(string)
+		network := ""
+		if t == upcloud.NetworkTypePrivate {
+			network = val["network"].(string)
+		}
+
+		prev := findInterface(s.Networking.Interfaces, index, val["ip_address"].(string))
+		var iface *upcloud.Interface
+		if prev == nil || !canModifyInterface(val, prev) {
+			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+				ServerUUID: d.Id(),
+				Index:      index,
+			})
+			if err != nil {
+				var ucProb *upcloud.Problem
+				if errors.As(err, &ucProb) && ucProb.Type != upcloud.ErrCodeInterfaceNotFound {
+					return err
+				}
+			}
+
+			iface, err = svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
+				ServerUUID:        d.Id(),
+				Index:             index,
+				Type:              val["type"].(string),
+				NetworkUUID:       network,
+				IPAddresses:       addresses,
+				SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
+				Bootable:          upcloud.FromBool(val["bootable"].(bool)),
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			iface, err = svc.ModifyNetworkInterface(ctx, &request.ModifyNetworkInterfaceRequest{
+				ServerUUID:   d.Id(),
+				CurrentIndex: prev.Index,
+
+				NewIndex:          val["index"].(int),
+				IPAddresses:       addresses,
+				SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
+				Bootable:          upcloud.FromBool(val["bootable"].(bool)),
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		_ = d.Set(key+".index", iface.Index)
+		_ = d.Set(key+".ip_address", iface.IPAddresses[0].Address)
+	}
+
+	// Remove interfaces that are removed from configuration
+	for _, iface := range s.Networking.Interfaces {
+		if !indicesToKeep[iface.Index] {
+			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+				ServerUUID: d.Id(),
+				Index:      iface.Index,
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func networkInterfacesFromResourceData(ctx context.Context, svc *service.Service, d *schema.ResourceData) ([]request.CreateNetworkInterfaceRequest, error) {
-	rs := make([]request.CreateNetworkInterfaceRequest, 0)
+func addressesFromResourceData(ctx context.Context, svc *service.Service, d *schema.ResourceData, key string) (request.CreateNetworkInterfaceIPAddressSlice, error) {
+	addresses := make(request.CreateNetworkInterfaceIPAddressSlice, 0)
+	val, ok := d.Get(key).(map[string]interface{})
+	if !ok {
+		return addresses, fmt.Errorf("unable to read '%s' value", key)
+	}
+
+	ip := request.CreateNetworkInterfaceIPAddress{}
+	if v, ok := val["ip_address_family"].(string); ok && v != "" {
+		ip.Family = v
+	}
+
+	if v, ok := val["type"].(string); ok && v == upcloud.NetworkTypePrivate {
+		net := ""
+		if v, ok := val["network"].(string); ok {
+			net = v
+		}
+		if v, ok := val["ip_address"].(string); ok && v != "" {
+			ip.Address = v
+			// If network has changed but ip hasn't, check if network contains IP or leave IP empty if network has DHCP is enabled.
+			if d.HasChange(key+".network") && !d.HasChange(key+".ip_address") {
+				network, err := svc.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{UUID: net})
+				if err != nil {
+					return nil, err
+				}
+				ip.Address, err = resolveInterfaceIPAddress(network, v)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+	addresses = append(addresses, ip)
+
+	if v, ok := d.GetOk(key + ".additional_ip_address"); ok {
+		additionalIPAddresses := v.(*schema.Set).List()
+		if len(additionalIPAddresses) > 0 && val["type"].(string) != upcloud.NetworkTypePrivate {
+			return nil, fmt.Errorf("additional_ip_address can only be set for private network interfaces")
+		}
+
+		for _, v := range additionalIPAddresses {
+			ipAddress := v.(map[string]interface{})
+
+			addresses = append(addresses, request.CreateNetworkInterfaceIPAddress{
+				Family:  ipAddress["ip_address_family"].(string),
+				Address: ipAddress["ip_address"].(string),
+			})
+		}
+	}
+	return addresses, nil
+}
+
+func validateNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData) error {
 	nInf, ok := d.Get("network_interface.#").(int)
 	if !ok {
-		return rs, errors.New("unable to read network_interface count")
+		return errors.New("unable to read network_interface count")
 	}
 	for i := 0; i < nInf; i++ {
 		key := fmt.Sprintf("network_interface.%d", i)
-		val, ok := d.Get(key).(map[string]interface{})
-		if !ok {
-			return rs, fmt.Errorf("unable to read '%s' value", key)
+		if _, err := addressesFromResourceData(ctx, svc, d, key); err != nil {
+			return err
 		}
-		r := request.CreateNetworkInterfaceRequest{
-			ServerUUID:  d.Id(),
-			Index:       i + 1,
-			IPAddresses: make(request.CreateNetworkInterfaceIPAddressSlice, 0),
-		}
-		if v, ok := val["type"].(string); ok {
-			r.Type = v
-		}
-		ip := request.CreateNetworkInterfaceIPAddress{}
-		if v, ok := val["ip_address_family"].(string); ok && v != "" {
-			ip.Family = v
-		}
-		if r.Type == upcloud.NetworkTypePrivate {
-			if v, ok := val["network"].(string); ok && v != "" {
-				r.NetworkUUID = v
-			}
-			if v, ok := val["ip_address"].(string); ok && v != "" {
-				ip.Address = v
-				// If network has changed but ip hasn't, check if network contains IP or leave IP empty if network has DHCP is enabled.
-				if d.HasChange(key+".network") && !d.HasChange(key+".ip_address") {
-					network, err := svc.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{UUID: r.NetworkUUID})
-					if err != nil {
-						return rs, err
-					}
-					ip.Address, err = resolveInterfaceIPAddress(network, v)
-					if err != nil {
-						return rs, err
-					}
-				}
-			}
-			if v, ok := val["source_ip_filtering"].(bool); ok {
-				r.SourceIPFiltering = upcloud.FromBool(v)
-			}
-			if v, ok := val["bootable"].(bool); ok {
-				r.Bootable = upcloud.FromBool(v)
-			}
-		}
-		r.IPAddresses = append(r.IPAddresses, ip)
-
-		if v, ok := d.GetOk(key + ".additional_ip_address"); ok {
-			additionalIPAddresses := v.(*schema.Set).List()
-			if len(additionalIPAddresses) > 0 && val["type"].(string) != upcloud.NetworkTypePrivate {
-				return nil, fmt.Errorf("additional_ip_address can only be set for private network interfaces")
-			}
-
-			for _, v := range additionalIPAddresses {
-				ipAddress := v.(map[string]interface{})
-
-				r.IPAddresses = append(r.IPAddresses, request.CreateNetworkInterfaceIPAddress{
-					Family:  ipAddress["ip_address_family"].(string),
-					Address: ipAddress["ip_address"].(string),
-				})
-			}
-		}
-
-		rs = append(rs, r)
 	}
-	return rs, nil
+	return nil
 }
 
 func resolveInterfaceIPAddress(network *upcloud.Network, ipAddress string) (string, error) {
@@ -147,20 +231,4 @@ func resolveInterfaceIPAddress(network *upcloud.Network, ipAddress string) (stri
 		return "", nil
 	}
 	return "", fmt.Errorf("IP address %s is not valid for network %s (%s) which doesn't have DHCP enabled", ipAddress, network.Name, network.UUID)
-}
-
-func interfacesEquals(a upcloud.ServerInterface, b request.CreateNetworkInterfaceRequest) bool {
-	if a.Type != b.Type {
-		return false
-	}
-	if a.Index != b.Index {
-		return false
-	}
-	if len(a.IPAddresses) != 1 || len(b.IPAddresses) != 1 {
-		return false
-	}
-	if a.IPAddresses[0].Family != b.IPAddresses[0].Family {
-		return false
-	}
-	return true
 }
