@@ -158,6 +158,13 @@ func ResourceServer() *schema.Resource {
 				MinItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"index": {
+							Type:         schema.TypeInt,
+							Description:  "The interface index.",
+							Optional:     true,
+							Computed:     true,
+							ValidateFunc: validation.IntAtLeast(1),
+						},
 						"ip_address_family":   schemaIPAddressFamily("The type of the primary IP address of this interface (one of `IPv4` or `IPv6`)."),
 						"ip_address":          schemaIPAddress("The assigned primary IP address."),
 						"ip_address_floating": schemaIPAddressFloating("`true` indicates that the primary IP address is a floating IP address."),
@@ -581,11 +588,31 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		_ = d.Set("simple_backup", []interface{}{simpleBackup})
 	}
 
-	networkInterfaces := []map[string]interface{}{}
 	var connIP string
-	for _, iface := range server.Networking.Interfaces {
+	n, ok := d.Get("network_interface.#").(int)
+	if !ok {
+		return diag.Errorf("unable to read network_interface count")
+	}
+	networkInterfaces := make([]map[string]interface{}, n)
+	for i := 0; i < n; i++ {
+		key := fmt.Sprintf("network_interface.%d", i)
+		val, ok := d.Get(key).(map[string]interface{})
+		if !ok {
+			return diag.Errorf("unable to read '%s' value", key)
+		}
+
+		var iface *upcloud.ServerInterface
+		if index := val["index"].(int); index == 0 && i < len(server.Networking.Interfaces) {
+			iface = &server.Networking.Interfaces[i]
+		} else {
+			iface = findInterface(server.Networking.Interfaces, val["index"].(int), "")
+		}
+		if iface == nil {
+			continue
+		}
+
 		ni := make(map[string]interface{})
-		primaryIPInState, primaryIPSet := d.GetOk(fmt.Sprintf("network_interface.%d.ip_address", iface.Index-1))
+		primaryIPInState, primaryIPSet := d.GetOk(fmt.Sprintf("network_interface.%d.ip_address", i))
 		additionalIPAddresses := []map[string]interface{}{}
 
 		for i, ipAddress := range iface.IPAddresses {
@@ -626,6 +653,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 
 		ni["additional_ip_address"] = additionalIPAddresses
 
+		ni["index"] = iface.Index
 		ni["mac_address"] = iface.MAC
 		ni["network"] = iface.Network
 		ni["type"] = iface.Type
@@ -636,7 +664,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 			ni["source_ip_filtering"] = iface.SourceIPFiltering.Bool()
 		}
 
-		networkInterfaces = append(networkInterfaces, ni)
+		networkInterfaces[i] = ni
 
 		if iface.Type == upcloud.NetworkTypePublic &&
 			iface.IPAddresses[0].Family == upcloud.IPAddressFamilyIPv4 {
@@ -707,8 +735,8 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	// Before stopping, build & validate network interface requests to avoid unnecessary server downtime
-	networkReqs, err := networkInterfacesFromResourceData(ctx, client, d)
+	// Before stopping, validate network interface requests to avoid unnecessary server downtime
+	err = validateNetworkInterfaces(ctx, client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -955,7 +983,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if d.HasChange("network_interface") {
-		if err := reconfigureServerNetworkInterfaces(ctx, client, d, networkReqs); err != nil {
+		if err := updateServerNetworkInterfaces(ctx, client, d); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -1204,6 +1232,7 @@ func buildNetworkOpts(d *schema.ResourceData) ([]request.CreateServerInterface, 
 	for i := 0; i < niCount; i++ {
 		keyRoot := fmt.Sprintf("network_interface.%d.", i)
 		iface := request.CreateServerInterface{
+			Index: d.Get(keyRoot + "index").(int),
 			IPAddresses: []request.CreateServerIPAddress{
 				{
 					Family:  d.Get(keyRoot + "ip_address_family").(string),

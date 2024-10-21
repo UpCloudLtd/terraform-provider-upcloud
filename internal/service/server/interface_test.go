@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,49 +53,4 @@ func TestResolveInterfaceIPAddress(t *testing.T) {
 		},
 	}, want)
 	assert.Error(t, err)
-}
-
-func TestInterfacesEquals(t *testing.T) {
-	assert.False(t, interfacesEquals(upcloud.ServerInterface{
-		Index:       1,
-		IPAddresses: []upcloud.IPAddress{},
-		Type:        "",
-	}, request.CreateNetworkInterfaceRequest{
-		Index:       0,
-		IPAddresses: []request.CreateNetworkInterfaceIPAddress{},
-		Type:        "",
-	}))
-	assert.False(t, interfacesEquals(upcloud.ServerInterface{
-		Index:       0,
-		IPAddresses: []upcloud.IPAddress{},
-		Type:        upcloud.NetworkTypePublic,
-	}, request.CreateNetworkInterfaceRequest{
-		Index:       0,
-		IPAddresses: []request.CreateNetworkInterfaceIPAddress{},
-		Type:        upcloud.NetworkTypePrivate,
-	}))
-	assert.False(t, interfacesEquals(upcloud.ServerInterface{
-		Index: 0,
-		IPAddresses: []upcloud.IPAddress{{
-			Family: upcloud.IPAddressFamilyIPv4,
-		}},
-		Type: upcloud.NetworkTypePublic,
-	}, request.CreateNetworkInterfaceRequest{
-		Index:       0,
-		IPAddresses: []request.CreateNetworkInterfaceIPAddress{},
-		Type:        upcloud.NetworkTypePublic,
-	}))
-	assert.True(t, interfacesEquals(upcloud.ServerInterface{
-		Index: 0,
-		IPAddresses: []upcloud.IPAddress{{
-			Family: upcloud.IPAddressFamilyIPv4,
-		}},
-		Type: upcloud.NetworkTypePublic,
-	}, request.CreateNetworkInterfaceRequest{
-		Index: 0,
-		IPAddresses: []request.CreateNetworkInterfaceIPAddress{{
-			Family: upcloud.IPAddressFamilyIPv4,
-		}},
-		Type: upcloud.NetworkTypePublic,
-	}))
 }
