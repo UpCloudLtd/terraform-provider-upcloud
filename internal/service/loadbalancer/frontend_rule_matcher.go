@@ -21,20 +21,24 @@ import (
 )
 
 type frontendRuleMatcherModel struct {
-	BodySize      types.List `tfsdk:"body_size"`
-	BodySizeRange types.List `tfsdk:"body_size_range"`
-	Cookie        types.List `tfsdk:"cookie"`
-	Header        types.List `tfsdk:"header"`
-	Host          types.List `tfsdk:"host"`
-	HTTPMethod    types.List `tfsdk:"http_method"`
-	NumMembersUp  types.List `tfsdk:"num_members_up"`
-	Path          types.List `tfsdk:"path"`
-	SrcIP         types.List `tfsdk:"src_ip"`
-	SrcPort       types.List `tfsdk:"src_port"`
-	SrcPortRange  types.List `tfsdk:"src_port_range"`
-	URL           types.List `tfsdk:"url"`
-	URLParam      types.List `tfsdk:"url_param"`
-	URLQuery      types.List `tfsdk:"url_query"`
+	BodySize        types.List `tfsdk:"body_size"`
+	BodySizeRange   types.List `tfsdk:"body_size_range"`
+	Cookie          types.List `tfsdk:"cookie"`
+	Header          types.List `tfsdk:"header"`
+	RequestHeader   types.List `tfsdk:"request_header"`
+	ResponseHeader  types.List `tfsdk:"response_header"`
+	Host            types.List `tfsdk:"host"`
+	HTTPMethod      types.List `tfsdk:"http_method"`
+	HTTPStatus      types.List `tfsdk:"http_status"`
+	HTTPStatusRange types.List `tfsdk:"http_status_range"`
+	NumMembersUp    types.List `tfsdk:"num_members_up"`
+	Path            types.List `tfsdk:"path"`
+	SrcIP           types.List `tfsdk:"src_ip"`
+	SrcPort         types.List `tfsdk:"src_port"`
+	SrcPortRange    types.List `tfsdk:"src_port_range"`
+	URL             types.List `tfsdk:"url"`
+	URLParam        types.List `tfsdk:"url_param"`
+	URLQuery        types.List `tfsdk:"url_query"`
 }
 
 type frontendRuleMatcherHostModel struct {
@@ -428,7 +432,39 @@ func buildFrontendRuleMatchers(ctx context.Context, dataMatchers types.List) ([]
 		}
 
 		for _, header := range headers {
-			matcher := request.NewLoadBalancerHeaderMatcher(
+			matcher := request.NewLoadBalancerHeaderMatcher( //nolint:staticcheck // This is also deprecated in the provider. To be removed in the next major release.
+				upcloud.LoadBalancerStringMatcherMethod(header.Method.ValueString()),
+				header.Name.ValueString(),
+				header.Value.ValueString(),
+				header.IgnoreCase.ValueBoolPointer(),
+			)
+			matchers = appendMatcher(matchers, matcher, header.Inverse.ValueBool())
+		}
+
+		var requestHeaders []frontendRuleMatcherStringWithArgumentModel
+		diags = planMatcher.RequestHeader.ElementsAs(ctx, &requestHeaders, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, header := range requestHeaders {
+			matcher := request.NewLoadBalancerRequestHeaderMatcher(
+				upcloud.LoadBalancerStringMatcherMethod(header.Method.ValueString()),
+				header.Name.ValueString(),
+				header.Value.ValueString(),
+				header.IgnoreCase.ValueBoolPointer(),
+			)
+			matchers = appendMatcher(matchers, matcher, header.Inverse.ValueBool())
+		}
+
+		var responseHeader []frontendRuleMatcherStringWithArgumentModel
+		diags = planMatcher.ResponseHeader.ElementsAs(ctx, &responseHeader, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, header := range responseHeader {
+			matcher := request.NewLoadBalancerResponseHeaderMatcher(
 				upcloud.LoadBalancerStringMatcherMethod(header.Method.ValueString()),
 				header.Name.ValueString(),
 				header.Value.ValueString(),
@@ -461,6 +497,34 @@ func buildFrontendRuleMatchers(ctx context.Context, dataMatchers types.List) ([]
 				upcloud.LoadBalancerHTTPMatcherMethod(httpMethod.Value.ValueString()),
 			)
 			matchers = appendMatcher(matchers, matcher, httpMethod.Inverse.ValueBool())
+		}
+
+		var httpStatuses []frontendRuleMatcherIntegerModel
+		diags = planMatcher.HTTPStatus.ElementsAs(ctx, &httpStatuses, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, httpStatus := range httpStatuses {
+			matcher := request.NewLoadBalancerHTTPStatusMatcher(
+				upcloud.LoadBalancerIntegerMatcherMethod(httpStatus.Method.ValueString()),
+				int(httpStatus.Value.ValueInt64()),
+			)
+			matchers = appendMatcher(matchers, matcher, httpStatus.Inverse.ValueBool())
+		}
+
+		var httpStatusRanges []frontendRuleMatcherRangeModel
+		diags = planMatcher.HTTPStatusRange.ElementsAs(ctx, &httpStatusRanges, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, httpStatusRange := range httpStatusRanges {
+			matcher := request.NewLoadBalancerHTTPStatusRangeMatcher(
+				int(httpStatusRange.RangeStart.ValueInt64()),
+				int(httpStatusRange.RangeEnd.ValueInt64()),
+			)
+			matchers = appendMatcher(matchers, matcher, httpStatusRange.Inverse.ValueBool())
 		}
 
 		var numMembersUp []frontendRuleMatcherNumMembersUpModel
@@ -598,8 +662,12 @@ func setFrontendRuleMatchersValues(ctx context.Context, data *frontendRuleModel,
 	bodySizeRanges := make([]frontendRuleMatcherRangeModel, 0)
 	cookies := make([]frontendRuleMatcherStringWithArgumentModel, 0)
 	headers := make([]frontendRuleMatcherStringWithArgumentModel, 0)
+	requestHeaders := make([]frontendRuleMatcherStringWithArgumentModel, 0)
+	responseHeaders := make([]frontendRuleMatcherStringWithArgumentModel, 0)
 	hosts := make([]frontendRuleMatcherHostModel, 0)
 	httpMethods := make([]frontendRuleMatcherHTTPMethodModel, 0)
+	httpStatuses := make([]frontendRuleMatcherIntegerModel, 0)
+	httpStatusRanges := make([]frontendRuleMatcherRangeModel, 0)
 	numMembersUp := make([]frontendRuleMatcherNumMembersUpModel, 0)
 	paths := make([]frontendRuleMatcherStringModel, 0)
 	srcIPs := make([]frontendRuleMatcherSrcIPModel, 0)
@@ -654,6 +722,34 @@ func setFrontendRuleMatchersValues(ctx context.Context, data *frontendRuleModel,
 			})
 		}
 
+		if m.RequestHeader != nil {
+			var ignoreCase bool
+			if m.RequestHeader.IgnoreCase != nil {
+				ignoreCase = *m.RequestHeader.IgnoreCase
+			}
+			requestHeaders = append(requestHeaders, frontendRuleMatcherStringWithArgumentModel{
+				IgnoreCase: types.BoolValue(ignoreCase),
+				Inverse:    types.BoolValue(*m.Inverse),
+				Method:     types.StringValue(string(m.RequestHeader.Method)),
+				Name:       types.StringValue(m.RequestHeader.Name),
+				Value:      types.StringValue(m.RequestHeader.Value),
+			})
+		}
+
+		if m.ResponseHeader != nil {
+			var ignoreCase bool
+			if m.ResponseHeader.IgnoreCase != nil {
+				ignoreCase = *m.ResponseHeader.IgnoreCase
+			}
+			responseHeaders = append(responseHeaders, frontendRuleMatcherStringWithArgumentModel{
+				IgnoreCase: types.BoolValue(ignoreCase),
+				Inverse:    types.BoolValue(*m.Inverse),
+				Method:     types.StringValue(string(m.ResponseHeader.Method)),
+				Name:       types.StringValue(m.ResponseHeader.Name),
+				Value:      types.StringValue(m.ResponseHeader.Value),
+			})
+		}
+
 		if m.Host != nil {
 			hosts = append(hosts, frontendRuleMatcherHostModel{
 				Inverse: types.BoolValue(*m.Inverse),
@@ -666,6 +762,22 @@ func setFrontendRuleMatchersValues(ctx context.Context, data *frontendRuleModel,
 				Inverse: types.BoolValue(*m.Inverse),
 				Value:   types.StringValue(string(m.HTTPMethod.Value)),
 			})
+		}
+
+		if m.HTTPStatus != nil {
+			if m.HTTPStatus.Method == upcloud.LoadBalancerIntegerMatcherMethodRange {
+				httpStatusRanges = append(httpStatusRanges, frontendRuleMatcherRangeModel{
+					Inverse:    types.BoolValue(*m.Inverse),
+					RangeEnd:   types.Int64Value(int64(m.HTTPStatus.RangeEnd)),
+					RangeStart: types.Int64Value(int64(m.HTTPStatus.RangeStart)),
+				})
+			} else {
+				httpStatuses = append(httpStatuses, frontendRuleMatcherIntegerModel{
+					Method:  types.StringValue(string(m.HTTPStatus.Method)),
+					Inverse: types.BoolValue(*m.Inverse),
+					Value:   types.Int64Value(int64(m.HTTPStatus.Value)),
+				})
+			}
 		}
 
 		if m.NumMembersUp != nil {
@@ -784,6 +896,20 @@ func setFrontendRuleMatchersValues(ctx context.Context, data *frontendRuleModel,
 		respDiagnostics.AddError("cannot set frontend rule matcher", "header element type not found")
 	}
 
+	if elementType, ok := elementTypes["request_header"]; ok {
+		matcher.RequestHeader, diags = types.ListValueFrom(ctx, elementType, requestHeaders)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule matcher", "request_header element type not found")
+	}
+
+	if elementType, ok := elementTypes["response_header"]; ok {
+		matcher.ResponseHeader, diags = types.ListValueFrom(ctx, elementType, responseHeaders)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule matcher", "response_header element type not found")
+	}
+
 	if elementType, ok := elementTypes["host"]; ok {
 		matcher.Host, diags = types.ListValueFrom(ctx, elementType, hosts)
 		respDiagnostics.Append(diags...)
@@ -796,6 +922,20 @@ func setFrontendRuleMatchersValues(ctx context.Context, data *frontendRuleModel,
 		respDiagnostics.Append(diags...)
 	} else {
 		respDiagnostics.AddError("cannot set frontend rule matcher", "http_method element type not found")
+	}
+
+	if elementType, ok := elementTypes["http_status"]; ok {
+		matcher.HTTPStatus, diags = types.ListValueFrom(ctx, elementType, httpStatuses)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule matcher", "http_status element type not found")
+	}
+
+	if elementType, ok := elementTypes["http_status_range"]; ok {
+		matcher.HTTPStatusRange, diags = types.ListValueFrom(ctx, elementType, httpStatusRanges)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule matcher", "http_status_range element type not found")
 	}
 
 	if elementType, ok := elementTypes["num_members_up"]; ok {

@@ -8,6 +8,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - Log UpCloud API requests and responses with debug level to Terraform logs.
+- upcloud_loadbalancer_frontend_rule: add `http_status`, `http_status_range`, `request_header`, and `response_header` rule matchers.
+- upcloud_loadbalancer_frontend_rule: add `set_request_header`, and `set_response_header` rule actions.
+
+### Deprecated
+
+- upcloud_loadbalancer_frontend_rule: `header` rule matcher. Use `request_header` rule matcher instead.
 
 ### Fixed
 
