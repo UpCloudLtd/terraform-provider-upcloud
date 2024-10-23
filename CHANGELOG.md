@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_database_*: Handle `["object", "null"]` property type (e.g. in `migration` property of MySQL databases) as an object when building API request to create and update DB properties.
+
 ## [5.13.0] - 2024-10-23
 
 ### Added
