@@ -7,7 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_database_*: Handle `["object", "null"]` property type (e.g. in `migration` property of MySQL databases) as an object when building API request to create and update DB properties.
+- upcloud_managed_database_\*: Handle `["object", "null"]` property type (e.g. in `migration` property of MySQL databases) as an object when building API request to create and update DB properties.
 
 ## [5.13.0] - 2024-10-23
 
@@ -202,7 +202,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_database_*: do not include empty or unmodified nested properties values in the API request. I.e., filter nested properties similarly than main level properties.
+- upcloud_managed_database_\*: do not include empty or unmodified nested properties values in the API request. I.e., filter nested properties similarly than main level properties.
 
 ### Deprecated
 
@@ -246,7 +246,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- managed object storage: fix error when refreshing a state after the resource was deleted outside of Terraform; applies to all upcloud_managed_object_storage* resources
+- managed object storage: fix error when refreshing a state after the resource was deleted outside of Terraform; applies to all upcloud_managed_object_storage\* resources
 
 ### Changed
 
