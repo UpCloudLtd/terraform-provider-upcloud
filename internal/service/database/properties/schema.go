@@ -57,7 +57,10 @@ func GetType(prop upcloud.ManagedDatabaseServiceProperty) string {
 			}
 		}
 	}
-	return raw.(string)
+	if t, ok := raw.(string); ok {
+		return t
+	}
+	return ""
 }
 
 func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool {
