@@ -213,6 +213,26 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 								listvalidator.SizeBetween(0, 100),
 							},
 						},
+						"set_request_header": schema.ListNestedBlock{
+							MarkdownDescription: "Set request header",
+							NestedObject:        frontendRuleActionSetHeaderSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"set_response_header": schema.ListNestedBlock{
+							MarkdownDescription: "Set response header",
+							NestedObject:        frontendRuleActionSetHeaderSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
 						"tcp_reject": schema.ListNestedBlock{
 							MarkdownDescription: "Terminates a connection.",
 							NestedObject: schema.NestedBlockObject{
@@ -300,6 +320,27 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 						},
 						"header": schema.ListNestedBlock{
 							MarkdownDescription: "Matches by HTTP header value. Header name must be provided.",
+							DeprecationMessage:  "Use `request_header` instead.",
+							NestedObject:        frontendRuleMatcherStringWithArgumentSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"request_header": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by HTTP request header value. Header name must be provided.",
+							NestedObject:        frontendRuleMatcherStringWithArgumentSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"response_header": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by HTTP response header value. Header name must be provided.",
 							NestedObject:        frontendRuleMatcherStringWithArgumentSchema(),
 							PlanModifiers: []planmodifier.List{
 								listplanmodifier.RequiresReplace(),
@@ -321,6 +362,26 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 						"http_method": schema.ListNestedBlock{
 							MarkdownDescription: "Matches by HTTP method.",
 							NestedObject:        frontendRuleMatcherHTTPMethodSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"http_status": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by HTTP status.",
+							NestedObject:        frontendRuleMatcherIntegerSchema(),
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeBetween(0, 100),
+							},
+						},
+						"http_status_range": schema.ListNestedBlock{
+							MarkdownDescription: "Matches by range of HTTP statuses.",
+							NestedObject:        frontendRuleMatcherRangeSchema(),
 							PlanModifiers: []planmodifier.List{
 								listplanmodifier.RequiresReplace(),
 							},

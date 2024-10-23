@@ -5,8 +5,12 @@ import (
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -14,6 +18,8 @@ type frontendRuleActionModel struct {
 	HTTPRedirect        types.List `tfsdk:"http_redirect"`
 	HTTPReturn          types.List `tfsdk:"http_return"`
 	SetForwardedHeaders types.List `tfsdk:"set_forwarded_headers"`
+	SetRequestHeader    types.List `tfsdk:"set_request_header"`
+	SetResponseHeader   types.List `tfsdk:"set_response_header"`
 	TCPReject           types.List `tfsdk:"tcp_reject"`
 	UseBackend          types.List `tfsdk:"use_backend"`
 }
@@ -33,12 +39,44 @@ type frontendRuleActionSetForwardedHeadersModel struct {
 	Active types.Bool `tfsdk:"active"`
 }
 
+type frontendRuleActionSetHeaderModel struct {
+	Header types.String `tfsdk:"header"`
+	Value  types.String `tfsdk:"value"`
+}
+
 type frontendRuleActionTCPRejectModel struct {
 	Active types.Bool `tfsdk:"active"`
 }
 
 type frontendRuleActionUseBackendModel struct {
 	BackendName types.String `tfsdk:"backend_name"`
+}
+
+func frontendRuleActionSetHeaderSchema() schema.NestedBlockObject {
+	return schema.NestedBlockObject{
+		Attributes: map[string]schema.Attribute{
+			"header": schema.StringAttribute{
+				MarkdownDescription: "Header name.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 256),
+				},
+			},
+			"value": schema.StringAttribute{
+				MarkdownDescription: "Header value.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 256),
+				},
+			},
+		},
+	}
 }
 
 func buildFrontendRuleActions(ctx context.Context, dataActions types.List) ([]upcloud.LoadBalancerAction, diag.Diagnostics) {
@@ -67,6 +105,30 @@ func buildFrontendRuleActions(ctx context.Context, dataActions types.List) ([]up
 
 		for range setForwardedHeaders {
 			action := request.NewLoadBalancerSetForwardedHeadersAction()
+
+			actions = append(actions, action)
+		}
+
+		var setRequestHeader []frontendRuleActionSetHeaderModel
+		diags = planAction.SetRequestHeader.ElementsAs(ctx, &setRequestHeader, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, setHeader := range setRequestHeader {
+			action := request.NewLoadBalancerSetRequestHeaderAction(setHeader.Header.ValueString(), setHeader.Value.ValueString())
+
+			actions = append(actions, action)
+		}
+
+		var setResponseHeader []frontendRuleActionSetHeaderModel
+		diags = planAction.SetResponseHeader.ElementsAs(ctx, &setResponseHeader, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, setHeader := range setResponseHeader {
+			action := request.NewLoadBalancerSetResponseHeaderAction(setHeader.Header.ValueString(), setHeader.Value.ValueString())
 
 			actions = append(actions, action)
 		}
@@ -149,6 +211,8 @@ func setFrontendRuleActionsValues(ctx context.Context, data *frontendRuleModel, 
 	httpRedirects := make([]frontendRuleActionHTTPRedirectModel, 0)
 	httpReturns := make([]frontendRuleActionHTTPReturnModel, 0)
 	setForwardedHeaders := make([]frontendRuleActionSetForwardedHeadersModel, 0)
+	setRequestHeader := make([]frontendRuleActionSetHeaderModel, 0)
+	setResponseHeader := make([]frontendRuleActionSetHeaderModel, 0)
 	tcpRejects := make([]frontendRuleActionTCPRejectModel, 0)
 	useBackends := make([]frontendRuleActionUseBackendModel, 0)
 
@@ -178,6 +242,20 @@ func setFrontendRuleActionsValues(ctx context.Context, data *frontendRuleModel, 
 		if a.SetForwardedHeaders != nil {
 			setForwardedHeaders = append(setForwardedHeaders, frontendRuleActionSetForwardedHeadersModel{
 				Active: types.BoolValue(true),
+			})
+		}
+
+		if a.SetRequestHeader != nil {
+			setRequestHeader = append(setRequestHeader, frontendRuleActionSetHeaderModel{
+				Header: types.StringValue(a.SetRequestHeader.Header),
+				Value:  types.StringValue(a.SetRequestHeader.Value),
+			})
+		}
+
+		if a.SetResponseHeader != nil {
+			setResponseHeader = append(setResponseHeader, frontendRuleActionSetHeaderModel{
+				Header: types.StringValue(a.SetResponseHeader.Header),
+				Value:  types.StringValue(a.SetResponseHeader.Value),
 			})
 		}
 
@@ -215,6 +293,20 @@ func setFrontendRuleActionsValues(ctx context.Context, data *frontendRuleModel, 
 		respDiagnostics.Append(diags...)
 	} else {
 		respDiagnostics.AddError("cannot set frontend rule actions", "set_forwarded_headers element type not found")
+	}
+
+	if elementType, ok := elementTypes["set_request_header"]; ok {
+		action.SetRequestHeader, diags = types.ListValueFrom(ctx, elementType, setRequestHeader)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule actions", "set_request_header element type not found")
+	}
+
+	if elementType, ok := elementTypes["set_response_header"]; ok {
+		action.SetResponseHeader, diags = types.ListValueFrom(ctx, elementType, setResponseHeader)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule actions", "set_response_header element type not found")
 	}
 
 	if elementType, ok := elementTypes["tcp_reject"]; ok {

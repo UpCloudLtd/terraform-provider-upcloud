@@ -178,6 +178,15 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     http_method {
       value = "PATCH"
     }
+    http_status {
+      method  = "equal"
+      value   = 301
+    }
+    http_status_range {
+      range_start = 200
+      range_end   = 299
+      inverse     = true
+    }
     cookie {
       method = "exact"
       name   = "x-session-id"
@@ -187,6 +196,18 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
       method      = "exact"
       name        = "status"
       value       = "active"
+      ignore_case = true
+    }
+    request_header {
+      method      = "exact"
+      name        = "direction"
+      value       = "request"
+      ignore_case = true
+    }
+    response_header {
+      method      = "exact"
+      name        = "direction"
+      value       = "response"
       ignore_case = true
     }
     url_param {
@@ -218,6 +239,14 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     }
     tcp_reject {}
     set_forwarded_headers {}
+    set_request_header {
+      header  = "Test-Request-Header"
+      value = "asd123"
+    }
+    set_response_header {
+      header  = "Test-Response-Header"
+      value = "321dsa"
+    }
   }
 }
 
