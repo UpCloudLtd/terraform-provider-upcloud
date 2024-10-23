@@ -98,6 +98,8 @@ Blocks:
 - `http_redirect` (Block List) Redirects HTTP requests to specified location or URL scheme. Only either location or scheme can be defined at a time. (see [below for nested schema](#nestedblock--actions--http_redirect))
 - `http_return` (Block List) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
 - `set_forwarded_headers` (Block List) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
+- `set_request_header` (Block List) Set request header (see [below for nested schema](#nestedblock--actions--set_request_header))
+- `set_response_header` (Block List) Set response header (see [below for nested schema](#nestedblock--actions--set_response_header))
 - `tcp_reject` (Block List) Terminates a connection. (see [below for nested schema](#nestedblock--actions--tcp_reject))
 - `use_backend` (Block List) Routes traffic to specified `backend`. (see [below for nested schema](#nestedblock--actions--use_backend))
 
@@ -128,6 +130,30 @@ Optional Attributes:
 - `active` (Boolean)
 
 
+<a id="nestedblock--actions--set_request_header"></a>
+### Nested Schema for `actions.set_request_header`
+
+Required Attributes:
+
+- `header` (String) Header name.
+
+Optional Attributes:
+
+- `value` (String) Header value.
+
+
+<a id="nestedblock--actions--set_response_header"></a>
+### Nested Schema for `actions.set_response_header`
+
+Required Attributes:
+
+- `header` (String) Header name.
+
+Optional Attributes:
+
+- `value` (String) Header value.
+
+
 <a id="nestedblock--actions--tcp_reject"></a>
 ### Nested Schema for `actions.tcp_reject`
 
@@ -153,11 +179,15 @@ Blocks:
 - `body_size` (Block List) Matches by HTTP request body size. (see [below for nested schema](#nestedblock--matchers--body_size))
 - `body_size_range` (Block List) Matches by range of HTTP request body sizes. (see [below for nested schema](#nestedblock--matchers--body_size_range))
 - `cookie` (Block List) Matches by HTTP cookie value. Cookie name must be provided. (see [below for nested schema](#nestedblock--matchers--cookie))
-- `header` (Block List) Matches by HTTP header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--header))
+- `header` (Block List, Deprecated) Matches by HTTP header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--header))
 - `host` (Block List) Matches by hostname. Header extracted from HTTP Headers or from TLS certificate in case of secured connection. (see [below for nested schema](#nestedblock--matchers--host))
 - `http_method` (Block List) Matches by HTTP method. (see [below for nested schema](#nestedblock--matchers--http_method))
+- `http_status` (Block List) Matches by HTTP status. (see [below for nested schema](#nestedblock--matchers--http_status))
+- `http_status_range` (Block List) Matches by range of HTTP statuses. (see [below for nested schema](#nestedblock--matchers--http_status_range))
 - `num_members_up` (Block List) Matches by number of healthy backend members. (see [below for nested schema](#nestedblock--matchers--num_members_up))
 - `path` (Block List) Matches by URL path. (see [below for nested schema](#nestedblock--matchers--path))
+- `request_header` (Block List) Matches by HTTP request header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--request_header))
+- `response_header` (Block List) Matches by HTTP response header value. Header name must be provided. (see [below for nested schema](#nestedblock--matchers--response_header))
 - `src_ip` (Block List) Matches by source IP address. (see [below for nested schema](#nestedblock--matchers--src_ip))
 - `src_port` (Block List) Matches by source port number. (see [below for nested schema](#nestedblock--matchers--src_port))
 - `src_port_range` (Block List) Matches by range of source port numbers. (see [below for nested schema](#nestedblock--matchers--src_port_range))
@@ -245,6 +275,32 @@ Optional Attributes:
 - `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
 
 
+<a id="nestedblock--matchers--http_status"></a>
+### Nested Schema for `matchers.http_status`
+
+Required Attributes:
+
+- `method` (String) Match method (`equal`, `greater`, `greater_or_equal`, `less`, `less_or_equal`).
+- `value` (Number) Integer value.
+
+Optional Attributes:
+
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
+
+
+<a id="nestedblock--matchers--http_status_range"></a>
+### Nested Schema for `matchers.http_status_range`
+
+Required Attributes:
+
+- `range_end` (Number) Integer value.
+- `range_start` (Number) Integer value.
+
+Optional Attributes:
+
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
+
+
 <a id="nestedblock--matchers--num_members_up"></a>
 ### Nested Schema for `matchers.num_members_up`
 
@@ -265,6 +321,36 @@ Optional Attributes:
 Required Attributes:
 
 - `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+
+Optional Attributes:
+
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
+- `value` (String) String value.
+
+
+<a id="nestedblock--matchers--request_header"></a>
+### Nested Schema for `matchers.request_header`
+
+Required Attributes:
+
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `name` (String) Name of the argument.
+
+Optional Attributes:
+
+- `ignore_case` (Boolean) Defines if case should be ignored. Defaults to `false`.
+- `inverse` (Boolean) Defines if the condition should be inverted. Works similarly to logical NOT operator.
+- `value` (String) String value.
+
+
+<a id="nestedblock--matchers--response_header"></a>
+### Nested Schema for `matchers.response_header`
+
+Required Attributes:
+
+- `method` (String) Match method (`exact`, `substring`, `regexp`, `starts`, `ends`, `domain`, `ip`, `exists`). Matcher with `exists` and `ip` methods must be used without `value` and `ignore_case` fields.
+- `name` (String) Name of the argument.
 
 Optional Attributes:
 
