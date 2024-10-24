@@ -86,6 +86,8 @@ Required Attributes:
 Optional Attributes:
 
 - `automatic_utility_network_ip_filter` (Boolean) Automatic utility network IP Filter. Automatically allow connections from servers in the utility network within the same zone.
+- `backup_hour` (Number) The hour of day (in UTC) when backup for the service is started. New backup is only started if previous backup has already completed.
+- `backup_minute` (Number) The minute of an hour when backup for the service is started. New backup is only started if previous backup has already completed.
 - `ip_filter` (List of String) IP filter. Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `redis_acl_channels_default` (String) Default ACL for pub/sub channels used when Redis user is created. Determines default pub/sub channels' ACL for new users if ACL is not supplied. When this option is not defined, all_channels is assumed to keep backward compatibility. This option doesn't affect Redis configuration acl-pubsub-default.
