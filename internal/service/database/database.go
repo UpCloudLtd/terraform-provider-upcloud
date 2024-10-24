@@ -250,7 +250,7 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 				continue
 			}
 		}
-		if propsInfo[field].Type == "object" {
+		if properties.GetType(propsInfo[field]) == "object" {
 			// convert resource data list of objects into API objects
 			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
 				// Do similar filtering for nested properties as is done for main level properties.
@@ -283,7 +283,7 @@ func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcl
 			continue
 		}
 
-		if propsInfo[key].Type == "object" {
+		if properties.GetType(propsInfo[key]) == "object" {
 			// convert API objects into list of objects
 			if m, ok := value.(map[string]interface{}); ok {
 				resourceProps[key] = []map[string]interface{}{m}

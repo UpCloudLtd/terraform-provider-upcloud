@@ -47,7 +47,9 @@ func getDescription(key string, prop upcloud.ManagedDatabaseServiceProperty) str
 	return strings.TrimSpace(ensureDot(prop.Title) + " " + ensureDot(prop.Description))
 }
 
-func getType(raw interface{}) string {
+// GetType parses property type from the raw value, which might be either a string or a list of strings. If the type is a list of strings, first non-null value is returned.
+func GetType(prop upcloud.ManagedDatabaseServiceProperty) string {
+	raw := prop.Type
 	if types, ok := raw.([]interface{}); ok {
 		for _, t := range types {
 			if t.(string) != "null" {
@@ -55,7 +57,10 @@ func getType(raw interface{}) string {
 			}
 		}
 	}
-	return raw.(string)
+	if t, ok := raw.(string); ok {
+		return t
+	}
+	return ""
 }
 
 func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool {
@@ -118,7 +123,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema
 
 	validations := []schema.SchemaValidateFunc{} //nolint:staticcheck // Most of the validators still use the deprecated function signature.
 
-	switch getType(prop.Type) {
+	switch GetType(prop) {
 	case "string":
 		s.Type = schema.TypeString
 		var hasEnum, patternMatchesEmpty bool
