@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- Terraform: Introduce support for Terraform protocol version 6. Protocol version 6 requires Terraform CLI version 1.0 and later.
+
 ## [5.13.2] - 2024-10-25
 
 ### Fixed
