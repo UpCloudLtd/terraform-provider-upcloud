@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_loadbalancer_frontend_rule: include `set_request_header`, and `set_response_header` in the _at least one action_ validator.
+
 ## [5.13.1] - 2024-10-24
 
 ### Fixed
