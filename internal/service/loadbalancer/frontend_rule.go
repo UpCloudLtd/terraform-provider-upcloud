@@ -62,7 +62,7 @@ type frontendRuleModel struct {
 }
 
 func validateAtLeastOneAction(action string) validator.List {
-	fields := []string{"http_redirect", "http_return", "set_forwarded_headers", "tcp_reject", "use_backend"}
+	fields := []string{"http_redirect", "http_return", "set_request_header", "set_response_header", "set_forwarded_headers", "tcp_reject", "use_backend"}
 	expressions := []path.Expression{}
 
 	for _, field := range fields {
