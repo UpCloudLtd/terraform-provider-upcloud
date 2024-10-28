@@ -74,7 +74,7 @@ resource "upcloud_loadbalancer" "lb" {
 - `dns_name` (String, Deprecated) DNS name of the load balancer
 - `frontends` (List of String) Frontends receive the traffic before dispatching it to the backends.
 - `id` (String) The unique identifier of the load balancer.
-- `nodes` (Block List) Nodes are instances running load balancer service (see [below for nested schema](#nestedblock--nodes))
+- `nodes` (Attributes List) Nodes are instances running load balancer service (see [below for nested schema](#nestedatt--nodes))
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 - `resolvers` (List of String) Domain Name Resolvers.
 
@@ -97,24 +97,24 @@ Read-Only:
 - `id` (String) The unique identifier of the network.
 
 
-<a id="nestedblock--nodes"></a>
+<a id="nestedatt--nodes"></a>
 ### Nested Schema for `nodes`
 
 Read-Only:
 
-- `networks` (Block List) Networks attached to the node (see [below for nested schema](#nestedblock--nodes--networks))
+- `networks` (Attributes List) Networks attached to the node (see [below for nested schema](#nestedatt--nodes--networks))
 - `operational_state` (String) Node's operational state. Managed by the system.
 
-<a id="nestedblock--nodes--networks"></a>
+<a id="nestedatt--nodes--networks"></a>
 ### Nested Schema for `nodes.networks`
 
 Read-Only:
 
-- `ip_addresses` (Block List) IP addresses attached to the network (see [below for nested schema](#nestedblock--nodes--networks--ip_addresses))
+- `ip_addresses` (Attributes List) IP addresses attached to the network (see [below for nested schema](#nestedatt--nodes--networks--ip_addresses))
 - `name` (String) The name of the network
 - `type` (String) The type of the network
 
-<a id="nestedblock--nodes--networks--ip_addresses"></a>
+<a id="nestedatt--nodes--networks--ip_addresses"></a>
 ### Nested Schema for `nodes.networks.ip_addresses`
 
 Read-Only:
