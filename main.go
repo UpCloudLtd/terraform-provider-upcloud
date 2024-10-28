@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
 )
 
 func main() {
@@ -19,13 +19,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var serveOpts []tf5server.ServeOpt
+	var serveOpts []tf6server.ServeOpt
 
 	if debug {
-		serveOpts = append(serveOpts, tf5server.WithManagedDebug())
+		serveOpts = append(serveOpts, tf6server.WithManagedDebug())
 	}
 
-	err = tf5server.Serve(
+	err = tf6server.Serve(
 		"registry.terraform.io/upcloudltd/upcloud",
 		factory,
 		serveOpts...,

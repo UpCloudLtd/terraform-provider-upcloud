@@ -16,7 +16,7 @@ import (
 func TestAccUpCloudNetworksNoZone(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("", ""),
@@ -29,7 +29,7 @@ func TestAccUpCloudNetworksNoZone(t *testing.T) {
 func TestAccUpCloudNetworksWithZone(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("fi-hel1", ""),
@@ -42,7 +42,7 @@ func TestAccUpCloudNetworksWithZone(t *testing.T) {
 func TestAccUpCloudNetworksWithFilter(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworksConfig("", "^Public.*"),

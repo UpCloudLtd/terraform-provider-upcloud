@@ -21,7 +21,7 @@ func TestAccUpCloudRouter(t *testing.T) {
 	staticRoutes := []upcloud.StaticRoute{{Name: "test-route", Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -55,7 +55,7 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -94,7 +94,7 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -129,7 +129,7 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -163,7 +163,7 @@ func TestAccUpCloudRouter_staticRoutes(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,

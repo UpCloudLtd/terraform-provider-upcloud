@@ -27,9 +27,6 @@ build: fmtcheck
 generate:
 	go generate ./...
 
-build_0_12: fmtcheck
-	go install
-
 test: fmtcheck
 	go test $(TEST) || exit 1
 	echo $(TEST) | \

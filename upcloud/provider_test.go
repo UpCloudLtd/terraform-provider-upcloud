@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -13,15 +13,15 @@ import (
 const debianTemplateUUID = "01000000-0000-4000-8000-000020070100"
 
 var (
-	testAccProviderFactories map[string]func() (tfprotov5.ProviderServer, error)
+	testAccProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
 	testAccProvider          *schema.Provider
 )
 
 func init() {
 	testAccProvider = Provider()
-	testAccProviderFactories = make(map[string]func() (tfprotov5.ProviderServer, error))
+	testAccProviderFactories = make(map[string]func() (tfprotov6.ProviderServer, error))
 
-	testAccProviderFactories["upcloud"] = func() (tfprotov5.ProviderServer, error) {
+	testAccProviderFactories["upcloud"] = func() (tfprotov6.ProviderServer, error) {
 		factory, err := NewProviderServerFactory()
 		return factory(), err
 	}

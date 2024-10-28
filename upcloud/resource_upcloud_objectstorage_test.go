@@ -92,7 +92,7 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName1),
 		Steps: []resource.TestStep{
 			{
@@ -129,7 +129,7 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -177,7 +177,7 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -218,7 +218,7 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             verifyObjectStorageDoesNotExist(objectStorageTestExpectedName2),
 		Steps: []resource.TestStep{
 			{
@@ -315,7 +315,7 @@ func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
 			os.Setenv(accessKeyEnvVarName, accessKey)
 			os.Setenv(secretKeyEnvVarName, secretKey)
 		},
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             verifyObjectStorageDoesNotExist(name),
 		Steps: []resource.TestStep{
 			{

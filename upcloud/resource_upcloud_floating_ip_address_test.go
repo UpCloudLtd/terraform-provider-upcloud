@@ -25,7 +25,7 @@ func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             testAccCheckFloatingIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -55,7 +55,7 @@ func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"test"}, 0),
@@ -83,7 +83,7 @@ func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccProviderFactories,
+		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"first", "second"}, 0),
