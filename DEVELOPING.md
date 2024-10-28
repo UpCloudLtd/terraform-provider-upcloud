@@ -1,7 +1,7 @@
 # Developing the Provider
 ## Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
+* [Terraform](https://www.terraform.io/downloads.html) 1.0.0 or later
 * [Go](https://golang.org/doc/install) > 1.14
 
 Get the provider source code:
@@ -185,73 +185,3 @@ UpCloud provider can be run in debug mode using a debugger such as Delve.
 For more information, see [Terraform docs](https://www.terraform.io/docs/extend/debugging.html#starting-a-provider-in-debug-mode)  
 
 Environment variables `UPCLOUD_DEBUG_API_BASE_URL` and `UPCLOUD_DEBUG_SKIP_CERTIFICATE_VERIFY` can be used for HTTP client debugging purposes. More information can be found in the client's [README](https://github.com/UpCloudLtd/upcloud-go-api/blob/986ca6da9ca85ff51ecacc588215641e2e384cfa/README.md#debugging) file.
-
-## Consuming local provider with Terraform 0.12.0
-
-With the release of Terraform 0.13.0 the discovery of a locally built provider
-binary has changed.  These changes have been made to allow all providers to be
-discovered from public and provider registries.
-
-The UpCloud makefile supports the old, Terraform 0.12 style where plugin
-directory structure is not relevant and only the binary name matters.
-
-The following make command can be executed to build and place the provider in
-the Go binary directory. Make sure your PATH includes the Go binary directory.
-
-```sh
-make build_0_12
-```
-
-After the provider has been built and can be executed, you can then use
-standard terraform commands as normal.
-
-### Using local provider with Terraform 0.12 or earlier
-
-```terraform
-# configure the provider
-provider "upcloud" {
-  # Your UpCloud credentials are read from the environment variables:
-  # export UPCLOUD_USERNAME="Username of your UpCloud API user"
-  # export UPCLOUD_PASSWORD="Password of your UpCloud API user"
-}
-
-# create a server
-resource "upcloud_server" "example" {
-  hostname = "terraform.example.tld"
-  zone     = "de-fra1"
-  plan     = "1xCPU-1GB"
-
-  # Declare network interfaces
-  network_interface {
-    type = "public"
-  }
-
-  network_interface {
-    type = "utility"
-  }
-
-  # Include at least one public SSH key
-  login {
-    user = "terraform"
-    keys = [
-      "<YOUR SSH PUBLIC KEY>",
-    ]
-    create_password = false
-  }
-
-  # Provision the server with Ubuntu
-  template {
-    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
-
-    # Use all the space allotted by the selected simple plan
-    size = 25
-
-    # Enable backups
-    backup_rule {
-      interval  = "daily"
-      time      = "0100"
-      retention = 8
-    }
-  }
-}
-```

@@ -65,7 +65,7 @@ provider "upcloud" {
 
 ### Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) 0.12.x or later
+* [Terraform](https://www.terraform.io/downloads.html) 1.0.0 or later
 
 
 It's recommended to configure your credentials using environment variable:
@@ -90,7 +90,7 @@ permissions for increased security:
    create the sub-account
 
 Below is an example configuration on how to create a server using the Terraform
-provider with Terraform 0.13 or later:
+provider with Terraform 1.0.0 or later:
 
 ```terraform
 # set the provider version
