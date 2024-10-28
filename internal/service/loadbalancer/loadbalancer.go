@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -84,9 +85,30 @@ type loadbalancerNodeNetworkModel struct {
 	IPAddresses types.List   `tfsdk:"ip_addresses"`
 }
 
+func (m loadbalancerNodeNetworkModel) ElementType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+			"type": types.StringType,
+			"ip_addresses": types.ListType{
+				ElemType: loadBalancerNodeNetworkIPAddressModel{}.ElementType(),
+			},
+		},
+	}
+}
+
 type loadBalancerNodeNetworkIPAddressModel struct {
 	Address types.String `tfsdk:"address"`
 	Listen  types.Bool   `tfsdk:"listen"`
+}
+
+func (m loadBalancerNodeNetworkIPAddressModel) ElementType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"address": types.StringType,
+			"listen":  types.BoolType,
+		},
+	}
 }
 
 func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -162,6 +184,50 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 				Default:             stringdefault.StaticString(""),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"nodes": schema.ListNestedAttribute{
+				MarkdownDescription: "Nodes are instances running load balancer service",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"operational_state": schema.StringAttribute{
+							MarkdownDescription: "Node's operational state. Managed by the system.",
+							Computed:            true,
+						},
+						"networks": schema.ListNestedAttribute{
+							MarkdownDescription: "Networks attached to the node",
+							Computed:            true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"name": schema.StringAttribute{
+										MarkdownDescription: "The name of the network",
+										Computed:            true,
+									},
+									"type": schema.StringAttribute{
+										MarkdownDescription: "The type of the network",
+										Computed:            true,
+									},
+									"ip_addresses": schema.ListNestedAttribute{
+										MarkdownDescription: "IP addresses attached to the network",
+										Computed:            true,
+										NestedObject: schema.NestedAttributeObject{
+											Attributes: map[string]schema.Attribute{
+												"address": schema.StringAttribute{
+													MarkdownDescription: "Node's IP address",
+													Computed:            true,
+												},
+												"listen": schema.BoolAttribute{
+													MarkdownDescription: "Whether the node listens to the traffic",
+													Computed:            true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 			"operational_state": schema.StringAttribute{
@@ -262,51 +328,6 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 					getNetworksPlanModifier(),
 				},
 			},
-			"nodes": schema.ListNestedBlock{
-				MarkdownDescription: "Nodes are instances running load balancer service",
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						"operational_state": schema.StringAttribute{
-							MarkdownDescription: "Node's operational state. Managed by the system.",
-							Computed:            true,
-						},
-					},
-					Blocks: map[string]schema.Block{
-						"networks": schema.ListNestedBlock{
-							MarkdownDescription: "Networks attached to the node",
-							NestedObject: schema.NestedBlockObject{
-								Attributes: map[string]schema.Attribute{
-									"name": schema.StringAttribute{
-										MarkdownDescription: "The name of the network",
-										Computed:            true,
-									},
-									"type": schema.StringAttribute{
-										MarkdownDescription: "The type of the network",
-										Computed:            true,
-									},
-								},
-								Blocks: map[string]schema.Block{
-									"ip_addresses": schema.ListNestedBlock{
-										MarkdownDescription: "IP addresses attached to the network",
-										NestedObject: schema.NestedBlockObject{
-											Attributes: map[string]schema.Attribute{
-												"address": schema.StringAttribute{
-													MarkdownDescription: "Node's IP address",
-													Computed:            true,
-												},
-												"listen": schema.BoolAttribute{
-													MarkdownDescription: "Whether the node listens to the traffic",
-													Computed:            true,
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 	}
 }
@@ -366,21 +387,11 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 
 	data.ID = types.StringValue(loadBalancer.UUID)
 
-	blocks := make(map[string]schema.ListNestedBlock)
-	for k, v := range req.Config.Schema.GetBlocks() {
-		block, ok := v.(schema.ListNestedBlock)
-		if !ok {
-			continue
-		}
-
-		blocks[k] = block
-	}
-
-	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer, blocks)...)
+	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbalancer *upcloud.LoadBalancer, blocks map[string]schema.ListNestedBlock) diag.Diagnostics {
+func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbalancer *upcloud.LoadBalancer) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
 	backendNames := []string{}
@@ -425,44 +436,44 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 
 	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
 	respDiagnostics.Append(diags...)
-	data.Nodes = types.ListNull(blocks["nodes"].NestedObject.Type())
 
-	if len(loadbalancer.Nodes) > 0 {
-		ipAddressElementType := blocks["nodes"].NestedObject.Blocks["networks"].(schema.ListNestedBlock).NestedObject.Blocks["ip_addresses"].(schema.ListNestedBlock).NestedObject.Type()
-		networkElementType := blocks["nodes"].NestedObject.Blocks["networks"].(schema.ListNestedBlock).NestedObject.Type()
-		nodeElementType := blocks["nodes"].NestedObject.Type()
-
-		nodes := make([]loadbalancerNodeModel, len(loadbalancer.Nodes))
-		for i, n := range loadbalancer.Nodes {
-			networkData := make([]loadbalancerNodeNetworkModel, len(n.Networks))
-			for j, network := range n.Networks {
-				ipAddressData := make([]loadBalancerNodeNetworkIPAddressModel, len(network.IPAddresses))
-				for k, ip := range network.IPAddresses {
-					ipAddressData[k] = loadBalancerNodeNetworkIPAddressModel{
-						Address: types.StringValue(ip.Address),
-						Listen:  types.BoolValue(ip.Listen),
-					}
-				}
-				networkData[j] = loadbalancerNodeNetworkModel{
-					Name: types.StringValue(network.Name),
-					Type: types.StringValue(string(network.Type)),
-				}
-				ipAddress, diags := types.ListValueFrom(ctx, ipAddressElementType, ipAddressData)
-				respDiagnostics.Append(diags...)
-				networkData[j].IPAddresses = ipAddress
-			}
-			nodeData := loadbalancerNodeModel{
-				OperationalState: types.StringValue(string(n.OperationalState)),
-			}
-			networks, diags := types.ListValueFrom(ctx, networkElementType, networkData)
-			respDiagnostics.Append(diags...)
-			nodeData.Networks = networks
-			nodes[i] = nodeData
+	nodes := make([]loadbalancerNodeModel, len(loadbalancer.Nodes))
+	for i, node := range loadbalancer.Nodes {
+		dataNode := loadbalancerNodeModel{
+			OperationalState: types.StringValue(string(node.OperationalState)),
 		}
+		nodeNetworks := make([]loadbalancerNodeNetworkModel, len(node.Networks))
 
-		data.Nodes, diags = types.ListValueFrom(ctx, nodeElementType, nodes)
-		respDiagnostics.Append(diags...)
+		for j, nodeNetwork := range node.Networks {
+			dataNetwork := loadbalancerNodeNetworkModel{
+				Name: types.StringValue(nodeNetwork.Name),
+				Type: types.StringValue(string(nodeNetwork.Type)),
+			}
+
+			nodeNetworkIPAddresses := make([]loadBalancerNodeNetworkIPAddressModel, len(nodeNetwork.IPAddresses))
+			for k, nodeNetworkIPAddress := range nodeNetwork.IPAddresses {
+				nodeNetworkIPAddresses[k] = loadBalancerNodeNetworkIPAddressModel{
+					Address: types.StringValue(nodeNetworkIPAddress.Address),
+					Listen:  types.BoolValue(nodeNetworkIPAddress.Listen),
+				}
+			}
+
+			dataNodeNetworkIPAddresses, ipDiags := types.ListValueFrom(ctx, loadBalancerNodeNetworkIPAddressModel{}.ElementType(), nodeNetworkIPAddresses)
+			respDiagnostics.Append(ipDiags...)
+			dataNetwork.IPAddresses = dataNodeNetworkIPAddresses
+
+			nodeNetworks[j] = dataNetwork
+		}
+		dataNodeNetworks, networkDiags := types.ListValueFrom(ctx, loadbalancerNodeNetworkModel{}.ElementType(), nodeNetworks)
+		respDiagnostics.Append(networkDiags...)
+
+		dataNode.Networks = dataNodeNetworks
+
+		nodes[i] = dataNode
 	}
+
+	data.Nodes, diags = types.ListValueFrom(ctx, data.Nodes.ElementType(ctx), nodes)
+	respDiagnostics.Append(diags...)
 
 	data.OperationalState = types.StringValue(string(loadbalancer.OperationalState))
 	data.Plan = types.StringValue(loadbalancer.Plan)
@@ -507,17 +518,7 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	blocks := make(map[string]schema.ListNestedBlock)
-	for k, v := range req.State.Schema.GetBlocks() {
-		block, ok := v.(schema.ListNestedBlock)
-		if !ok {
-			continue
-		}
-
-		blocks[k] = block
-	}
-
-	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer, blocks)...)
+	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -590,17 +591,7 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 
 	data.ID = types.StringValue(loadBalancer.UUID)
 
-	blocks := make(map[string]schema.ListNestedBlock)
-	for k, v := range req.Config.Schema.GetBlocks() {
-		block, ok := v.(schema.ListNestedBlock)
-		if !ok {
-			continue
-		}
-
-		blocks[k] = block
-	}
-
-	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer, blocks)...)
+	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
