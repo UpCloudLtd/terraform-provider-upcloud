@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_object_storage_bucket resource for managing buckets in managed object storage services.
+
 ## [5.14.0] - 2024-10-28
 
 ### Changed

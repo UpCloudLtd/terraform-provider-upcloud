@@ -15,6 +15,7 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 
 	this := "upcloud_managed_object_storage.this"
 	minimal := "upcloud_managed_object_storage.minimal"
+	bucket := "upcloud_managed_object_storage_bucket.this"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -37,7 +38,13 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 				ResourceName:            this,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"operational_state"},
+				ImportStateVerifyIgnore: []string{"operational_state", "updated_at"},
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      bucket,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 			{
 				Config:                  testDataS1,
