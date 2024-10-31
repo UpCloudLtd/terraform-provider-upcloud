@@ -152,10 +152,12 @@ func ResourceServer() *schema.Resource {
 				Optional:    true,
 			},
 			"network_interface": {
-				Type:        schema.TypeList,
-				Description: "One or more blocks describing the network interfaces of the server.",
-				Required:    true,
-				MinItems:    1,
+				Type: schema.TypeList,
+				Description: `One or more blocks describing the network interfaces of the server.
+
+    In addition to list order, the configured network interfaces are matched to the server's actual network interfaces by index and ip_address. This is to avoid public and utility network interfaces being re-assigned when the server is updated. This might result to inaccurate diffs in the Terraform plan when interfaces are re-ordered or when interface is removed from middle of the list.`,
+				Required: true,
+				MinItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"index": {
@@ -611,8 +613,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 			continue
 		}
 
-		primaryIPInState := d.Get(fmt.Sprintf("network_interface.%d.ip_address", i))
-		ni := setInterfaceValues((*upcloud.Interface)(iface), primaryIPInState.(string))
+		ni := setInterfaceValues((*upcloud.Interface)(iface))
 		networkInterfaces[i] = ni
 
 		if iface.Type == upcloud.NetworkTypePublic &&

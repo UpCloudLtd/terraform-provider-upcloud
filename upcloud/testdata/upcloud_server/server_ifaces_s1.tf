@@ -52,7 +52,14 @@ resource "upcloud_server" "this" {
   }
 
   network_interface {
-    index = 4
+    type    = "private"
+    index   = 4
+    ip_address = "10.100.3.30"
+    network = upcloud_network.this.id
+  }
+
+  network_interface {
+    index = 5
     type  = "utility"
   }
 

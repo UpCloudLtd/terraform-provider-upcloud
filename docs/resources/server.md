@@ -77,7 +77,9 @@ resource "upcloud_server" "example" {
 ### Blocks
 
 - `login` (Block Set, Max: 1) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
-- `network_interface` (Block List, Min: 1) One or more blocks describing the network interfaces of the server. (see [below for nested schema](#nestedblock--network_interface))
+- `network_interface` (Block List, Min: 1) One or more blocks describing the network interfaces of the server.
+
+    In addition to list order, the configured network interfaces are matched to the server's actual network interfaces by index and ip_address. This is to avoid public and utility network interfaces being re-assigned when the server is updated. This might result to inaccurate diffs in the Terraform plan when interfaces are re-ordered or when interface is removed from middle of the list. (see [below for nested schema](#nestedblock--network_interface))
 - `simple_backup` (Block Set, Max: 1) Simple backup schedule configuration  
 				The idea behind simple backups is to provide a simplified way of backing up *all* of the storages attached to a given server. 
 				This means you cannot have simple backup set for a server, and then some individual backup_rules on the storages attached to said server. 
@@ -115,6 +117,7 @@ Required Attributes:
 Optional Attributes:
 
 - `bootable` (Boolean) `true` if this interface should be used for network booting.
+- `index` (Number) The interface index.
 - `ip_address` (String) The assigned primary IP address.
 - `ip_address_family` (String) The type of the primary IP address of this interface (one of `IPv4` or `IPv6`).
 - `network` (String) The unique ID of a network to attach this network to.

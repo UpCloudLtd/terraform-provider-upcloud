@@ -13,14 +13,14 @@ import (
 )
 
 func findInterface(ifaces []upcloud.ServerInterface, index int, ip string) *upcloud.ServerInterface {
-	for _, i := range ifaces {
-		if i.Index == index {
-			return &i
+	for _, iface := range ifaces {
+		if iface.Index == index {
+			return &iface
 		}
 	}
-	for _, i := range ifaces {
-		if len(i.IPAddresses) > 0 && i.IPAddresses[0].Address == ip {
-			return &i
+	for _, iface := range ifaces {
+		if len(iface.IPAddresses) > 0 && iface.IPAddresses[0].Address == ip {
+			return &iface
 		}
 	}
 	return nil
@@ -39,25 +39,18 @@ func canModifyInterface(plan map[string]interface{}, prev *upcloud.ServerInterfa
 	return true
 }
 
-func setInterfaceValues(iface *upcloud.Interface, primaryIPInState string) map[string]interface{} {
-	primaryIPSet := primaryIPInState != ""
-
+func setInterfaceValues(iface *upcloud.Interface) map[string]interface{} {
 	ni := make(map[string]interface{})
 	additionalIPAddresses := []map[string]interface{}{}
 
 	for i, ipAddress := range iface.IPAddresses {
-		// If the primary IP address is not set in the state, use the first IP address as primary. Otherwise,
-		// re-use the matching primary IP address
-		if (i == 0 && !primaryIPSet) || (primaryIPSet && primaryIPInState == ipAddress.Address) {
+		if i == 0 {
 			ni["ip_address_family"] = ipAddress.Family
 			ni["ip_address"] = ipAddress.Address
 			if !ipAddress.Floating.Empty() {
 				ni["ip_address_floating"] = ipAddress.Floating.Bool()
 			}
-
-			continue
-		}
-		if iface.Type == upcloud.NetworkTypePrivate {
+		} else if iface.Type == upcloud.NetworkTypePrivate {
 			additionalIPAddress := map[string]interface{}{
 				"ip_address":        ipAddress.Address,
 				"ip_address_family": ipAddress.Family,
@@ -68,19 +61,6 @@ func setInterfaceValues(iface *upcloud.Interface, primaryIPInState string) map[s
 			additionalIPAddresses = append(additionalIPAddresses, additionalIPAddress)
 		}
 	}
-	// If the primary IP address was not found, use the first additional IP address as primary instead. This might
-	// happen if the attached network was changed.
-	if _, ok := ni["ip_address"]; !ok && len(additionalIPAddresses) > 0 {
-		ni["ip_address_family"] = additionalIPAddresses[0]["ip_address_family"]
-		ni["ip_address"] = additionalIPAddresses[0]["ip_address"]
-		if _, ok := additionalIPAddresses[0]["ip_address_floating"]; ok {
-			ni["ip_address_floating"] = additionalIPAddresses[0]["ip_address_floating"]
-		}
-
-		// remove first element of additionalIPAddresses
-		additionalIPAddresses = append(additionalIPAddresses[:0], additionalIPAddresses[1:]...)
-	}
-
 	ni["additional_ip_address"] = additionalIPAddresses
 
 	ni["index"] = iface.Index
@@ -183,7 +163,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 				return err
 			}
 		}
-		networkInterfaces[i] = setInterfaceValues(iface, val["ip_address"].(string))
+		networkInterfaces[i] = setInterfaceValues(iface)
 	}
 
 	if err := d.Set("network_interface", networkInterfaces); err != nil {

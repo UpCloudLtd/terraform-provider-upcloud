@@ -43,7 +43,7 @@ resource "upcloud_server" "this" {
 
   network_interface {
     type  = "public"
-    index = 1
+    index = 10
   }
 
   network_interface {
