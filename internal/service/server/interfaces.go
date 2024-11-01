@@ -26,17 +26,81 @@ func findInterface(ifaces []upcloud.ServerInterface, index int, ip string) *upcl
 	return nil
 }
 
+func interfacesToMap(ifaces []interface{}) map[int]interface{} {
+	m := make(map[int]interface{})
+	for _, iface := range ifaces {
+		val := iface.(map[string]interface{})
+		m[val["index"].(int)] = iface
+	}
+	return m
+}
+
+func findInterfaceFromState(ifaces map[int]interface{}, index int, ip, t string) (int, map[string]interface{}, map[int]interface{}) {
+	for i, iface := range ifaces {
+		val := iface.(map[string]interface{})
+		if val["index"].(int) == index {
+			delete(ifaces, i)
+			return i, iface.(map[string]interface{}), ifaces
+		}
+	}
+	for i, iface := range ifaces {
+		val := iface.(map[string]interface{})
+		if val["ip_address"].(string) == ip && val["type"].(string) == t {
+			delete(ifaces, i)
+			return i, iface.(map[string]interface{}), ifaces
+		}
+	}
+	return -1, nil, ifaces
+}
+
 func canModifyInterface(plan map[string]interface{}, prev *upcloud.ServerInterface) bool {
-	if prev.Type != plan["type"].(string) {
+	if v, ok := plan["type"].(string); !ok || prev.Type != v {
 		return false
 	}
-	if prev.Network != plan["network"].(string) {
+	if v, ok := plan["network"].(string); !ok || prev.Network != v {
 		return false
 	}
-	if len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Family != plan["ip_address_family"].(string) {
+	if v, ok := plan["ip_address_family"].(string); !ok || len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Family != v {
 		return false
+	}
+	if prev.Type == upcloud.NetworkTypePrivate {
+		if v, ok := plan["ip_address"].(string); !ok || len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Address != v {
+			return false
+		}
 	}
 	return true
+}
+
+func shouldModifyInterface(plan map[string]interface{}, addresses request.CreateNetworkInterfaceIPAddressSlice, iface *upcloud.ServerInterface) bool {
+	if iface.Index != plan["index"].(int) {
+		return true
+	}
+
+	if iface.Bootable.Bool() != plan["bootable"].(bool) {
+		return true
+	}
+
+	if iface.SourceIPFiltering.Bool() != plan["source_ip_filtering"].(bool) {
+		return true
+	}
+
+	for i, ip := range iface.IPAddresses {
+		if i >= len(addresses) {
+			return true
+		}
+		if ip.Family != addresses[i].Family {
+			return true
+		}
+		// Additional IP addresses are only set for private networks
+		if iface.Type != upcloud.NetworkTypePrivate {
+			break
+		}
+		if ip.Address != addresses[i].Address {
+			return true
+		}
+	}
+
+	return false
 }
 
 func setInterfaceValues(iface *upcloud.Interface) map[string]interface{} {
@@ -77,6 +141,10 @@ func setInterfaceValues(iface *upcloud.Interface) map[string]interface{} {
 	return ni
 }
 
+func interfaceKey(i int) string {
+	return fmt.Sprintf("network_interface.%d", i)
+}
+
 func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData) error {
 	// Assert server is stopped
 	s, err := svc.GetServerDetails(ctx, &request.GetServerDetailsRequest{
@@ -95,10 +163,60 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 		return errors.New("unable to read network_interface count")
 	}
 
-	networkInterfaces := make([]map[string]interface{}, n)
+	newNetworkInterfaces := make([]map[string]interface{}, n)
+	networkInterfaces := interfacesToMap(d.Get("network_interface").([]interface{}))
+	modifiedInterfaces := make(map[int]*upcloud.Interface)
 
+	// Try to modify existing server interfaces
+	var i int
+	var val map[string]interface{}
+	for _, iface := range s.Networking.Interfaces {
+		i, val, networkInterfaces = findInterfaceFromState(networkInterfaces, iface.Index, iface.IPAddresses[0].Address, iface.Type)
+
+		// Remove interface if it has been removed from configuration
+		if val == nil {
+			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+				ServerUUID: d.Id(),
+				Index:      iface.Index,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		if !canModifyInterface(val, &iface) {
+			continue
+		}
+
+		addresses, err := addressesFromResourceData(ctx, svc, d, interfaceKey(i))
+		if err != nil {
+			return err
+		}
+
+		modified := (*upcloud.Interface)(&iface)
+		if shouldModifyInterface(val, addresses, &iface) {
+			req := request.ModifyNetworkInterfaceRequest{
+				ServerUUID:   d.Id(),
+				CurrentIndex: iface.Index,
+
+				NewIndex:          val["index"].(int),
+				SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
+				Bootable:          upcloud.FromBool(val["bootable"].(bool)),
+			}
+			if iface.Type == upcloud.NetworkTypePrivate {
+				req.IPAddresses = addresses
+			}
+			modified, err = svc.ModifyNetworkInterface(ctx, &req)
+			if err != nil {
+				return err
+			}
+		}
+		modifiedInterfaces[modified.Index] = modified
+	}
+
+	// Replace interfaces that can not be modified
 	for i := 0; i < n; i++ {
-		key := fmt.Sprintf("network_interface.%d", i)
+		key := interfaceKey(i)
 		index := d.Get(key + ".index").(int)
 		indicesToKeep[index] = true
 
@@ -108,7 +226,12 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 		}
 
 		if !d.HasChange(key) {
-			networkInterfaces[i] = val
+			newNetworkInterfaces[i] = val
+			continue
+		}
+
+		if modified := modifiedInterfaces[index]; modified != nil {
+			newNetworkInterfaces[i] = setInterfaceValues(modified)
 			continue
 		}
 
@@ -123,64 +246,34 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 			network = val["network"].(string)
 		}
 
-		prev := findInterface(s.Networking.Interfaces, index, val["ip_address"].(string))
-		var iface *upcloud.Interface
-		if prev == nil || !canModifyInterface(val, prev) {
-			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: d.Id(),
-				Index:      index,
-			})
-			if err != nil {
-				var ucProb *upcloud.Problem
-				if errors.As(err, &ucProb) && ucProb.Type != upcloud.ErrCodeInterfaceNotFound {
-					return err
-				}
-			}
-
-			iface, err = svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
-				ServerUUID:        d.Id(),
-				Index:             index,
-				Type:              val["type"].(string),
-				NetworkUUID:       network,
-				IPAddresses:       addresses,
-				SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
-				Bootable:          upcloud.FromBool(val["bootable"].(bool)),
-			})
-			if err != nil {
-				return err
-			}
-		} else {
-			iface, err = svc.ModifyNetworkInterface(ctx, &request.ModifyNetworkInterfaceRequest{
-				ServerUUID:   d.Id(),
-				CurrentIndex: prev.Index,
-
-				NewIndex:          val["index"].(int),
-				IPAddresses:       addresses,
-				SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
-				Bootable:          upcloud.FromBool(val["bootable"].(bool)),
-			})
-			if err != nil {
+		err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+			ServerUUID: d.Id(),
+			Index:      index,
+		})
+		if err != nil {
+			var ucProb *upcloud.Problem
+			if errors.As(err, &ucProb) && ucProb.Type != upcloud.ErrCodeInterfaceNotFound {
 				return err
 			}
 		}
-		networkInterfaces[i] = setInterfaceValues(iface)
+
+		iface, err := svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
+			ServerUUID:        d.Id(),
+			Index:             index,
+			Type:              val["type"].(string),
+			NetworkUUID:       network,
+			IPAddresses:       addresses,
+			SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
+			Bootable:          upcloud.FromBool(val["bootable"].(bool)),
+		})
+		if err != nil {
+			return err
+		}
+		newNetworkInterfaces[i] = setInterfaceValues(iface)
 	}
 
-	if err := d.Set("network_interface", networkInterfaces); err != nil {
+	if err := d.Set("network_interface", newNetworkInterfaces); err != nil {
 		return err
-	}
-
-	// Remove interfaces that are removed from configuration
-	for _, iface := range s.Networking.Interfaces {
-		if !indicesToKeep[iface.Index] {
-			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: d.Id(),
-				Index:      iface.Index,
-			})
-			if err != nil {
-				return err
-			}
-		}
 	}
 	return nil
 }

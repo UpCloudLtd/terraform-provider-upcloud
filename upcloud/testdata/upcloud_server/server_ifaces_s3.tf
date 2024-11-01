@@ -37,7 +37,7 @@ resource "upcloud_server" "this" {
   // Reorder interfaces
 
   network_interface {
-    index = 4
+    index = 5
     type  = "utility"
   }
 

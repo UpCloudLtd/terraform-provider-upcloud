@@ -72,6 +72,7 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_ifaces_s3.tf")
 
 	this := "upcloud_server.this"
+	family := "upcloud_server.family"
 
 	var thisIP1, thisIP4, thisIP5 string
 
@@ -91,13 +92,15 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 					checkStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP4),
 					resource.TestCheckResourceAttr(this, "network_interface.4.index", "5"),
 					checkStringDoesNotChange(this, "network_interface.4.ip_address", &thisIP5),
+					// IP family change
+					resource.TestCheckResourceAttr(family, "network_interface.0.ip_address_family", "IPv4"),
 				),
 			},
 			{
 				Config: testDataS2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(this, "network_interface.#", "4"),
-					resource.TestCheckResourceAttr(this, "network_interface.0.index", "1"),
+					resource.TestCheckResourceAttr(this, "network_interface.0.index", "10"),
 					checkStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP1),
 					resource.TestCheckResourceAttr(this, "network_interface.1.index", "3"),
 					// Private IP will be re-assigned because it is not specified in the configuration
@@ -105,6 +108,8 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 					checkStringDoesNotChange(this, "network_interface.2.ip_address", &thisIP4),
 					resource.TestCheckResourceAttr(this, "network_interface.3.index", "5"),
 					checkStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP5),
+					// IP family change
+					resource.TestCheckResourceAttr(family, "network_interface.0.ip_address_family", "IPv6"),
 				),
 			},
 			{
@@ -113,7 +118,7 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 					resource.TestCheckResourceAttr(this, "network_interface.#", "3"),
 					resource.TestCheckResourceAttr(this, "network_interface.0.index", "4"),
 					checkStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP4),
-					resource.TestCheckResourceAttr(this, "network_interface.1.index", "1"),
+					resource.TestCheckResourceAttr(this, "network_interface.1.index", "10"),
 					checkStringDoesNotChange(this, "network_interface.1.ip_address", &thisIP1),
 					resource.TestCheckResourceAttr(this, "network_interface.2.index", "3"),
 					// Private IP will be re-assigned because it is not specified in the configuration

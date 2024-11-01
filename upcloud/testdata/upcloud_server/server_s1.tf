@@ -20,11 +20,11 @@ resource "upcloud_network" "n1" {
 
 resource "upcloud_server" "server1" {
   hostname = "${var.prefix}server1"
-  zone     =  var.zone
+  zone     = var.zone
 
   network_interface {
-    type = "private"
-    network = upcloud_network.n1.id
+    type       = "private"
+    network    = upcloud_network.n1.id
     ip_address = "172.102.0.2"
     additional_ip_address {
       ip_address = "172.102.0.3"

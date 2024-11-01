@@ -155,7 +155,7 @@ func ResourceServer() *schema.Resource {
 				Type: schema.TypeList,
 				Description: `One or more blocks describing the network interfaces of the server.
 
-    In addition to list order, the configured network interfaces are matched to the server's actual network interfaces by index and ip_address. This is to avoid public and utility network interfaces being re-assigned when the server is updated. This might result to inaccurate diffs in the Terraform plan when interfaces are re-ordered or when interface is removed from middle of the list.`,
+    In addition to list order, the configured network interfaces are matched to the server's actual network interfaces by ` + "`" + `index` + "`" + ` and ` + "`" + `ip_address` + "`" + ` fields. This is to avoid public and utility network interfaces being re-assigned when the server is updated. This might result to inaccurate diffs in the plan, when interfaces are re-ordered or when interface is removed from the middle of the list.`,
 				Required: true,
 				MinItems: 1,
 				Elem: &schema.Resource{
