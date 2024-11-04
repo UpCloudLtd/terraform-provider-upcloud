@@ -12,14 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func findInterface(ifaces []upcloud.ServerInterface, index int, ip string) *upcloud.ServerInterface {
+func findInterface(ifaces []upcloud.ServerInterface, index int) *upcloud.ServerInterface {
 	for _, iface := range ifaces {
 		if iface.Index == index {
-			return &iface
-		}
-	}
-	for _, iface := range ifaces {
-		if len(iface.IPAddresses) > 0 && iface.IPAddresses[0].Address == ip {
 			return &iface
 		}
 	}
@@ -28,9 +23,8 @@ func findInterface(ifaces []upcloud.ServerInterface, index int, ip string) *upcl
 
 func interfacesToMap(ifaces []interface{}) map[int]interface{} {
 	m := make(map[int]interface{})
-	for _, iface := range ifaces {
-		val := iface.(map[string]interface{})
-		m[val["index"].(int)] = iface
+	for i, iface := range ifaces {
+		m[i] = iface
 	}
 	return m
 }
@@ -57,13 +51,13 @@ func canModifyInterface(plan map[string]interface{}, prev *upcloud.ServerInterfa
 	if v, ok := plan["type"].(string); !ok || prev.Type != v {
 		return false
 	}
-	if v, ok := plan["network"].(string); !ok || prev.Network != v {
-		return false
-	}
 	if v, ok := plan["ip_address_family"].(string); !ok || len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Family != v {
 		return false
 	}
 	if prev.Type == upcloud.NetworkTypePrivate {
+		if v, ok := plan["network"].(string); !ok || prev.Network != v {
+			return false
+		}
 		if v, ok := plan["ip_address"].(string); !ok || len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Address != v {
 			return false
 		}
@@ -103,18 +97,31 @@ func shouldModifyInterface(plan map[string]interface{}, addresses request.Create
 	return false
 }
 
-func setInterfaceValues(iface *upcloud.Interface) map[string]interface{} {
+func setInterfaceValues(iface *upcloud.Interface, ipInState interface{}) map[string]interface{} {
 	ni := make(map[string]interface{})
 	additionalIPAddresses := []map[string]interface{}{}
 
+	// IP addresses are not returned in deterministic order. If any of the IP addresses of the interface match the IP address in state, use that.
+	if ip, ok := ipInState.(string); ok {
+		for _, ipAddress := range iface.IPAddresses {
+			if ipAddress.Address == ip {
+				ni["ip_address_family"] = ipAddress.Family
+				ni["ip_address"] = ipAddress.Address
+				if !ipAddress.Floating.Empty() {
+					ni["ip_address_floating"] = ipAddress.Floating.Bool()
+				}
+			}
+		}
+	}
+
 	for i, ipAddress := range iface.IPAddresses {
-		if i == 0 {
+		if i == 0 && ni["ip_address"] == nil {
 			ni["ip_address_family"] = ipAddress.Family
 			ni["ip_address"] = ipAddress.Address
 			if !ipAddress.Floating.Empty() {
 				ni["ip_address_floating"] = ipAddress.Floating.Bool()
 			}
-		} else if iface.Type == upcloud.NetworkTypePrivate {
+		} else if iface.Type == upcloud.NetworkTypePrivate && ipAddress.Address != ni["ip_address"].(string) {
 			additionalIPAddress := map[string]interface{}{
 				"ip_address":        ipAddress.Address,
 				"ip_address_family": ipAddress.Family,
@@ -231,7 +238,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 		}
 
 		if modified := modifiedInterfaces[index]; modified != nil {
-			newNetworkInterfaces[i] = setInterfaceValues(modified)
+			newNetworkInterfaces[i] = setInterfaceValues(modified, val["ip_address"])
 			continue
 		}
 
@@ -269,7 +276,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 		if err != nil {
 			return err
 		}
-		newNetworkInterfaces[i] = setInterfaceValues(iface)
+		newNetworkInterfaces[i] = setInterfaceValues(iface, val["ip_address"])
 	}
 
 	if err := d.Set("network_interface", newNetworkInterfaces); err != nil {

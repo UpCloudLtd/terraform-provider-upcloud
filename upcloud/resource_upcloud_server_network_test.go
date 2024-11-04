@@ -116,8 +116,8 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 				Config: testDataS3,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(this, "network_interface.#", "3"),
-					resource.TestCheckResourceAttr(this, "network_interface.0.index", "4"),
-					checkStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP4),
+					resource.TestCheckResourceAttr(this, "network_interface.0.index", "5"),
+					checkStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP5),
 					resource.TestCheckResourceAttr(this, "network_interface.1.index", "10"),
 					checkStringDoesNotChange(this, "network_interface.1.ip_address", &thisIP1),
 					resource.TestCheckResourceAttr(this, "network_interface.2.index", "3"),

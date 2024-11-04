@@ -19,9 +19,10 @@ resource "upcloud_network" "this" {
   }
 }
 
-resource "upcloud_floating_ip_address" "this" {
-  mac_address = upcloud_server.this.network_interface[0].mac_address
-}
+# Nested field can not be set as unkown, so we need to remove the floating IP address to avoid data consistency error: https://github.com/hashicorp/terraform-plugin-sdk/issues/459
+# resource "upcloud_floating_ip_address" "this" {
+#   mac_address = upcloud_server.this.network_interface[1].mac_address
+# }
 
 resource "upcloud_server" "this" {
   hostname = "${var.prefix}vm"
@@ -34,7 +35,7 @@ resource "upcloud_server" "this" {
     keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB8Q"]
   }
 
-  // Reorder interfaces
+  // Reorder interfaces, remove interface with index 4
 
   network_interface {
     index = 5

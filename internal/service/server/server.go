@@ -597,7 +597,7 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	networkInterfaces := make([]map[string]interface{}, n)
 	for i := 0; i < n; i++ {
-		key := fmt.Sprintf("network_interface.%d", i)
+		key := interfaceKey(i)
 		val, ok := d.Get(key).(map[string]interface{})
 		if !ok {
 			return diag.Errorf("unable to read '%s' value", key)
@@ -607,13 +607,13 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		if index := val["index"].(int); index == 0 && i < len(server.Networking.Interfaces) {
 			iface = &server.Networking.Interfaces[i]
 		} else {
-			iface = findInterface(server.Networking.Interfaces, val["index"].(int), "")
+			iface = findInterface(server.Networking.Interfaces, val["index"].(int))
 		}
 		if iface == nil {
 			continue
 		}
 
-		ni := setInterfaceValues((*upcloud.Interface)(iface))
+		ni := setInterfaceValues((*upcloud.Interface)(iface), val["ip_address"])
 		networkInterfaces[i] = ni
 
 		if iface.Type == upcloud.NetworkTypePublic &&
