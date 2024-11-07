@@ -173,11 +173,13 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 	newNetworkInterfaces := make([]map[string]interface{}, n)
 	networkInterfaces := interfacesToMap(d.Get("network_interface").([]interface{}))
 	modifiedInterfaces := make(map[int]*upcloud.Interface)
+	indices := make(map[int]bool)
 
 	// Try to modify existing server interfaces
 	var i int
 	var val map[string]interface{}
 	for _, iface := range s.Networking.Interfaces {
+		indices[iface.Index] = true
 		i, val, networkInterfaces = findInterfaceFromState(networkInterfaces, iface.Index, iface.IPAddresses[0].Address, iface.Type)
 
 		// Remove interface if it has been removed from configuration
@@ -253,13 +255,12 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d 
 			network = val["network"].(string)
 		}
 
-		err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-			ServerUUID: d.Id(),
-			Index:      index,
-		})
-		if err != nil {
-			var ucProb *upcloud.Problem
-			if errors.As(err, &ucProb) && ucProb.Type != upcloud.ErrCodeInterfaceNotFound {
+		if exists := indices[index]; exists {
+			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+				ServerUUID: d.Id(),
+				Index:      index,
+			})
+			if err != nil {
 				return err
 			}
 		}
