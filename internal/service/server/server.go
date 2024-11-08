@@ -23,7 +23,14 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 )
 
-const serverTitleLength int = 255
+const (
+	serverTitleLength       int = 255
+	simpleBackupDescription     = `Simple backup schedule configuration
+
+    The simple backups provide a simplified way to back up *all* of the storages attached to a given server. This means you cannot have simple backup set for a server, and individual ` + "`" + `backup_rules` + "`" + ` on the storages attached to the server. Such configuration will throw an error during execution. This also applies to ` + "`" + `backup_rules` + "`" + ` defined for server templates.
+
+    ` + storage.BackupRuleSimpleBackupWarning
+)
 
 func ResourceServer() *schema.Resource {
 	return &schema.Resource{
@@ -387,15 +394,7 @@ func ResourceServer() *schema.Resource {
 				},
 			},
 			"simple_backup": {
-				Description: `Simple backup schedule configuration  
-				The idea behind simple backups is to provide a simplified way of backing up *all* of the storages attached to a given server. 
-				This means you cannot have simple backup set for a server, and then some individual backup_rules on the storages attached to said server. 
-				Such configuration will throw an error during execution. This also apply to backup_rules set for server templates.  
-				Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, 
-				it is advised to never switch between simple_backup on the server and individual storages backup_rules in one apply.
-				If you want to switch from using server simple backup to per-storage defined backup rules, 
-				please first remove simple_backup block from a server, run 'terraform apply', 
-				then add backup_rule to desired storages and run 'terraform apply' again.`,
+				Description:   simpleBackupDescription,
 				Type:          schema.TypeSet,
 				MaxItems:      1,
 				Optional:      true,
