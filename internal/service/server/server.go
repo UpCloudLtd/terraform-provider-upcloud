@@ -7,6 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -17,15 +21,25 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 )
 
 const serverTitleLength int = 255
 
 func ResourceServer() *schema.Resource {
+	s := resourceServerV0()
+	s.SchemaVersion = 1
+	s.StateUpgraders = []schema.StateUpgrader{
+		{
+			Type:    resourceServerV0().CoreConfigSchema().ImpliedType(),
+			Upgrade: resourceServerStateUpgradeV0,
+			Version: 0,
+		},
+	}
+
+	return s
+}
+
+func resourceServerV0() *schema.Resource {
 	return &schema.Resource{
 		Description:   "The UpCloud server resource allows the creation, update and deletion of a [cloud server](https://upcloud.com/products/cloud-servers).",
 		CreateContext: resourceServerCreate,
@@ -438,6 +452,58 @@ func ResourceServer() *schema.Resource {
 			validateTagsChange,
 		),
 	}
+}
+
+func resourceServerStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	svc := meta.(*service.Service)
+	networking, err := svc.GetServerNetworks(ctx, &request.GetServerNetworksRequest{ServerUUID: rawState["id"].(string)})
+	if err != nil {
+		return rawState, err
+	}
+
+	if networking == nil {
+		return rawState, nil
+	}
+
+	rawInterfaces, ok := rawState["network_interface"].([]interface{})
+	if !ok {
+		return rawState, fmt.Errorf("network_interface not found in state")
+	}
+
+	if len(networking.Interfaces) != len(rawInterfaces) {
+		return rawState, fmt.Errorf("values for network_interface have been modified outside of Terraform, unable to migrate the state. correct the drift between state and the resource to continue")
+	}
+
+	for k, v := range rawInterfaces {
+		iface := v.(map[string]interface{})
+		index, err := getIndexFromNetworking(networking, iface)
+		if err != nil {
+			return rawState, err
+		}
+
+		iface["index"] = index
+		rawInterfaces[k] = iface
+	}
+
+	rawState["network_interface"] = rawInterfaces
+
+	return rawState, nil
+}
+
+func getIndexFromNetworking(networking *upcloud.Networking, iface map[string]interface{}) (int, error) {
+	for _, n := range networking.Interfaces {
+		if n.Type != iface["type"].(string) {
+			continue
+		}
+
+		if n.MAC != iface["mac_address"].(string) {
+			continue
+		}
+
+		return n.Index, nil
+	}
+
+	return 0, fmt.Errorf("unable to find index for interface %s", iface["mac_address"].(string))
 }
 
 func schemaIPAddressFamily(description string) *schema.Schema {
