@@ -492,15 +492,9 @@ func resourceServerStateUpgradeV0(ctx context.Context, rawState map[string]inter
 
 func getIndexFromNetworking(networking *upcloud.Networking, iface map[string]interface{}) (int, error) {
 	for _, n := range networking.Interfaces {
-		if n.Type != iface["type"].(string) {
-			continue
+		if n.Type == iface["type"].(string) && n.MAC == iface["mac_address"].(string) {
+			return n.Index, nil
 		}
-
-		if n.MAC != iface["mac_address"].(string) {
-			continue
-		}
-
-		return n.Index, nil
 	}
 
 	return 0, fmt.Errorf("unable to find index for interface %s", iface["mac_address"].(string))
