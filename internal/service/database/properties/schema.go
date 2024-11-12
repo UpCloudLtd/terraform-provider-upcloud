@@ -96,8 +96,8 @@ func stringSlice(val interface{}) ([]string, bool) {
 func getKeyDiffSuppressFunc(key string) schema.SchemaDiffSuppressFunc {
 	switch key {
 	case "ip_filter":
-		return func(_, old, new string, _ *schema.ResourceData) bool {
-			return strings.TrimSuffix(old, "/32") == strings.TrimSuffix(new, "/32")
+		return func(_, oldValue, newValue string, _ *schema.ResourceData) bool {
+			return strings.TrimSuffix(oldValue, "/32") == strings.TrimSuffix(newValue, "/32")
 		}
 	default:
 		return nil

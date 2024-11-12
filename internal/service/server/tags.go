@@ -150,9 +150,9 @@ func getTagChange(oldTags, newTags []string) (tagsToAdd, tagsToDelete []string) 
 	return
 }
 
-func tagsHasChange(old, new interface{}) bool {
+func tagsHasChange(oldTags, newTags interface{}) bool {
 	// Check how tags would change
-	toAdd, toDelete := getTagChange(utils.ExpandStrings(old), utils.ExpandStrings(new))
+	toAdd, toDelete := getTagChange(utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags))
 
 	// If no tags would be added or deleted, no change will be made
 	if len(toAdd) == 0 && len(toDelete) == 0 {
