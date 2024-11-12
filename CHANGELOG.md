@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_managed_object_storage_bucket resource for managing buckets in managed object storage services.
 
+### Changed
+
+- upcloud_managed_database_\*: Update available properties to match listing provided by the API, see [#626](https://github.com/UpCloudLtd/terraform-provider-upcloud/pull/626) for details.
+
 ## [5.14.0] - 2024-10-28
 
 ### Changed
