@@ -7,6 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -17,10 +21,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
 )
 
 const (
@@ -33,6 +33,20 @@ const (
 )
 
 func ResourceServer() *schema.Resource {
+	s := resourceServerV0()
+	s.SchemaVersion = 1
+	s.StateUpgraders = []schema.StateUpgrader{
+		{
+			Type:    resourceServerV0().CoreConfigSchema().ImpliedType(),
+			Upgrade: resourceServerStateUpgradeV0,
+			Version: 0,
+		},
+	}
+
+	return s
+}
+
+func resourceServerV0() *schema.Resource {
 	return &schema.Resource{
 		Description:   "The UpCloud server resource allows the creation, update and deletion of a [cloud server](https://upcloud.com/products/cloud-servers).",
 		CreateContext: resourceServerCreate,
@@ -159,12 +173,23 @@ func ResourceServer() *schema.Resource {
 				Optional:    true,
 			},
 			"network_interface": {
-				Type:        schema.TypeList,
-				Description: "One or more blocks describing the network interfaces of the server.",
-				Required:    true,
-				MinItems:    1,
+				Type: schema.TypeList,
+				Description: `One or more blocks describing the network interfaces of the server.
+
+    In addition to list order, the configured network interfaces are matched to the server's actual network interfaces by ` + "`" + `index` + "`" + ` and ` + "`" + `ip_address` + "`" + ` fields. This is to avoid public and utility network interfaces being re-assigned when the server is updated. This might result to inaccurate diffs in the plan, when interfaces are re-ordered or when interface is removed from the middle of the list.
+
+    We recommend explicitly setting the value for ` + "`" + `index` + "`" + ` in configuration, when re-ordering interfaces or when removing interface from middle of the list.`,
+				Required: true,
+				MinItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"index": {
+							Type:         schema.TypeInt,
+							Description:  "The interface index.",
+							Optional:     true,
+							Computed:     true,
+							ValidateFunc: validation.IntAtLeast(1),
+						},
 						"ip_address_family":   schemaIPAddressFamily("The type of the primary IP address of this interface (one of `IPv4` or `IPv6`)."),
 						"ip_address":          schemaIPAddress("The assigned primary IP address."),
 						"ip_address_floating": schemaIPAddressFloating("`true` indicates that the primary IP address is a floating IP address."),
@@ -430,6 +455,52 @@ func ResourceServer() *schema.Resource {
 	}
 }
 
+func resourceServerStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	svc := meta.(*service.Service)
+	networking, err := svc.GetServerNetworks(ctx, &request.GetServerNetworksRequest{ServerUUID: rawState["id"].(string)})
+	if err != nil {
+		return rawState, err
+	}
+
+	if networking == nil {
+		return rawState, nil
+	}
+
+	rawInterfaces, ok := rawState["network_interface"].([]interface{})
+	if !ok {
+		return rawState, fmt.Errorf("network_interface not found in state")
+	}
+
+	if len(networking.Interfaces) != len(rawInterfaces) {
+		return rawState, fmt.Errorf("values for network_interface have been modified outside of Terraform, unable to migrate the state. correct the drift between state and the resource to continue")
+	}
+
+	for k, v := range rawInterfaces {
+		iface := v.(map[string]interface{})
+		index, err := getIndexFromNetworking(networking, iface)
+		if err != nil {
+			return rawState, err
+		}
+
+		iface["index"] = index
+		rawInterfaces[k] = iface
+	}
+
+	rawState["network_interface"] = rawInterfaces
+
+	return rawState, nil
+}
+
+func getIndexFromNetworking(networking *upcloud.Networking, iface map[string]interface{}) (int, error) {
+	for _, n := range networking.Interfaces {
+		if n.Type == iface["type"].(string) && n.MAC == iface["mac_address"].(string) {
+			return n.Index, nil
+		}
+	}
+
+	return 0, fmt.Errorf("unable to find index for interface %s", iface["mac_address"].(string))
+}
+
 func schemaIPAddressFamily(description string) *schema.Schema {
 	return &schema.Schema{
 		Type:             schema.TypeString,
@@ -580,62 +651,31 @@ func resourceServerRead(ctx context.Context, d *schema.ResourceData, meta interf
 		_ = d.Set("simple_backup", []interface{}{simpleBackup})
 	}
 
-	networkInterfaces := []map[string]interface{}{}
 	var connIP string
-	for _, iface := range server.Networking.Interfaces {
-		ni := make(map[string]interface{})
-		primaryIPInState, primaryIPSet := d.GetOk(fmt.Sprintf("network_interface.%d.ip_address", iface.Index-1))
-		additionalIPAddresses := []map[string]interface{}{}
-
-		for i, ipAddress := range iface.IPAddresses {
-			// If the primary IP address is not set in the state, use the first IP address as primary. Otherwise,
-			// re-use the matching primary IP address
-			if (i == 0 && !primaryIPSet) || (primaryIPSet && primaryIPInState.(string) == ipAddress.Address) {
-				ni["ip_address_family"] = ipAddress.Family
-				ni["ip_address"] = ipAddress.Address
-				if !ipAddress.Floating.Empty() {
-					ni["ip_address_floating"] = ipAddress.Floating.Bool()
-				}
-
-				continue
-			}
-			if iface.Type == upcloud.NetworkTypePrivate {
-				additionalIPAddress := map[string]interface{}{
-					"ip_address":        ipAddress.Address,
-					"ip_address_family": ipAddress.Family,
-				}
-				if !ipAddress.Floating.Empty() {
-					additionalIPAddress["ip_address_floating"] = ipAddress.Floating.Bool()
-				}
-				additionalIPAddresses = append(additionalIPAddresses, additionalIPAddress)
-			}
-		}
-		// If the primary IP address was not found, use the first additional IP address as primary instead. This might
-		// happen if the attached network was changed.
-		if _, ok := ni["ip_address"]; !ok && len(additionalIPAddresses) > 0 {
-			ni["ip_address_family"] = additionalIPAddresses[0]["ip_address_family"]
-			ni["ip_address"] = additionalIPAddresses[0]["ip_address"]
-			if _, ok := additionalIPAddresses[0]["ip_address_floating"]; ok {
-				ni["ip_address_floating"] = additionalIPAddresses[0]["ip_address_floating"]
-			}
-
-			// remove first element of additionalIPAddresses
-			additionalIPAddresses = append(additionalIPAddresses[:0], additionalIPAddresses[1:]...)
+	n, ok := d.Get("network_interface.#").(int)
+	if !ok {
+		return diag.Errorf("unable to read network_interface count")
+	}
+	networkInterfaces := make([]map[string]interface{}, n)
+	for i := 0; i < n; i++ {
+		key := interfaceKey(i)
+		val, ok := d.Get(key).(map[string]interface{})
+		if !ok {
+			return diag.Errorf("unable to read '%s' value", key)
 		}
 
-		ni["additional_ip_address"] = additionalIPAddresses
-
-		ni["mac_address"] = iface.MAC
-		ni["network"] = iface.Network
-		ni["type"] = iface.Type
-		if !iface.Bootable.Empty() {
-			ni["bootable"] = iface.Bootable.Bool()
+		var iface *upcloud.ServerInterface
+		if index := val["index"].(int); index == 0 && i < len(server.Networking.Interfaces) {
+			iface = &server.Networking.Interfaces[i]
+		} else {
+			iface = findInterface(server.Networking.Interfaces, val["index"].(int))
 		}
-		if !iface.SourceIPFiltering.Empty() {
-			ni["source_ip_filtering"] = iface.SourceIPFiltering.Bool()
+		if iface == nil {
+			continue
 		}
 
-		networkInterfaces = append(networkInterfaces, ni)
+		ni := setInterfaceValues((*upcloud.Interface)(iface), val["ip_address"])
+		networkInterfaces[i] = ni
 
 		if iface.Type == upcloud.NetworkTypePublic &&
 			iface.IPAddresses[0].Family == upcloud.IPAddressFamilyIPv4 {
@@ -706,8 +746,8 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	// Before stopping, build & validate network interface requests to avoid unnecessary server downtime
-	networkReqs, err := networkInterfacesFromResourceData(ctx, client, d)
+	// Before stopping, validate network interface requests to avoid unnecessary server downtime
+	err = validateNetworkInterfaces(ctx, client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -954,7 +994,7 @@ func resourceServerUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if d.HasChange("network_interface") {
-		if err := reconfigureServerNetworkInterfaces(ctx, client, d, networkReqs); err != nil {
+		if err := updateServerNetworkInterfaces(ctx, client, d); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -1203,6 +1243,7 @@ func buildNetworkOpts(d *schema.ResourceData) ([]request.CreateServerInterface, 
 	for i := 0; i < niCount; i++ {
 		keyRoot := fmt.Sprintf("network_interface.%d.", i)
 		iface := request.CreateServerInterface{
+			Index: d.Get(keyRoot + "index").(int),
 			IPAddresses: []request.CreateServerIPAddress{
 				{
 					Family:  d.Get(keyRoot + "ip_address_family").(string),
