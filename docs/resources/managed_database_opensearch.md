@@ -93,7 +93,7 @@ Optional Attributes:
 - `action_destructive_requires_name` (Boolean) Require explicit index names when deleting.
 - `automatic_utility_network_ip_filter` (Boolean) Automatic utility network IP Filter. Automatically allow connections from servers in the utility network within the same zone.
 - `cluster_max_shards_per_node` (Number) Controls the number of shards allowed in the cluster per data node.
-- `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to 2.
+- `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to node cpu count * 2.
 - `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name.
 - `email_sender_name` (String) Sender name placeholder to be used in Opensearch Dashboards and Opensearch keystore. This should be identical to the Sender name defined in Opensearch dashboards.
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
@@ -144,14 +144,16 @@ Optional Attributes:
 Blocks:
 
 - `auth_failure_listeners` (Block List, Max: 1) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
-- `azure_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--azure_migration))
-- `gcs_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--gcs_migration))
+- `azure_migration` (Block List, Max: 1) Azure migration settings. (see [below for nested schema](#nestedblock--properties--azure_migration))
+- `gcs_migration` (Block List, Max: 1) Google Cloud Storage migration settings. (see [below for nested schema](#nestedblock--properties--gcs_migration))
 - `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
 - `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
 - `opensearch_dashboards` (Block List, Max: 1) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
-- `s3_migration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--s3_migration))
+- `s3_migration` (Block List, Max: 1) AWS S3 / AWS S3 compatible migration settings. (see [below for nested schema](#nestedblock--properties--s3_migration))
 - `saml` (Block List, Max: 1) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
+- `search_backpressure` (Block List, Max: 1) Search Backpressure Settings. (see [below for nested schema](#nestedblock--properties--search_backpressure))
+- `shard_indexing_pressure` (Block List, Max: 1) Shard indexing back pressure settings. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure))
 
 <a id="nestedblock--properties--auth_failure_listeners"></a>
 ### Nested Schema for `properties.auth_failure_listeners`
@@ -200,7 +202,10 @@ Optional Attributes:
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `container` (String) Azure container name. Azure container name.
 - `endpoint_suffix` (String) Endpoint suffix. Defines the DNS suffix for Azure Storage endpoints.
+- `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
+- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
 - `key` (String) Account secret key. Azure account secret key. One of key or sas_token should be specified.
+- `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
 - `sas_token` (String) SAS token. A shared access signatures (SAS) token. One of key or sas_token should be specified.
 - `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
 
@@ -215,6 +220,9 @@ Optional Attributes:
 - `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `credentials` (String) Credentials. Google Cloud Storage credentials file content.
+- `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
+- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
+- `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
 - `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
 
 
@@ -280,7 +288,10 @@ Optional Attributes:
 - `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `endpoint` (String) The S3 service endpoint to connect. The S3 service endpoint to connect to. If you are using an S3-compatible service then you should set this to the service’s endpoint.
+- `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
+- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
 - `region` (String) S3 region. S3 region.
+- `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
 - `secret_key` (String) AWS secret key. AWS secret key.
 - `server_side_encryption` (Boolean) Server side encryption. When set to true files are encrypted on server side.
 - `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
@@ -298,6 +309,129 @@ Optional Attributes:
 - `roles_key` (String) SAML response role attribute. Optional. Specifies the attribute in the SAML response where role information is stored, if available. Role attributes are not required for SAML authentication, but can be included in SAML assertions by most Identity Providers (IdPs) to determine user access levels or permissions.
 - `sp_entity_id` (String) Service Provider Entity ID. The unique identifier for the Service Provider (SP) entity that is used for SAML authentication. This value is typically provided by the SP.
 - `subject_key` (String) SAML response subject attribute. Optional. Specifies the attribute in the SAML response where the subject identifier is stored. If not configured, the NameID attribute is used by default.
+
+
+<a id="nestedblock--properties--search_backpressure"></a>
+### Nested Schema for `properties.search_backpressure`
+
+Optional Attributes:
+
+- `mode` (String) The search backpressure mode. The search backpressure mode. Valid values are monitor_only, enforced, or disabled. Default is monitor_only.
+
+Blocks:
+
+- `node_duress` (Block List, Max: 1) Node duress settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--node_duress))
+- `search_shard_task` (Block List, Max: 1) Search shard settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--search_shard_task))
+- `search_task` (Block List, Max: 1) Search task settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--search_task))
+
+<a id="nestedblock--properties--search_backpressure--node_duress"></a>
+### Nested Schema for `properties.search_backpressure.node_duress`
+
+Optional Attributes:
+
+- `cpu_threshold` (Number) The CPU usage threshold (as a percentage) required for a node to be considered to be under duress. The CPU usage threshold (as a percentage) required for a node to be considered to be under duress. Default is 0.9.
+- `heap_threshold` (Number) The heap usage threshold (as a percentage) required for a node to be considered to be under duress. The heap usage threshold (as a percentage) required for a node to be considered to be under duress. Default is 0.7.
+- `num_successive_breaches` (Number) The number of successive limit breaches after which the node is considered to be under duress. The number of successive limit breaches after which the node is considered to be under duress. Default is 3.
+
+
+<a id="nestedblock--properties--search_backpressure--search_shard_task"></a>
+### Nested Schema for `properties.search_backpressure.search_shard_task`
+
+Optional Attributes:
+
+- `cancellation_burst` (Number) The maximum number of search tasks to cancel in a single iteration of the observer thread. The maximum number of search tasks to cancel in a single iteration of the observer thread. Default is 10.0.
+- `cancellation_rate` (Number) The maximum number of tasks to cancel per millisecond of elapsed time. The maximum number of tasks to cancel per millisecond of elapsed time. Default is 0.003.
+- `cancellation_ratio` (Number) The maximum number of tasks to cancel. The maximum number of tasks to cancel, as a percentage of successful task completions. Default is 0.1.
+- `cpu_time_millis_threshold` (Number) The CPU usage threshold (in milliseconds) required for a single search shard task before it is considered for cancellation. The CPU usage threshold (in milliseconds) required for a single search shard task before it is considered for cancellation. Default is 15000.
+- `elapsed_time_millis_threshold` (Number) The elapsed time threshold (in milliseconds) required for a single search shard task before it is considered for cancellation. The elapsed time threshold (in milliseconds) required for a single search shard task before it is considered for cancellation. Default is 30000.
+- `heap_moving_average_window_size` (Number) The number of previously completed search shard tasks to consider when calculating the rolling average of heap usage. The number of previously completed search shard tasks to consider when calculating the rolling average of heap usage. Default is 100.
+- `heap_percent_threshold` (Number) The heap usage threshold (as a percentage) required for a single search shard task before it is considered for cancellation. The heap usage threshold (as a percentage) required for a single search shard task before it is considered for cancellation. Default is 0.5.
+- `heap_variance` (Number) The minimum variance required for a single search shard task’s heap usage compared to the rolling average of previously completed tasks before it is considered for cancellation. The minimum variance required for a single search shard task’s heap usage compared to the rolling average of previously completed tasks before it is considered for cancellation. Default is 2.0.
+- `total_heap_percent_threshold` (Number) The heap usage threshold (as a percentage) required for the sum of heap usages of all search shard tasks before cancellation is applied. The heap usage threshold (as a percentage) required for the sum of heap usages of all search shard tasks before cancellation is applied. Default is 0.5.
+
+
+<a id="nestedblock--properties--search_backpressure--search_task"></a>
+### Nested Schema for `properties.search_backpressure.search_task`
+
+Optional Attributes:
+
+- `cancellation_burst` (Number) The maximum number of search tasks to cancel in a single iteration of the observer thread. The maximum number of search tasks to cancel in a single iteration of the observer thread. Default is 5.0.
+- `cancellation_rate` (Number) The maximum number of search tasks to cancel per millisecond of elapsed time. The maximum number of search tasks to cancel per millisecond of elapsed time. Default is 0.003.
+- `cancellation_ratio` (Number) The maximum number of search tasks to cancel, as a percentage of successful search task completions. The maximum number of search tasks to cancel, as a percentage of successful search task completions. Default is 0.1.
+- `cpu_time_millis_threshold` (Number) The CPU usage threshold (in milliseconds) required for an individual parent task before it is considered for cancellation. The CPU usage threshold (in milliseconds) required for an individual parent task before it is considered for cancellation. Default is 30000.
+- `elapsed_time_millis_threshold` (Number) The elapsed time threshold (in milliseconds) required for an individual parent task before it is considered for cancellation. The elapsed time threshold (in milliseconds) required for an individual parent task before it is considered for cancellation. Default is 45000.
+- `heap_moving_average_window_size` (Number) The window size used to calculate the rolling average of the heap usage for the completed parent tasks. The window size used to calculate the rolling average of the heap usage for the completed parent tasks. Default is 10.
+- `heap_percent_threshold` (Number) The heap usage threshold (as a percentage) required for an individual parent task before it is considered for cancellation. The heap usage threshold (as a percentage) required for an individual parent task before it is considered for cancellation. Default is 0.2.
+- `heap_variance` (Number) The heap usage variance required for an individual parent task before it is considered for cancellation. The heap usage variance required for an individual parent task before it is considered for cancellation. A task is considered for cancellation when taskHeapUsage is greater than or equal to heapUsageMovingAverage * variance. Default is 2.0.
+- `total_heap_percent_threshold` (Number) The heap usage threshold (as a percentage) required for the sum of heap usages of all search tasks before cancellation is applied. The heap usage threshold (as a percentage) required for the sum of heap usages of all search tasks before cancellation is applied. Default is 0.5.
+
+
+
+<a id="nestedblock--properties--shard_indexing_pressure"></a>
+### Nested Schema for `properties.shard_indexing_pressure`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable shard indexing backpressure. Enable or disable shard indexing backpressure. Default is false.
+- `enforced` (Boolean) Run shard indexing backpressure in shadow mode or enforced mode. Run shard indexing backpressure in shadow mode or enforced mode.
+            In shadow mode (value set as false), shard indexing backpressure tracks all granular-level metrics,
+            but it doesn’t actually reject any indexing requests.
+            In enforced mode (value set as true),
+            shard indexing backpressure rejects any requests to the cluster that might cause a dip in its performance.
+            Default is false.
+
+Blocks:
+
+- `operating_factor` (Block List, Max: 1) Operating factor. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--operating_factor))
+- `primary_parameter` (Block List, Max: 1) Primary parameter. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter))
+
+<a id="nestedblock--properties--shard_indexing_pressure--operating_factor"></a>
+### Nested Schema for `properties.shard_indexing_pressure.operating_factor`
+
+Optional Attributes:
+
+- `lower` (Number) Lower occupancy limit of the allocated quota of memory for the shard. Specify the lower occupancy limit of the allocated quota of memory for the shard.
+                    If the total memory usage of a shard is below this limit,
+                    shard indexing backpressure decreases the current allocated memory for that shard.
+                    Default is 0.75.
+- `optimal` (Number) Optimal occupancy of the allocated quota of memory for the shard. Specify the optimal occupancy of the allocated quota of memory for the shard.
+                    If the total memory usage of a shard is at this level,
+                    shard indexing backpressure doesn’t change the current allocated memory for that shard.
+                    Default is 0.85.
+- `upper` (Number) Upper occupancy limit of the allocated quota of memory for the shard. Specify the upper occupancy limit of the allocated quota of memory for the shard.
+                    If the total memory usage of a shard is above this limit,
+                    shard indexing backpressure increases the current allocated memory for that shard.
+                    Default is 0.95.
+
+
+<a id="nestedblock--properties--shard_indexing_pressure--primary_parameter"></a>
+### Nested Schema for `properties.shard_indexing_pressure.primary_parameter`
+
+Blocks:
+
+- `node` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter--node))
+- `shard` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter--shard))
+
+<a id="nestedblock--properties--shard_indexing_pressure--primary_parameter--node"></a>
+### Nested Schema for `properties.shard_indexing_pressure.primary_parameter.node`
+
+Optional Attributes:
+
+- `soft_limit` (Number) Node soft limit. Define the percentage of the node-level memory
+                            threshold that acts as a soft indicator for strain on a node.
+                            Default is 0.7.
+
+
+<a id="nestedblock--properties--shard_indexing_pressure--primary_parameter--shard"></a>
+### Nested Schema for `properties.shard_indexing_pressure.primary_parameter.shard`
+
+Optional Attributes:
+
+- `min_limit` (Number) Shard min limit. Specify the minimum assigned quota for a new shard in any role (coordinator, primary, or replica).
+                            Shard indexing backpressure increases or decreases this allocated quota based on the inflow of traffic for the shard.
+                            Default is 0.001.
+
+
 
 
 
