@@ -12,7 +12,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 
-- upcloud_server: When modifying `network_interfaces`, match configured network interfaces to the server's actual network interfaces by `index` and `ip_address` (in addition to list order). This is to avoid public and utility network interfaces being re-assigned when the interfaces are re-ordered or when interface is removed from middle of the list. This might result to inaccurate diffs in the Terraform plan when interfaces are re-ordered or when interface is removed from middle of the list.
+- upcloud_server: When modifying `network_interfaces`, match configured network interfaces to the server's actual network interfaces by `index` and `ip_address` (in addition to list order). This is to avoid public and utility network interfaces being re-assigned when the interfaces are re-ordered or when interface is removed from middle of the list. This might result to inaccurate diffs in the Terraform plan when interfaces are re-ordered or when interface is removed from middle of the list. We recommend explicitly setting the value for `index` in configuration, when interfaces are re-ordered or when interface is removed from middle of the list.
 
 ## [5.14.0] - 2024-10-28
 
