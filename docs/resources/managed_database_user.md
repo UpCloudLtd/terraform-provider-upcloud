@@ -45,6 +45,7 @@ resource "upcloud_managed_database_user" "example_user" {
 - `opensearch_access_control` (Block List, Max: 1) OpenSearch access control object. (see [below for nested schema](#nestedblock--opensearch_access_control))
 - `pg_access_control` (Block List, Max: 1) PostgreSQL access control object. (see [below for nested schema](#nestedblock--pg_access_control))
 - `redis_access_control` (Block List, Max: 1) Redis access control object. (see [below for nested schema](#nestedblock--redis_access_control))
+- `valkey_access_control` (Block List, Max: 1) Valkey access control object. (see [below for nested schema](#nestedblock--valkey_access_control))
 
 ### Read-Only
 
@@ -78,6 +79,17 @@ Optional Attributes:
 
 <a id="nestedblock--redis_access_control"></a>
 ### Nested Schema for `redis_access_control`
+
+Optional Attributes:
+
+- `categories` (List of String) Set access control to all commands in specified categories.
+- `channels` (List of String) Set access control to Pub/Sub channels.
+- `commands` (List of String) Set access control to commands.
+- `keys` (List of String) Set access control to keys.
+
+
+<a id="nestedblock--valkey_access_control"></a>
+### Nested Schema for `valkey_access_control`
 
 Optional Attributes:
 
