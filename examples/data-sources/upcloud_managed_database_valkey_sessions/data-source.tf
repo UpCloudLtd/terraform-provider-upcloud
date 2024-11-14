@@ -1,6 +1,6 @@
 # Use data source to gather a list of the active sessions for a Managed Valkey Database
 
-# Create a Managed Redis resource
+# Create a Managed Valkey resource
 resource "upcloud_managed_database_valkey" "example" {
   name  = "example"
   title = "example"
