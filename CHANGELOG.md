@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.15.0] - 2024-11-14
+
 ### Added
 
 - upcloud_managed_object_storage_bucket resource for managing buckets in managed object storage services.
@@ -838,7 +840,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.14.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.15.0...HEAD
+[5.15.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.14.0...v5.15.0
 [5.14.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.13.2...v5.14.0
 [5.13.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.13.1...v5.13.2
 [5.13.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.13.0...v5.13.1
