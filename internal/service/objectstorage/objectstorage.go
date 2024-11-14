@@ -34,9 +34,7 @@ type objectStorageKeyType string
 
 func ResourceObjectStorage() *schema.Resource {
 	return &schema.Resource{
-		Description: fmt.Sprintf(`~> %s
-
-This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage.`, deprecationMessage),
+		Description:        utils.DescriptionWithDeprecationWarning(deprecationMessage, "This resource represents an UpCloud Object Storage instance, which provides S3 compatible storage."),
 		DeprecationMessage: deprecationMessage,
 		CreateContext:      resourceObjectStorageCreate,
 		ReadContext:        resourceObjectStorageRead,

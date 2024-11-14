@@ -10,13 +10,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const redisDeprecationMessage string = "Redis is deprecated in favor of Valkey. Please use Valkey for new key value store instances."
+
 func ResourceRedis() *schema.Resource {
 	return &schema.Resource{
-		Description:   serviceDescription("Redis"),
-		CreateContext: resourceRedisCreate,
-		ReadContext:   resourceRedisRead,
-		UpdateContext: resourceRedisUpdate,
-		DeleteContext: resourceDatabaseDelete,
+		Description:        utils.DescriptionWithDeprecationWarning(redisDeprecationMessage, serviceDescription("Redis")),
+		DeprecationMessage: redisDeprecationMessage,
+		CreateContext:      resourceRedisCreate,
+		ReadContext:        resourceRedisRead,
+		UpdateContext:      resourceRedisUpdate,
+		DeleteContext:      resourceDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -28,7 +31,7 @@ func ResourceRedis() *schema.Resource {
 }
 
 func resourceRedisCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if err := d.Set("type", string(upcloud.ManagedDatabaseServiceTypeRedis)); err != nil {
+	if err := d.Set("type", string(upcloud.ManagedDatabaseServiceTypeRedis)); err != nil { //nolint:staticcheck // To be removed when Redis support has been removed
 		return diag.FromErr(err)
 	}
 
@@ -63,7 +66,7 @@ func schemaRedisEngine() map[string]*schema.Schema {
 			Computed:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeRedis),
+				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeRedis), //nolint:staticcheck // To be removed when Redis support has been removed
 			},
 		},
 	}

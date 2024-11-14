@@ -77,6 +77,7 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_mysql":                 database.ResourceMySQL(),
 			"upcloud_managed_database_redis":                 database.ResourceRedis(),
 			"upcloud_managed_database_opensearch":            database.ResourceOpenSearch(),
+			"upcloud_managed_database_valkey":                database.ResourceValkey(),
 			"upcloud_managed_database_user":                  database.ResourceUser(),
 			"upcloud_managed_database_logical_database":      database.ResourceLogicalDatabase(),
 			"upcloud_managed_object_storage":                 managedobjectstorage.ResourceManagedObjectStorage(),
@@ -92,6 +93,7 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
 			"upcloud_managed_database_redis_sessions":      database.DataSourceSessionsRedis(),
+			"upcloud_managed_database_valkey_sessions":     database.DataSourceSessionsValkey(),
 			"upcloud_managed_object_storage_policies":      managedobjectstorage.DataSourceManagedObjectStoragePolicies(),
 		},
 

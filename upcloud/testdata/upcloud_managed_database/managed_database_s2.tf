@@ -16,6 +16,10 @@ resource "upcloud_router" "r1" {
   name = "${var.prefix}router-r1"
 }
 
+resource "upcloud_router" "v1" {
+  name = "${var.prefix}router-v1"
+}
+
 resource "upcloud_router" "msql1" {
   name = "${var.prefix}router-msql1"
 }
@@ -44,6 +48,19 @@ resource "upcloud_network" "r1" {
   }
 
   router = upcloud_router.r1.id
+}
+
+resource "upcloud_network" "v1" {
+  name = "${var.prefix}net-v1"
+  zone = var.zone
+
+  ip_network {
+    address = "172.18.104.0/24"
+    dhcp    = false
+    family  = "IPv4"
+  }
+
+  router = upcloud_router.v1.id
 }
 
 resource "upcloud_network" "msql1" {
@@ -139,6 +156,26 @@ resource "upcloud_managed_database_redis" "r1" {
   }
 }
 
+resource "upcloud_managed_database_valkey" "v1" {
+  name  = "${var.prefix}valkey-1"
+  plan  = "1x1xCPU-2GB"
+  title = "${var.prefix}valkey-1-updated"
+  zone  = var.zone
+
+  // No change in network
+  network {
+    family = "IPv4"
+    name   = "${var.prefix}net-v1"
+    type   = "private"
+    uuid   = upcloud_network.v1.id
+  }
+
+  labels = {
+    test       = ""
+    managed-by = "team-devex"
+  }
+}
+
 resource "upcloud_managed_database_user" "db_user_1" {
   service        = upcloud_managed_database_mysql.msql1.id
   username       = "somename"
@@ -161,5 +198,14 @@ resource "upcloud_managed_database_user" "db_user_3" {
   password = "Superpass123"
   redis_access_control {
     keys = ["key*"]
+  }
+}
+
+resource "upcloud_managed_database_user" "db_user_5" {
+  service  = upcloud_managed_database_valkey.v1.id
+  username = "somename"
+  password = "Superpass123"
+  valkey_access_control {
+    keys       = ["key*"]
   }
 }

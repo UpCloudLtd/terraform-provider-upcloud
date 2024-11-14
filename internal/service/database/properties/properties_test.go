@@ -12,7 +12,8 @@ func getTypes() []upcloud.ManagedDatabaseServiceType {
 		upcloud.ManagedDatabaseServiceTypeMySQL,
 		upcloud.ManagedDatabaseServiceTypeOpenSearch,
 		upcloud.ManagedDatabaseServiceTypePostgreSQL,
-		upcloud.ManagedDatabaseServiceTypeRedis,
+		upcloud.ManagedDatabaseServiceTypeRedis, //nolint:staticcheck // To be removed when Redis support has been removed
+		upcloud.ManagedDatabaseServiceTypeValkey,
 	}
 }
 
