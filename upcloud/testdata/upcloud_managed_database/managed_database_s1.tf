@@ -16,6 +16,10 @@ resource "upcloud_router" "r1" {
   name = "${var.prefix}router-r1"
 }
 
+resource "upcloud_router" "v1" {
+  name = "${var.prefix}router-v1"
+}
+
 resource "upcloud_network" "pg2" {
   name = "${var.prefix}net-pg2"
   zone = var.zone
@@ -40,6 +44,19 @@ resource "upcloud_network" "r1" {
   }
 
   router = upcloud_router.r1.id
+}
+
+resource "upcloud_network" "v1" {
+  name = "${var.prefix}net-v1"
+  zone = var.zone
+
+  ip_network {
+    address = "172.18.104.0/24"
+    dhcp    = false
+    family  = "IPv4"
+  }
+
+  router = upcloud_router.v1.id
 }
 
 resource "upcloud_managed_database_postgresql" "pg1" {
@@ -108,9 +125,24 @@ resource "upcloud_managed_database_redis" "r1" {
   // Attach network on create
   network {
     family = "IPv4"
-    name   = "${var.prefix}net-r1"
+    name   = "${var.prefix}net-1"
     type   = "private"
     uuid   = upcloud_network.r1.id
+  }
+}
+
+resource "upcloud_managed_database_valkey" "v1" {
+  name  = "${var.prefix}valkey-1"
+  plan  = "1x1xCPU-2GB"
+  title = "${var.prefix}valkey-1"
+  zone  = var.zone
+
+  // Attach network on create
+  network {
+    family = "IPv4"
+    name   = "${var.prefix}net-v1"
+    type   = "private"
+    uuid   = upcloud_network.v1.id
   }
 }
 
@@ -162,5 +194,17 @@ resource "upcloud_managed_database_user" "db_user_4" {
       index      = ".opensearch-observability"
       permission = "admin"
     }
+  }
+}
+
+resource "upcloud_managed_database_user" "db_user_5" {
+  service  = upcloud_managed_database_valkey.v1.id
+  username = "somename"
+  password = "Superpass123"
+  valkey_access_control {
+    categories = ["+@set"]
+    channels   = ["*"]
+    commands   = ["+set"]
+    keys       = ["key_*"]
   }
 }

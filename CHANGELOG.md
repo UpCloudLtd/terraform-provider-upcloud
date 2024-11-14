@@ -9,11 +9,16 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_managed_object_storage_bucket resource for managing buckets in managed object storage services.
 - upcloud_server: `index` field to `network_interfaces`.
+- upcloud_managed_database_valkey: add support for Valkey.
 
 ### Changed
 
 - upcloud_managed_database_\*: Update available properties to match listing provided by the API, see [#626](https://github.com/UpCloudLtd/terraform-provider-upcloud/pull/626) for details.
 - upcloud_server: When modifying `network_interfaces`, match configured network interfaces to the server's actual network interfaces by `index` and `ip_address` (in addition to list order). This is to avoid public and utility network interfaces being re-assigned when the interfaces are re-ordered or when interface is removed from middle of the list. This might result to inaccurate diffs in the Terraform plan when interfaces are re-ordered or when interface is removed from middle of the list. We recommend explicitly setting the value for `index` in configuration, when interfaces are re-ordered or when interface is removed from middle of the list.
+
+### Deprecated
+
+- upcloud_managed_database_redis: Redis is deprecated in favor of Valkey. Please use Valkey for new key value store instances.
 
 ## [5.14.0] - 2024-10-28
 

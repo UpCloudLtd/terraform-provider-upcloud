@@ -37,11 +37,23 @@ func DataSourceSessionsPostgreSQL() *schema.Resource {
 
 func DataSourceSessionsRedis() *schema.Resource {
 	return &schema.Resource{
-		Description: "Current sessions of a Redis managed database",
-		ReadContext: dataSourceSessionsRedisRead,
+		Description:        utils.DescriptionWithDeprecationWarning(redisDeprecationMessage, "Current sessions of a Redis managed database"),
+		DeprecationMessage: redisDeprecationMessage,
+		ReadContext:        dataSourceSessionsRedisRead,
 		Schema: utils.JoinSchemas(
 			schemaDataSourceSessionsCommon(),
 			schemaDataSourceSessionsRedis(),
+		),
+	}
+}
+
+func DataSourceSessionsValkey() *schema.Resource {
+	return &schema.Resource{
+		Description: "Current sessions of a Valkey managed database",
+		ReadContext: dataSourceSessionsValkeyRead,
+		Schema: utils.JoinSchemas(
+			schemaDataSourceSessionsCommon(),
+			schemaDataSourceSessionsValkey(),
 		),
 	}
 }
@@ -107,6 +119,18 @@ func schemaDataSourceSessionsRedis() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 			Elem:        schemaDatabaseSessionRedis(),
+		},
+	}
+}
+
+func schemaDataSourceSessionsValkey() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"sessions": {
+			Description: "Current sessions",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Computed:    true,
+			Elem:        schemaDatabaseSessionValkey(),
 		},
 	}
 }
@@ -372,6 +396,102 @@ func schemaDatabaseSessionRedis() *schema.Resource {
 	}
 }
 
+func schemaDatabaseSessionValkey() *schema.Resource {
+	return &schema.Resource{
+		Description: "Valkey session",
+		Schema: map[string]*schema.Schema{
+			"active_channel_subscriptions": {
+				Description: "Number of active channel subscriptions",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"active_database": {
+				Description: "Current database ID",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"active_pattern_matching_channel_subscriptions": {
+				Description: "Number of pattern matching subscriptions.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"application_name": {
+				Description: "Name of the application that is connected to this service.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"client_addr": {
+				Description: "Number of pattern matching subscriptions.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"connection_age": {
+				Description: "Total duration of the connection in nanoseconds.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"connection_idle": {
+				Description: "Idle time of the connection in nanoseconds.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"flags": {
+				Description: "A set containing flags' descriptions.",
+				Type:        schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
+			},
+			"flags_raw": {
+				Description: "Client connection flags in raw string format.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"id": {
+				Description: "Process ID of this session.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"multi_exec_commands": {
+				Description: "Number of commands in a MULTI/EXEC context.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"output_buffer": {
+				Description: "Output buffer length.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"output_buffer_memory": {
+				Description: "Output buffer memory usage.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"output_list_length": {
+				Description: "Output list length (replies are queued in this list when the buffer is full).",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"query": {
+				Description: "The last executed command.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"query_buffer": {
+				Description: "Query buffer length (0 means no query pending).",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"query_buffer_free": {
+				Description: "Free space of the query buffer (0 means the buffer is full).",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+		},
+	}
+}
+
 func dataSourceSessionsMySQLRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	return dataSourceSessionsRead(ctx, d, meta, upcloud.ManagedDatabaseServiceTypeMySQL)
 }
@@ -381,7 +501,11 @@ func dataSourceSessionsPostgreSQLRead(ctx context.Context, d *schema.ResourceDat
 }
 
 func dataSourceSessionsRedisRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	return dataSourceSessionsRead(ctx, d, meta, upcloud.ManagedDatabaseServiceTypeRedis)
+	return dataSourceSessionsRead(ctx, d, meta, upcloud.ManagedDatabaseServiceTypeRedis) //nolint:staticcheck // To be removed when Redis support has been removed
+}
+
+func dataSourceSessionsValkeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+	return dataSourceSessionsRead(ctx, d, meta, upcloud.ManagedDatabaseServiceTypeValkey)
 }
 
 func dataSourceSessionsRead(ctx context.Context, d *schema.ResourceData, meta interface{}, serviceType upcloud.ManagedDatabaseServiceType) (diags diag.Diagnostics) {
@@ -426,8 +550,13 @@ func dataSourceSessionsRead(ctx context.Context, d *schema.ResourceData, meta in
 		if err := d.Set("sessions", buildSessionsPostgreSQL(sessions.PostgreSQL)); err != nil {
 			return diag.FromErr(err)
 		}
-	case upcloud.ManagedDatabaseServiceTypeRedis:
-		err := d.Set("sessions", buildSessionsRedis(sessions.Redis))
+	case upcloud.ManagedDatabaseServiceTypeRedis: //nolint:staticcheck // To be removed when Redis support has been removed
+		err := d.Set("sessions", buildSessionsRedis(sessions.Redis)) //nolint:staticcheck // To be removed when Redis support has been removed
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	case upcloud.ManagedDatabaseServiceTypeValkey:
+		err := d.Set("sessions", buildSessionsValkey(sessions.Valkey))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -495,7 +624,39 @@ func buildSessionsPostgreSQL(sessions []upcloud.ManagedDatabaseSessionPostgreSQL
 	return maps
 }
 
-func buildSessionsRedis(sessions []upcloud.ManagedDatabaseSessionRedis) []map[string]interface{} {
+func buildSessionsRedis(sessions []upcloud.ManagedDatabaseSessionRedis) []map[string]interface{} { //nolint:staticcheck // To be removed when Redis support has been removed
+	maps := make([]map[string]interface{}, 0)
+
+	if len(sessions) == 0 {
+		return maps
+	}
+
+	for _, session := range sessions {
+		maps = append(maps, map[string]interface{}{
+			"active_channel_subscriptions":                  session.ActiveChannelSubscriptions,
+			"active_database":                               session.ActiveDatabase,
+			"active_pattern_matching_channel_subscriptions": session.ActivePatternMatchingChannelSubscriptions,
+			"application_name":                              session.ApplicationName,
+			"client_addr":                                   session.ClientAddr,
+			"connection_age":                                session.ConnectionAge.Nanoseconds(),
+			"connection_idle":                               session.ConnectionIdle.Nanoseconds(),
+			"flags":                                         session.Flags,
+			"flags_raw":                                     session.FlagsRaw,
+			"id":                                            session.Id,
+			"multi_exec_commands":                           session.MultiExecCommands,
+			"output_buffer":                                 session.OutputBuffer,
+			"output_buffer_memory":                          session.OutputBufferMemory,
+			"output_list_length":                            session.OutputListLength,
+			"query":                                         session.Query,
+			"query_buffer":                                  session.QueryBuffer,
+			"query_buffer_free":                             session.QueryBufferFree,
+		})
+	}
+
+	return maps
+}
+
+func buildSessionsValkey(sessions []upcloud.ManagedDatabaseSessionValkey) []map[string]interface{} {
 	maps := make([]map[string]interface{}, 0)
 
 	if len(sessions) == 0 {

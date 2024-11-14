@@ -67,7 +67,7 @@ func schemaUser() map[string]*schema.Schema {
 		},
 		"pg_access_control": {
 			Description:   "PostgreSQL access control object.",
-			ConflictsWith: []string{"redis_access_control", "opensearch_access_control"},
+			ConflictsWith: []string{"redis_access_control", "opensearch_access_control", "valkey_access_control"},
 			Type:          schema.TypeList,
 			Optional:      true,
 			MaxItems:      1,
@@ -82,6 +82,15 @@ func schemaUser() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: schemaRedisUserAccessControl(),
+			},
+		},
+		"valkey_access_control": {
+			Description: "Valkey access control object.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: schemaValkeyUserAccessControl(),
 			},
 		},
 		"opensearch_access_control": {
@@ -108,6 +117,47 @@ func schemaPostgreSQLUserAccessControl() map[string]*schema.Schema {
 }
 
 func schemaRedisUserAccessControl() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"categories": {
+			Description: "Set access control to all commands in specified categories.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"channels": {
+			Description: "Set access control to Pub/Sub channels.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"commands": {
+			Description: "Set access control to commands.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"keys": {
+			Description: "Set access control to keys.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+	}
+}
+
+func schemaValkeyUserAccessControl() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"categories": {
 			Description: "Set access control to all commands in specified categories.",
@@ -218,10 +268,12 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 				AllowReplication: &v,
 			}
 		}
-	case upcloud.ManagedDatabaseServiceTypeRedis:
-		req.RedisAccessControl = redisAccessControlFromResourceData(d)
+	case upcloud.ManagedDatabaseServiceTypeRedis: //nolint:staticcheck // To be removed when Redis support has been removed
+		req.RedisAccessControl = redisAccessControlFromResourceData(d) //nolint:staticcheck // To be removed when Redis support has been removed
 	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
 		req.OpenSearchAccessControl = openSearchAccessControlFromResourceData(d)
+	case upcloud.ManagedDatabaseServiceTypeValkey:
+		req.ValkeyAccessControl = valkeyAccessControlFromResourceData(d)
 	}
 
 	if _, err = client.CreateManagedDatabaseUser(ctx, req); err != nil {
@@ -314,7 +366,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 				return diag.FromErr(err)
 			}
 		}
-	case upcloud.ManagedDatabaseServiceTypeRedis:
+	case upcloud.ManagedDatabaseServiceTypeRedis: //nolint:staticcheck // To be removed when Redis support has been removed
 		if d.HasChange("redis_access_control.0") {
 			if _, err := modifyRedisUserAccessControl(ctx, client, d); err != nil {
 				return diag.FromErr(err)
@@ -323,6 +375,12 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
 		if d.HasChange("opensearch_access_control.0") {
 			if _, err := modifyOpenSearchUserAccessControl(ctx, client, d); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	case upcloud.ManagedDatabaseServiceTypeValkey:
+		if d.HasChange("valkey_access_control.0") {
+			if _, err := modifyValkeyUserAccessControl(ctx, client, d); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -403,13 +461,13 @@ func copyUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedD
 		}
 	}
 
-	if details.RedisAccessControl != nil {
+	if details.RedisAccessControl != nil { //nolint:staticcheck // To be removed when Redis support has been removed
 		if err := d.Set("redis_access_control", []map[string][]string{
 			{
-				"categories": *details.RedisAccessControl.Categories,
-				"channels":   *details.RedisAccessControl.Channels,
-				"commands":   *details.RedisAccessControl.Commands,
-				"keys":       *details.RedisAccessControl.Keys,
+				"categories": *details.RedisAccessControl.Categories, //nolint:staticcheck // To be removed when Redis support has been removed
+				"channels":   *details.RedisAccessControl.Channels,   //nolint:staticcheck // To be removed when Redis support has been removed
+				"commands":   *details.RedisAccessControl.Commands,   //nolint:staticcheck // To be removed when Redis support has been removed
+				"keys":       *details.RedisAccessControl.Keys,       //nolint:staticcheck // To be removed when Redis support has been removed
 			},
 		}); err != nil {
 			return diag.FromErr(err)
@@ -457,8 +515,17 @@ func modifyRedisUserAccessControl(ctx context.Context, svc *service.Service, d *
 	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
 }
 
-func redisAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserRedisAccessControl {
-	acl := &upcloud.ManagedDatabaseUserRedisAccessControl{}
+func modifyValkeyUserAccessControl(ctx context.Context, svc *service.Service, d *schema.ResourceData) (*upcloud.ManagedDatabaseUser, error) {
+	req := &request.ModifyManagedDatabaseUserAccessControlRequest{
+		ServiceUUID:         d.Get("service").(string),
+		Username:            d.Get("username").(string),
+		ValkeyAccessControl: valkeyAccessControlFromResourceData(d),
+	}
+	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
+}
+
+func redisAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserRedisAccessControl { //nolint:staticcheck // To be removed when Redis support has been removed
+	acl := &upcloud.ManagedDatabaseUserRedisAccessControl{} //nolint:staticcheck // To be removed when Redis support has been removed
 	if v, ok := d.Get("redis_access_control.0.categories").([]interface{}); ok {
 		categories := make([]string, len(v))
 		for i := range v {
@@ -481,6 +548,39 @@ func redisAccessControlFromResourceData(d *schema.ResourceData) *upcloud.Managed
 		acl.Commands = &commands
 	}
 	if v, ok := d.Get("redis_access_control.0.keys").([]interface{}); ok {
+		keys := make([]string, len(v))
+		for i := range v {
+			keys[i] = v[i].(string)
+		}
+		acl.Keys = &keys
+	}
+	return acl
+}
+
+func valkeyAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserValkeyAccessControl {
+	acl := &upcloud.ManagedDatabaseUserValkeyAccessControl{}
+	if v, ok := d.Get("valkey_access_control.0.categories").([]interface{}); ok {
+		categories := make([]string, len(v))
+		for i := range v {
+			categories[i] = v[i].(string)
+		}
+		acl.Categories = &categories
+	}
+	if v, ok := d.Get("valkey_access_control.0.channels").([]interface{}); ok {
+		channels := make([]string, len(v))
+		for i := range v {
+			channels[i] = v[i].(string)
+		}
+		acl.Channels = &channels
+	}
+	if v, ok := d.Get("valkey_access_control.0.commands").([]interface{}); ok {
+		commands := make([]string, len(v))
+		for i := range v {
+			commands[i] = v[i].(string)
+		}
+		acl.Commands = &commands
+	}
+	if v, ok := d.Get("valkey_access_control.0.keys").([]interface{}); ok {
 		keys := make([]string, len(v))
 		for i := range v {
 			keys[i] = v[i].(string)
