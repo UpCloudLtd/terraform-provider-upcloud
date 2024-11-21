@@ -2,14 +2,15 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/netip"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func findInterface(ifaces []upcloud.ServerInterface, index int) *upcloud.ServerInterface {
@@ -21,60 +22,112 @@ func findInterface(ifaces []upcloud.ServerInterface, index int) *upcloud.ServerI
 	return nil
 }
 
-func interfacesToMap(ifaces []interface{}) map[int]interface{} {
-	m := make(map[int]interface{})
-	for i, iface := range ifaces {
-		m[i] = iface
+func ipAndTypeMatches(api upcloud.ServerInterface, data networkInterfaceModel) bool {
+	if api.Type != data.Type.ValueString() {
+		return false
 	}
+	for _, ip := range api.IPAddresses {
+		if ip.Address == data.IPAddress.ValueString() {
+			return true
+		}
+	}
+	return false
+}
+
+type ifaceChange struct {
+	api   *upcloud.ServerInterface
+	plan  *networkInterfaceModel
+	state *networkInterfaceModel
+}
+
+func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfaceModel) map[int]ifaceChange {
+	m := make(map[int]ifaceChange)
+
+	// For tracking interfaces that were matched by index.
+	matchedPlanIfaces := make(map[int]bool)
+	unmatchedIfaces := make(map[int]upcloud.ServerInterface)
+
+	// Match interfaces by index.
+	for i, apiIface := range api {
+		change := ifaceChange{api: &apiIface}
+		for j, planIface := range plan {
+			if planIface.Index.ValueInt64() == int64(apiIface.Index) {
+				change.plan = &planIface
+				matchedPlanIfaces[j] = true
+				break
+			}
+		}
+
+		// If no match, this might be overridden by IP based matching below.
+		m[i] = change
+
+		if change.plan == nil {
+			unmatchedIfaces[i] = apiIface
+		}
+	}
+
+	// Match interfaces by IP address and type.
+	for i, apiIface := range unmatchedIfaces {
+		change := ifaceChange{api: &apiIface}
+
+		for _, stateIface := range state {
+			if ipAndTypeMatches(apiIface, stateIface) {
+				change.state = &stateIface
+				for k, planIface := range plan {
+					if matchedPlanIfaces[k] {
+						continue
+					}
+					if canModifyInterface(&stateIface, &planIface, &apiIface) {
+						change.plan = &planIface
+						matchedPlanIfaces[k] = true
+						break
+					}
+				}
+			}
+		}
+		m[i] = change
+	}
+
 	return m
 }
 
-func findInterfaceFromState(ifaces map[int]interface{}, index int, ip, t string) (int, map[string]interface{}, map[int]interface{}) {
-	for i, iface := range ifaces {
-		val := iface.(map[string]interface{})
-		if val["index"].(int) == index {
-			delete(ifaces, i)
-			return i, iface.(map[string]interface{}), ifaces
-		}
-	}
-	for i, iface := range ifaces {
-		val := iface.(map[string]interface{})
-		if val["ip_address"].(string) == ip && val["type"].(string) == t {
-			delete(ifaces, i)
-			return i, iface.(map[string]interface{}), ifaces
-		}
-	}
-	return -1, nil, ifaces
-}
-
-func canModifyInterface(plan map[string]interface{}, prev *upcloud.ServerInterface) bool {
-	if v, ok := plan["type"].(string); !ok || prev.Type != v {
+func canModifyInterface(state, plan *networkInterfaceModel, prev *upcloud.ServerInterface) bool {
+	if plan == nil {
 		return false
 	}
-	if v, ok := plan["ip_address_family"].(string); !ok || len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Family != v {
+
+	if prev.Type != plan.Type.ValueString() {
+		return false
+	}
+
+	family := plan.IPAddressFamily
+	if family.IsUnknown() && state != nil {
+		family = state.IPAddressFamily
+	}
+	if len(prev.IPAddresses) > 0 && !family.IsUnknown() && prev.IPAddresses[0].Family != family.ValueString() {
 		return false
 	}
 	if prev.Type == upcloud.NetworkTypePrivate {
-		if v, ok := plan["network"].(string); !ok || prev.Network != v {
+		if prev.Network != plan.Network.ValueString() {
 			return false
 		}
-		if v, ok := plan["ip_address"].(string); !ok || len(prev.IPAddresses) > 0 && prev.IPAddresses[0].Address != v {
+		if !ipAndTypeMatches(*prev, *plan) {
 			return false
 		}
 	}
 	return true
 }
 
-func shouldModifyInterface(plan map[string]interface{}, addresses request.CreateNetworkInterfaceIPAddressSlice, iface *upcloud.ServerInterface) bool {
-	if iface.Index != plan["index"].(int) {
+func shouldModifyInterface(plan networkInterfaceModel, addresses request.CreateNetworkInterfaceIPAddressSlice, iface *upcloud.ServerInterface) bool {
+	if iface.Index != int(plan.Index.ValueInt64()) {
 		return true
 	}
 
-	if iface.Bootable.Bool() != plan["bootable"].(bool) {
+	if iface.Bootable.Bool() != plan.Bootable.ValueBool() {
 		return true
 	}
 
-	if iface.SourceIPFiltering.Bool() != plan["source_ip_filtering"].(bool) {
+	if iface.SourceIPFiltering.Bool() != plan.SourceIPFiltering.ValueBool() {
 		return true
 	}
 
@@ -97,257 +150,243 @@ func shouldModifyInterface(plan map[string]interface{}, addresses request.Create
 	return false
 }
 
-func setInterfaceValues(iface *upcloud.Interface, ipInState interface{}) map[string]interface{} {
-	ni := make(map[string]interface{})
-	additionalIPAddresses := []map[string]interface{}{}
+func setInterfaceValues(ctx context.Context, iface *upcloud.Interface, ipInState types.String) (ni networkInterfaceModel, diags diag.Diagnostics) {
+	additionalIPAddresses := []additionalIPAddressModel{}
 
 	// IP addresses are not returned in deterministic order. If any of the IP addresses of the interface match the IP address in state, use that.
-	if ip, ok := ipInState.(string); ok {
+	if !ipInState.IsNull() {
+		ip := ipInState.ValueString()
 		for _, ipAddress := range iface.IPAddresses {
 			if ipAddress.Address == ip {
-				ni["ip_address_family"] = ipAddress.Family
-				ni["ip_address"] = ipAddress.Address
-				if !ipAddress.Floating.Empty() {
-					ni["ip_address_floating"] = ipAddress.Floating.Bool()
-				}
+				ni.IPAddressFamily = types.StringValue(ipAddress.Family)
+				ni.IPAddress = types.StringValue(ipAddress.Address)
+				ni.IPAddressFloating = types.BoolValue(ipAddress.Floating.Bool())
 			}
 		}
 	}
 
 	for i, ipAddress := range iface.IPAddresses {
-		if i == 0 && ni["ip_address"] == nil {
-			ni["ip_address_family"] = ipAddress.Family
-			ni["ip_address"] = ipAddress.Address
-			if !ipAddress.Floating.Empty() {
-				ni["ip_address_floating"] = ipAddress.Floating.Bool()
-			}
-		} else if iface.Type == upcloud.NetworkTypePrivate && ipAddress.Address != ni["ip_address"].(string) {
-			additionalIPAddress := map[string]interface{}{
-				"ip_address":        ipAddress.Address,
-				"ip_address_family": ipAddress.Family,
-			}
-			if !ipAddress.Floating.Empty() {
-				additionalIPAddress["ip_address_floating"] = ipAddress.Floating.Bool()
-			}
-			additionalIPAddresses = append(additionalIPAddresses, additionalIPAddress)
+		noKnownIP := ni.IPAddress.IsNull() || ni.IPAddress.IsUnknown()
+		if i == 0 && noKnownIP {
+			ni.IPAddressFamily = types.StringValue(ipAddress.Family)
+			ni.IPAddress = types.StringValue(ipAddress.Address)
+			ni.IPAddressFloating = types.BoolValue(ipAddress.Floating.Bool())
+		} else if iface.Type == upcloud.NetworkTypePrivate && ipAddress.Address != ni.IPAddress.ValueString() {
+			additionalIPAddresses = append(additionalIPAddresses, additionalIPAddressModel{
+				IPAddressFamily:   types.StringValue(ipAddress.Family),
+				IPAddress:         types.StringValue(ipAddress.Address),
+				IPAddressFloating: types.BoolValue(ipAddress.Floating.Bool()),
+			})
 		}
 	}
-	ni["additional_ip_address"] = additionalIPAddresses
+	ni.AdditionalIPAddresses, diags = types.SetValueFrom(ctx, types.ObjectType{
+		AttrTypes: additionalIPAddressModel{}.AttributeTypes(),
+	}, additionalIPAddresses)
 
-	ni["index"] = iface.Index
-	ni["mac_address"] = iface.MAC
-	ni["network"] = iface.Network
-	ni["type"] = iface.Type
-	if !iface.Bootable.Empty() {
-		ni["bootable"] = iface.Bootable.Bool()
-	}
-	if !iface.SourceIPFiltering.Empty() {
-		ni["source_ip_filtering"] = iface.SourceIPFiltering.Bool()
-	}
+	ni.Index = types.Int64Value(int64(iface.Index))
+	ni.MACAddress = types.StringValue(iface.MAC)
+	ni.Network = types.StringValue(iface.Network)
+	ni.Type = types.StringValue(iface.Type)
+	ni.Bootable = types.BoolValue(iface.Bootable.Bool())
+	ni.SourceIPFiltering = types.BoolValue(iface.SourceIPFiltering.Bool())
 
-	return ni
+	return
 }
 
-func interfaceKey(i int) string {
-	return fmt.Sprintf("network_interface.%d", i)
-}
-
-func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData) error {
+func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, state, plan *serverModel) (diags diag.Diagnostics) {
+	uuid := plan.ID.ValueString()
 	// Assert server is stopped
 	s, err := svc.GetServerDetails(ctx, &request.GetServerDetailsRequest{
-		UUID: d.Id(),
+		UUID: uuid,
 	})
 	if err != nil {
-		return err
+		diags.AddError("Unable to read server details", utils.ErrorDiagnosticDetail(err))
+		return
 	}
 	if s.State != upcloud.ServerStateStopped {
-		return errors.New("server needs to be stopped to alter networks")
+		diags.AddError("Invalid server state", "Server needs to be stopped to alter networks")
+		return
 	}
+
+	var networkInterfacesPlan []networkInterfaceModel
+	diags.Append(plan.NetworkInterfaces.ElementsAs(ctx, &networkInterfacesPlan, false)...)
+
+	var networkInterfacesState []networkInterfaceModel
+	diags.Append(state.NetworkInterfaces.ElementsAs(ctx, &networkInterfacesState, false)...)
 
 	indicesToKeep := map[int]bool{}
-	n, ok := d.Get("network_interface.#").(int)
-	if !ok {
-		return errors.New("unable to read network_interface count")
-	}
+	n := len(networkInterfacesPlan)
 
-	newNetworkInterfaces := make([]map[string]interface{}, n)
-	networkInterfaces := interfacesToMap(d.Get("network_interface").([]interface{}))
+	newNetworkInterfaces := make([]networkInterfaceModel, n)
+	networkInterfaceChanges := matchInterfaces(s.Networking.Interfaces, networkInterfacesState, networkInterfacesPlan)
 	modifiedInterfaces := make(map[int]*upcloud.Interface)
 	indices := make(map[int]bool)
 
 	// Try to modify existing server interfaces
-	var i int
-	var val map[string]interface{}
-	for _, iface := range s.Networking.Interfaces {
+	for i, iface := range s.Networking.Interfaces {
 		indices[iface.Index] = true
-		i, val, networkInterfaces = findInterfaceFromState(networkInterfaces, iface.Index, iface.IPAddresses[0].Address, iface.Type)
+
+		change := networkInterfaceChanges[i]
+		stateVal := change.state
+		planVal := change.plan
 
 		// Remove interface if it has been removed from configuration
-		if val == nil {
+		if planVal == nil {
 			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: d.Id(),
+				ServerUUID: uuid,
 				Index:      iface.Index,
 			})
 			if err != nil {
-				return err
+				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
+				return
 			}
 		}
 
-		if !canModifyInterface(val, &iface) {
+		if !canModifyInterface(stateVal, planVal, &iface) {
 			continue
 		}
 
-		addresses, err := addressesFromResourceData(ctx, svc, d, interfaceKey(i))
-		if err != nil {
-			return err
+		addresses, d := addressesFromResourceData(ctx, svc, *planVal)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
 		}
 
 		modified := (*upcloud.Interface)(&iface)
-		if shouldModifyInterface(val, addresses, &iface) {
+		if shouldModifyInterface(*planVal, addresses, &iface) {
 			req := request.ModifyNetworkInterfaceRequest{
-				ServerUUID:   d.Id(),
+				ServerUUID:   uuid,
 				CurrentIndex: iface.Index,
 
-				NewIndex:          val["index"].(int),
-				SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
-				Bootable:          upcloud.FromBool(val["bootable"].(bool)),
+				NewIndex:          int(planVal.Index.ValueInt64()),
+				SourceIPFiltering: upcloud.FromBool(planVal.SourceIPFiltering.ValueBool()),
+				Bootable:          upcloud.FromBool(planVal.Bootable.ValueBool()),
 			}
 			if iface.Type == upcloud.NetworkTypePrivate {
 				req.IPAddresses = addresses
 			}
 			modified, err = svc.ModifyNetworkInterface(ctx, &req)
 			if err != nil {
-				return err
+				diags.AddError("Unable to modify network interface", utils.ErrorDiagnosticDetail(err))
+				return
 			}
 		}
 		modifiedInterfaces[modified.Index] = modified
 	}
 
 	// Replace interfaces that can not be modified
+	var d diag.Diagnostics
 	for i := 0; i < n; i++ {
-		key := interfaceKey(i)
-		index := d.Get(key + ".index").(int)
+		val := networkInterfacesPlan[i]
+		index := int(val.Index.ValueInt64())
 		indicesToKeep[index] = true
 
-		val, ok := d.Get(key).(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("unable to read '%s' value", key)
-		}
-
-		if !d.HasChange(key) {
-			newNetworkInterfaces[i] = val
-			continue
-		}
-
 		if modified := modifiedInterfaces[index]; modified != nil {
-			newNetworkInterfaces[i] = setInterfaceValues(modified, val["ip_address"])
+			newNetworkInterfaces[i], d = setInterfaceValues(ctx, modified, val.IPAddress)
+			diags.Append(d...)
 			continue
 		}
 
-		addresses, err := addressesFromResourceData(ctx, svc, d, key)
-		if err != nil {
-			return err
+		addresses, d := addressesFromResourceData(ctx, svc, val)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
 		}
 
-		t := val["type"].(string)
+		t := val.Type.ValueString()
 		network := ""
 		if t == upcloud.NetworkTypePrivate {
-			network = val["network"].(string)
+			network = val.Network.ValueString()
 		}
 
 		if exists := indices[index]; exists {
 			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: d.Id(),
+				ServerUUID: uuid,
 				Index:      index,
 			})
 			if err != nil {
-				return err
+				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
+				return
 			}
 		}
 
 		iface, err := svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
-			ServerUUID:        d.Id(),
+			ServerUUID:        uuid,
 			Index:             index,
-			Type:              val["type"].(string),
+			Type:              t,
 			NetworkUUID:       network,
 			IPAddresses:       addresses,
-			SourceIPFiltering: upcloud.FromBool(val["source_ip_filtering"].(bool)),
-			Bootable:          upcloud.FromBool(val["bootable"].(bool)),
+			SourceIPFiltering: upcloud.FromBool(val.SourceIPFiltering.ValueBool()),
+			Bootable:          upcloud.FromBool(val.Bootable.ValueBool()),
 		})
 		if err != nil {
-			return err
+			diags.AddError("Unable to create network interface", utils.ErrorDiagnosticDetail(err))
+			return
 		}
-		newNetworkInterfaces[i] = setInterfaceValues(iface, val["ip_address"])
+		newNetworkInterfaces[i], d = setInterfaceValues(ctx, iface, val.IPAddress)
+		diags.Append(d...)
 	}
 
-	if err := d.Set("network_interface", newNetworkInterfaces); err != nil {
-		return err
-	}
-	return nil
+	plan.NetworkInterfaces, d = types.ListValueFrom(ctx, plan.NetworkInterfaces.ElementType(ctx), newNetworkInterfaces)
+	diags.Append(d...)
+	return
 }
 
-func addressesFromResourceData(ctx context.Context, svc *service.Service, d *schema.ResourceData, key string) (request.CreateNetworkInterfaceIPAddressSlice, error) {
-	addresses := make(request.CreateNetworkInterfaceIPAddressSlice, 0)
-	val, ok := d.Get(key).(map[string]interface{})
-	if !ok {
-		return addresses, fmt.Errorf("unable to read '%s' value", key)
-	}
-
+func addressesFromResourceData(ctx context.Context, svc *service.Service, data networkInterfaceModel) (addresses request.CreateNetworkInterfaceIPAddressSlice, diags diag.Diagnostics) {
 	ip := request.CreateNetworkInterfaceIPAddress{}
-	if v, ok := val["ip_address_family"].(string); ok && v != "" {
+	if v := data.IPAddressFamily.ValueString(); v != "" {
 		ip.Family = v
 	}
 
-	if v, ok := val["type"].(string); ok && v == upcloud.NetworkTypePrivate {
-		net := ""
-		if v, ok := val["network"].(string); ok {
-			net = v
-		}
-		if v, ok := val["ip_address"].(string); ok && v != "" {
+	isPrivate := data.Type.ValueString() == upcloud.NetworkTypePrivate
+	if isPrivate {
+		net := data.Network.ValueString()
+		if v := data.IPAddress.ValueString(); v != "" {
 			ip.Address = v
-			// If network has changed but ip hasn't, check if network contains IP or leave IP empty if network has DHCP is enabled.
-			if d.HasChange(key+".network") && !d.HasChange(key+".ip_address") {
-				network, err := svc.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{UUID: net})
-				if err != nil {
-					return nil, err
-				}
-				ip.Address, err = resolveInterfaceIPAddress(network, v)
-				if err != nil {
-					return nil, err
-				}
+			// Check if network contains IP or leave IP empty if network has DHCP is enabled.
+			network, err := svc.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{UUID: net})
+			if err != nil {
+				diags.AddError("Unable to read network details", utils.ErrorDiagnosticDetail(err))
+				return
+			}
+			ip.Address, err = resolveInterfaceIPAddress(network, v)
+			if err != nil {
+				diags.AddError("Unable to resolve interface IP address", err.Error())
+				return
 			}
 		}
 	}
 	addresses = append(addresses, ip)
 
-	if v, ok := d.GetOk(key + ".additional_ip_address"); ok {
-		additionalIPAddresses := v.(*schema.Set).List()
-		if len(additionalIPAddresses) > 0 && val["type"].(string) != upcloud.NetworkTypePrivate {
-			return nil, fmt.Errorf("additional_ip_address can only be set for private network interfaces")
+	if !data.AdditionalIPAddresses.IsNull() {
+		var additionalIPAddresses []additionalIPAddressModel
+		diags.Append(data.AdditionalIPAddresses.ElementsAs(ctx, &additionalIPAddresses, false)...)
+
+		if len(additionalIPAddresses) > 0 && !isPrivate {
+			diags.AddError("Invalid configuration", "additional_ip_address can only be set for private network interfaces")
+			return
 		}
 
-		for _, v := range additionalIPAddresses {
-			ipAddress := v.(map[string]interface{})
-
+		for _, ipAddress := range additionalIPAddresses {
 			addresses = append(addresses, request.CreateNetworkInterfaceIPAddress{
-				Family:  ipAddress["ip_address_family"].(string),
-				Address: ipAddress["ip_address"].(string),
+				Family:  ipAddress.IPAddressFamily.ValueString(),
+				Address: ipAddress.IPAddress.ValueString(),
 			})
 		}
 	}
 	return addresses, nil
 }
 
-func validateNetworkInterfaces(ctx context.Context, svc *service.Service, d *schema.ResourceData) error {
-	nInf, ok := d.Get("network_interface.#").(int)
-	if !ok {
-		return errors.New("unable to read network_interface count")
+func validateNetworkInterfaces(ctx context.Context, svc *service.Service, data serverModel) (diags diag.Diagnostics) {
+	var ifaces []networkInterfaceModel
+	diags.Append(data.NetworkInterfaces.ElementsAs(ctx, &ifaces, false)...)
+	if diags.HasError() {
+		return diags
 	}
-	for i := 0; i < nInf; i++ {
-		key := fmt.Sprintf("network_interface.%d", i)
-		if _, err := addressesFromResourceData(ctx, svc, d, key); err != nil {
-			return err
-		}
+
+	for _, iface := range ifaces {
+		_, d := addressesFromResourceData(ctx, svc, iface)
+		diags.Append(d...)
 	}
 	return nil
 }

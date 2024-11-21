@@ -495,7 +495,7 @@ func (r *storageResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Restart the attached server if it was stopped
 	if stopServer {
-		err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: storage.ServerUUIDs[0]}, r.client)
+		_, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: storage.ServerUUIDs[0]}, r.client)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Unable to restart attached server after resizing storage",
@@ -568,7 +568,7 @@ func (r *storageResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 			if strings.HasPrefix(storageDevice.Address, "ide") && serverDetails.State != upcloud.ServerStateStopped {
 				// No need to pass host explicitly here, as the server will be started on old host by default (for private clouds)
-				if err = utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: serverUUID}, r.client); err != nil {
+				if _, err = utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: serverUUID}, r.client); err != nil {
 					resp.Diagnostics.AddError(
 						"Unable to restart attached server after detaching storage",
 						utils.ErrorDiagnosticDetail(err),

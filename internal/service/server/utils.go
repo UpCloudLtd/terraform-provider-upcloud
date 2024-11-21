@@ -6,7 +6,7 @@ import (
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 func isProviderAccountSubaccount(ctx context.Context, s *service.Service) (bool, error) {
@@ -29,28 +29,30 @@ func defaultTitleFromHostname(hostname string) string {
 	return fmt.Sprintf("%s%s", hostname, suffix)
 }
 
-func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(d *schema.ResourceData) bool {
-	if !d.HasChange("simple_backup") || !d.HasChange("template.0.backup_rule") {
-		return false
+func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(ctx context.Context, state, plan serverModel) (yes bool, diags diag.Diagnostics) {
+	stateTemplate, d := getTemplate(ctx, state)
+	diags.Append(d...)
+
+	planTemplate, d := getTemplate(ctx, plan)
+	diags.Append(d...)
+
+	if diags.HasError() {
+		return
 	}
 
-	sb, sbOk := d.GetOk("simple_backup")
-	if !sbOk {
-		return false
+	if plan.SimpleBackup.Equal(state.SimpleBackup) || planTemplate.BackupRule.Equal(stateTemplate.BackupRule) {
+		return
 	}
 
-	simpleBackup := sb.(*schema.Set).List()[0].(map[string]interface{})
-	if simpleBackup["interval"] == "" {
-		return false
+	if plan.SimpleBackup.IsNull() {
+		return
 	}
 
-	tbr, tbrOk := d.GetOk("template.0.backup_rule.0")
-	templateBackupRule := tbr.(map[string]interface{})
-	if tbrOk && templateBackupRule["interval"] != "" {
-		return false
+	if planTemplate.BackupRule.IsNull() {
+		yes = true
 	}
 
-	return true
+	return
 }
 
 func sliceToMap(input []string) map[string]bool {

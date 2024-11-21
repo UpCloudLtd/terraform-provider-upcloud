@@ -19,7 +19,7 @@ resource "upcloud_network" "this" {
   }
 }
 
-# Nested field can not be set as unkown, so we need to remove the floating IP address to avoid data consistency error: https://github.com/hashicorp/terraform-plugin-sdk/issues/459
+# Nested field can not be set as unknown, so we need to remove the floating IP address to avoid data consistency error: https://github.com/hashicorp/terraform-plugin-sdk/issues/459
 # resource "upcloud_floating_ip_address" "this" {
 #   mac_address = upcloud_server.this.network_interface[1].mac_address
 # }

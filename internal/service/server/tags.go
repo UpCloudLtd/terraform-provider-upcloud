@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -150,9 +149,9 @@ func getTagChange(oldTags, newTags []string) (tagsToAdd, tagsToDelete []string) 
 	return
 }
 
-func tagsHasChange(oldTags, newTags interface{}) bool {
+func tagsHasChange(oldTags, newTags []string) bool {
 	// Check how tags would change
-	toAdd, toDelete := getTagChange(utils.ExpandStrings(oldTags), utils.ExpandStrings(newTags))
+	toAdd, toDelete := getTagChange(oldTags, newTags)
 
 	// If no tags would be added or deleted, no change will be made
 	if len(toAdd) == 0 && len(toDelete) == 0 {
