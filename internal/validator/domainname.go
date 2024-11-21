@@ -4,22 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
 var _ validator.String = isDomainNameValidator{}
 
-// isDomainNameValidator validates that the value of an int64 attribute is divisible by a given divisor.
-type isDomainNameValidator struct {
-	divisor int64
-}
+type isDomainNameValidator struct{}
 
 // Description describes the validation.
 func (v isDomainNameValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("value must be divisible by %d", v.divisor)
+	return "value must be a valid domain name"
 }
 
 // MarkdownDescription describes the validation in Markdown.
@@ -110,31 +105,4 @@ func ValidateDomainName(name string) error {
 	}
 
 	return nil
-}
-
-func ValidateDomainNameDiag(val interface{}, path cty.Path) diag.Diagnostics {
-	var diags diag.Diagnostics
-	name, ok := val.(string)
-
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity:      diag.Error,
-			Summary:       "Validation failed due to wrong type",
-			Detail:        "expected value to be a string",
-			AttributePath: path,
-		})
-		return diags
-	}
-
-	err := ValidateDomainName(name)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity:      diag.Error,
-			Summary:       "Validation failed",
-			Detail:        err.Error(),
-			AttributePath: path,
-		})
-	}
-
-	return diags
 }

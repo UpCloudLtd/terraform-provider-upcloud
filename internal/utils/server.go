@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequest, meta interface{}) error {
+func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequest, client *service.Service) error {
 	if stopRequest.Timeout == 0 {
 		stopRequest.Timeout = time.Minute * 2
 	}
@@ -18,7 +18,6 @@ func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequ
 		stopRequest.StopType = upcloud.StopTypeSoft
 	}
 
-	client := meta.(*service.Service)
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
 		UUID: stopRequest.UUID,
@@ -45,29 +44,28 @@ func VerifyServerStopped(ctx context.Context, stopRequest request.StopServerRequ
 	return nil
 }
 
-func VerifyServerStarted(ctx context.Context, startRequest request.StartServerRequest, meta interface{}) error {
-	client := meta.(*service.Service)
+func VerifyServerStarted(ctx context.Context, startRequest request.StartServerRequest, client *service.Service) (*upcloud.ServerDetails, error) {
 	// Get current server state
 	r := &request.GetServerDetailsRequest{
 		UUID: startRequest.UUID,
 	}
 	server, err := client.GetServerDetails(ctx, r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if server.State != upcloud.ServerStateStarted {
 		tflog.Info(ctx, "starting server", map[string]interface{}{"uuid": startRequest.UUID})
 		_, err := client.StartServer(ctx, &startRequest)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		_, err = client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
+		server, err = client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 			UUID:         startRequest.UUID,
 			DesiredState: upcloud.ServerStateStarted,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return server, nil
 }

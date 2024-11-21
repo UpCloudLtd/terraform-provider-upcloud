@@ -67,7 +67,7 @@ func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
 				Config: testDataStep2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(server(1), "server_group"),
-					resource.TestCheckResourceAttr(server(2), "server_group", ""),
+					resource.TestCheckNoResourceAttr(server(2), "server_group"),
 				),
 			},
 		},
