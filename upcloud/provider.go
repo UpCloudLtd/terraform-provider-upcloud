@@ -142,7 +142,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	_, err := config.checkLogin(service)
 	if err != nil {
-		resp.Diagnostics.AddError("Authentication failed", "Failed to authenticate to UpCloud API with given credentials")
+		resp.Diagnostics.AddError("Failed to authenticate to UpCloud API with given credentials", err.Error())
 	}
 
 	tflog.Info(ctx, "UpCloud service connection configured for plugin framework provider", map[string]interface{}{"http_client": fmt.Sprintf("%#v", httpClient), "request_timeout": requestTimeout})
