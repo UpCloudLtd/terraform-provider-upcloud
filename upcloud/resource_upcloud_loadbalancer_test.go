@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccUpcloudLoadBalancer(t *testing.T) {
@@ -164,7 +164,11 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1TLS1Name, "name", "lb-fe-1-tls1-test"),
 				),
 			},
-			verifyImportStep(lbName, "operational_state"),
+			{
+				// Refresh state to include backends, frontends and resolvers in the state.
+				Config: testDataS1,
+			},
+			verifyImportStep(lbName, "nodes", "operational_state"),
 			verifyImportStep(fe1Name),
 			verifyImportStep(be1Name),
 			verifyImportStep(dnsName),
@@ -323,7 +327,7 @@ func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 				ResourceName:            name,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"operational_state"},
+				ImportStateVerifyIgnore: []string{"operational_state", "nodes"},
 			},
 		},
 	})

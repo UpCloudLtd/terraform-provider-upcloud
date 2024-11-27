@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccUpcloudKubernetes(t *testing.T) {
@@ -72,6 +72,10 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 						"storage_size": "25",
 					}),
 				),
+			},
+			{
+				// Refresh state to include node-groups in the state.
+				Config: testDataS1,
 			},
 			verifyImportStep(cName, "state"),
 			verifyImportStep(g1Name),

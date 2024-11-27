@@ -2,11 +2,13 @@ package upcloud
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/config"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func withPrefixDB(text string) string {
@@ -170,6 +172,60 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(valkeyName, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(valkeyName, "powered", "true"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
+	testdata := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/termination_protection.tf")
+	db := "upcloud_managed_database_mysql.this.0"
+
+	variables := func(dbCount int32, powered bool, termination_protection bool) map[string]config.Variable {
+		return map[string]config.Variable{
+			"db_count":               config.IntegerVariable(dbCount),
+			"powered":                config.BoolVariable(powered),
+			"termination_protection": config.BoolVariable(termination_protection),
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:          testdata,
+				ConfigVariables: variables(1, true, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(db, "powered", "true"),
+					resource.TestCheckResourceAttr(db, "termination_protection", "true"),
+				),
+			},
+			// Powering off the service should fail as termination protection is enabled
+			{
+				Config:          testdata,
+				ConfigVariables: variables(1, false, true),
+				ExpectError:     regexp.MustCompile("Service state cannot be updated, termination protection is enabled."),
+			},
+			// Deleting the service should fail as termination protection is enabled
+			{
+				Config:          testdata,
+				ConfigVariables: variables(0, true, true),
+				ExpectError:     regexp.MustCompile("Service cannot be deleted, termination protection is enabled."),
+			},
+			// Disable termination protection and power off the service
+			{
+				Config:          testdata,
+				ConfigVariables: variables(1, false, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(db, "powered", "false"),
+					resource.TestCheckResourceAttr(db, "termination_protection", "false"),
+				),
+			},
+			// Deleting the service should succeed as termination protection is disabled
+			{
+				Config:          testdata,
+				ConfigVariables: variables(0, false, false),
 			},
 		},
 	})
