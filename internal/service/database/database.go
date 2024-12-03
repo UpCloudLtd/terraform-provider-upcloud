@@ -98,7 +98,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	client := meta.(*service.Service)
 	diags := diag.Diagnostics{}
 
-	if d.HasChanges("plan", "title", "zone",
+	if d.HasChanges("plan", "title", "termination_protection", "zone",
 		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network", "labels") {
 		req := request.ModifyManagedDatabaseRequest{UUID: d.Id()}
 		req.Plan = d.Get("plan").(string)
@@ -112,6 +112,11 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		if d.HasChange("labels") {
 			labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
 			req.Labels = &labels
+		}
+
+		if d.HasChange("termination_protection") {
+			terminationProtection := d.Get("termination_protection").(bool)
+			req.TerminationProtection = &terminationProtection
 		}
 
 		if d.HasChange("properties.0") {
@@ -183,13 +188,15 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func buildManagedDatabaseRequestFromResourceData(d *schema.ResourceData) request.CreateManagedDatabaseRequest {
+	terminationProtection := d.Get("termination_protection").(bool)
 	req := request.CreateManagedDatabaseRequest{
-		HostNamePrefix: d.Get("name").(string),
-		Plan:           d.Get("plan").(string),
-		Title:          d.Get("title").(string),
-		Labels:         utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
-		Type:           upcloud.ManagedDatabaseServiceType(d.Get("type").(string)),
-		Zone:           d.Get("zone").(string),
+		HostNamePrefix:        d.Get("name").(string),
+		Plan:                  d.Get("plan").(string),
+		Title:                 d.Get("title").(string),
+		TerminationProtection: &terminationProtection,
+		Labels:                utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
+		Type:                  upcloud.ManagedDatabaseServiceType(d.Get("type").(string)),
+		Zone:                  d.Get("zone").(string),
 	}
 
 	if d.HasChange("network") {
@@ -377,6 +384,9 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 		return err
 	}
 	if err = d.Set("state", string(details.State)); err != nil {
+		return err
+	}
+	if err = d.Set("termination_protection", details.TerminationProtection); err != nil {
 		return err
 	}
 	if err = d.Set("title", details.Title); err != nil {

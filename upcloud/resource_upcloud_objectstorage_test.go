@@ -14,8 +14,8 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/minio/minio-go/v7"
 )
 
@@ -87,7 +87,16 @@ func TestMain(m *testing.M) {
 	resource.TestMain(m)
 }
 
+func skipObjstoEOL(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TF_ACC_OBJSTO_EOL") == "" {
+		t.Skip("Skipping end-of-life object storage acceptance tests. Set TF_ACC_OBJSTO_EOL environment variable to run these tests.")
+	}
+}
+
 func TestUpCloudObjectStorage_basic(t *testing.T) {
+	skipObjstoEOL(t)
+
 	const expectedSize = "250"
 
 	resource.Test(t, resource.TestCase{
@@ -120,6 +129,8 @@ func TestUpCloudObjectStorage_basic(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_basic_update(t *testing.T) {
+	skipObjstoEOL(t)
+
 	const expectedSize = "500"
 
 	const expectedUpdatedSize = "1000"
@@ -170,6 +181,8 @@ func TestUpCloudObjectStorage_basic_update(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_default_values(t *testing.T) {
+	skipObjstoEOL(t)
+
 	const expectedSize = "500"
 	const expectedUpdatedSize = "1000"
 	const expectedUpdatedKey = "an updated access key"
@@ -209,6 +222,8 @@ func TestUpCloudObjectStorage_default_values(t *testing.T) {
 }
 
 func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
+	skipObjstoEOL(t)
+
 	const expectedSize = "500"
 	const expectedBucketName1 = "bucket1"
 	const expectedBucketName2 = "bucket2"
@@ -295,6 +310,8 @@ func TestUpCloudObjectStorage_bucket_management(t *testing.T) {
 
 // We bundle creating object storage using env vars and import because import relies on passing access and secret key as env vars
 func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
+	skipObjstoEOL(t)
+
 	name := objectStorageTestExpectedName4
 	zone := "pl-waw1"
 	desc := "just some random stuff"

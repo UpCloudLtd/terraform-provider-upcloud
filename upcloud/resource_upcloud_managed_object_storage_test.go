@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccUpcloudManagedObjectStorage(t *testing.T) {
@@ -51,7 +51,7 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 				ResourceName:            minimal,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"operational_state"},
+				ImportStateVerifyIgnore: []string{"operational_state", "updated_at"},
 			},
 			{
 				Config: testDataS2,

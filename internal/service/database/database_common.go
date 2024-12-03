@@ -90,6 +90,12 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"termination_protection": {
+			Description: "If set to true, prevents the managed service from being powered off, or deleted.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"title": {
 			Description:  "Title of a managed database instance",
 			Type:         schema.TypeString,

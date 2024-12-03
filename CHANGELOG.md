@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- upcloud_managed_database_\*: add `termination_protection` field.
+
 ## [5.15.0] - 2024-11-14
 
 ### Added

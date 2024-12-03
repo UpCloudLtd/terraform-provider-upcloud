@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
@@ -57,11 +57,14 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config:                  testDataS1,
-				ResourceName:            userAccessKey,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"secret_access_key"}, // only provided on creation, not available on subsequent requests like import
+				Config:            testDataS1,
+				ResourceName:      userAccessKey,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"last_used_at",
+					"secret_access_key", // only provided on creation, not available on subsequent requests like import
+				},
 			},
 			{
 				Config: testDataS2,
