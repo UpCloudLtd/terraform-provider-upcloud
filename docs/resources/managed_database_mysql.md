@@ -64,6 +64,7 @@ resource "upcloud_managed_database_mysql" "example_3" {
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service
+- `termination_protection` (Boolean) If set to true, prevents the managed service from being powered off, or deleted.
 
 ### Blocks
 
