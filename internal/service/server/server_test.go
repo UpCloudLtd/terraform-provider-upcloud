@@ -5,8 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/stretchr/testify/assert"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func TestServerDefaultTitle(t *testing.T) {
@@ -26,12 +25,12 @@ func TestServerDefaultTitle(t *testing.T) {
 }
 
 func TestBuildSimpleBackupOpts_basic(t *testing.T) {
-	attrs := map[string]interface{}{
-		"time": "2200",
-		"plan": "weeklies",
+	value := simpleBackupModel{
+		Time: types.StringValue("2200"),
+		Plan: types.StringValue("weeklies"),
 	}
 
-	sb := buildSimpleBackupOpts(attrs)
+	sb := buildSimpleBackupOpts(&value)
 	expected := "2200,weeklies"
 
 	if sb != expected {
@@ -41,26 +40,15 @@ func TestBuildSimpleBackupOpts_basic(t *testing.T) {
 }
 
 func TestBuildSimpleBackupOpts_withInvalidInput(t *testing.T) {
-	attrs := map[string]interface{}{
-		"time":     "2200",
-		"interval": "daily",
-		"retetion": 7,
+	value := simpleBackupModel{
+		Time: types.StringValue("2200"),
 	}
 
-	sb := buildSimpleBackupOpts(attrs)
+	sb := buildSimpleBackupOpts(&value)
 	expected := "no"
 
 	if sb != expected {
 		t.Logf("BuildSimpleBackuOpts produced unexpected value. Expected: %s, received: %s", expected, sb)
 		t.Fail()
 	}
-}
-
-func TestBuildLabels(t *testing.T) {
-	attr := map[string]interface{}{
-		"origin": "unit-test",
-	}
-
-	l := buildLabels(attr)
-	assert.Equal(t, &upcloud.LabelSlice{upcloud.Label{Key: "origin", Value: "unit-test"}}, l)
 }
