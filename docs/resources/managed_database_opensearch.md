@@ -96,6 +96,7 @@ Optional Attributes:
 - `cluster_max_shards_per_node` (Number) Controls the number of shards allowed in the cluster per data node.
 - `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to node cpu count * 2.
 - `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name.
+- `elasticsearch_version` (String) Elasticsearch major version.
 - `email_sender_name` (String) Sender name placeholder to be used in Opensearch Dashboards and Opensearch keystore. This should be identical to the Sender name defined in Opensearch dashboards.
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
 - `email_sender_username` (String) Sender username for Opensearch alerts.
@@ -154,6 +155,7 @@ Blocks:
 - `s3_migration` (Block List, Max: 1) AWS S3 / AWS S3 compatible migration settings. (see [below for nested schema](#nestedblock--properties--s3_migration))
 - `saml` (Block List, Max: 1) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
 - `search_backpressure` (Block List, Max: 1) Search Backpressure Settings. (see [below for nested schema](#nestedblock--properties--search_backpressure))
+- `search_insights_top_queries` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--search_insights_top_queries))
 - `shard_indexing_pressure` (Block List, Max: 1) Shard indexing back pressure settings. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure))
 
 <a id="nestedblock--properties--auth_failure_listeners"></a>
@@ -197,7 +199,7 @@ Optional Attributes:
 
 Optional Attributes:
 
-- `account` (String) Account name. Azure account name.
+- `account` (String) Account name.
 - `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
 - `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
@@ -208,7 +210,7 @@ Optional Attributes:
 - `key` (String) Account secret key. Azure account secret key. One of key or sas_token should be specified.
 - `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
 - `sas_token` (String) SAS token. A shared access signatures (SAS) token. One of key or sas_token should be specified.
-- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
+- `snapshot_name` (String) The snapshot name to restore from.
 
 
 <a id="nestedblock--properties--gcs_migration"></a>
@@ -217,14 +219,14 @@ Optional Attributes:
 Optional Attributes:
 
 - `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
-- `bucket` (String) The path to the repository data within its container. Google Cloud Storage bucket name.
+- `bucket` (String) Google Cloud Storage bucket name. The path to the repository data within its container.
 - `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `credentials` (String) Credentials. Google Cloud Storage credentials file content.
 - `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
 - `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
 - `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
-- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
+- `snapshot_name` (String) The snapshot name to restore from.
 
 
 <a id="nestedblock--properties--index_rollup"></a>
@@ -283,19 +285,19 @@ Optional Attributes:
 
 Optional Attributes:
 
-- `access_key` (String) AWS Access key. AWS Access key.
+- `access_key` (String) AWS Access key.
 - `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
-- `bucket` (String) S3 bucket name. S3 bucket name.
+- `bucket` (String) S3 bucket name.
 - `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
 - `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
 - `endpoint` (String) The S3 service endpoint to connect. The S3 service endpoint to connect to. If you are using an S3-compatible service then you should set this to the service’s endpoint.
 - `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
 - `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
-- `region` (String) S3 region. S3 region.
+- `region` (String) S3 region.
 - `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
 - `secret_key` (String) AWS secret key. AWS secret key.
 - `server_side_encryption` (Boolean) Server side encryption. When set to true files are encrypted on server side.
-- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
+- `snapshot_name` (String) The snapshot name to restore from.
 
 
 <a id="nestedblock--properties--saml"></a>
@@ -365,6 +367,46 @@ Optional Attributes:
 - `heap_percent_threshold` (Number) The heap usage threshold (as a percentage) required for an individual parent task before it is considered for cancellation. The heap usage threshold (as a percentage) required for an individual parent task before it is considered for cancellation. Default is 0.2.
 - `heap_variance` (Number) The heap usage variance required for an individual parent task before it is considered for cancellation. The heap usage variance required for an individual parent task before it is considered for cancellation. A task is considered for cancellation when taskHeapUsage is greater than or equal to heapUsageMovingAverage * variance. Default is 2.0.
 - `total_heap_percent_threshold` (Number) The heap usage threshold (as a percentage) required for the sum of heap usages of all search tasks before cancellation is applied. The heap usage threshold (as a percentage) required for the sum of heap usages of all search tasks before cancellation is applied. Default is 0.5.
+
+
+
+<a id="nestedblock--properties--search_insights_top_queries"></a>
+### Nested Schema for `properties.search_insights_top_queries`
+
+Blocks:
+
+- `cpu` (Block List, Max: 1) Top N queries monitoring by CPU. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--cpu))
+- `latency` (Block List, Max: 1) Top N queries monitoring by latency. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--latency))
+- `memory` (Block List, Max: 1) Top N queries monitoring by memory. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--memory))
+
+<a id="nestedblock--properties--search_insights_top_queries--cpu"></a>
+### Nested Schema for `properties.search_insights_top_queries.cpu`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
+- `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+
+
+<a id="nestedblock--properties--search_insights_top_queries--latency"></a>
+### Nested Schema for `properties.search_insights_top_queries.latency`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
+- `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+
+
+<a id="nestedblock--properties--search_insights_top_queries--memory"></a>
+### Nested Schema for `properties.search_insights_top_queries.memory`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
+- `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
 
 
 
