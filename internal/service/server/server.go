@@ -33,6 +33,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
@@ -286,6 +287,9 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				Description: "The pricing plan used for the server. You can list available server plans with `upctl server plans`",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(
 						path.MatchRoot("cpu"),
@@ -708,6 +712,8 @@ func attributeIPAddressFloating(description string) schema.BoolAttribute {
 	return schema.BoolAttribute{
 		MarkdownDescription: description,
 		Computed:            true,
+		// Force the value to be unknown if not set. For some reason, the value is null by default in additional_ip_address block, which causes data-consistency errors if user has defined additional IP addresses.
+		Default: utils.StaticUnknown{},
 	}
 }
 
@@ -741,13 +747,31 @@ func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, uuid s
 	for i, planIface := range networkInterfacesPlan {
 		change := networkInterfaceChanges[i]
 		if canModifyInterface(change.state, change.plan, change.api) {
-			if planIface.AdditionalIPAddresses.IsNull() && len(change.api.IPAddresses) > 0 {
-				planIface.IPAddress = types.StringValue(change.api.IPAddresses[0].Address)
-				planIface.IPAddressFamily = types.StringValue(change.api.IPAddresses[0].Family)
-				planIface.IPAddressFloating = utils.AsTypesBool(change.api.IPAddresses[0].Floating)
+			if ip := findIPAddress(*change.api, planIface.IPAddress.ValueString()); ip != nil {
+				planIface.IPAddress = types.StringValue(ip.Address)
+				planIface.IPAddressFamily = types.StringValue(ip.Family)
+				planIface.IPAddressFloating = utils.AsTypesBool(ip.Floating)
+			}
+
+			if !planIface.AdditionalIPAddresses.IsNull() {
+				var additionalIPAddresses []additionalIPAddressModel
+				resp.Diagnostics.Append(planIface.AdditionalIPAddresses.ElementsAs(ctx, &additionalIPAddresses, false)...)
+				for i, additionalIPAddress := range additionalIPAddresses {
+					if ip := findIPAddress(*change.api, additionalIPAddress.IPAddress.ValueString()); ip != nil {
+						additionalIPAddress.IPAddress = types.StringValue(ip.Address)
+						additionalIPAddress.IPAddressFamily = types.StringValue(ip.Family)
+						additionalIPAddress.IPAddressFloating = utils.AsTypesBool(ip.Floating)
+					}
+					additionalIPAddresses[i] = additionalIPAddress
+				}
+
+				var diags diag.Diagnostics
+				planIface.AdditionalIPAddresses, diags = types.SetValueFrom(ctx, planIface.AdditionalIPAddresses.ElementType(ctx), additionalIPAddresses)
+				resp.Diagnostics.Append(diags...)
 			}
 			planIface.MACAddress = types.StringValue(change.api.MAC)
 			planIface.Network = types.StringValue(change.api.Network)
+			tflog.Debug(ctx, fmt.Sprintf("Modified network interface plan.\nOld plan: %+v\nNew plan: %+v", change.plan, planIface))
 		}
 		networkInterfacesPlan[i] = planIface
 	}
@@ -861,13 +885,14 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 		}
 
 		ni, diags := setInterfaceValues(ctx, (*upcloud.Interface)(iface), nic.IPAddress)
+		tflog.Debug(ctx, fmt.Sprintf("Setting values for network interface.\nPlan: %+v\nNew state: %+v", nic, ni))
 		respDiagnostics.Append(diags...)
 
 		networkInterfaces = append(networkInterfaces, ni)
 		handledInterfaces[int(index)] = true
 	}
 
-	// Handle new network interfaces
+	// Handle new network interfaces. This is needed for importing state.
 	for _, iface := range server.Networking.Interfaces {
 		if handledInterfaces[iface.Index] {
 			continue
@@ -886,7 +911,7 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 	respDiagnostics.Append(diags...)
 
 	for _, serverStorage := range server.StorageDevices {
-		if serverStorage.UUID == template.ID.ValueString() {
+		if template != nil && serverStorage.UUID == template.ID.ValueString() {
 			templates := []templateModel{
 				{
 					Address:         types.StringValue(utils.StorageAddressFormat(serverStorage.Address)),
@@ -1421,6 +1446,10 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 }
 
 func getTemplate(ctx context.Context, data serverModel) (*templateModel, diag.Diagnostics) {
+	if data.Template.IsNull() {
+		return nil, nil
+	}
+
 	var templates []templateModel
 	diags := data.Template.ElementsAs(ctx, &templates, false)
 

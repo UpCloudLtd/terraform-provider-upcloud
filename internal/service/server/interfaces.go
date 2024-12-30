@@ -22,6 +22,15 @@ func findInterface(ifaces []upcloud.ServerInterface, index int) *upcloud.ServerI
 	return nil
 }
 
+func findIPAddress(iface upcloud.ServerInterface, address string) *upcloud.IPAddress {
+	for _, ip := range iface.IPAddresses {
+		if ip.Address == address {
+			return &ip
+		}
+	}
+	return nil
+}
+
 func ipAndTypeMatches(api upcloud.ServerInterface, data networkInterfaceModel) bool {
 	if api.Type != data.Type.ValueString() {
 		return false
