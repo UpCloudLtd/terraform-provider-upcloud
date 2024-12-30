@@ -82,7 +82,7 @@ func TestUpcloudServer_minimal(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "hostname", "tf-acc-test-server-minimal"),
-					resource.TestCheckNoResourceAttr("upcloud_server.this", "tags"),
+					resource.TestCheckResourceAttr("upcloud_server.this", "tags.#", "0"),
 				),
 			},
 			{
