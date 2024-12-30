@@ -4,7 +4,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	sdkv2_schema "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // Lines > 1 should have one level of indentation to keep them under the right list item
@@ -45,45 +44,18 @@ func BackupRuleBlock() schema.ListNestedBlock {
 	}
 }
 
-func BackupRuleSchema() *sdkv2_schema.Schema {
-	return &sdkv2_schema.Schema{
-		Description: BackupRuleDescription,
-		Type:        sdkv2_schema.TypeList,
-		MaxItems:    1,
-		Optional:    true,
-		Elem: &sdkv2_schema.Resource{
-			Schema: map[string]*sdkv2_schema.Schema{
-				"interval": {
-					Description: "The weekday when the backup is created",
-					Type:        sdkv2_schema.TypeString,
-					Required:    true,
-				},
-				"time": {
-					Description: "The time of day when the backup is created",
-					Type:        sdkv2_schema.TypeString,
-					Required:    true,
-				},
-				"retention": {
-					Description: "The number of days before a backup is automatically deleted",
-					Type:        sdkv2_schema.TypeInt,
-					Required:    true,
-				},
-			},
-		},
-	}
-}
+func BackupRule(backupRule BackupRuleModel) *upcloud.BackupRule {
+	interval := backupRule.Interval.ValueString()
+	time := backupRule.Time.ValueString()
+	retention := int(backupRule.Retention.ValueInt64())
 
-func BackupRule(backupRule map[string]interface{}) *upcloud.BackupRule {
-	if interval, ok := backupRule["interval"]; ok {
-		if time, ok := backupRule["time"]; ok {
-			if retention, ok := backupRule["retention"]; ok {
-				return &upcloud.BackupRule{
-					Interval:  interval.(string),
-					Time:      time.(string),
-					Retention: retention.(int),
-				}
-			}
+	if interval != "" && time != "" && retention != 0 {
+		return &upcloud.BackupRule{
+			Interval:  interval,
+			Time:      time,
+			Retention: retention,
 		}
 	}
+
 	return &upcloud.BackupRule{}
 }

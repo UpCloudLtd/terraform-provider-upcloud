@@ -5,9 +5,18 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_server: make template storage tier configurable.
+
+### Fixed
+
+- upcloud_server: mark network interface IP address values as unknown during planning. This ensures that IP addresses have known values after apply.
+
 ## [5.16.0] - 2024-12-03
 
 ### Added
+
 - upcloud_managed_database_\*: add `termination_protection` field.
 
 ## [5.15.0] - 2024-11-14
