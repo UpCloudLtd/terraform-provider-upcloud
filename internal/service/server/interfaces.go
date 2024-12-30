@@ -50,10 +50,6 @@ type ifaceChange struct {
 	state     *networkInterfaceModel
 }
 
-func intPtr(i int) *int {
-	return &i
-}
-
 func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfaceModel) map[int]ifaceChange {
 	m := make(map[int]ifaceChange)
 
@@ -68,7 +64,7 @@ func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfa
 		for j, planIface := range plan {
 			if planIface.Index.ValueInt64() == int64(apiIface.Index) {
 				change.plan = &planIface
-				change.planIndex = intPtr(j)
+				change.planIndex = upcloud.IntPtr(j)
 				matchedPlanIfaces[j] = true
 				break
 			}
@@ -95,7 +91,7 @@ func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfa
 					}
 					if canModifyInterface(&stateIface, &planIface, &apiIface) {
 						change.plan = &planIface
-						change.planIndex = intPtr(k)
+						change.planIndex = upcloud.IntPtr(k)
 						matchedPlanIfaces[k] = true
 						break
 					}
