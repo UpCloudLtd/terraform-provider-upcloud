@@ -711,10 +711,56 @@ func attributeIPAddressFloating(description string) schema.BoolAttribute {
 	}
 }
 
+func (r *serverResource) updateCPUandMemPlan(state, plan *serverModel) {
+	if state.Plan.Equal(plan.Plan) {
+		if plan.CPU.IsUnknown() {
+			plan.CPU = state.CPU
+		}
+		if plan.Mem.IsUnknown() {
+			plan.Mem = state.Mem
+		}
+	}
+}
+
+func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, uuid string, state, plan serverModel, resp *resource.ModifyPlanResponse) {
+	server, err := r.client.GetServerDetails(ctx, &request.GetServerDetailsRequest{UUID: uuid})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read server details when modifying network interfaces plan",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	var networkInterfacesPlan []networkInterfaceModel
+	resp.Diagnostics.Append(plan.NetworkInterfaces.ElementsAs(ctx, &networkInterfacesPlan, false)...)
+
+	var networkInterfacesState []networkInterfaceModel
+	resp.Diagnostics.Append(state.NetworkInterfaces.ElementsAs(ctx, &networkInterfacesState, false)...)
+
+	networkInterfaceChanges := matchInterfacesToPlan(server.Networking.Interfaces, networkInterfacesState, networkInterfacesPlan)
+	for i, planIface := range networkInterfacesPlan {
+		change := networkInterfaceChanges[i]
+		if canModifyInterface(change.state, change.plan, change.api) {
+			if planIface.AdditionalIPAddresses.IsNull() && len(change.api.IPAddresses) > 0 {
+				planIface.IPAddress = types.StringValue(change.api.IPAddresses[0].Address)
+				planIface.IPAddressFamily = types.StringValue(change.api.IPAddresses[0].Family)
+				planIface.IPAddressFloating = utils.AsTypesBool(change.api.IPAddresses[0].Floating)
+			}
+			planIface.MACAddress = types.StringValue(change.api.MAC)
+			planIface.Network = types.StringValue(change.api.Network)
+		}
+		networkInterfacesPlan[i] = planIface
+	}
+
+	var diags diag.Diagnostics
+	plan.NetworkInterfaces, diags = types.ListValueFrom(ctx, plan.NetworkInterfaces.ElementType(ctx), networkInterfacesPlan)
+	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, plan)...)
+}
+
 func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	var plan *serverModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
 	if plan == nil {
 		// Do not validate config for destroy plans.
 		return
@@ -726,10 +772,16 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 	resp.Diagnostics.Append(validatePlan(ctx, r.client, config.Plan)...)
 	resp.Diagnostics.Append(validateZone(ctx, r.client, config.Zone)...)
 
-	var state serverModel
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	var state *serverModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if state == nil {
+		return
+	}
 
 	resp.Diagnostics.Append(validateTagsChangeRequiresMainAccount(ctx, r.client, state.Tags, plan.Tags)...)
+
+	r.updateCPUandMemPlan(state, plan)
+	r.modifyNetworkInterfacesPlan(ctx, plan.ID.ValueString(), *state, *plan, resp)
 }
 
 func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDetails) diag.Diagnostics {

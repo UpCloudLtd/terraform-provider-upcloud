@@ -35,9 +35,14 @@ func ipAndTypeMatches(api upcloud.ServerInterface, data networkInterfaceModel) b
 }
 
 type ifaceChange struct {
-	api   *upcloud.ServerInterface
-	plan  *networkInterfaceModel
-	state *networkInterfaceModel
+	api       *upcloud.ServerInterface
+	plan      *networkInterfaceModel
+	planIndex *int
+	state     *networkInterfaceModel
+}
+
+func intPtr(i int) *int {
+	return &i
 }
 
 func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfaceModel) map[int]ifaceChange {
@@ -50,9 +55,11 @@ func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfa
 	// Match interfaces by index.
 	for i, apiIface := range api {
 		change := ifaceChange{api: &apiIface}
+
 		for j, planIface := range plan {
 			if planIface.Index.ValueInt64() == int64(apiIface.Index) {
 				change.plan = &planIface
+				change.planIndex = intPtr(j)
 				matchedPlanIfaces[j] = true
 				break
 			}
@@ -79,6 +86,7 @@ func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfa
 					}
 					if canModifyInterface(&stateIface, &planIface, &apiIface) {
 						change.plan = &planIface
+						change.planIndex = intPtr(k)
 						matchedPlanIfaces[k] = true
 						break
 					}
@@ -89,6 +97,17 @@ func matchInterfaces(api []upcloud.ServerInterface, state, plan []networkInterfa
 	}
 
 	return m
+}
+
+func matchInterfacesToPlan(api []upcloud.ServerInterface, state, plan []networkInterfaceModel) map[int]ifaceChange {
+	a := matchInterfaces(api, state, plan)
+	b := make(map[int]ifaceChange)
+	for _, change := range a {
+		if change.planIndex != nil && change.plan != nil {
+			b[*change.planIndex] = change
+		}
+	}
+	return b
 }
 
 func canModifyInterface(state, plan *networkInterfaceModel, prev *upcloud.ServerInterface) bool {
@@ -111,7 +130,7 @@ func canModifyInterface(state, plan *networkInterfaceModel, prev *upcloud.Server
 		if prev.Network != plan.Network.ValueString() {
 			return false
 		}
-		if !ipAndTypeMatches(*prev, *plan) {
+		if !plan.IPAddress.IsUnknown() && !ipAndTypeMatches(*prev, *plan) {
 			return false
 		}
 	}
