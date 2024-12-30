@@ -33,7 +33,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
@@ -728,6 +727,12 @@ func (r *serverResource) updateCPUandMemPlan(state, plan *serverModel) {
 	}
 }
 
+func setAddressPlan(plan *networkInterfaceModel, ip upcloud.IPAddress) {
+	plan.IPAddress = types.StringValue(ip.Address)
+	plan.IPAddressFamily = types.StringValue(ip.Family)
+	plan.IPAddressFloating = utils.AsTypesBool(ip.Floating)
+}
+
 func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, uuid string, state, plan serverModel, resp *resource.ModifyPlanResponse) {
 	server, err := r.client.GetServerDetails(ctx, &request.GetServerDetailsRequest{UUID: uuid})
 	if err != nil {
@@ -748,9 +753,11 @@ func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, uuid s
 		change := networkInterfaceChanges[i]
 		if canModifyInterface(change.state, change.plan, change.api) {
 			if ip := findIPAddress(*change.api, planIface.IPAddress.ValueString()); ip != nil {
-				planIface.IPAddress = types.StringValue(ip.Address)
-				planIface.IPAddressFamily = types.StringValue(ip.Family)
-				planIface.IPAddressFloating = utils.AsTypesBool(ip.Floating)
+				// Handle cases where IP address is defined in the config.
+				setAddressPlan(&planIface, *ip)
+			} else if planIface.AdditionalIPAddresses.IsNull() && len(change.api.IPAddresses) > 0 {
+				// Handle cases where IP address is defined by the system.
+				setAddressPlan(&planIface, change.api.IPAddresses[0])
 			}
 
 			if !planIface.AdditionalIPAddresses.IsNull() {
@@ -771,7 +778,6 @@ func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, uuid s
 			}
 			planIface.MACAddress = types.StringValue(change.api.MAC)
 			planIface.Network = types.StringValue(change.api.Network)
-			tflog.Debug(ctx, fmt.Sprintf("Modified network interface plan.\nOld plan: %+v\nNew plan: %+v", change.plan, planIface))
 		}
 		networkInterfacesPlan[i] = planIface
 	}
@@ -885,7 +891,6 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 		}
 
 		ni, diags := setInterfaceValues(ctx, (*upcloud.Interface)(iface), nic.IPAddress)
-		tflog.Debug(ctx, fmt.Sprintf("Setting values for network interface.\nPlan: %+v\nNew state: %+v", nic, ni))
 		respDiagnostics.Append(diags...)
 
 		networkInterfaces = append(networkInterfaces, ni)
