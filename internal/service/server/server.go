@@ -658,11 +658,11 @@ func (r *serverResource) UpgradeState(_ context.Context) map[int64]resource.Stat
 					var login []loginModel
 					resp.Diagnostics.Append(data.Login.ElementsAs(ctx, &login, false)...)
 
-					if login[0].User.ValueString() == "" {
+					if len(login) > 0 && login[0].User.ValueString() == "" {
 						login[0].User = types.StringNull()
-					}
 
-					data.Login, _ = types.SetValueFrom(ctx, data.Login.ElementType(ctx), login)
+						data.Login, _ = types.SetValueFrom(ctx, data.Login.ElementType(ctx), login)
+					}
 				}
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
@@ -727,21 +727,19 @@ func (r *serverResource) updateCPUandMemPlan(state, plan *serverModel) {
 	}
 }
 
+func (r *serverResource) updateTagsPlan(server *upcloud.ServerDetails, plan *serverModel) {
+	if plan.Tags.IsUnknown() && len(server.Tags) == 0 {
+		plan.Tags = types.SetNull(types.StringType)
+	}
+}
+
 func setAddressPlan(plan *networkInterfaceModel, ip upcloud.IPAddress) {
 	plan.IPAddress = types.StringValue(ip.Address)
 	plan.IPAddressFamily = types.StringValue(ip.Family)
 	plan.IPAddressFloating = utils.AsTypesBool(ip.Floating)
 }
 
-func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, uuid string, state, plan serverModel, resp *resource.ModifyPlanResponse) {
-	server, err := r.client.GetServerDetails(ctx, &request.GetServerDetailsRequest{UUID: uuid})
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read server details when modifying network interfaces plan",
-			utils.ErrorDiagnosticDetail(err),
-		)
-	}
-
+func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, server *upcloud.ServerDetails, state, plan serverModel, resp *resource.ModifyPlanResponse) {
 	var networkInterfacesPlan []networkInterfaceModel
 	resp.Diagnostics.Append(plan.NetworkInterfaces.ElementsAs(ctx, &networkInterfacesPlan, false)...)
 
@@ -811,7 +809,18 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 	resp.Diagnostics.Append(validateTagsChangeRequiresMainAccount(ctx, r.client, state.Tags, plan.Tags)...)
 
 	r.updateCPUandMemPlan(state, plan)
-	r.modifyNetworkInterfacesPlan(ctx, plan.ID.ValueString(), *state, *plan, resp)
+
+	uuid := plan.ID.ValueString()
+	server, err := r.client.GetServerDetails(ctx, &request.GetServerDetailsRequest{UUID: uuid})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read server details when modifying plan",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	r.updateTagsPlan(server, plan)
+	r.modifyNetworkInterfacesPlan(ctx, server, *state, *plan, resp)
 }
 
 func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDetails) diag.Diagnostics {
