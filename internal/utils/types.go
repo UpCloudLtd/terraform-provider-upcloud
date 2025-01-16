@@ -20,6 +20,14 @@ func AsUpCloudBoolean(b types.Bool) upcloud.Boolean {
 	return upcloud.False
 }
 
+func AsTypesBool(b upcloud.Boolean) types.Bool {
+	if b.Empty() {
+		return types.BoolNull()
+	}
+
+	return types.BoolValue(b.Bool())
+}
+
 func AsBool(b upcloud.Boolean) types.Bool {
 	if b.Empty() {
 		return types.BoolPointerValue(nil)
