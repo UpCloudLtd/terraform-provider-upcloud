@@ -53,46 +53,46 @@ resource "upcloud_server" "example" {
 
 ### Required Attributes
 
-- `hostname` (String) A valid domain name
+- `hostname` (String) The hostname of the server.
 - `zone` (String) The zone in which the server will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
 
 - `boot_order` (String) The boot device order, `cdrom`|`disk`|`network` or comma separated combination of those values. Defaults to `disk`
-- `cpu` (Number) The number of CPU for the server
+- `cpu` (Number) The number of CPU cores for the server
 - `firewall` (Boolean) Are firewall rules active for the server
 - `host` (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
 - `labels` (Map of String) User defined key-value pairs to classify the server.
-- `mem` (Number) The size of memory for the server (in megabytes)
-- `metadata` (Boolean) Is the metadata service active for the server
+- `mem` (Number) The amount of memory for the server (in megabytes)
+- `metadata` (Boolean) Is metadata service active for the server
 - `nic_model` (String) The model of the server's network interfaces
 - `plan` (String) The pricing plan used for the server. You can list available server plans with `upctl server plans`
 - `server_group` (String) The UUID of a server group to attach this server to. Note that the server can also be attached to a server group via the `members` property of `upcloud_server_group`. Only one of the these should be defined at a time. This value is only updated if it has been set to non-zero value.
 - `tags` (Set of String) The server related tags
-- `timezone` (String) A timezone identifier, e.g. `Europe/Helsinki`
-- `title` (String) A short, informational description
+- `timezone` (String) The timezone of the server. The timezone must be a valid timezone string, e.g. `Europe/Helsinki`.
+- `title` (String) A short, informational description of the server.
 - `user_data` (String) Defines URL for a server setup script, or the script body itself
 - `video_model` (String) The model of the server's video interface
 
 ### Blocks
 
-- `login` (Block Set, Max: 1) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
-- `network_interface` (Block List, Min: 1) One or more blocks describing the network interfaces of the server.
+- `login` (Block Set) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
+- `network_interface` (Block List) One or more blocks describing the network interfaces of the server.
 
     In addition to list order, the configured network interfaces are matched to the server's actual network interfaces by `index` and `ip_address` fields. This is to avoid public and utility network interfaces being re-assigned when the server is updated. This might result to inaccurate diffs in the plan, when interfaces are re-ordered or when interface is removed from the middle of the list.
 
     We recommend explicitly setting the value for `index` in configuration, when re-ordering interfaces or when removing interface from middle of the list. (see [below for nested schema](#nestedblock--network_interface))
-- `simple_backup` (Block Set, Max: 1) Simple backup schedule configuration
+- `simple_backup` (Block Set) Simple backup schedule configuration
 
     The simple backups provide a simplified way to back up *all* of the storages attached to a given server. This means you cannot have simple backup set for a server, and individual `backup_rules` on the storages attached to the server. Such configuration will throw an error during execution. This also applies to `backup_rules` defined for server templates.
 
     Also, due to how UpCloud API works with simple backups and how Terraform orders the update operations, it is advised to never switch between `simple_backup` on the server and individual storages `backup_rules` in one apply. If you want to switch from using server simple backup to per-storage defined backup rules,  please first remove `simple_backup` block from a server, run `terraform apply`, then add `backup_rule` to desired storages and run `terraform apply` again. (see [below for nested schema](#nestedblock--simple_backup))
-- `storage_devices` (Block Set) A list of storage devices associated with the server (see [below for nested schema](#nestedblock--storage_devices))
-- `template` (Block List, Max: 1) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
+- `storage_devices` (Block Set) A set of storage devices associated with the server (see [below for nested schema](#nestedblock--storage_devices))
+- `template` (Block List) Block describing the preconfigured operating system (see [below for nested schema](#nestedblock--template))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) UUID of the server.
 
 <a id="nestedblock--login"></a>
 ### Nested Schema for `login`
@@ -116,27 +116,27 @@ Optional Attributes:
 
 - `bootable` (Boolean) `true` if this interface should be used for network booting.
 - `index` (Number) The interface index.
-- `ip_address` (String) The assigned primary IP address.
+- `ip_address` (String) The primary IP address of this interface.
 - `ip_address_family` (String) The type of the primary IP address of this interface (one of `IPv4` or `IPv6`).
-- `network` (String) The unique ID of a network to attach this network to.
+- `network` (String) The UUID of the network to attach this interface to. Required for private network interfaces.
 - `source_ip_filtering` (Boolean) `true` if source IP should be filtered.
 
 Blocks:
 
-- `additional_ip_address` (Block Set, Max: 4) 0-4 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private` (see [below for nested schema](#nestedblock--network_interface--additional_ip_address))
+- `additional_ip_address` (Block Set) 0-4 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private` (see [below for nested schema](#nestedblock--network_interface--additional_ip_address))
 
 Read-Only:
 
 - `ip_address_floating` (Boolean) `true` indicates that the primary IP address is a floating IP address.
-- `mac_address` (String) The assigned MAC address.
+- `mac_address` (String) The MAC address of the interface.
 
 <a id="nestedblock--network_interface--additional_ip_address"></a>
 ### Nested Schema for `network_interface.additional_ip_address`
 
 Optional Attributes:
 
-- `ip_address` (String) The assigned additional IP address.
-- `ip_address_family` (String) The type of this additional IP address of this interface (one of `IPv4` or `IPv6`).
+- `ip_address` (String) An additional IP address for this interface.
+- `ip_address_family` (String) The type of the additional IP address of this interface (one of `IPv4` or `IPv6`).
 
 Read-Only:
 
@@ -147,7 +147,7 @@ Read-Only:
 <a id="nestedblock--simple_backup"></a>
 ### Nested Schema for `simple_backup`
 
-Required Attributes:
+Optional Attributes:
 
 - `plan` (String) Simple backup plan. Accepted values: daily, dailies, weeklies, monthlies.
 - `time` (String) Time of the day at which backup will be taken. Should be provided in a hhmm format (e.g. 2230).
@@ -156,23 +156,16 @@ Required Attributes:
 <a id="nestedblock--storage_devices"></a>
 ### Nested Schema for `storage_devices`
 
-Required Attributes:
-
-- `storage` (String) A valid storage UUID
-
 Optional Attributes:
 
 - `address` (String) The device address the storage will be attached to (`scsi`|`virtio`|`ide`). Leave `address_position` field empty to auto-select next available address from that bus.
 - `address_position` (String) The device position in the given bus (defined via field `address`). Valid values for address `virtio` are `0-15` (`0`, for example). Valid values for `scsi` or `ide` are `0-1:0-1` (`0:0`, for example). Leave empty to auto-select next available address in the given bus.
+- `storage` (String) The UUID of the storage to attach to the server.
 - `type` (String) The device type the storage will be attached as
 
 
 <a id="nestedblock--template"></a>
 ### Nested Schema for `template`
-
-Required Attributes:
-
-- `storage` (String) A valid storage UUID or template name. You can list available public templates with `upctl storage list --public --template` and available private templates with `upctl storage list --template`.
 
 Optional Attributes:
 
@@ -185,11 +178,13 @@ Optional Attributes:
 							to restore the storage and then deleted. If the resize attempt succeeds, backup will be kept (unless delete_autoresize_backup option is set to true).
 							Taking and keeping backups incure costs.
 - `size` (Number) The size of the storage in gigabytes
+- `storage` (String) A valid storage UUID or template name. You can list available public templates with `upctl storage list --public --template` and available private templates with `upctl storage list --template`.
+- `tier` (String) The storage tier to use.
 - `title` (String) A short, informative description
 
 Blocks:
 
-- `backup_rule` (Block List, Max: 1) The criteria to backup the storage.
+- `backup_rule` (Block List) The criteria to backup the storage.
 
     Please keep in mind that it's not possible to have a storage with `backup_rule` attached to a server with `simple_backup` specified. Such configurations will throw errors during execution.
 
@@ -198,7 +193,6 @@ Blocks:
 Read-Only:
 
 - `id` (String) The unique identifier for the storage
-- `tier` (String) The storage tier to use
 
 <a id="nestedblock--template--backup_rule"></a>
 ### Nested Schema for `template.backup_rule`
