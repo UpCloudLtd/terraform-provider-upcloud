@@ -57,7 +57,7 @@ func ResourceFirewallRules() *schema.Resource {
 						},
 						"action": {
 							Type:         schema.TypeString,
-							Description:  "Action to take if the rule conditions are met",
+							Description:  "Action to take if the rule conditions are met. Valid values `accept | drop`",
 							Required:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.StringInSlice([]string{"accept", "drop"}, false),
