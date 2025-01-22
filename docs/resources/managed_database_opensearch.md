@@ -94,11 +94,14 @@ Optional Attributes:
 - `action_destructive_requires_name` (Boolean) Require explicit index names when deleting.
 - `automatic_utility_network_ip_filter` (Boolean) Automatic utility network IP Filter. Automatically allow connections from servers in the utility network within the same zone.
 - `cluster_max_shards_per_node` (Number) Controls the number of shards allowed in the cluster per data node.
+- `cluster_routing_allocation_balance_prefer_primary` (Boolean) When set to true, OpenSearch attempts to evenly distribute the primary shards between the cluster nodes. Enabling this setting does not always guarantee an equal number of primary shards on each node, especially in the event of a failover. Changing this setting to false after it was set to true does not invoke redistribution of primary shards. Default is false.
 - `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to node cpu count * 2.
 - `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name.
+- `elasticsearch_version` (String) Elasticsearch major version.
 - `email_sender_name` (String) Sender name placeholder to be used in Opensearch Dashboards and Opensearch keystore. This should be identical to the Sender name defined in Opensearch dashboards.
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
 - `email_sender_username` (String) Sender username for Opensearch alerts.
+- `enable_remote_backed_storage` (Boolean) Enable remote-backed storage.
 - `enable_security_audit` (Boolean) Enable/Disable security audit.
 - `http_max_content_length` (Number) Maximum content length for HTTP requests to the OpenSearch HTTP API, in bytes.
 - `http_max_header_size` (Number) The max size of allowed headers, in bytes.
@@ -145,15 +148,15 @@ Optional Attributes:
 Blocks:
 
 - `auth_failure_listeners` (Block List, Max: 1) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
-- `azure_migration` (Block List, Max: 1) Azure migration settings. (see [below for nested schema](#nestedblock--properties--azure_migration))
-- `gcs_migration` (Block List, Max: 1) Google Cloud Storage migration settings. (see [below for nested schema](#nestedblock--properties--gcs_migration))
+- `cluster_search_request_slowlog` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog))
 - `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
 - `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
 - `opensearch_dashboards` (Block List, Max: 1) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
-- `s3_migration` (Block List, Max: 1) AWS S3 / AWS S3 compatible migration settings. (see [below for nested schema](#nestedblock--properties--s3_migration))
 - `saml` (Block List, Max: 1) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
 - `search_backpressure` (Block List, Max: 1) Search Backpressure Settings. (see [below for nested schema](#nestedblock--properties--search_backpressure))
+- `search_insights_top_queries` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--search_insights_top_queries))
+- `segrep` (Block List, Max: 1) Segment Replication Backpressure Settings. (see [below for nested schema](#nestedblock--properties--segrep))
 - `shard_indexing_pressure` (Block List, Max: 1) Shard indexing back pressure settings. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure))
 
 <a id="nestedblock--properties--auth_failure_listeners"></a>
@@ -192,39 +195,27 @@ Optional Attributes:
 
 
 
-<a id="nestedblock--properties--azure_migration"></a>
-### Nested Schema for `properties.azure_migration`
+<a id="nestedblock--properties--cluster_search_request_slowlog"></a>
+### Nested Schema for `properties.cluster_search_request_slowlog`
 
 Optional Attributes:
 
-- `account` (String) Account name. Azure account name.
-- `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
-- `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
-- `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
-- `container` (String) Azure container name. Azure container name.
-- `endpoint_suffix` (String) Endpoint suffix. Defines the DNS suffix for Azure Storage endpoints.
-- `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
-- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
-- `key` (String) Account secret key. Azure account secret key. One of key or sas_token should be specified.
-- `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
-- `sas_token` (String) SAS token. A shared access signatures (SAS) token. One of key or sas_token should be specified.
-- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
+- `level` (String) Log level.
 
+Blocks:
 
-<a id="nestedblock--properties--gcs_migration"></a>
-### Nested Schema for `properties.gcs_migration`
+- `threshold` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog--threshold))
+
+<a id="nestedblock--properties--cluster_search_request_slowlog--threshold"></a>
+### Nested Schema for `properties.cluster_search_request_slowlog.threshold`
 
 Optional Attributes:
 
-- `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
-- `bucket` (String) The path to the repository data within its container. Google Cloud Storage bucket name.
-- `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
-- `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
-- `credentials` (String) Credentials. Google Cloud Storage credentials file content.
-- `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
-- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
-- `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
-- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
+- `debug` (String) Debug threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1.
+- `info` (String) Info threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1.
+- `trace` (String) Trace threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1.
+- `warn` (String) Warning threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1.
+
 
 
 <a id="nestedblock--properties--index_rollup"></a>
@@ -275,27 +266,8 @@ Optional Attributes:
 
 - `enabled` (Boolean) Enable or disable OpenSearch Dashboards.
 - `max_old_space_size` (Number) Limits the maximum amount of memory (in MiB) the OpenSearch Dashboards process can use. This sets the max_old_space_size option of the nodejs running the OpenSearch Dashboards. Note: the memory reserved by OpenSearch Dashboards is not available for OpenSearch.
+- `multiple_data_source_enabled` (Boolean) Enable or disable multiple data sources in OpenSearch Dashboards.
 - `opensearch_request_timeout` (Number) Timeout in milliseconds for requests made by OpenSearch Dashboards towards OpenSearch.
-
-
-<a id="nestedblock--properties--s3_migration"></a>
-### Nested Schema for `properties.s3_migration`
-
-Optional Attributes:
-
-- `access_key` (String) AWS Access key. AWS Access key.
-- `base_path` (String) The path to the repository data within its container. The path to the repository data within its container. The value of this setting should not start or end with a /.
-- `bucket` (String) S3 bucket name. S3 bucket name.
-- `chunk_size` (String) Chunk size. Big files can be broken down into chunks during snapshotting if needed. Should be the same as for the 3rd party repository.
-- `compress` (Boolean) Metadata files are stored in compressed format. when set to true metadata files are stored in compressed format.
-- `endpoint` (String) The S3 service endpoint to connect. The S3 service endpoint to connect to. If you are using an S3-compatible service then you should set this to the service’s endpoint.
-- `include_aliases` (Boolean) Include aliases. Whether to restore aliases alongside their associated indexes. Default is true.
-- `indices` (String) Indices to restore. A comma-delimited list of indices to restore from the snapshot. Multi-index syntax is supported.
-- `region` (String) S3 region. S3 region.
-- `restore_global_state` (Boolean) Restore the cluster state or not. If true, restore the cluster state. Defaults to false.
-- `secret_key` (String) AWS secret key. AWS secret key.
-- `server_side_encryption` (Boolean) Server side encryption. When set to true files are encrypted on server side.
-- `snapshot_name` (String) The snapshot name to restore from. The snapshot name to restore from.
 
 
 <a id="nestedblock--properties--saml"></a>
@@ -366,6 +338,57 @@ Optional Attributes:
 - `heap_variance` (Number) The heap usage variance required for an individual parent task before it is considered for cancellation. The heap usage variance required for an individual parent task before it is considered for cancellation. A task is considered for cancellation when taskHeapUsage is greater than or equal to heapUsageMovingAverage * variance. Default is 2.0.
 - `total_heap_percent_threshold` (Number) The heap usage threshold (as a percentage) required for the sum of heap usages of all search tasks before cancellation is applied. The heap usage threshold (as a percentage) required for the sum of heap usages of all search tasks before cancellation is applied. Default is 0.5.
 
+
+
+<a id="nestedblock--properties--search_insights_top_queries"></a>
+### Nested Schema for `properties.search_insights_top_queries`
+
+Blocks:
+
+- `cpu` (Block List, Max: 1) Top N queries monitoring by CPU. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--cpu))
+- `latency` (Block List, Max: 1) Top N queries monitoring by latency. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--latency))
+- `memory` (Block List, Max: 1) Top N queries monitoring by memory. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--memory))
+
+<a id="nestedblock--properties--search_insights_top_queries--cpu"></a>
+### Nested Schema for `properties.search_insights_top_queries.cpu`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
+- `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+
+
+<a id="nestedblock--properties--search_insights_top_queries--latency"></a>
+### Nested Schema for `properties.search_insights_top_queries.latency`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
+- `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+
+
+<a id="nestedblock--properties--search_insights_top_queries--memory"></a>
+### Nested Schema for `properties.search_insights_top_queries.memory`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
+- `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+
+
+
+<a id="nestedblock--properties--segrep"></a>
+### Nested Schema for `properties.segrep`
+
+Optional Attributes:
+
+- `pressure.checkpoint.limit` (Number) The maximum number of indexing checkpoints that a replica shard can fall behind when copying from primary. Once `segrep.pressure.checkpoint.limit` is breached along with `segrep.pressure.time.limit`, the segment replication backpressure mechanism is initiated. Default is 4 checkpoints.
+- `pressure.enabled` (Boolean) Enables the segment replication backpressure mechanism. Default is false.
+- `pressure.replica.stale.limit` (Number) The maximum number of stale replica shards that can exist in a replication group. Once `segrep.pressure.replica.stale.limit` is breached, the segment replication backpressure mechanism is initiated. Default is .5, which is 50% of a replication group.
+- `pressure.time.limit` (String) The maximum amount of time that a replica shard can take to copy from the primary shard. Once segrep.pressure.time.limit is breached along with segrep.pressure.checkpoint.limit, the segment replication backpressure mechanism is initiated. Default is 5 minutes.
 
 
 <a id="nestedblock--properties--shard_indexing_pressure"></a>
