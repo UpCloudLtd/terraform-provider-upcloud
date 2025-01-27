@@ -4,8 +4,8 @@ resource "upcloud_managed_database_valkey" "valkey_properties" {
   plan  = "1x1xCPU-2GB"
   zone  = "fi-hel2"
   properties {
-    automatic_utility_network_ip_filter     = false
-    public_access                           = false
+    automatic_utility_network_ip_filter      = false
+    public_access                            = false
     valkey_lfu_decay_time                    = 2
     valkey_number_of_databases               = 2
     valkey_notify_keyspace_events            = "KEA"
@@ -17,6 +17,6 @@ resource "upcloud_managed_database_valkey" "valkey_properties" {
     valkey_persistence                       = "off"
     valkey_timeout                           = 310
     valkey_acl_channels_default              = "allchannels"
-    service_log                             = true
+    service_log                              = true
   }
 }

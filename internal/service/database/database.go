@@ -241,7 +241,8 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 
 	for field := range resourceProps {
 		// skip properties that are not present in the propsInfo
-		if _, ok := propsInfo[field]; !ok {
+		prop, ok := propsInfo[field]
+		if !ok {
 			continue
 		}
 
@@ -252,12 +253,12 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 		if shouldOmit {
 			continue
 		}
-		if propsInfo[field].CreateOnly {
+		if prop.CreateOnly {
 			if !hasChange {
 				continue
 			}
 		}
-		if properties.GetType(propsInfo[field]) == "object" {
+		if properties.GetType(prop) == "object" {
 			// convert resource data list of objects into API objects
 			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
 				// Do similar filtering for nested properties as is done for main level properties.
@@ -265,8 +266,9 @@ func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceDat
 				reqObj := make(map[string]interface{})
 				for k := range stateObj {
 					value, _, shouldOmit := getPropertiesValue(d, fmt.Sprintf("%s.0.%s", key, k))
-					if !shouldOmit {
-						reqObj[k] = value
+					reqKey := properties.GetKey(prop.Properties, k)
+					if !shouldOmit && reqKey != "" {
+						reqObj[reqKey] = value
 					}
 				}
 				r[upcloud.ManagedDatabasePropertyKey(field)] = reqObj
@@ -293,17 +295,22 @@ func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcl
 		if properties.GetType(propsInfo[key]) == "object" {
 			// convert API objects into list of objects
 			if m, ok := value.(map[string]interface{}); ok {
-				resourceProps[key] = []map[string]interface{}{m}
+				// Convert API keys to schema keys
+				sMap := make(map[string]interface{})
+				for k, v := range m {
+					sMap[properties.SchemaKey(k)] = v
+				}
+				resourceProps[properties.SchemaKey(key)] = []map[string]interface{}{sMap}
 			}
 		} else {
-			resourceProps[key] = value
+			resourceProps[properties.SchemaKey(key)] = value
 		}
 	}
 
 	// clean up removed properties that are not present in the propsInfo
 	for key := range resourceProps {
 		if _, ok := propsInfo[key]; !ok {
-			delete(resourceProps, key)
+			delete(resourceProps, properties.SchemaKey(key))
 		}
 	}
 
