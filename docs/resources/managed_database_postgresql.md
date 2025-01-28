@@ -131,6 +131,7 @@ Optional Attributes:
 - `max_standby_streaming_delay` (Number) Max standby streaming delay in milliseconds.
 - `max_wal_senders` (Number) PostgreSQL maximum WAL senders.
 - `max_worker_processes` (Number) Sets the maximum number of background processes that the system can support.
+- `password_encryption` (String, Sensitive) Chooses the algorithm for encrypting passwords.
 - `pg_partman_bgw_interval` (Number) Sets the time interval to run pg_partman's scheduled tasks.
 - `pg_partman_bgw_role` (String) Controls which role to use for pg_partman's scheduled background tasks.
 - `pg_stat_monitor_enable` (Boolean) Enable pg_stat_monitor extension if available for the current cluster. Enable the pg_stat_monitor extension. Enabling this extension will cause the cluster to be restarted.When this extension is enabled, pg_stat_statements results for utility commands are unreliable.
