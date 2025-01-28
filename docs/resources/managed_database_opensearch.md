@@ -385,10 +385,10 @@ Optional Attributes:
 
 Optional Attributes:
 
-- `pressure.checkpoint.limit` (Number) The maximum number of indexing checkpoints that a replica shard can fall behind when copying from primary. Once `segrep.pressure.checkpoint.limit` is breached along with `segrep.pressure.time.limit`, the segment replication backpressure mechanism is initiated. Default is 4 checkpoints.
-- `pressure.enabled` (Boolean) Enables the segment replication backpressure mechanism. Default is false.
-- `pressure.replica.stale.limit` (Number) The maximum number of stale replica shards that can exist in a replication group. Once `segrep.pressure.replica.stale.limit` is breached, the segment replication backpressure mechanism is initiated. Default is .5, which is 50% of a replication group.
-- `pressure.time.limit` (String) The maximum amount of time that a replica shard can take to copy from the primary shard. Once segrep.pressure.time.limit is breached along with segrep.pressure.checkpoint.limit, the segment replication backpressure mechanism is initiated. Default is 5 minutes.
+- `pressure_checkpoint_limit` (Number) The maximum number of indexing checkpoints that a replica shard can fall behind when copying from primary. Once `segrep.pressure.checkpoint.limit` is breached along with `segrep.pressure.time.limit`, the segment replication backpressure mechanism is initiated. Default is 4 checkpoints.
+- `pressure_enabled` (Boolean) Enables the segment replication backpressure mechanism. Default is false.
+- `pressure_replica_stale_limit` (Number) The maximum number of stale replica shards that can exist in a replication group. Once `segrep.pressure.replica.stale.limit` is breached, the segment replication backpressure mechanism is initiated. Default is .5, which is 50% of a replication group.
+- `pressure_time_limit` (String) The maximum amount of time that a replica shard can take to copy from the primary shard. Once segrep.pressure.time.limit is breached along with segrep.pressure.checkpoint.limit, the segment replication backpressure mechanism is initiated. Default is 5 minutes.
 
 
 <a id="nestedblock--properties--shard_indexing_pressure"></a>
