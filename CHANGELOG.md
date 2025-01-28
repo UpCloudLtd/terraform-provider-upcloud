@@ -26,6 +26,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_server: mark network interface IP address values as unknown during planning. This ensures that IP addresses have known values after apply.
 
+## [5.17.0] - 2025-01-28
+
+### Added
+
+- Adding support for load balancer redirect rule status
+
 ## [5.16.0] - 2024-12-03
 
 ### Added
