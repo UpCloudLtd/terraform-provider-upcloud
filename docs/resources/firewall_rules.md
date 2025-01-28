@@ -83,7 +83,7 @@ resource "upcloud_firewall_rules" "example" {
 
 Required Attributes:
 
-- `action` (String) Action to take if the rule conditions are met
+- `action` (String) Action to take if the rule conditions are met. Valid values `accept | drop`
 - `direction` (String) The direction of network traffic this rule will be applied to
 
 Optional Attributes:
