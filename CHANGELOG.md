@@ -14,7 +14,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 
 - upcloud_server: make template storage tier configurable.
-- upcloud_managed_database_*: Update available properties to match listing provided by the API, see #687 for details.
+- upcloud_managed_database_\*: Update available properties to match listing provided by the API, see #687 for details.
 
 ### Fixed
 
