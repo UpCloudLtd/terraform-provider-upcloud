@@ -63,6 +63,23 @@ func GetType(prop upcloud.ManagedDatabaseServiceProperty) string {
 	return ""
 }
 
+func GetKey(props map[string]upcloud.ManagedDatabaseServiceProperty, field string) string {
+	if _, ok := props[field]; ok {
+		return field
+	}
+
+	withDots := strings.ReplaceAll(field, "_", ".")
+	if _, ok := props[withDots]; ok {
+		return withDots
+	}
+
+	return ""
+}
+
+func SchemaKey(key string) string {
+	return strings.ReplaceAll(key, ".", "_")
+}
+
 func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool {
 	return d.Id() != ""
 }
@@ -211,7 +228,7 @@ func getSchemaMap(props map[string]upcloud.ManagedDatabaseServiceProperty) (map[
 		if err != nil {
 			return nil, err
 		}
-		sMap[key] = s
+		sMap[SchemaKey(key)] = s
 	}
 	return sMap, nil
 }

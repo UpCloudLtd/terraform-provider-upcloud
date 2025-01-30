@@ -206,6 +206,6 @@ resource "upcloud_managed_database_user" "db_user_5" {
   username = "somename"
   password = "Superpass123"
   valkey_access_control {
-    keys       = ["key*"]
+    keys = ["key*"]
   }
 }

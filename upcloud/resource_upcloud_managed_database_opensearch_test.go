@@ -41,7 +41,7 @@ func TestAccUpcloudManagedDatabaseOpenSearchProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "extended_access_control", "true"),
 					resource.TestCheckResourceAttr(name, prop("public_access"), "true"),
 					resource.TestCheckResourceAttr(name, prop("automatic_utility_network_ip_filter"), "true"),
-					resource.TestCheckResourceAttr(name, prop("version"), "2"),
+					resource.TestCheckResourceAttr(name, prop("version"), "1"),
 				),
 			},
 		},

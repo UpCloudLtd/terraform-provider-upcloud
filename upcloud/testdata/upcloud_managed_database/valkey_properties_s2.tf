@@ -4,8 +4,8 @@ resource "upcloud_managed_database_valkey" "valkey_properties" {
   plan  = "1x1xCPU-2GB"
   zone  = "fi-hel2"
   properties {
-    automatic_utility_network_ip_filter     = true
-    public_access                           = true
+    automatic_utility_network_ip_filter      = true
+    public_access                            = true
     valkey_lfu_decay_time                    = 1
     valkey_number_of_databases               = 3
     valkey_notify_keyspace_events            = ""
