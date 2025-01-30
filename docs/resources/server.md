@@ -123,7 +123,7 @@ Optional Attributes:
 
 Blocks:
 
-- `additional_ip_address` (Block Set) 0-4 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private` (see [below for nested schema](#nestedblock--network_interface--additional_ip_address))
+- `additional_ip_address` (Block Set) 0-31 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private` (see [below for nested schema](#nestedblock--network_interface--additional_ip_address))
 
 Read-Only:
 
