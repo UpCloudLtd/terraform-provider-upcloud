@@ -366,9 +366,9 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 					},
 					Blocks: map[string]schema.Block{
 						"additional_ip_address": schema.SetNestedBlock{
-							Description: "0-4 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private`",
+							Description: "0-31 blocks of additional IP addresses to assign to this interface. Allowed only with network interfaces of type `private`",
 							Validators: []validator.Set{
-								setvalidator.SizeAtMost(4),
+								setvalidator.SizeAtMost(31),
 							},
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
