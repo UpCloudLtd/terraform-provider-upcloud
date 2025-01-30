@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.18.0] - 2025-01-30
+
+### Changed
+
+- upcloud_server: allow maximum of 31 additional_ip_address blocks instead of previous 4
+
 ## [5.17.0] - 2025-01-28
 
 ### Added
@@ -15,7 +21,6 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_server: make template storage tier configurable.
 - upcloud_managed_database_\*: Update available properties to match listing provided by the API, see #687 for details.
-- upcloud_server: allow maximum of 31 additional_ip_address blocks instead of previous 4
 
 ### Fixed
 
@@ -862,7 +867,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.17.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.18.0...HEAD
+[5.18.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.17.0...v5.18.0
 [5.17.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.16.0...v5.17.0
 [5.16.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.15.0...v5.16.0
 [5.15.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.14.0...v5.15.0
