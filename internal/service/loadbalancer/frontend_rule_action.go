@@ -27,6 +27,7 @@ type frontendRuleActionModel struct {
 type frontendRuleActionHTTPRedirectModel struct {
 	Location types.String `tfsdk:"location"`
 	Scheme   types.String `tfsdk:"scheme"`
+	Status   types.Int64  `tfsdk:"status"`
 }
 
 type frontendRuleActionHTTPReturnModel struct {
@@ -142,9 +143,9 @@ func buildFrontendRuleActions(ctx context.Context, dataActions types.List) ([]up
 		for _, httpRedirect := range httpRedirects {
 			var action upcloud.LoadBalancerAction
 			if httpRedirect.Scheme.ValueString() != "" {
-				action = request.NewLoadBalancerHTTPRedirectSchemeAction(upcloud.LoadBalancerActionHTTPRedirectScheme(httpRedirect.Scheme.ValueString()))
+				action = request.NewLoadBalancerHTTPRedirectSchemeActionWithStatus(upcloud.LoadBalancerActionHTTPRedirectScheme(httpRedirect.Scheme.ValueString()), int(httpRedirect.Status.ValueInt64()))
 			} else if httpRedirect.Location.ValueString() != "" {
-				action = request.NewLoadBalancerHTTPRedirectAction(httpRedirect.Location.ValueString())
+				action = request.NewLoadBalancerHTTPRedirectActionWithStatus(httpRedirect.Location.ValueString(), int(httpRedirect.Status.ValueInt64()))
 			}
 
 			actions = append(actions, action)
@@ -227,6 +228,8 @@ func setFrontendRuleActionsValues(ctx context.Context, data *frontendRuleModel, 
 			if a.HTTPRedirect.Location != "" {
 				httpRedirect.Location = types.StringValue(a.HTTPRedirect.Location)
 			}
+
+			httpRedirect.Status = types.Int64Value(int64(a.HTTPRedirect.Status))
 
 			httpRedirects = append(httpRedirects, httpRedirect)
 		}
