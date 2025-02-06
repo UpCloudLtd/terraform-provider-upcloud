@@ -155,6 +155,14 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 											),
 										},
 									},
+									"status": schema.Int64Attribute{
+										MarkdownDescription: "HTTP status code.",
+										Optional:            true,
+										Computed:            true,
+										Validators: []validator.Int64{
+											int64validator.OneOf(301, 302, 303, 307, 308),
+										},
+									},
 								},
 							},
 							Validators: []validator.List{

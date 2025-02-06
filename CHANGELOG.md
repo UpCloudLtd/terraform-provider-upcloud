@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer_frontend_rule: add support for load balancer redirect rule status
+
 ## [5.18.0] - 2025-01-30
 
 ### Changed
