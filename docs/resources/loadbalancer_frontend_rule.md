@@ -59,7 +59,19 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
-  network           = resource.upcloud_network.lb_network.id
+
+  networks {
+    type   = "public"
+    family = "IPv4"
+    name   = "public"
+  }
+
+  networks {
+    type    = "private"
+    family  = "IPv4"
+    name    = "private"
+    network = resource.upcloud_network.lb_network.id
+  }
 }
 
 resource "upcloud_loadbalancer_backend" "lb_be_1" {
@@ -110,6 +122,7 @@ Optional Attributes:
 
 - `location` (String) Target location.
 - `scheme` (String) Target scheme.
+- `status` (Number) HTTP status code.
 
 
 <a id="nestedblock--actions--http_return"></a>
