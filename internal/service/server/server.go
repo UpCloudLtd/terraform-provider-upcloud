@@ -736,7 +736,7 @@ func (r *serverResource) updateTagsPlan(server *upcloud.ServerDetails, plan *ser
 func setAddressPlan(plan *networkInterfaceModel, ip upcloud.IPAddress) {
 	plan.IPAddress = types.StringValue(ip.Address)
 	plan.IPAddressFamily = types.StringValue(ip.Family)
-	plan.IPAddressFloating = utils.AsTypesBool(ip.Floating)
+	plan.IPAddressFloating = utils.AsBool(ip.Floating)
 }
 
 func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, server *upcloud.ServerDetails, state, plan serverModel, resp *resource.ModifyPlanResponse) {
@@ -765,7 +765,7 @@ func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, server
 					if ip := findIPAddress(*change.api, additionalIPAddress.IPAddress.ValueString()); ip != nil {
 						additionalIPAddress.IPAddress = types.StringValue(ip.Address)
 						additionalIPAddress.IPAddressFamily = types.StringValue(ip.Family)
-						additionalIPAddress.IPAddressFloating = utils.AsTypesBool(ip.Floating)
+						additionalIPAddress.IPAddressFloating = utils.AsBool(ip.Floating)
 					}
 					additionalIPAddresses[i] = additionalIPAddress
 				}
