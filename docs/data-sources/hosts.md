@@ -35,4 +35,15 @@ Read-Only:
 
 - `description` (String) Free form text describing the host
 - `host_id` (Number) The unique id of the host
+- `statistics` (Block List) (see [below for nested schema](#nestedblock--hosts--statistics))
+- `windows_enabled` (Boolean) If true, this node can be used as a host for Windows servers.
 - `zone` (String) The zone the host is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
+
+<a id="nestedblock--hosts--statistics"></a>
+### Nested Schema for `hosts.statistics`
+
+Read-Only:
+
+- `name` (String) The name of the statistic
+- `timestamp` (String) The timestamp of the statistic
+- `value` (Number) The value of the statistic
