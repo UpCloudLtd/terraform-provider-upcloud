@@ -165,7 +165,6 @@ Blocks:
 Blocks:
 
 - `internal_authentication_backend_limiting` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--auth_failure_listeners--internal_authentication_backend_limiting))
-- `ip_rate_limiting` (Block List, Max: 1) IP address rate limiting settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners--ip_rate_limiting))
 
 <a id="nestedblock--properties--auth_failure_listeners--internal_authentication_backend_limiting"></a>
 ### Nested Schema for `properties.auth_failure_listeners.internal_authentication_backend_limiting`
@@ -174,19 +173,6 @@ Optional Attributes:
 
 - `allowed_tries` (Number) The number of login attempts allowed before login is blocked.
 - `authentication_backend` (String) The internal backend. Enter `internal`.
-- `block_expiry_seconds` (Number) The duration of time that login remains blocked after a failed login.
-- `max_blocked_clients` (Number) The maximum number of blocked IP addresses.
-- `max_tracked_clients` (Number) The maximum number of tracked IP addresses that have failed login.
-- `time_window_seconds` (Number) The window of time in which the value for `allowed_tries` is enforced.
-- `type` (String) The type of rate limiting.
-
-
-<a id="nestedblock--properties--auth_failure_listeners--ip_rate_limiting"></a>
-### Nested Schema for `properties.auth_failure_listeners.ip_rate_limiting`
-
-Optional Attributes:
-
-- `allowed_tries` (Number) The number of login attempts allowed before login is blocked.
 - `block_expiry_seconds` (Number) The duration of time that login remains blocked after a failed login.
 - `max_blocked_clients` (Number) The maximum number of blocked IP addresses.
 - `max_tracked_clients` (Number) The maximum number of tracked IP addresses that have failed login.
