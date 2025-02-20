@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- Experimental support for token authentication.
+
 ## [5.19.0] - 2025-02-13
 
 ### Added

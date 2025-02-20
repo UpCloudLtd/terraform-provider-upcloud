@@ -15,6 +15,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
@@ -30,13 +31,19 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("UPCLOUD_USERNAME", nil),
-				Description: "UpCloud username with API access. Can also be configured using the `UPCLOUD_USERNAME` environment variable.",
+				Description: usernameDescription,
 			},
 			"password": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("UPCLOUD_PASSWORD", nil),
-				Description: "Password for UpCloud API user. Can also be configured using the `UPCLOUD_PASSWORD` environment variable.",
+				Description: passwordDescription,
+			},
+			"token": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("UPCLOUD_TOKEN", nil),
+				Description: tokenDescription,
 			},
 			"retry_wait_min_sec": {
 				Type:        schema.TypeInt,
@@ -121,6 +128,7 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...
 	svc := newUpCloudServiceConnection(
 		d.Get("username").(string),
 		d.Get("password").(string),
+		d.Get("token").(string),
 		httpClient.HTTPClient,
 		requestTimeout,
 		userAgents...,
@@ -150,13 +158,14 @@ func logDebug(ctx context.Context, format string, args ...any) {
 	tflog.Debug(ctx, format, meta)
 }
 
-func newUpCloudServiceConnection(username, password string, httpClient *http.Client, requestTimeout time.Duration, userAgents ...string) *service.Service {
+func newUpCloudServiceConnection(username, password, token string, httpClient *http.Client, requestTimeout time.Duration, userAgents ...string) *service.Service {
 	providerClient := client.New(
-		username,
-		password,
+		"",
+		"",
 		client.WithHTTPClient(httpClient),
 		client.WithTimeout(requestTimeout),
 		client.WithLogger(logDebug),
+		utils.WithAuth(username, password, token),
 	)
 
 	if len(userAgents) == 0 {
