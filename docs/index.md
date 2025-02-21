@@ -59,6 +59,7 @@ provider "upcloud" {
 - `retry_max` (Number) Maximum number of retries
 - `retry_wait_max_sec` (Number) Maximum time to wait between retries
 - `retry_wait_min_sec` (Number) Minimum time to wait between retries
+- `token` (String) Token for authenticating to UpCloud API. Can also be configured using the `UPCLOUD_TOKEN` environment variable. (EXPERIMENTAL)
 - `username` (String) UpCloud username with API access. Can also be configured using the `UPCLOUD_USERNAME` environment variable.
 
 ## Using the provider
