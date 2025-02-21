@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -16,10 +17,11 @@ import (
 type Config struct {
 	Username string
 	Password string
+	Token    string
 }
 
 func (c *Config) Client() (*service.Service, error) {
-	client := client.New(c.Username, c.Password)
+	client := client.New("", "", utils.WithAuth(c.Username, c.Password, c.Token))
 	svc := service.New(client)
 	res, err := c.checkLogin(svc)
 	if err != nil {

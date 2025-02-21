@@ -31,12 +31,14 @@ import (
 const (
 	usernameDescription       = "UpCloud username with API access. Can also be configured using the `UPCLOUD_USERNAME` environment variable."
 	passwordDescription       = "Password for UpCloud API user. Can also be configured using the `UPCLOUD_PASSWORD` environment variable."
+	tokenDescription          = "Token for authenticating to UpCloud API. Can also be configured using the `UPCLOUD_TOKEN` environment variable. (EXPERIMENTAL)"
 	requestTimeoutDescription = "The duration (in seconds) that the provider waits for an HTTP request towards UpCloud API to complete. Defaults to 120 seconds"
 )
 
 type upcloudProviderModel struct {
 	Username          types.String `tfsdk:"username"`
 	Password          types.String `tfsdk:"password"`
+	Token             types.String `tfsdk:"token"`
 	RetryWaitMinSec   types.Int64  `tfsdk:"retry_wait_min_sec"`
 	RetryWaitMaxSec   types.Int64  `tfsdk:"retry_wait_max_sec"`
 	RetryMax          types.Int64  `tfsdk:"retry_max"`
@@ -75,6 +77,10 @@ func (p *upcloudProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 			},
 			"password": schema.StringAttribute{
 				Description: passwordDescription,
+				Optional:    true,
+			},
+			"token": schema.StringAttribute{
+				Description: tokenDescription,
 				Optional:    true,
 			},
 			"retry_wait_min_sec": schema.Int64Attribute{
@@ -126,6 +132,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	config := Config{
 		Username: withEnvDefault(model.Username, "UPCLOUD_USERNAME"),
 		Password: withEnvDefault(model.Password, "UPCLOUD_PASSWORD"),
+		Token:    withEnvDefault(model.Token, "UPCLOUD_TOKEN"),
 	}
 
 	httpClient := retryablehttp.NewClient()
@@ -136,6 +143,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	service := newUpCloudServiceConnection(
 		config.Username,
 		config.Password,
+		config.Token,
 		httpClient.HTTPClient,
 		requestTimeout,
 		p.userAgent,

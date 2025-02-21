@@ -41,21 +41,19 @@ func init() {
 	resource.AddTestSweepers("object_storage_cleanup", &resource.Sweeper{
 		Name: "object_storage_cleanup",
 		F: func(_ string) error {
-			username, ok := os.LookupEnv("UPCLOUD_USERNAME")
-			if !ok {
-				return fmt.Errorf("UPCLOUD_USERNAME must be set for acceptance tests")
-			}
+			username, usernameOk := os.LookupEnv("UPCLOUD_USERNAME")
+			password, passwordOk := os.LookupEnv("UPCLOUD_PASSWORD")
+			token, tokenOk := os.LookupEnv("UPCLOUD_TOKEN")
 
-			password, ok := os.LookupEnv("UPCLOUD_PASSWORD")
-			if !ok {
-				return fmt.Errorf("UPCLOUD_PASSWORD must be set for acceptance tests")
+			if !(usernameOk && passwordOk || tokenOk) {
+				return fmt.Errorf("UPCLOUD_USERNAME and UPCLOUD_PASSWORD or UPCLOUD_TOKEN must be set for acceptance tests")
 			}
 
 			client := retryablehttp.NewClient()
 
 			requestTimeout := 120 * time.Second
 
-			svc := newUpCloudServiceConnection(username, password, client.HTTPClient, requestTimeout)
+			svc := newUpCloudServiceConnection(username, password, token, client.HTTPClient, requestTimeout)
 
 			objectStorages, err := svc.GetObjectStorages(context.Background())
 			if err != nil {
