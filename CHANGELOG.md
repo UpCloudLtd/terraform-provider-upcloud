@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- Update labels validation: label key can contain printable ascii characters and must not start with an underscore.
+
 ## [5.20.0] - 2025-02-24
 
 ### Added
