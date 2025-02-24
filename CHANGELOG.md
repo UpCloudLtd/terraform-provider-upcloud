@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Experimental support for token authentication.
 
+### Changed
+
+- upcloud_managed_database_\*: Update available properties to match listing provided by the API, see #703 for details.
+
 ## [5.19.0] - 2025-02-13
 
 ### Added
