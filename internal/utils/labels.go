@@ -18,7 +18,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var labelKeyRegExp = regexp.MustCompile("^([a-zA-Z0-9])+([a-zA-Z0-9_-])*$")
+var validLabelKeyRegExp = regexp.MustCompile("^[ -^`-~]+[ -~]*$") // Printable ASCII characters: ' ' (Space), ..., '^', '_', '`', ..., `~`
+
+const (
+	invalidLabelKeyMessage = "must only contain printable ASCII characters and must not start with an underscore"
+)
 
 func labelsDescription(resource string) string {
 	return fmt.Sprintf("User defined key-value pairs to classify the %s.", resource)
@@ -74,7 +78,9 @@ func LabelsAttribute(resource string, additionalPlanModifiers ...planmodifier.Ma
 		Description:   description,
 		PlanModifiers: planModifiers,
 		Validators: []validator.Map{
-			mapvalidator.KeysAre(stringvalidator.LengthBetween(2, 32), stringvalidator.RegexMatches(labelKeyRegExp, "")),
+			mapvalidator.KeysAre(
+				stringvalidator.LengthBetween(2, 32),
+				stringvalidator.RegexMatches(validLabelKeyRegExp, invalidLabelKeyMessage)),
 			mapvalidator.ValueStringsAre(stringvalidator.LengthBetween(0, 255)),
 		},
 	}
@@ -151,6 +157,6 @@ func LabelsSliceToSystemLabelsMap(s []upcloud.Label) map[string]string {
 
 var ValidateLabelsDiagFunc = validation.AllDiag(
 	validation.MapKeyLenBetween(2, 32),
-	validation.MapKeyMatch(labelKeyRegExp, ""),
+	validation.MapKeyMatch(validLabelKeyRegExp, invalidLabelKeyMessage),
 	validation.MapValueLenBetween(0, 255),
 )

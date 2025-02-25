@@ -180,7 +180,11 @@ func TestAccUpcloudGateway_LabelsValidation(t *testing.T) {
 		},
 		{
 			labels:  `test-validation-fails-åäö = "invalid-characters-in-key"`,
-			errorRe: regexp.MustCompile(`Map key expected to match regular expression`),
+			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
+		},
+		{
+			labels:  `_key = "starts-with-underscore"`,
+			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
 		},
 		{
 			labels:  `test-validation-fails = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam egestas dolor vitae erat egestas, vel malesuada nisi ullamcorper. Aenean suscipit turpis quam, ut interdum lorem varius dignissim. Morbi eu erat bibendum, tincidunt turpis id, porta enim. Pellentesque..."`,
