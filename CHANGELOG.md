@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Update labels validation: label key can contain printable ascii characters and must not start with an underscore.
 
+### Changed
+
+- upcloud_managed_database_\*: Update available properties to match listing provided by the API, see #718 for details.
+
 ## [5.20.0] - 2025-02-24
 
 ### Added
