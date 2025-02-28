@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.20.1] - 2025-02-28
+
 ### Fixed
 
 - Update labels validation: label key can contain printable ascii characters and must not start with an underscore.
@@ -892,7 +894,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.1...HEAD
+[5.20.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.0...v5.20.1
 [5.20.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.19.0...v5.20.0
 [5.19.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.18.0...v5.19.0
 [5.18.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.17.0...v5.18.0
