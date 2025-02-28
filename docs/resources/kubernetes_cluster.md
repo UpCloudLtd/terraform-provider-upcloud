@@ -88,10 +88,10 @@ resource "upcloud_kubernetes_cluster" "example2" {
 ### Optional Attributes
 
 - `labels` (Map of String) User defined key-value pairs to classify the cluster.
-- `plan` (String) The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`.
+- `plan` (String) The pricing plan used for the cluster. You can list available plans with `upctl kubernetes plans`.
 - `private_node_groups` (Boolean) Enable private node groups. Private node groups requires a network that is routed through NAT gateway.
 - `storage_encryption` (String) Set default storage encryption strategy for all nodes in the cluster.
-- `version` (String) Kubernetes version ID, e.g. `1.29`. You can list available version IDs with `upctl kubernetes versions`.
+- `version` (String) Kubernetes version ID, e.g. `1.30`. You can list available version IDs with `upctl kubernetes versions`.
 
 ### Read-Only
 
