@@ -9,7 +9,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- Update labels validation: label key can contain printable ascii characters and must not start with an underscore.
+- Update labels validation: label key can contain printable ASCII characters and must not start with an underscore.
 
 ### Changed
 
