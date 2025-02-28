@@ -24,15 +24,14 @@ const (
 	networkDescription                  = "Network ID for the cluster to run in."
 	networkCIDRDescription              = "Network CIDR for the given network. Computed automatically."
 	nodeGroupNamesDescription           = "Names of the node groups configured to cluster"
-	planDescription                     = "The pricing plan used for the cluster. Default plan is `development`. You can list available plans with `upctl kubernetes plans`."
+	planDescription                     = "The pricing plan used for the cluster. You can list available plans with `upctl kubernetes plans`."
 	privateNodeGroupsDescription        = "Enable private node groups. Private node groups requires a network that is routed through NAT gateway."
 	stateDescription                    = "Operational state of the cluster."
-	versionDescription                  = "Kubernetes version ID, e.g. `1.29`. You can list available version IDs with `upctl kubernetes versions`."
+	versionDescription                  = "Kubernetes version ID, e.g. `1.30`. You can list available version IDs with `upctl kubernetes versions`."
 	zoneDescription                     = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`."
 
-	cleanupWaitTimeSeconds = 240
-	resourceNameMaxLength  = 63
-	resourceNameRegexpStr  = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+	resourceNameMaxLength = 63
+	resourceNameRegexpStr = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 )
 
 var resourceNameRegexp = regexp.MustCompile(resourceNameRegexpStr)

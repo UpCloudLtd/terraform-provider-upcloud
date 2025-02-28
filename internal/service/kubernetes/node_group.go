@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
@@ -507,14 +506,6 @@ func (r *kubernetesNodeGroupResource) Delete(ctx context.Context, req resource.D
 
 	// wait before continuing so that all nodes are destroyed
 	resp.Diagnostics.Append(waitForNodeGroupToBeDeleted(ctx, r.client, data.Cluster.ValueString(), data.Name.ValueString())...)
-
-	// If there was an error during while waiting for the node group to be deleted - just end the delete operation here
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Additionally wait some time so that all cleanup operations can finish
-	time.Sleep(time.Second * cleanupWaitTimeSeconds)
 }
 
 func (r *kubernetesNodeGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

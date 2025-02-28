@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -118,7 +116,6 @@ func (r *kubernetesClusterResource) Schema(_ context.Context, _ resource.SchemaR
 				MarkdownDescription: planDescription,
 				Computed:            true,
 				Optional:            true,
-				Default:             stringdefault.StaticString("development"),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
@@ -354,14 +351,6 @@ func (r *kubernetesClusterResource) Delete(ctx context.Context, req resource.Del
 	}
 
 	resp.Diagnostics.Append(waitForClusterToBeDeleted(ctx, r.client, data.ID.ValueString())...)
-
-	// If there was an error during while waiting for the cluster to be deleted - just end the delete operation here
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Additionally wait some time so that all cleanup operations can finish
-	time.Sleep(time.Second * cleanupWaitTimeSeconds)
 }
 
 func (r *kubernetesClusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
