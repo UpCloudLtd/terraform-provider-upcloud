@@ -35,7 +35,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(cName, "control_plane_ip_filter.*", "0.0.0.0/0"),
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
-					resource.TestCheckResourceAttr(cName, "version", "1.29"),
+					resource.TestCheckResourceAttr(cName, "version", "1.30"),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(g1Name, "name", "small"),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
@@ -85,7 +85,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "control_plane_ip_filter.#", "0"),
-					resource.TestCheckResourceAttr(cName, "version", "1.29"),
+					resource.TestCheckResourceAttr(cName, "version", "1.30"),
 					resource.TestCheckResourceAttr(g1Name, "node_count", "1"),
 					resource.TestCheckResourceAttr(g2Name, "node_count", "2"),
 				),
