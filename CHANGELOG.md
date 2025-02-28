@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_kubernetes_cluster: update default plan to `dev-md`.
+- upcloud_kubernetes_\*: remove the extra waits from delete methods. The back-end side has been updated so that cluster does not return HTTP 404 response until it has been fully removed.
+
 ## [5.20.1] - 2025-02-28
 
 ### Fixed

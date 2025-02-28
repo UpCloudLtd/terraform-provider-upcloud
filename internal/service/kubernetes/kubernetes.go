@@ -30,9 +30,8 @@ const (
 	versionDescription                  = "Kubernetes version ID, e.g. `1.29`. You can list available version IDs with `upctl kubernetes versions`."
 	zoneDescription                     = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`."
 
-	cleanupWaitTimeSeconds = 240
-	resourceNameMaxLength  = 63
-	resourceNameRegexpStr  = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+	resourceNameMaxLength = 63
+	resourceNameRegexpStr = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 )
 
 var resourceNameRegexp = regexp.MustCompile(resourceNameRegexpStr)
