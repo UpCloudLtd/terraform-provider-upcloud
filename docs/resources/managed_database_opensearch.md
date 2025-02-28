@@ -149,6 +149,7 @@ Blocks:
 
 - `auth_failure_listeners` (Block List, Max: 1) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
 - `cluster_search_request_slowlog` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog))
+- `disk_watermarks` (Block List, Max: 1) Watermark settings. (see [below for nested schema](#nestedblock--properties--disk_watermarks))
 - `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
 - `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
@@ -202,6 +203,16 @@ Optional Attributes:
 - `trace` (String) Trace threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1.
 - `warn` (String) Warning threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1.
 
+
+
+<a id="nestedblock--properties--disk_watermarks"></a>
+### Nested Schema for `properties.disk_watermarks`
+
+Optional Attributes:
+
+- `flood_stage` (Number) Flood stage watermark (percentage). The flood stage watermark for disk usage.
+- `high` (Number) High watermark (percentage). The high watermark for disk usage.
+- `low` (Number) Low watermark (percentage). The low watermark for disk usage.
 
 
 <a id="nestedblock--properties--index_rollup"></a>
