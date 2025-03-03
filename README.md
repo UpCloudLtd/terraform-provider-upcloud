@@ -1,7 +1,3 @@
-<a href="https://terraform.io">
-  <img src="assets/images/terraform_logo.svg" alt="Terraform logo" title="Terraform" align="right" height="50" />
-</a>
-
 # UpCloud Terraform Provider
 
 This Terraform plugin allows managing different [UpCloud products](https://upcloud.com/products) with
@@ -9,12 +5,13 @@ terraform.
 
 ## Documentation
 
-Documentation is available on the Terraform registry website:
+Documentation is available in OpenTofu and Terraform registries:
 
-https://registry.terraform.io/providers/UpCloudLtd/upcloud/latest/docs
+- https://search.opentofu.org/provider/upcloudltd/upcloud/latest
+- https://registry.terraform.io/providers/UpCloudLtd/upcloud/latest/docs
 
 For more examples, check the [examples](examples/) directory
 
 ## Developing the Provider
-See [DEVELOPING.md](DEVELOPING.md) for more instructions how to develop and debug UpCloud provider.
+See [DEVELOPING.md](DEVELOPING.md) for instructions on how to develop and debug the UpCloud provider.
 
