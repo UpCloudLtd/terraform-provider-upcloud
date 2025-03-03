@@ -3,20 +3,14 @@
 page_title: "upcloud_firewall_rules Resource - terraform-provider-upcloud"
 subcategory: Servers
 description: |-
-  This resource represents a generated list of UpCloud firewall rules.
-  Firewall rules are used in conjunction with UpCloud servers.
-  Each server has its own firewall rules.
-  The firewall is enabled on all network interfaces except ones attached to private virtual networks.
-  The maximum number of firewall rules per server is 1000.
+  Firewall rules are used to control network access of UpCloud servers. Each server has its own firewall rules and there should be only one upcloud_firewall_rules resource per server.
+  The firewall is enabled on public and utility network interfaces.
 ---
 
 # upcloud_firewall_rules (Resource)
 
-This resource represents a generated list of UpCloud firewall rules. 
-		Firewall rules are used in conjunction with UpCloud servers. 
-		Each server has its own firewall rules. 
-		The firewall is enabled on all network interfaces except ones attached to private virtual networks. 
-		The maximum number of firewall rules per server is 1000.
+Firewall rules are used to control network access of UpCloud servers. Each server has its own firewall rules and there should be only one `upcloud_firewall_rules` resource per server.
+The firewall is enabled on public and utility network interfaces.
 
 ## Example Usage
 
@@ -67,12 +61,15 @@ resource "upcloud_firewall_rules" "example" {
 
 ### Blocks
 
-- `firewall_rule` (Block List, Min: 1, Max: 1000) A single firewall rule.
-				If used, IP address and port ranges must have both start and end values specified. These can be the same value if only one IP address or port number is specified.
-				Source and destination port numbers can only be set if the protocol is TCP or UDP.
-				The ICMP type may only be set if the protocol is ICMP.
-				Typical firewall rule should have "action", "direction", "protocol", "family" and at least one destination/source-address/port range.
-				The default rule can be created by providing only "action" and "direction" attributes. Default rule should be defined last. (see [below for nested schema](#nestedblock--firewall_rule))
+- `firewall_rule` (Block List, Min: 1, Max: 1000) A single firewall rule. The rules are evaluated in order. The maximum number of firewall rules per server is 1000.
+
+	Typical firewall rule should have `action`, `direction`, `protocol`, `family` and at least one destination/source-address/port range.
+
+	A default rule can be created by providing only `action` and `direction` attributes. Default rule should be defined last.
+
+	If used, IP address and port ranges must have both start and end values specified. These can be the same value if only one IP address or port number is specified.
+	Source and destination port numbers can only be set if the protocol is TCP or UDP.
+	The ICMP type may only be set if the protocol is ICMP. (see [below for nested schema](#nestedblock--firewall_rule))
 
 ### Read-Only
 

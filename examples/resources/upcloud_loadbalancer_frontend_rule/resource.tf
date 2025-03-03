@@ -44,7 +44,7 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "lb-test"
   plan              = "development"
   zone              = var.lb_zone
-  
+
   networks {
     type   = "public"
     family = "IPv4"
