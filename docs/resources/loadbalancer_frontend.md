@@ -68,7 +68,9 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
 
 ### Required Attributes
 
-- `default_backend_name` (String) The name of the default backend where traffic will be routed. Note, default backend can be overwritten in frontend rules.
+- `default_backend_name` (String) The name of the backend where traffic will be routed by default. The default backend can be overridden in frontend rules.
+
+	Note that the frontend resource depends on the default backend resource. Use the `name` field of a backend resource as the value for this field (like in the example above) or the `depends_on` meta argument to ensure the resources are created and destroyed in the correct order.
 - `loadbalancer` (String) UUID of the load balancer to which the frontend is connected.
 - `mode` (String) When load balancer operating in `tcp` mode it acts as a layer 4 proxy. In `http` mode it acts as a layer 7 proxy.
 - `name` (String) The name of the frontend. Must be unique within the load balancer service.
