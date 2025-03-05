@@ -24,7 +24,7 @@ func (v dhcpRouteValidator) ValidateString(_ context.Context, req validator.Stri
 		return
 	}
 
-	re := regexp.MustCompile(`^([0-9.:/]+)(?:-nexthop=([0-9.:]+)){0,1}$`)
+	re := regexp.MustCompile(`^([0-9a-fA-F.:/]+)(?:-nexthop=([0-9a-fA-F.:]+)){0,1}$`)
 	matches := re.FindStringSubmatch(req.ConfigValue.ValueString())
 
 	if len(matches) < 2 {
