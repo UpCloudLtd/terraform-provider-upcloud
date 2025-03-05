@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_network: allow defining nexthop in `dhcp_routes`.
+
 ## [5.20.2] - 2025-03-04
 
 ### Fixed
