@@ -156,9 +156,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							},
 							Validators: []validator.Set{
 								setvalidator.ValueStringsAre(
-									stringvalidator.Any(
-										validatorutil.NewFrameworkStringValidator(validation.IsCIDR),
-									),
+									dhcpRouteValidator{},
 								),
 							},
 						},
