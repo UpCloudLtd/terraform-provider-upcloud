@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- Display descriptive error message when credentials are not configured.
+
 ## [5.20.3] - 2025-03-06
 
 ### Fixed
