@@ -34,7 +34,6 @@ func (d *zoneDataSource) Configure(_ context.Context, req datasource.ConfigureRe
 
 type zoneModel struct {
 	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 	Public      types.Bool   `tfsdk:"public"`
 	ParentZone  types.String `tfsdk:"parent_zone"`
@@ -45,16 +44,8 @@ func (d *zoneDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 		Description: "Provides details on given zone.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Optional:    true, // TODO: Make required when removing name field
-				Computed:    true,
+				Required:    true,
 				Description: "Identifier of the zone.",
-			},
-			// TODO: Remove name field on next major release
-			"name": schema.StringAttribute{
-				Optional:           true,
-				Computed:           true,
-				DeprecationMessage: "Contains the same value as `id`. Use `id` instead.",
-				Description:        "Identifier of the zone. Contains the same value as `id`. If both `id` and `name` are set, `id` takes precedence.",
 			},
 			"description": schema.StringAttribute{
 				Computed:    true,
@@ -78,11 +69,7 @@ func (d *zoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	id := data.ID.ValueString()
 	if id == "" {
-		id = data.Name.ValueString()
-		data.ID = types.StringValue(id)
-	}
-	if id == "" {
-		resp.Diagnostics.AddError("Either `id` or `name` must be set", "Both `id` and `name` are empty.")
+		resp.Diagnostics.AddError("`id` must be set", "`id` in `upcloud_zone` data source can't be empty.")
 		return
 	}
 
@@ -108,7 +95,6 @@ func (d *zoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	data.Name = types.StringValue(zone.ID)
 	data.Description = types.StringValue(zone.Description)
 	data.Public = types.BoolValue(zone.Public.Bool())
 	data.ParentZone = types.StringValue(zone.ParentZone)
