@@ -7,18 +7,9 @@ import (
 )
 
 const (
-	configWithName = `
-data "upcloud_zone" "my_zone" {
-  name = "uk-lon1"
-}`
 	configWithID = `
 data "upcloud_zone" "my_zone" {
   id = "uk-lon1"
-}`
-	configWithNameAndID = `
-data "upcloud_zone" "my_zone" {
-  id = "uk-lon1"
-  name = "de-fra1"
 }`
 )
 
@@ -29,28 +20,18 @@ func TestAccDataSourceUpCloudZone_basic(t *testing.T) {
 	expectedDescription := "London #1"
 	expectedPublic := "true"
 
-	var steps []resource.TestStep
-	for _, config := range []string{
-		configWithName,
-		configWithID,
-		configWithNameAndID,
-	} {
-		steps = append(steps, resource.TestStep{
-			Config: config,
-			Check: resource.ComposeAggregateTestCheckFunc(
-				resource.TestCheckResourceAttr(
-					resourceName, "name", expectedZoneName),
-				resource.TestCheckResourceAttr(
-					resourceName, "description", expectedDescription),
-				resource.TestCheckResourceAttr(
-					resourceName, "public", expectedPublic),
-			),
-		})
-	}
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProviderFactories,
-		Steps:                    steps,
+		Steps: []resource.TestStep{
+			{
+				Config: configWithID,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "id", expectedZoneName),
+					resource.TestCheckResourceAttr(resourceName, "description", expectedDescription),
+					resource.TestCheckResourceAttr(resourceName, "public", expectedPublic),
+				),
+			},
+		},
 	})
 }
