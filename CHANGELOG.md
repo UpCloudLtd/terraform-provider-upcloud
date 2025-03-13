@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_server: set value for host field also when it is not defined by the user.
+
 ### Fixed
 
 - Display descriptive error message when credentials are not configured.

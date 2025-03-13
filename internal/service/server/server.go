@@ -272,6 +272,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 			},
 			"host": schema.Int64Attribute{
 				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",
+				Computed:    true,
 				Optional:    true,
 			},
 			"labels": utils.LabelsAttribute("server"),
@@ -827,6 +828,7 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 	var respDiagnostics, diags diag.Diagnostics
 
 	data.ID = types.StringValue(server.UUID)
+	data.Host = types.Int64Value(int64(server.Host))
 	data.Hostname = types.StringValue(server.Hostname)
 	data.Title = types.StringValue(server.Title)
 	data.Zone = types.StringValue(server.Zone)
