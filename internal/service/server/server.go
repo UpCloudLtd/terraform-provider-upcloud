@@ -740,7 +740,7 @@ func setAddressPlan(plan *networkInterfaceModel, ip upcloud.IPAddress) {
 	plan.IPAddressFloating = utils.AsBool(ip.Floating)
 }
 
-func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, server *upcloud.ServerDetails, state, plan serverModel, resp *resource.ModifyPlanResponse) {
+func (r *serverResource) updateNetworkInterfacesPlan(ctx context.Context, server *upcloud.ServerDetails, state, plan *serverModel, resp *resource.ModifyPlanResponse) {
 	var networkInterfacesPlan []networkInterfaceModel
 	resp.Diagnostics.Append(plan.NetworkInterfaces.ElementsAs(ctx, &networkInterfacesPlan, false)...)
 
@@ -784,7 +784,6 @@ func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, server
 	var diags diag.Diagnostics
 	plan.NetworkInterfaces, diags = types.ListValueFrom(ctx, plan.NetworkInterfaces.ElementType(ctx), networkInterfacesPlan)
 	resp.Diagnostics.Append(diags...)
-	resp.Diagnostics.Append(resp.Plan.Set(ctx, plan)...)
 }
 
 func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -820,11 +819,15 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 		)
 	}
 
-	// Host might change if server is migrated to different host, so update host here instead of using state for unknown.
-	plan.Host = types.Int64Value(int64(server.Host))
-
 	r.updateTagsPlan(server, plan)
-	r.modifyNetworkInterfacesPlan(ctx, server, *state, *plan, resp)
+	r.updateNetworkInterfacesPlan(ctx, server, state, plan, resp)
+
+	// Host might change if server is migrated to different host, so update host here instead of using state for unknown.
+	if !changeRequiresServerStop(*state, *plan) {
+		plan.Host = types.Int64Value(int64(server.Host))
+	}
+
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, plan)...)
 }
 
 func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDetails) diag.Diagnostics {
@@ -1211,16 +1214,7 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	// Stop the server if the requested changes require it
-	if !plan.CPU.Equal(state.CPU) ||
-		!plan.Mem.Equal(state.Mem) ||
-		!plan.Plan.Equal(state.Plan) ||
-		!plan.Timezone.Equal(state.Timezone) ||
-		!plan.VideoModel.Equal(state.VideoModel) ||
-		!plan.NICModel.Equal(state.NICModel) ||
-		!plan.Template.Equal(state.Template) ||
-		!plan.StorageDevices.Equal(state.StorageDevices) ||
-		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces) {
+	if changeRequiresServerStop(state, plan) {
 		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: uuid,
 		}, r.client)
