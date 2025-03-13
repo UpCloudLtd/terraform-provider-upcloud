@@ -2,9 +2,6 @@ package upcloud
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"strings"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
@@ -15,11 +12,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -107,7 +100,7 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigureWithDefaultUserAgent(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	return ProviderConfigure(ctx, d, defaultUserAgent())
+	return ProviderConfigure(ctx, d, config.DefaultUserAgent())
 }
 
 func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...string) (interface{}, diag.Diagnostics) {
@@ -115,9 +108,10 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...
 
 	requestTimeout := time.Duration(d.Get("request_timeout_sec").(int)) * time.Second
 
-	cfg := Config{
+	cfg := config.Config{
 		Username: d.Get("username").(string),
 		Password: d.Get("password").(string),
+		Token:    d.Get("token").(string),
 	}
 
 	httpClient := retryablehttp.NewClient()
@@ -125,57 +119,14 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...
 	httpClient.RetryWaitMax = time.Duration(d.Get("retry_wait_max_sec").(int)) * time.Second
 	httpClient.RetryMax = d.Get("retry_max").(int)
 
-	svc := newUpCloudServiceConnection(
-		d.Get("username").(string),
-		d.Get("password").(string),
-		d.Get("token").(string),
+	svc, err := cfg.NewUpCloudServiceConnection(
 		httpClient.HTTPClient,
 		requestTimeout,
 		userAgents...,
 	)
-
-	_, err := cfg.checkLogin(svc)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
 
 	return svc, diags
-}
-
-// logDebug converts slog style key-value varargs to a map compatible with tflog methods and calls tflog.Debug.
-func logDebug(ctx context.Context, format string, args ...any) {
-	meta := make(map[string]interface{})
-	for i := 0; i < len(args); i += 2 {
-		key := fmt.Sprintf("%+v", args[i])
-
-		var value interface{}
-		if i+1 < len(args) {
-			value = args[i+1]
-		}
-
-		meta[key] = value
-	}
-	tflog.Debug(ctx, format, meta)
-}
-
-func newUpCloudServiceConnection(username, password, token string, httpClient *http.Client, requestTimeout time.Duration, userAgents ...string) *service.Service {
-	providerClient := client.New(
-		"",
-		"",
-		client.WithHTTPClient(httpClient),
-		client.WithTimeout(requestTimeout),
-		client.WithLogger(logDebug),
-		utils.WithAuth(username, password, token),
-	)
-
-	if len(userAgents) == 0 {
-		userAgents = []string{defaultUserAgent()}
-	}
-	providerClient.UserAgent = strings.Join(userAgents, " ")
-
-	return service.New(providerClient)
-}
-
-func defaultUserAgent() string {
-	return fmt.Sprintf("terraform-provider-upcloud/%s", config.Version)
 }

@@ -53,7 +53,7 @@ var _ provider.Provider = New()
 
 func New() provider.Provider {
 	return &upcloudProvider{
-		userAgent: defaultUserAgent(),
+		userAgent: config.DefaultUserAgent(),
 	}
 }
 
@@ -129,7 +129,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	requestTimeout := time.Duration(withInt64Default(model.RequestTimeoutSec, 120)) * time.Second
-	config := Config{
+	cfg := config.Config{
 		Username: withEnvDefault(model.Username, "UPCLOUD_USERNAME"),
 		Password: withEnvDefault(model.Password, "UPCLOUD_PASSWORD"),
 		Token:    withEnvDefault(model.Token, "UPCLOUD_TOKEN"),
@@ -140,16 +140,11 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	httpClient.RetryWaitMax = time.Duration(withInt64Default(model.RetryWaitMaxSec, 30)) * time.Second
 	httpClient.RetryMax = int(withInt64Default(model.RetryMax, 4))
 
-	service := newUpCloudServiceConnection(
-		config.Username,
-		config.Password,
-		config.Token,
+	service, err := cfg.NewUpCloudServiceConnection(
 		httpClient.HTTPClient,
 		requestTimeout,
 		p.userAgent,
 	)
-
-	_, err := config.checkLogin(service)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to authenticate to UpCloud API with given credentials", err.Error())
 	}

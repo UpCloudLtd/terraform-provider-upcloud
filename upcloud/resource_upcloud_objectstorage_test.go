@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
@@ -53,7 +54,15 @@ func init() {
 
 			requestTimeout := 120 * time.Second
 
-			svc := newUpCloudServiceConnection(username, password, token, client.HTTPClient, requestTimeout)
+			cfg := config.Config{
+				Username: username,
+				Password: password,
+				Token:    token,
+			}
+			svc, err := cfg.NewUpCloudServiceConnection(client.HTTPClient, requestTimeout)
+			if err != nil {
+				return err
+			}
 
 			objectStorages, err := svc.GetObjectStorages(context.Background())
 			if err != nil {
