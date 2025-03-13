@@ -820,6 +820,9 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 		)
 	}
 
+	// Host might change if server is migrated to different host, so update host here instead of using state for unknown.
+	plan.Host = types.Int64Value(int64(server.Host))
+
 	r.updateTagsPlan(server, plan)
 	r.modifyNetworkInterfacesPlan(ctx, server, *state, *plan, resp)
 }
