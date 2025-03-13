@@ -1191,7 +1191,8 @@ func (r *serverResource) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var state, plan serverModel
+	var config, state, plan serverModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -1454,7 +1455,7 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}
 
-	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, Host: int(plan.Host.ValueInt64())}, r.client)
+	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, Host: int(config.Host.ValueInt64())}, r.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to start server", utils.ErrorDiagnosticDetail(err))
 		return
