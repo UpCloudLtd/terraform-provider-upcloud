@@ -272,6 +272,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 			},
 			"host": schema.Int64Attribute{
 				Description: "Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts",
+				Computed:    true,
 				Optional:    true,
 			},
 			"labels": utils.LabelsAttribute("server"),
@@ -739,7 +740,7 @@ func setAddressPlan(plan *networkInterfaceModel, ip upcloud.IPAddress) {
 	plan.IPAddressFloating = utils.AsBool(ip.Floating)
 }
 
-func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, server *upcloud.ServerDetails, state, plan serverModel, resp *resource.ModifyPlanResponse) {
+func (r *serverResource) updateNetworkInterfacesPlan(ctx context.Context, server *upcloud.ServerDetails, state, plan *serverModel, resp *resource.ModifyPlanResponse) {
 	var networkInterfacesPlan []networkInterfaceModel
 	resp.Diagnostics.Append(plan.NetworkInterfaces.ElementsAs(ctx, &networkInterfacesPlan, false)...)
 
@@ -783,7 +784,6 @@ func (r *serverResource) modifyNetworkInterfacesPlan(ctx context.Context, server
 	var diags diag.Diagnostics
 	plan.NetworkInterfaces, diags = types.ListValueFrom(ctx, plan.NetworkInterfaces.ElementType(ctx), networkInterfacesPlan)
 	resp.Diagnostics.Append(diags...)
-	resp.Diagnostics.Append(resp.Plan.Set(ctx, plan)...)
 }
 
 func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -820,13 +820,21 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 	}
 
 	r.updateTagsPlan(server, plan)
-	r.modifyNetworkInterfacesPlan(ctx, server, *state, *plan, resp)
+	r.updateNetworkInterfacesPlan(ctx, server, state, plan, resp)
+
+	// Host might change if server is migrated to different host, so update host here instead of using state for unknown.
+	if !changeRequiresServerStop(*state, *plan) {
+		plan.Host = types.Int64Value(int64(server.Host))
+	}
+
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, plan)...)
 }
 
 func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDetails) diag.Diagnostics {
 	var respDiagnostics, diags diag.Diagnostics
 
 	data.ID = types.StringValue(server.UUID)
+	data.Host = types.Int64Value(int64(server.Host))
 	data.Hostname = types.StringValue(server.Hostname)
 	data.Title = types.StringValue(server.Title)
 	data.Zone = types.StringValue(server.Zone)
@@ -1186,7 +1194,8 @@ func (r *serverResource) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var state, plan serverModel
+	var config, state, plan serverModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -1205,16 +1214,7 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	// Stop the server if the requested changes require it
-	if !plan.CPU.Equal(state.CPU) ||
-		!plan.Mem.Equal(state.Mem) ||
-		!plan.Plan.Equal(state.Plan) ||
-		!plan.Timezone.Equal(state.Timezone) ||
-		!plan.VideoModel.Equal(state.VideoModel) ||
-		!plan.NICModel.Equal(state.NICModel) ||
-		!plan.Template.Equal(state.Template) ||
-		!plan.StorageDevices.Equal(state.StorageDevices) ||
-		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces) {
+	if changeRequiresServerStop(state, plan) {
 		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: uuid,
 		}, r.client)
@@ -1449,7 +1449,7 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}
 
-	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, Host: int(plan.Host.ValueInt64())}, r.client)
+	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, Host: int(config.Host.ValueInt64())}, r.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to start server", utils.ErrorDiagnosticDetail(err))
 		return

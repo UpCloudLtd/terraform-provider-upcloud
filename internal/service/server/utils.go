@@ -62,3 +62,15 @@ func sliceToMap(input []string) map[string]bool {
 	}
 	return output
 }
+
+func changeRequiresServerStop(state, plan serverModel) bool {
+	return !plan.CPU.Equal(state.CPU) ||
+		!plan.Mem.Equal(state.Mem) ||
+		!plan.Plan.Equal(state.Plan) ||
+		!plan.Timezone.Equal(state.Timezone) ||
+		!plan.VideoModel.Equal(state.VideoModel) ||
+		!plan.NICModel.Equal(state.NICModel) ||
+		!plan.Template.Equal(state.Template) ||
+		!plan.StorageDevices.Equal(state.StorageDevices) ||
+		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces)
+}
