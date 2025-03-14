@@ -72,4 +72,13 @@ docs: install-tools
 	$(TOOLS_DIR)/tfplugindocs
 	./scripts/group-docs.sh
 
-.PHONY: build generate test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_12 install-tools docs
+release-notes: CHANGELOG_HEADER = ^\#\# \[
+release-notes: CHANGELOG_VERSION = $(subst v,,$(VERSION))
+release-notes:
+	@awk \
+		'/${CHANGELOG_HEADER}${CHANGELOG_VERSION}/ { flag = 1; next } \
+		/${CHANGELOG_HEADER}/ { if ( flag ) { exit; } } \
+		flag { if ( n ) { print prev; } n++; prev = $$0 }' \
+		CHANGELOG.md
+
+.PHONY: build generate test testacc vet fmt fmtcheck errcheck test-compile update-deps website website-test build_0_12 install-tools docs release-notes
