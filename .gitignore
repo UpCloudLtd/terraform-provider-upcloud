@@ -49,3 +49,6 @@ terraform/
 
 # Ignore diff files from make generate
 *.diff
+
+# Generated release notes
+.release_notes
