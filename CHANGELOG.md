@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.20.4] - 2025-03-14
+
 ### Changed
 
 - upcloud_server: set value for host field also when it is not defined by the user.
@@ -915,7 +917,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.3...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.4...HEAD
+[5.20.4]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.3...v5.20.4
 [5.20.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.2...v5.20.3
 [5.20.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.1...v5.20.2
 [5.20.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.0...v5.20.1
