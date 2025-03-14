@@ -8,7 +8,5 @@
     1. Leave "Unreleased" section at the top empty
 1. Tag the release `vX.Y.Z` (e.g. `v2.3.5`)
 1. Push the tag to GitHub
-1. Push the tag to the internal GitLab repo
-    - This will fire an internal CI job that signs the code & creates a new draft release for the tag in GitHub
-3. Open the [draft release in GitHub](https://github.com/UpCloudLtd/terraform-provider-upcloud/releases) & publish it when you are happy with it
-4. The [Terraform registry](https://registry.terraform.io/providers/UpCloudLtd/upcloud) will pick up the release
+1. Ensure that there is new [release in GitHub](https://github.com/UpCloudLtd/terraform-provider-upcloud/releases) and publish it if it is draft state
+1. The [Terraform registry](https://registry.terraform.io/providers/UpCloudLtd/upcloud) will pick up the release
