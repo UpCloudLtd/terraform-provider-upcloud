@@ -2,15 +2,18 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -43,7 +46,7 @@ type storageBackupModel struct {
 	CreatedAt     types.String `tfsdk:"created_at"`
 }
 
-func (r *storageBackupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *storageBackupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Creates an on-demand storage backup in UpCloud. To force a backup, change the backup title to a unique name",
 		Attributes: map[string]schema.Attribute{
@@ -58,10 +61,16 @@ func (r *storageBackupResource) Schema(ctx context.Context, req resource.SchemaR
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID of the created backup.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp of the backup creation.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -76,29 +85,14 @@ func (r *storageBackupResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// Create a backup
-	_, err := r.client.CreateBackup(ctx, &request.CreateBackupRequest{
+	backupDetails, err := r.client.CreateBackup(ctx, &request.CreateBackupRequest{
 		UUID:  data.SourceStorage.ValueString(),
 		Title: data.Title.ValueString(),
 	})
-
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create storage backup", utils.ErrorDiagnosticDetail(err))
 		return
 	}
-
-	/*
-		// Format storage details as JSON for better readability
-		storageDetailsJSON, err := json.MarshalIndent(storageDetails, "", "  ")
-		if err != nil {
-			tflog.Error(ctx, "Failed to format storage details", map[string]interface{}{
-				"error": err.Error(),
-			})
-		} else {
-			tflog.Info(ctx, "Retrieved storage details:\n"+string(storageDetailsJSON))
-		}
-
-		tflog.Info(ctx, "--------------------------------------------------- 3")
-	*/
 
 	// Wait for backup to finish
 	_, err = r.client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
@@ -113,29 +107,9 @@ func (r *storageBackupResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	data.CreatedAt = types.StringValue(backupDetails.Created.Format(time.RFC3339))
+	data.ID = types.StringValue(backupDetails.UUID)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
-	/*
-		// Check if backup already exists
-		backup, err := r.client.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{
-			UUID: data.SourceStorage.ValueString(),
-		})
-
-		if err != nil {
-			resp.Diagnostics.AddError("Storage not found", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-
-		// Format storage details as JSON for better readability
-		backupJSON, err := json.MarshalIndent(backup, "", "  ")
-		if err != nil {
-			tflog.Error(ctx, "Failed to format storage details", map[string]interface{}{
-				"error": err.Error(),
-			})
-		} else {
-			tflog.Info(ctx, "Retrieved storage details:\n"+string(backupJSON))
-		}
-	*/
 }
 
 func (r *storageBackupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -146,40 +120,14 @@ func (r *storageBackupResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
+	// TODO: Do we have to remove the resource or do we have to log an error and return?
 	if data.SourceStorage.ValueString() == "" {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	// Get storage details
-	storageDetails, err := r.client.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{
-		UUID: data.SourceStorage.ValueString(),
-	})
-	if err != nil {
-		if utils.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-		} else {
-			resp.Diagnostics.AddError(
-				"Unable to read storage details",
-				utils.ErrorDiagnosticDetail(err),
-			)
-		}
-		return
-	}
-
-	if data.ID.ValueString() == "" {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	// Check if backup exists
-	if !slices.Contains(storageDetails.BackupUUIDs, data.ID.ValueString()) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	// Get the Storage Backup details - IT DOES NOT EXIST
-	backup, err := r.client.GetStorageBackupDetails(ctx, &request.GetStorageBackupDetailsRequest{
+	// Get backup details
+	backupDetails, err := r.client.GetStorageDetails(ctx, &request.GetStorageDetailsRequest{
 		UUID: data.ID.ValueString(),
 	})
 	if err != nil {
@@ -187,26 +135,99 @@ func (r *storageBackupResource) Read(ctx context.Context, req resource.ReadReque
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
-				"Unable to read backup storage details",
+				"Unable to read backup details",
 				utils.ErrorDiagnosticDetail(err),
 			)
 		}
 		return
 	}
 
-	data.CreatedAt = types.StringValue(backup.Created)
-	data.Title = types.StringValue(backup.Title)
+	data.ID = types.StringValue(backupDetails.UUID)
+	data.CreatedAt = types.StringValue(backupDetails.Created.Format(time.RFC3339))
+	data.Title = types.StringValue(backupDetails.Title)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *storageBackupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// To be implemented
+	// Read current configuration
+	var data storageBackupModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Read the current state
+	var state storageBackupModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Check if the source storage has changed
+	if data.SourceStorage.ValueString() != state.SourceStorage.ValueString() {
+		resp.Diagnostics.AddError("Source_storage cannot be changed", "Source_storage is immutable and cannot be changed.")
+		return
+	}
+
+	updateRequired := false
+	modifyStorageRequest := request.ModifyStorageRequest{
+		UUID: state.ID.ValueString(),
+	}
+
+	if data.Title.ValueString() != state.Title.ValueString() {
+		modifyStorageRequest.Title = data.Title.ValueString()
+		updateRequired = true
+	}
+
+	if updateRequired {
+		_, err := r.client.ModifyStorage(ctx, &modifyStorageRequest)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to update storage backup", utils.ErrorDiagnosticDetail(err))
+			return
+		}
+	}
+
+	data.ID = state.ID
+	data.CreatedAt = state.CreatedAt
+	data.SourceStorage = state.SourceStorage
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *storageBackupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// To be implemented
+	var state storageBackupModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	backupID := state.ID.ValueString()
+
+	// Wait for backup to enter 'online' state as storage devices can only be deleted in this state.
+	_, err := r.client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+		UUID:         backupID,
+		DesiredState: upcloud.StorageStateOnline,
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Storage did not reach online state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	deleteStorageRequest := &request.DeleteStorageRequest{
+		UUID: backupID,
+	}
+	err = r.client.DeleteStorage(ctx, deleteStorageRequest)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete backup",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	resp.State.RemoveResource(ctx)
 }
 
 func (r *storageBackupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// To be implemented
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
