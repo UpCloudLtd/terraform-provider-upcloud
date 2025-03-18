@@ -8,7 +8,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -17,9 +16,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &storageBackupResource{}
-	_ resource.ResourceWithConfigure   = &storageBackupResource{}
-	_ resource.ResourceWithImportState = &storageBackupResource{}
+	_ resource.Resource              = &storageBackupResource{}
+	_ resource.ResourceWithConfigure = &storageBackupResource{}
 )
 
 type storageBackupResource struct {
@@ -120,7 +118,6 @@ func (r *storageBackupResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	// TODO: Do we have to remove the resource or do we have to log an error and return?
 	if data.SourceStorage.ValueString() == "" {
 		resp.State.RemoveResource(ctx)
 		return
@@ -214,6 +211,7 @@ func (r *storageBackupResource) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
+	// Do we want to delete the snapshot from the system or only make TF think it is deleted?
 	deleteStorageRequest := &request.DeleteStorageRequest{
 		UUID: backupID,
 	}
@@ -226,8 +224,4 @@ func (r *storageBackupResource) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	resp.State.RemoveResource(ctx)
-}
-
-func (r *storageBackupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
