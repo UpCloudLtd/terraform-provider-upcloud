@@ -46,7 +46,7 @@ type storageBackupModel struct {
 
 func (r *storageBackupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Creates an on-demand storage backup in UpCloud. To force a backup, change the backup title to a unique name",
+		Description: "Manages an on-demand storage backup.",
 		Attributes: map[string]schema.Attribute{
 			"source_storage": schema.StringAttribute{
 				Required:    true,
