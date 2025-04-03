@@ -38,6 +38,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - Display descriptive error message when credentials are not configured.
+
+### Added
+
 - Added upcloud_storage_backup resource that creates a backup of a storage resource
 
 ## [5.20.3] - 2025-03-06
