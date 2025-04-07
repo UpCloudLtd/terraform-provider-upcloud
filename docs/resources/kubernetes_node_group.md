@@ -79,7 +79,9 @@ resource "upcloud_kubernetes_node_group" "group" {
 ### Blocks
 
 - `custom_plan` (Block List) Resource properties for custom plan (see [below for nested schema](#nestedblock--custom_plan))
-- `kubelet_args` (Block Set) Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args. (see [below for nested schema](#nestedblock--kubelet_args))
+- `kubelet_args` (Block Set) Additional arguments for kubelet for the nodes in this group. Configure the arguments without leading `--`. The API will prefix the arguments with `--` when preparing kubelet call.
+
+    Note that these arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args. (see [below for nested schema](#nestedblock--kubelet_args))
 - `taint` (Block Set) Taints for the nodes in this group. (see [below for nested schema](#nestedblock--taint))
 
 ### Read-Only
