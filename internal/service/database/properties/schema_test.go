@@ -22,8 +22,8 @@ func TestGetSchema(t *testing.T) {
 			defaultf: func(v interface{}) bool { return v.(bool) == false },
 		},
 		{
-			db:       "redis",
-			key:      "redis_notify_keyspace_events",
+			db:       "valkey",
+			key:      "valkey_notify_keyspace_events",
 			computed: false,
 		},
 	}
