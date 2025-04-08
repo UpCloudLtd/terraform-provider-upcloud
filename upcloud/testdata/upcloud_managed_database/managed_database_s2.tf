@@ -136,26 +136,6 @@ resource "upcloud_managed_database_logical_database" "logical_db_1" {
   name    = "${var.prefix}logical-db-1-updated"
 }
 
-resource "upcloud_managed_database_redis" "r1" {
-  name  = "${var.prefix}redis-1"
-  plan  = "1x1xCPU-2GB"
-  title = "${var.prefix}redis-1-updated"
-  zone  = var.zone
-
-  // No change in network
-  network {
-    family = "IPv4"
-    name   = "${var.prefix}net"
-    type   = "private"
-    uuid   = upcloud_network.r1.id
-  }
-
-  labels = {
-    test       = ""
-    managed-by = "team-devex"
-  }
-}
-
 resource "upcloud_managed_database_valkey" "v1" {
   name  = "${var.prefix}valkey-1"
   plan  = "1x1xCPU-2GB"
@@ -189,15 +169,6 @@ resource "upcloud_managed_database_user" "db_user_2" {
   password = "Superpass123"
   pg_access_control {
     allow_replication = true
-  }
-}
-
-resource "upcloud_managed_database_user" "db_user_3" {
-  service  = upcloud_managed_database_redis.r1.id
-  username = "somename"
-  password = "Superpass123"
-  redis_access_control {
-    keys = ["key*"]
   }
 }
 

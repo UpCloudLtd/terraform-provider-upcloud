@@ -116,21 +116,6 @@ resource "upcloud_managed_database_logical_database" "logical_db_1" {
   name    = "${var.prefix}logical-db-1"
 }
 
-resource "upcloud_managed_database_redis" "r1" {
-  name  = "${var.prefix}redis-1"
-  plan  = "1x1xCPU-2GB"
-  title = "${var.prefix}redis-1"
-  zone  = var.zone
-
-  // Attach network on create
-  network {
-    family = "IPv4"
-    name   = "${var.prefix}net-1"
-    type   = "private"
-    uuid   = upcloud_network.r1.id
-  }
-}
-
 resource "upcloud_managed_database_valkey" "v1" {
   name  = "${var.prefix}valkey-1"
   plan  = "1x1xCPU-2GB"
@@ -170,18 +155,6 @@ resource "upcloud_managed_database_user" "db_user_2" {
   password = "Superpass123"
   pg_access_control {
     allow_replication = false
-  }
-}
-
-resource "upcloud_managed_database_user" "db_user_3" {
-  service  = upcloud_managed_database_redis.r1.id
-  username = "somename"
-  password = "Superpass123"
-  redis_access_control {
-    categories = ["+@set"]
-    channels   = ["*"]
-    commands   = ["+set"]
-    keys       = ["key_*"]
   }
 }
 
