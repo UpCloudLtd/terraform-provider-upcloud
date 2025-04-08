@@ -241,7 +241,9 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				},
 			},
 			"kubelet_args": schema.SetNestedBlock{
-				MarkdownDescription: "Additional arguments for kubelet for the nodes in this group. WARNING - those arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args.",
+				MarkdownDescription: `Additional arguments for kubelet for the nodes in this group. Configure the arguments without leading ` + "`" + `--` + "`" + `. The API will prefix the arguments with ` + "`" + `--` + "`" + ` when preparing kubelet call.
+
+    Note that these arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args.`,
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
