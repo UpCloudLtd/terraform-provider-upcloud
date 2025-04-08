@@ -54,4 +54,4 @@ jobs:
           UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
           UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
         run: upctl all list --include *tf-acc-test* --exclude *persistent*
-        if: ${{ always() }}
+        if: ${{ failure() }}
