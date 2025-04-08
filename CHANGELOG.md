@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- Set `valkey_access_control` data when importing Valkey user to `upcloud_managed_database_user` resource.
+
 ## [5.20.4] - 2025-03-14
 
 ### Changed

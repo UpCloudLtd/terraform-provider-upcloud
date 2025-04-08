@@ -474,6 +474,19 @@ func copyUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedD
 		}
 	}
 
+	if details.ValkeyAccessControl != nil {
+		if err := d.Set("valkey_access_control", []map[string][]string{
+			{
+				"categories": *details.ValkeyAccessControl.Categories,
+				"channels":   *details.ValkeyAccessControl.Channels,
+				"commands":   *details.ValkeyAccessControl.Commands,
+				"keys":       *details.ValkeyAccessControl.Keys,
+			},
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	if details.OpenSearchAccessControl != nil {
 		rules := make([]map[string]interface{}, 0)
 		for _, rule := range *details.OpenSearchAccessControl.Rules {
