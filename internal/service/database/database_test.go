@@ -35,6 +35,10 @@ func TestWaitServiceNameToPropagateContextTimeout(t *testing.T) {
 }
 
 func TestDatabaseProperties(t *testing.T) {
+	if os.Getenv("TF_ACC_DB_PROPS") == "" {
+		t.Skip("Skipping database properties validation, because we have CI workflow for updating these automatically. Set TF_ACC_DB_PROPS environment variable to run these tests.")
+	}
+
 	dbTypes := []upcloud.ManagedDatabaseServiceType{
 		upcloud.ManagedDatabaseServiceTypeMySQL,
 		upcloud.ManagedDatabaseServiceTypeOpenSearch,
