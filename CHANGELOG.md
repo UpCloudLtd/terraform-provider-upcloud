@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_managed_database_\*: Update available properties to match listing provided by the API, see #741 for details.
+
 ### Fixed
 
 - Set `valkey_access_control` data when importing Valkey user to `upcloud_managed_database_user` resource.
