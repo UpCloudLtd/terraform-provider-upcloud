@@ -417,7 +417,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				// Update simple backup while storage is attached
 				Config: `
 					resource "upcloud_storage" "addon" {
-						title = "addon"
+						title = "tf-acc-test-server-storage-simple-backup-extra-disk"
 						size = 10
 						zone = "pl-waw1"
 					}
@@ -459,7 +459,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				// Delete simple backups while storage is attached
 				Config: `
 					resource "upcloud_storage" "addon" {
-						title = "addon"
+						title = "tf-acc-test-server-storage-simple-backup-extra-disk"
 						size = 10
 						zone = "pl-waw1"
 					}
@@ -493,7 +493,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 				// Add backup rule to additional storage and to the template
 				Config: `
 					resource "upcloud_storage" "addon" {
-						title = "addon"
+						title = "tf-acc-test-server-storage-simple-backup-extra-disk"
 						size = 10
 						zone = "pl-waw1"
 

@@ -1,6 +1,6 @@
 resource "upcloud_managed_database_mysql" "mysql_sessions" {
   name  = "mysql-sessions-test-1"
-  title = "mysql-sessions-test-1"
+  title = "tf-acc-test-mysql-sessions-1"
   plan  = "1x1xCPU-2GB-25GB"
   zone  = "fi-hel2"
 }
