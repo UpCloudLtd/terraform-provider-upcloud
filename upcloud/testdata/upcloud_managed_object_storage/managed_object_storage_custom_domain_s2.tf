@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "tf-acc-test-objsto2-custom-domain-"
+  default = "tf-acc-test-objstov2-custom-domain-"
   type    = string
 }
 

@@ -1,8 +1,18 @@
+variable "prefix" {
+  default = "tf-acc-test-valkey-props-"
+  type    = string
+}
+
+variable "zone" {
+  default = "fi-hel2"
+  type    = string
+}
+
 resource "upcloud_managed_database_valkey" "valkey_properties" {
-  name  = "tf-valkey-properties-test"
-  title = "tf-valkey-properties-test"
+  name  = "valkey-props-test"
+  title = "${var.prefix}db"
   plan  = "1x1xCPU-2GB"
-  zone  = "fi-hel2"
+  zone  = var.zone
   properties {
     automatic_utility_network_ip_filter      = true
     public_access                            = true
