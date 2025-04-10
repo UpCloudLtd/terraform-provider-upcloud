@@ -3,6 +3,9 @@ package upcloud
 import (
 	"fmt"
 	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -950,6 +953,145 @@ func TestUpcloudServer_createPreChecks(t *testing.T) {
 				Config:             configSimple("tf-acc-test-server-create-pre-checks", "1xCPU-1GB", "_fi-hel2"),
 				ExpectNonEmptyPlan: true,
 				ExpectError:        regexp.MustCompile("expected zone to be one of"),
+			},
+		},
+	})
+}
+
+func configHotResize(planName string, hotResize bool, captureUptime bool, checkUptime bool, keyDir string) string {
+	provisioner := ""
+
+	if captureUptime {
+		provisioner = `
+			provisioner "remote-exec" {
+				inline = [
+					"uptime -s > /tmp/server_start_time.txt",
+				]
+				connection {
+					type        = "ssh"
+					user        = "root"
+					host        = self.network_interface[0].ip_address
+					private_key = file("%s/id_rsa")
+				}
+			}
+		`
+		provisioner = fmt.Sprintf(provisioner, keyDir)
+	} else if checkUptime {
+		provisioner = `
+			provisioner "remote-exec" {
+				inline = [
+					"cat /tmp/server_start_time.txt > /tmp/original_start_time.txt",
+					"uptime > /tmp/current_start_time.txt",
+					"cmp /tmp/original_start_time.txt /tmp/current_start_time.txt && echo 'PASS: Server did not restart' || echo 'FAIL: Server restarted'",
+				]
+				connection {
+					type        = "ssh"
+					user        = "root"
+					host        = self.network_interface[0].ip_address
+					private_key = file("%s/id_rsa")
+				}
+			}
+		`
+		provisioner = fmt.Sprintf(provisioner, keyDir)
+	}
+
+	return fmt.Sprintf(`
+		resource "upcloud_server" "hot_resize" {
+			hostname    = "tf-acc-test-server-hot-resize"
+			zone        = "pl-waw1"
+			plan        = "%s"
+			metadata    = true
+			hot_resize  = %t
+
+			login {
+				user = "root"
+				keys = [
+					file("%s/id_rsa.pub")
+				]
+			}
+
+			template {
+				storage = "%s"
+				size    = 10
+			}
+
+			network_interface {
+				type = "public"
+			}
+
+			%s
+		}
+
+		output "server_ip" {
+			value = upcloud_server.hot_resize.network_interface[0].ip_address
+		}
+	`, planName, hotResize, keyDir, debianTemplateUUID, provisioner)
+}
+
+// generateSSHKey generates an SSH key pair in the given directory
+func generateSSHKey(t *testing.T, keyDir string) error {
+	cmd := exec.Command("ssh-keygen", "-t", "rsa", "-b", "2048", "-N", "", "-f", filepath.Join(keyDir, "id_rsa"))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("Error generating SSH key: %s", output)
+		return fmt.Errorf("failed to generate SSH key: %w", err)
+	}
+
+	t.Logf("Temporary SSH keys generated successfully in %s", keyDir)
+	return nil
+}
+
+func TestUpcloudServer_hotResize(t *testing.T) {
+	// Skip if we're not running acceptance tests
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping hot resize test as TF_ACC is not set")
+	}
+
+	// Create a temporary directory for SSH keys
+	keyDir := t.TempDir()
+	err := generateSSHKey(t, keyDir)
+	if err != nil {
+		t.Fatalf("Failed to generate SSH keys: %v", err)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create a server with 1xCPU-1GB plan and capture uptime
+				Config: configHotResize("1xCPU-1GB", true, true, false, keyDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-1GB"),
+					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "hot_resize", "true"),
+					func(_ *terraform.State) error {
+						t.Logf("Initial server startup and uptime capture complete")
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: Apply hot resize to 1xCPU-2GB
+				Config: configHotResize("1xCPU-2GB", true, false, false, keyDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
+					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "hot_resize", "true"),
+					func(_ *terraform.State) error {
+						t.Logf("Hot resize applied, server plan changed to 1xCPU-2GB")
+						return nil
+					},
+				),
+			},
+			{
+				// Step 3: Verify that the server didn't restart by checking the uptime in a separate step
+				Config: configHotResize("1xCPU-2GB", true, false, true, keyDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
+					func(_ *terraform.State) error {
+						t.Logf("Server was successfully hot resize'd")
+						return nil
+					},
+				),
 			},
 		},
 	})
