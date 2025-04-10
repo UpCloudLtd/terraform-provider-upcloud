@@ -104,6 +104,5 @@ func changeRequiresServerStop(state, plan serverModel) bool {
 		!plan.NICModel.Equal(state.NICModel) ||
 		!plan.Template.Equal(state.Template) ||
 		!plan.StorageDevices.Equal(state.StorageDevices) ||
-		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces) ||
-		(state.HotResize.ValueBool() && !plan.HotResize.ValueBool()) // Only require server stop if hot_resize is changing from true to false
+		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces)
 }
