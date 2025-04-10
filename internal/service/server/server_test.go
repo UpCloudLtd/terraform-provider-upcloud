@@ -196,6 +196,30 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 			},
 			expectShutdown: false,
 		},
+		{
+			name: "Only hot_resize changing from true to false",
+			state: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(false),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: false,
+		},
 	}
 
 	for _, tt := range tests {
