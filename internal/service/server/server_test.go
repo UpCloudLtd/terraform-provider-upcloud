@@ -52,3 +52,158 @@ func TestBuildSimpleBackupOpts_withInvalidInput(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
+	// Define default values for fields not being tested to ensure they're equal
+	defaultTimezone := types.StringValue("UTC")
+	defaultVideoModel := types.StringValue("vga")
+	defaultNICModel := types.StringValue("virtio")
+	defaultTemplate := types.ListNull(types.ObjectType{})
+	defaultStorageDevices := types.SetNull(types.ObjectType{})
+	defaultNetworkInterfaces := types.ListNull(types.ObjectType{})
+
+	tests := []struct {
+		name           string
+		state          serverModel
+		plan           serverModel
+		expectShutdown bool
+	}{
+		{
+			name: "Only plan changing with hot_resize disabled",
+			state: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(false),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:              types.StringValue("2xCPU-2GB"),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: true,
+		},
+		{
+			name: "Only plan changing with hot_resize enabled",
+			state: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:              types.StringValue("2xCPU-2GB"),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: false,
+		},
+		{
+			name: "Custom plan with CPU changing and hot_resize enabled",
+			state: serverModel{
+				Plan:              types.StringValue(customPlanName),
+				CPU:               types.Int64Value(1),
+				Mem:               types.Int64Value(1024),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:              types.StringValue(customPlanName),
+				CPU:               types.Int64Value(2),
+				Mem:               types.Int64Value(1024),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: true,
+		},
+		{
+			name: "Changing from standard plan to custom plan with different CPU/Mem and hot_resize enabled",
+			state: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				CPU:               types.Int64Value(1),
+				Mem:               types.Int64Value(1024),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:              types.StringValue(customPlanName),
+				CPU:               types.Int64Value(2),
+				Mem:               types.Int64Value(2048),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: true,
+		},
+		{
+			name: "Only hot_resize changing from false to true",
+			state: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(false),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := changeRequiresServerStop(tt.state, tt.plan)
+			if result != tt.expectShutdown {
+				t.Errorf("changeRequiresServerStop() = %v, want %v", result, tt.expectShutdown)
+			}
+		})
+	}
+}

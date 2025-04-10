@@ -9,6 +9,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
+const (
+	// CustomPlanName is the name of the custom server plan
+	customPlanName = "custom"
+)
+
 func isProviderAccountSubaccount(ctx context.Context, s *service.Service) (bool, error) {
 	account, err := s.GetAccount(ctx)
 	if err != nil {
@@ -64,13 +69,41 @@ func sliceToMap(input []string) map[string]bool {
 }
 
 func changeRequiresServerStop(state, plan serverModel) bool {
-	return !plan.CPU.Equal(state.CPU) ||
-		!plan.Mem.Equal(state.Mem) ||
-		!plan.Plan.Equal(state.Plan) ||
+	// Only allow hot resize if it's enabled in the plan and not changing (i.e., it was also enabled in the state)
+	if plan.HotResize.ValueBool() && state.HotResize.ValueBool() &&
+		!plan.Plan.Equal(state.Plan) &&
+		plan.Timezone.Equal(state.Timezone) &&
+		plan.VideoModel.Equal(state.VideoModel) &&
+		plan.NICModel.Equal(state.NICModel) &&
+		plan.Template.Equal(state.Template) &&
+		plan.StorageDevices.Equal(state.StorageDevices) &&
+		plan.NetworkInterfaces.Equal(state.NetworkInterfaces) {
+		// For custom plans, we need to check if CPU and Mem are changing
+		if plan.Plan.ValueString() == customPlanName || state.Plan.ValueString() == customPlanName {
+			// If either plan is custom, we need to check if CPU or Mem are changing
+			if !plan.CPU.Equal(state.CPU) || !plan.Mem.Equal(state.Mem) {
+				return true
+			}
+		}
+		// For non-custom plans, we don't need to check CPU and Mem as they are determined by the plan
+
+		return false
+	}
+
+	// If hot_resize is not enabled in both state and plan, or other fields are changing, check if CPU and Mem are changing
+	// For custom plans, we need to check if CPU and Mem are changing
+	if plan.Plan.ValueString() == customPlanName || state.Plan.ValueString() == customPlanName {
+		if !plan.CPU.Equal(state.CPU) || !plan.Mem.Equal(state.Mem) {
+			return true
+		}
+	}
+
+	return !plan.Plan.Equal(state.Plan) ||
 		!plan.Timezone.Equal(state.Timezone) ||
 		!plan.VideoModel.Equal(state.VideoModel) ||
 		!plan.NICModel.Equal(state.NICModel) ||
 		!plan.Template.Equal(state.Template) ||
 		!plan.StorageDevices.Equal(state.StorageDevices) ||
-		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces)
+		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces) ||
+		(state.HotResize.ValueBool() && !plan.HotResize.ValueBool()) // Only require server stop if hot_resize is changing from true to false
 }
