@@ -1,10 +1,13 @@
 package upcloud
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -12,6 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"golang.org/x/crypto/ssh"
 )
 
 func configCustomPlan(cpu, mem int) string {
@@ -1030,11 +1034,34 @@ func configHotResize(planName string, hotResize bool, captureUptime bool, checkU
 
 // generateSSHKey generates an SSH key pair in the given directory
 func generateSSHKey(t *testing.T, keyDir string) error {
-	cmd := exec.Command("ssh-keygen", "-t", "rsa", "-b", "2048", "-N", "", "-f", filepath.Join(keyDir, "id_rsa"))
-	output, err := cmd.CombinedOutput()
+	// Generate private key
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		t.Logf("Error generating SSH key: %s", output)
-		return fmt.Errorf("failed to generate SSH key: %w", err)
+		return fmt.Errorf("failed to generate private key: %w", err)
+	}
+
+	// Create private key file
+	privateKeyFile := filepath.Join(keyDir, "id_rsa")
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	privateKeyPEM := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: privateKeyBytes,
+		},
+	)
+	if err := os.WriteFile(privateKeyFile, privateKeyPEM, 0o600); err != nil {
+		return fmt.Errorf("failed to write private key: %w", err)
+	}
+
+	// Create public key file
+	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("failed to generate public key: %w", err)
+	}
+	publicKeyBytes := ssh.MarshalAuthorizedKey(pub)
+	publicKeyFile := filepath.Join(keyDir, "id_rsa.pub")
+	if err := os.WriteFile(publicKeyFile, publicKeyBytes, 0o644); err != nil {
+		return fmt.Errorf("failed to write public key: %w", err)
 	}
 
 	t.Logf("Temporary SSH keys generated successfully in %s", keyDir)
