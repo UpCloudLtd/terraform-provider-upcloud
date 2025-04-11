@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -219,6 +220,128 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 				NetworkInterfaces: defaultNetworkInterfaces,
 			},
 			expectShutdown: false,
+		},
+		{
+			name: "Hot resize with plan change and network change - should require shutdown",
+			state: serverModel{
+				Plan:           types.StringValue("1xCPU-1GB"),
+				HotResize:      types.BoolValue(true),
+				Timezone:       defaultTimezone,
+				VideoModel:     defaultVideoModel,
+				NICModel:       defaultNICModel,
+				Template:       defaultTemplate,
+				StorageDevices: defaultStorageDevices,
+				NetworkInterfaces: types.ListValueMust(
+					types.ObjectType{
+						AttrTypes: map[string]attr.Type{},
+					},
+					[]attr.Value{
+						types.ObjectValueMust(
+							map[string]attr.Type{},
+							map[string]attr.Value{},
+						),
+					},
+				),
+			},
+			plan: serverModel{
+				Plan:           types.StringValue("2xCPU-2GB"),
+				HotResize:      types.BoolValue(true),
+				Timezone:       defaultTimezone,
+				VideoModel:     defaultVideoModel,
+				NICModel:       defaultNICModel,
+				Template:       defaultTemplate,
+				StorageDevices: defaultStorageDevices,
+				NetworkInterfaces: types.ListValueMust(
+					types.ObjectType{
+						AttrTypes: map[string]attr.Type{},
+					},
+					[]attr.Value{
+						types.ObjectValueMust(
+							map[string]attr.Type{},
+							map[string]attr.Value{},
+						),
+						types.ObjectValueMust(
+							map[string]attr.Type{},
+							map[string]attr.Value{},
+						),
+					},
+				),
+			},
+			expectShutdown: true,
+		},
+		{
+			name: "Hot resize with plan change and storage change - should require shutdown",
+			state: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:       types.StringValue("2xCPU-2GB"),
+				HotResize:  types.BoolValue(true),
+				Timezone:   defaultTimezone,
+				VideoModel: defaultVideoModel,
+				NICModel:   defaultNICModel,
+				Template: types.ListValueMust(
+					types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"size": types.Int64Type,
+						},
+					},
+					[]attr.Value{
+						types.ObjectValueMust(
+							map[string]attr.Type{
+								"size": types.Int64Type,
+							},
+							map[string]attr.Value{
+								"size": types.Int64Value(20),
+							},
+						),
+					},
+				),
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: true,
+		},
+		{
+			name: "Hot resize with plan change and template change - should require shutdown",
+			state: serverModel{
+				Plan:              types.StringValue("1xCPU-1GB"),
+				HotResize:         types.BoolValue(true),
+				Timezone:          defaultTimezone,
+				VideoModel:        defaultVideoModel,
+				NICModel:          defaultNICModel,
+				Template:          defaultTemplate,
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			plan: serverModel{
+				Plan:       types.StringValue("2xCPU-2GB"),
+				HotResize:  types.BoolValue(true),
+				Timezone:   defaultTimezone,
+				VideoModel: defaultVideoModel,
+				NICModel:   defaultNICModel,
+				Template: types.ListValueMust(
+					types.ObjectType{
+						AttrTypes: map[string]attr.Type{},
+					},
+					[]attr.Value{
+						types.ObjectValueMust(
+							map[string]attr.Type{},
+							map[string]attr.Value{},
+						),
+					},
+				),
+				StorageDevices:    defaultStorageDevices,
+				NetworkInterfaces: defaultNetworkInterfaces,
+			},
+			expectShutdown: true,
 		},
 	}
 

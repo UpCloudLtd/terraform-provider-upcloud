@@ -1226,9 +1226,22 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	// Check if plan is being changed and handle hot resize if enabled
-	if !plan.Plan.Equal(state.Plan) && plan.HotResize.ValueBool() {
-		// Attempt hot resize
+	// Determine what changes are needed
+	planChanged := !plan.Plan.Equal(state.Plan)
+	hotResizeEnabled := plan.HotResize.ValueBool()
+	needsServerStop := changeRequiresServerStop(state, plan)
+
+	// Server stop is required for certain changes - this takes precedence over hot resize
+	if needsServerStop {
+		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
+			UUID: uuid,
+		}, r.client)
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to stop server", utils.ErrorDiagnosticDetail(err))
+			return
+		}
+	} else if planChanged && hotResizeEnabled {
+		// Only attempt hot resize if no server stop is required
 		hotResizeReq := &request.ModifyServerRequest{
 			UUID: uuid,
 		}
@@ -1248,14 +1261,6 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 				"Hot resize failed",
 				fmt.Sprintf("Unable to hot resize server: %s. Hot resize requires the server to be in a state where it can be resized without a reboot. If hot resize is not possible, set hot_resize = false to use the standard approach with server reboot.", utils.ErrorDiagnosticDetail(err)),
 			)
-			return
-		}
-	} else if changeRequiresServerStop(state, plan) {
-		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
-			UUID: uuid,
-		}, r.client)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to stop server", utils.ErrorDiagnosticDetail(err))
 			return
 		}
 	}
