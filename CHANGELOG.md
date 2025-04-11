@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+- upcloud_server: add `hot_resize` attribute, allowing plan changes without server restarts when supported by the platform. See [UpCloud documentation](https://upcloud.com/docs/guides/scale-cloud-servers-hot-resize/) for more information.
+
 ## [5.20.5] - 2025-04-10
 
 ### Changed
