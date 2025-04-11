@@ -1,8 +1,18 @@
+variable "prefix" {
+  default = "tf-acc-test-mysql-props-"
+  type    = string
+}
+
+variable "zone" {
+  default = "fi-hel2"
+  type    = string
+}
+
 resource "upcloud_managed_database_mysql" "mysql_properties" {
-  name  = "mysql-properties-test"
-  title = "mysql-properties-test"
+  name  = "mysql-props-test"
+  title = "${var.prefix}db"
   plan  = "1x1xCPU-2GB-25GB"
-  zone  = "fi-hel2"
+  zone  = var.zone
   properties {
     innodb_read_io_threads        = 10
     innodb_flush_neighbors        = 0
