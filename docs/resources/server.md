@@ -62,6 +62,7 @@ resource "upcloud_server" "example" {
 - `cpu` (Number) The number of CPU cores for the server
 - `firewall` (Boolean) Are firewall rules active for the server
 - `host` (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
+- `hot_resize` (Boolean) If set to true, allows changing the server plan without requiring a reboot. This enables hot resizing of the server. If hot resizing fails, the apply operation will fail.
 - `labels` (Map of String) User defined key-value pairs to classify the server.
 - `mem` (Number) The amount of memory for the server (in megabytes)
 - `metadata` (Boolean) Is metadata service active for the server
