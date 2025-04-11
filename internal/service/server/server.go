@@ -94,6 +94,7 @@ type serverModel struct {
 	Login             types.Set    `tfsdk:"login"`
 	SimpleBackup      types.Set    `tfsdk:"simple_backup"`
 	BootOrder         types.String `tfsdk:"boot_order"`
+	HotResize         types.Bool   `tfsdk:"hot_resize"`
 }
 
 type networkInterfaceModel struct {
@@ -304,6 +305,12 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			"hot_resize": schema.BoolAttribute{
+				Description: "If set to true, allows changing the server plan without requiring a reboot. This enables hot resizing of the server. If hot resizing fails, the apply operation will fail.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -853,6 +860,11 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 	data.Plan = types.StringValue(server.Plan)
 	data.BootOrder = types.StringValue(server.BootOrder)
 
+	// Set hot_resize to false by default if not set
+	if data.HotResize.IsNull() {
+		data.HotResize = types.BoolValue(false)
+	}
+
 	if !data.Tags.IsNull() {
 		data.Tags, diags = types.SetValueFrom(ctx, data.Tags.ElementType(ctx), server.Tags)
 		respDiagnostics.Append(diags...)
@@ -1214,12 +1226,41 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if changeRequiresServerStop(state, plan) {
+	// Determine what changes are needed
+	planChanged := !plan.Plan.Equal(state.Plan)
+	hotResizeEnabled := plan.HotResize.ValueBool()
+	needsServerStop := changeRequiresServerStop(state, plan)
+
+	// Server stop is required for certain changes - this takes precedence over hot resize
+	if needsServerStop {
 		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{
 			UUID: uuid,
 		}, r.client)
 		if err != nil {
 			resp.Diagnostics.AddError("Unable to stop server", utils.ErrorDiagnosticDetail(err))
+			return
+		}
+	} else if planChanged && hotResizeEnabled {
+		// Only attempt hot resize if no server stop is required
+		hotResizeReq := &request.ModifyServerRequest{
+			UUID: uuid,
+		}
+
+		// Set the appropriate fields based on whether it's a custom plan
+		if plan.Plan.ValueString() == customPlanName {
+			hotResizeReq.CoreNumber = int(plan.CPU.ValueInt64())
+			hotResizeReq.MemoryAmount = int(plan.Mem.ValueInt64())
+		} else {
+			hotResizeReq.Plan = plan.Plan.ValueString()
+		}
+
+		_, err := r.client.ModifyServer(ctx, hotResizeReq)
+		if err != nil {
+			// If hot resize fails, return an error
+			resp.Diagnostics.AddError(
+				"Hot resize failed",
+				fmt.Sprintf("Unable to hot resize server: %s. Hot resize requires the server to be in a state where it can be resized without a reboot. If hot resize is not possible, set hot_resize = false to use the standard approach with server reboot.", utils.ErrorDiagnosticDetail(err)),
+			)
 			return
 		}
 	}
