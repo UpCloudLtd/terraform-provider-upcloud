@@ -1207,7 +1207,7 @@ func (r *serverResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var config, state, plan serverModel
-	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
