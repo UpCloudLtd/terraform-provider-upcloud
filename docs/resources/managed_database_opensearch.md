@@ -102,6 +102,7 @@ Optional Attributes:
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
 - `email_sender_username` (String) Sender username for Opensearch alerts.
 - `enable_remote_backed_storage` (Boolean) Enable remote-backed storage.
+- `enable_searchable_snapshots` (Boolean) Enable searchable snapshots.
 - `enable_security_audit` (Boolean) Enable/Disable security audit.
 - `http_max_content_length` (Number) Maximum content length for HTTP requests to the OpenSearch HTTP API, in bytes.
 - `http_max_header_size` (Number) The max size of allowed headers, in bytes.
