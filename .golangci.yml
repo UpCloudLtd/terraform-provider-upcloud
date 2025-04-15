@@ -50,6 +50,8 @@ issues:
         - bodyclose
 
 linters-settings:
+  govet:
+    enable: [nilness]
   goconst:
     min-len: 5
   predeclared:

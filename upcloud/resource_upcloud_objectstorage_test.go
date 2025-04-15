@@ -486,9 +486,7 @@ func verifyObjectStorageDoesNotExist(name string) resource.TestCheckFunc {
 				return err
 			}
 
-			if err == nil {
-				return fmt.Errorf("[ERROR] found instance %s : %s that should have been deleted", name, rs.Primary.ID)
-			}
+			return fmt.Errorf("[ERROR] found instance %s : %s that should have been deleted", name, rs.Primary.ID)
 		}
 		return nil
 	}
