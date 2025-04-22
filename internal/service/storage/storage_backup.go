@@ -8,6 +8,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -16,8 +17,9 @@ import (
 )
 
 var (
-	_ resource.Resource              = &storageBackupResource{}
-	_ resource.ResourceWithConfigure = &storageBackupResource{}
+	_ resource.Resource                = &storageBackupResource{}
+	_ resource.ResourceWithConfigure   = &storageBackupResource{}
+	_ resource.ResourceWithImportState = &storageBackupResource{}
 )
 
 type storageBackupResource struct {
@@ -51,6 +53,9 @@ func (r *storageBackupResource) Schema(_ context.Context, _ resource.SchemaReque
 			"source_storage": schema.StringAttribute{
 				Required:    true,
 				Description: "The UUID of the storage to back up.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"title": schema.StringAttribute{
 				Required:    true,
@@ -118,7 +123,7 @@ func (r *storageBackupResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	if data.SourceStorage.ValueString() == "" {
+	if data.ID.ValueString() == "" {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -158,12 +163,6 @@ func (r *storageBackupResource) Update(ctx context.Context, req resource.UpdateR
 	var state storageBackupModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Check if the source storage has changed
-	if data.SourceStorage.ValueString() != state.SourceStorage.ValueString() {
-		resp.Diagnostics.AddError("Source_storage cannot be changed", "Source_storage is immutable and cannot be changed.")
 		return
 	}
 
@@ -224,4 +223,12 @@ func (r *storageBackupResource) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	resp.State.RemoveResource(ctx)
+}
+
+func (r *storageBackupResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

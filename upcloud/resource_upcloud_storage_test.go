@@ -625,3 +625,33 @@ func testUpcloudStorageBackupConfig(backupTitle string) string {
 		}
 	`, backupTitle)
 }
+
+func TestAccUpCloudStorageBackup_import(t *testing.T) {
+	var backupDetails upcloud.StorageDetails
+
+	resourceName := "upcloud_storage_backup.this"
+	initialBackupTitle := "tf-acc-test-storage-backup-import"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageBackupDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create the backup resource
+			{
+				Config: testUpcloudStorageBackupConfig(initialBackupTitle),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckStorageExists(resourceName, &backupDetails),
+					resource.TestCheckResourceAttr(resourceName, "title", initialBackupTitle),
+				),
+			},
+			// Step 2: Import the backup using its ID
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"created_at", "source_storage"}, // optional: ignore if timestamp has formatting variation
+			},
+		},
+	})
+}
