@@ -36,5 +36,5 @@ resource "upcloud_kubernetes_node_group" "main" {
   cluster    = resource.upcloud_kubernetes_cluster.main.id
   node_count = 1
   name       = "small"
-  plan       = "1xCPU-1GB"
+  plan       = "1xCPU-2GB"
 }

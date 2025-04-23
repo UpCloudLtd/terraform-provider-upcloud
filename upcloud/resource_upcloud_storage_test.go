@@ -550,3 +550,108 @@ func createTempImage() (string, *hash.Hash, error) {
 
 	return imagePath, &sum, nil
 }
+
+// Test Storage Backup Resource
+func TestAccUpCloudStorageBackup_basic(t *testing.T) {
+	var storageDetails upcloud.StorageDetails
+	var backupDetails upcloud.StorageDetails
+
+	resourceName := "upcloud_storage_backup.this"
+	storageName := "upcloud_storage.test"
+
+	// Define test title updates
+	initialBackupTitle := "tf-acc-test-storage-backup"
+	updatedBackupTitle := "tf-acc-test-storage-backup-updated"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageBackupDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create Storage and Backup
+			{
+				Config: testUpcloudStorageBackupConfig(initialBackupTitle),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckStorageExists(storageName, &storageDetails),
+					testAccCheckStorageExists(resourceName, &backupDetails),
+					resource.TestCheckResourceAttr(resourceName, "title", initialBackupTitle),
+				),
+			},
+			// Step 2: Update the Backup Title
+			{
+				Config: testUpcloudStorageBackupConfig(updatedBackupTitle),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "title", updatedBackupTitle),
+				),
+			},
+		},
+	})
+}
+
+// Ensure that storage backups are properly removed
+func testAccCheckStorageBackupDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "upcloud_storage_backup" {
+			continue
+		}
+
+		client := testAccProvider.Meta().(*service.Service)
+		_, err := client.GetStorageDetails(context.Background(), &request.GetStorageDetailsRequest{
+			UUID: rs.Primary.ID,
+		})
+
+		if err == nil {
+			return fmt.Errorf("Backup still exists: %s", rs.Primary.ID)
+		}
+	}
+	return nil
+}
+
+// Generate Terraform Configuration for Storage & Backup
+func testUpcloudStorageBackupConfig(backupTitle string) string {
+	return fmt.Sprintf(`
+		// Step 1: Create a storage resource
+		resource "upcloud_storage" "test" {
+			size  = 10
+			tier  = "maxiops"
+			title = "tf-acc-test-storage"
+			zone  = "fi-hel1"
+		}
+
+		// Step 2: Create a backup from the storage
+		resource "upcloud_storage_backup" "this" {
+			source_storage = upcloud_storage.test.id
+			title          = "%s"
+		}
+	`, backupTitle)
+}
+
+func TestAccUpCloudStorageBackup_import(t *testing.T) {
+	var backupDetails upcloud.StorageDetails
+
+	resourceName := "upcloud_storage_backup.this"
+	initialBackupTitle := "tf-acc-test-storage-backup-import"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageBackupDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create the backup resource
+			{
+				Config: testUpcloudStorageBackupConfig(initialBackupTitle),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckStorageExists(resourceName, &backupDetails),
+					resource.TestCheckResourceAttr(resourceName, "title", initialBackupTitle),
+				),
+			},
+			// Step 2: Import the backup using its ID
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"created_at", "source_storage"}, // optional: ignore if timestamp has formatting variation
+			},
+		},
+	})
+}

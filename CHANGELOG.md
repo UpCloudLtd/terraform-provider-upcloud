@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- Added upcloud_storage_backup resource that creates a backup of a storage resource
+
 ## [5.21.0] - 2025-04-15
 
 ### Added

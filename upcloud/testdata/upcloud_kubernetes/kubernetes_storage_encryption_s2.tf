@@ -36,7 +36,7 @@ resource "upcloud_kubernetes_node_group" "main" {
   cluster    = resource.upcloud_kubernetes_cluster.main.id
   node_count = 1
   name       = "small"
-  plan       = "1xCPU-1GB"
+  plan       = "1xCPU-2GB"
 
   // This should not cause changes in the plan as the node group was created with clusters storage_encryption setting that matches the value defined here.
   storage_encryption = "data-at-rest"
