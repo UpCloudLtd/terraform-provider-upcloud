@@ -210,7 +210,6 @@ func (r *storageBackupResource) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	// Do we want to delete the snapshot from the system or only make TF think it is deleted?
 	deleteStorageRequest := &request.DeleteStorageRequest{
 		UUID: backupID,
 	}
