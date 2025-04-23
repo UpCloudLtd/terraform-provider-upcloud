@@ -78,17 +78,17 @@ export UPCLOUD_PASSWORD="verysecretpassword"
 
 To allow API access to your UpCloud account, you need to allow API connections
 by visiting [Account-page](https://hub.upcloud.com/account) in your UpCloud
-Hub. We recommend you to set up a sub-account specifically for the API usage
+Hub. We recommend you to set up a subaccount specifically for the API usage
 with its own username and password, as it allows you to assign specific
 permissions for increased security:
 
-1. Open the [People-page](https://hub.upcloud.com/people) in the UpCloud Hub
-2. Click **Add** in top-right corner and fill in the required details, and
-   check the **Allow API connections** checkbox to enable API for the
-   sub-account. You can also limit the API connections to a specific IP address
-   or address range for additional security
-3. Click the **Create subaccount** button at the bottom left of the page to
-   create the sub-account
+1. Open the [People-page](https://hub.upcloud.com/people) in the UpCloud Hub.
+2. Click **Create subaccount** in top-right corner and fill in the required
+   details and create the subaccount user.
+3. Once the user has been created, go to **Permissions** and select the user.
+   Then check the **Allow API connections** checkbox to enable API access for
+   the subaccount user. Note: You can also limit the API connections to a
+   specific IP address or address range for additional security.
 
 Below is an example configuration on how to create a server using the Terraform
 provider with Terraform 1.0.0 or later:
