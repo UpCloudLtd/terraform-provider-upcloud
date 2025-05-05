@@ -69,6 +69,7 @@ func TestUpcloudServer_minimal(t *testing.T) {
 			hostname = "tf-acc-test-server-minimal" 
 			zone     = "fi-hel2"
 			metadata = true
+			plan = "1xCPU-1GB" 
 
 			template {
 				storage = "%s"
@@ -107,6 +108,7 @@ func TestUpcloudServer_basic(t *testing.T) {
 			hostname = "tf-acc-test-server-basic"
 			title    = "tf-acc-test-server-basic"
 			metadata = true
+			plan = "1xCPU-1GB" 
 
 			labels   = {
 				env         = "dev",
@@ -237,6 +239,7 @@ func configSimpleBackup(time, plan string) string {
 			hostname = "tf-acc-test-server-simple-backup"
 			zone     = "fi-hel1"
 			metadata = true
+			plan = "1xCPU-1GB"
 
 			template {
 				storage = "%s"
