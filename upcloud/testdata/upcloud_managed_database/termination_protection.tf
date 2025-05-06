@@ -1,3 +1,5 @@
+// This file is used for the all test steps in the termination protection test. The variables below to define the changes between test steps.
+
 variable "prefix" {
   default = "tf-acc-test-db-termination-protection-"
   type    = string

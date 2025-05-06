@@ -1,6 +1,6 @@
 resource "upcloud_managed_database_opensearch" "opensearch_indices" {
   name  = "opensearch-indices-test-1"
-  title = "opensearch-indices-test-1"
+  title = "tf-acc-test-opensearch-indices-1"
   plan  = "1x2xCPU-4GB-80GB-1D"
   zone  = "fi-hel2"
   properties {
