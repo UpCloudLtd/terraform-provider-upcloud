@@ -103,7 +103,7 @@ func (r *storageBackupResource) Schema(_ context.Context, _ resource.SchemaReque
 				},
 			},
 			"zone": schema.StringAttribute{
-				MarkdownDescription: "The zone the storage is in, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
+				MarkdownDescription: "The zone the storage is in, e.g. `de-fra1`.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
