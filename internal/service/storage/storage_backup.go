@@ -79,7 +79,7 @@ func (r *storageBackupResource) Schema(_ context.Context, _ resource.SchemaReque
 				MarkdownDescription: encryptDescription,
 				Computed:            true,
 			},
-			"labels":        utils.ReadOnlyLabelsAttribute("storage"),
+			"labels":        utils.LabelsAttribute("storage"),
 			"system_labels": utils.SystemLabelsAttribute("storage"),
 			"size": schema.Int64Attribute{
 				MarkdownDescription: sizeDescription,
@@ -144,6 +144,26 @@ func (r *storageBackupResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labelsMap))
+
+	if len(labels) > 0 {
+		backupDetails, err = r.client.ModifyStorage(ctx, &request.ModifyStorageRequest{
+			UUID:   backupDetails.UUID,
+			Labels: &labels,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to modify the backup",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+	}
+
 	data.CreatedAt = types.StringValue(backupDetails.Created.Format(time.RFC3339))
 	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &backupDetails.Storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -199,28 +219,25 @@ func (r *storageBackupResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	updateRequired := false
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+	labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+
 	modifyStorageRequest := request.ModifyStorageRequest{
-		UUID: state.ID.ValueString(),
+		Labels: &labelsSlice,
+		Title:  data.Title.ValueString(),
+		UUID:   state.ID.ValueString(),
 	}
 
-	if data.Title.ValueString() != state.Title.ValueString() {
-		modifyStorageRequest.Title = data.Title.ValueString()
-		updateRequired = true
+	backupDetails, err := r.client.ModifyStorage(ctx, &modifyStorageRequest)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to update storage backup", utils.ErrorDiagnosticDetail(err))
+		return
 	}
 
-	if updateRequired {
-		_, err := r.client.ModifyStorage(ctx, &modifyStorageRequest)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to update storage backup", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-	}
-
-	data.ID = state.ID
-	data.CreatedAt = state.CreatedAt
-	data.SourceStorage = state.SourceStorage
-
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &backupDetails.Storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 

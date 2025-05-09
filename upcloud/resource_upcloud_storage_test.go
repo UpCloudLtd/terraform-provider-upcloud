@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -570,7 +571,7 @@ func TestAccUpCloudStorageBackup_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Step 1: Create Storage and Backup
 			{
-				Config: testUpcloudStorageBackupConfig(initialBackupTitle),
+				Config: testUpcloudStorageBackupConfig(initialBackupTitle, nil),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckStorageExists(storageName, &storageDetails),
 					testAccCheckStorageExists(resourceName, &backupDetails),
@@ -579,7 +580,7 @@ func TestAccUpCloudStorageBackup_basic(t *testing.T) {
 			},
 			// Step 2: Update the Backup Title
 			{
-				Config: testUpcloudStorageBackupConfig(updatedBackupTitle),
+				Config: testUpcloudStorageBackupConfig(updatedBackupTitle, nil),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "title", updatedBackupTitle),
 				),
@@ -608,7 +609,16 @@ func testAccCheckStorageBackupDestroy(s *terraform.State) error {
 }
 
 // Generate Terraform Configuration for Storage & Backup
-func testUpcloudStorageBackupConfig(backupTitle string) string {
+func testUpcloudStorageBackupConfig(backupTitle string, labels map[string]string) string {
+	labelsAttr := ""
+	if len(labels) > 0 {
+		labelsArr := []string{}
+		for key, value := range labels {
+			labelsArr = append(labelsArr, fmt.Sprintf(`%s = "%s" `, key, value))
+		}
+		labelsAttr = fmt.Sprintf("labels = { %s }", strings.Join(labelsArr, ", "))
+	}
+
 	return fmt.Sprintf(`
 		// Step 1: Create a storage resource
 		resource "upcloud_storage" "test" {
@@ -622,15 +632,16 @@ func testUpcloudStorageBackupConfig(backupTitle string) string {
 		resource "upcloud_storage_backup" "this" {
 			source_storage = upcloud_storage.test.id
 			title          = "%s"
+			%s
 		}
-	`, backupTitle)
+	`, backupTitle, labelsAttr)
 }
 
-func TestAccUpCloudStorageBackup_import(t *testing.T) {
+func TestAccUpCloudStorageBackup_labels(t *testing.T) {
 	var backupDetails upcloud.StorageDetails
 
 	resourceName := "upcloud_storage_backup.this"
-	initialBackupTitle := "tf-acc-test-storage-backup-import"
+	title := "tf-acc-test-storage-backup-labels"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -639,10 +650,16 @@ func TestAccUpCloudStorageBackup_import(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Step 1: Create the backup resource
 			{
-				Config: testUpcloudStorageBackupConfig(initialBackupTitle),
+				Config: testUpcloudStorageBackupConfig(title, map[string]string{
+					"animal": "cow",
+					"fruit":  "banana",
+					"planet": "pluto",
+				}),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckStorageExists(resourceName, &backupDetails),
-					resource.TestCheckResourceAttr(resourceName, "title", initialBackupTitle),
+					resource.TestCheckResourceAttr(resourceName, "title", title),
+					resource.TestCheckResourceAttr(
+						resourceName, "labels.%", "3"),
 				),
 			},
 			// Step 2: Import the backup using its ID
@@ -651,6 +668,19 @@ func TestAccUpCloudStorageBackup_import(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"created_at", "source_storage"}, // optional: ignore if timestamp has formatting variation
+			},
+			// Step 3: Modify backup labels
+			{
+				Config: testUpcloudStorageBackupConfig(title, map[string]string{
+					"animal": "cow",
+					"fruit":  "orange",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckStorageExists(resourceName, &backupDetails),
+					resource.TestCheckResourceAttr(resourceName, "title", title),
+					resource.TestCheckResourceAttr(
+						resourceName, "labels.%", "2"),
+				),
 			},
 		},
 	})
