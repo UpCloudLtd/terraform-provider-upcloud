@@ -1,11 +1,39 @@
 package upcloud
 
 import (
+	"context"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
+	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"golang.org/x/mod/semver"
 )
+
+// getLatestVersions fetches the latest Kubernetes versions from the UpCloud API
+// and returns the two most recent versions as strings.
+func getLatestVersions(t *testing.T) (string, string) {
+	t.Helper()
+
+	client := utils.NewServiceWithCredentialsFromEnv(t)
+	versions, err := client.GetKubernetesVersions(context.Background(), &request.GetKubernetesVersionsRequest{})
+	if err != nil {
+		return "", ""
+	}
+
+	var v []string
+	for _, version := range versions {
+		v = append(v, version.Id)
+	}
+	semver.Sort(v)
+
+	n := len(v)
+	if n < 2 {
+		return v[0], v[0]
+	}
+	return v[n-2], v[n-1]
+}
 
 func TestAccUpcloudKubernetes(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s1.tf")
@@ -16,9 +44,18 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 	g2Name := "upcloud_kubernetes_node_group.g2"
 	g3Name := "upcloud_kubernetes_node_group.g3"
 
+	s1Version, s2Version := getLatestVersions(t)
+
+	variables := func(version string) map[string]config.Variable {
+		return map[string]config.Variable{
+			"ver": config.StringVariable(version),
+		}
+	}
+
 	verifyImportStep := func(name string, ignore ...string) resource.TestStep {
 		return resource.TestStep{
 			Config:                  testDataS1,
+			ConfigVariables:         variables(s1Version),
 			ResourceName:            name,
 			ImportState:             true,
 			ImportStateVerify:       true,
@@ -31,11 +68,12 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testDataS1,
+				Config:          testDataS1,
+				ConfigVariables: variables(s1Version),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckTypeSetElemAttr(cName, "control_plane_ip_filter.*", "0.0.0.0/0"),
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
-					resource.TestCheckResourceAttr(cName, "version", "1.31"),
+					resource.TestCheckResourceAttr(cName, "version", s1Version),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(g1Name, "name", "small"),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
@@ -83,9 +121,11 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 			verifyImportStep(g3Name),
 			{
 				Config: testDataS2,
+				// Test cluster upgrade
+				ConfigVariables: variables(s2Version),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "control_plane_ip_filter.#", "0"),
-					resource.TestCheckResourceAttr(cName, "version", "1.31"),
+					resource.TestCheckResourceAttr(cName, "version", s2Version),
 					resource.TestCheckResourceAttr(g1Name, "node_count", "1"),
 					resource.TestCheckResourceAttr(g2Name, "node_count", "2"),
 				),

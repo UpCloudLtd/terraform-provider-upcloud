@@ -27,8 +27,11 @@ const (
 	planDescription                     = "The pricing plan used for the cluster. You can list available plans with `upctl kubernetes plans`."
 	privateNodeGroupsDescription        = "Enable private node groups. Private node groups requires a network that is routed through NAT gateway."
 	stateDescription                    = "Operational state of the cluster."
-	versionDescription                  = "Kubernetes version ID, e.g. `1.31`. You can list available version IDs with `upctl kubernetes versions`."
-	zoneDescription                     = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`."
+	versionDescription                  = `Kubernetes version ID, e.g. ` + "`" + `1.31` + "`" + `. You can list available version IDs with ` + "`" + `upctl kubernetes versions` + "`" + `.
+
+    Note that when changing the cluster version, ` + "`" + `upgrade_strategy` + "`" + ` will be taken into account.`
+	upgradeStrategyDescription = "The upgrade strategy to use when changing the cluster `version`. If not set, `manual` strategy will be used by default. When using `manual` strategy, you must replace the existing node-groups to update them."
+	zoneDescription            = "Zone in which the Kubernetes cluster will be hosted, e.g. `de-fra1`. You can list available zones with `upctl zone list`."
 
 	resourceNameMaxLength = 63
 	resourceNameRegexpStr = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"

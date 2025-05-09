@@ -8,6 +8,11 @@ variable "zone" {
   type    = string
 }
 
+variable "ver" {
+  default = "1.31"
+  type    = string
+}
+
 resource "upcloud_network" "main" {
   name = "${var.basename}net"
   zone = var.zone
@@ -26,6 +31,7 @@ resource "upcloud_kubernetes_cluster" "main" {
   control_plane_ip_filter = []
   name                    = "${var.basename}cluster"
   network                 = upcloud_network.main.id
+  version                 = var.ver
   zone                    = var.zone
 }
 

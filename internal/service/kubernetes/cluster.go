@@ -59,6 +59,7 @@ type kubernetesClusterModel struct {
 	State                types.String `tfsdk:"state"`
 	StorageEncryption    types.String `tfsdk:"storage_encryption"`
 	Version              types.String `tfsdk:"version"`
+	UpgradeStrategyType  types.String `tfsdk:"upgrade_strategy_type"`
 	Zone                 types.String `tfsdk:"zone"`
 }
 
@@ -150,8 +151,17 @@ func (r *kubernetesClusterResource) Schema(_ context.Context, _ resource.SchemaR
 				Computed:            true,
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"upgrade_strategy_type": schema.StringAttribute{
+				MarkdownDescription: upgradeStrategyDescription,
+				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.KubernetesUpgradeStrategyManual),
+						string(upcloud.KubernetesUpgradeStrategyRollingUpdate),
+					),
 				},
 			},
 			"zone": schema.StringAttribute{
@@ -292,20 +302,21 @@ func (r *kubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
 }
 
 func (r *kubernetesClusterResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data kubernetesClusterModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	var state, plan kubernetesClusterModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
 	var labels map[string]string
-	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
-		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
 	}
 	labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
 
 	var ipFilter []string
-	resp.Diagnostics.Append(data.ControlPlaneIPFilter.ElementsAs(ctx, &ipFilter, false)...)
+	resp.Diagnostics.Append(plan.ControlPlaneIPFilter.ElementsAs(ctx, &ipFilter, false)...)
 
 	apiReq := &request.ModifyKubernetesClusterRequest{
-		ClusterUUID: data.ID.ValueString(),
+		ClusterUUID: plan.ID.ValueString(),
 		Cluster: request.ModifyKubernetesCluster{
 			ControlPlaneIPFilter: &ipFilter,
 			Labels:               &labelsSlice,
@@ -321,9 +332,34 @@ func (r *kubernetesClusterResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
+	if !state.Version.Equal(plan.Version) {
+		upgradeReq := request.UpgradeKubernetesClusterRequest{
+			ClusterUUID: plan.ID.ValueString(),
+			Upgrade: upcloud.KubernetesClusterUpgrade{
+				Version: plan.Version.ValueString(),
+			},
+		}
+
+		strategyType := plan.UpgradeStrategyType.ValueString()
+		if strategyType != "" {
+			upgradeReq.Upgrade.Strategy = &upcloud.KubernetesClusterUpgradeStrategy{
+				Type: upcloud.KubernetesUpgradeStrategy(strategyType),
+			}
+		}
+
+		_, err := r.client.UpgradeKubernetesCluster(ctx, &upgradeReq)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to upgrade Kubernetes cluster",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+	}
+
 	cluster, err := r.client.WaitForKubernetesClusterState(ctx, &request.WaitForKubernetesClusterStateRequest{
 		DesiredState: upcloud.KubernetesClusterStateRunning,
-		UUID:         data.ID.ValueString(),
+		UUID:         plan.ID.ValueString(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -333,8 +369,8 @@ func (r *kubernetesClusterResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	resp.Diagnostics.Append(setClusterValues(ctx, &data, cluster)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(setClusterValues(ctx, &plan, cluster)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *kubernetesClusterResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
