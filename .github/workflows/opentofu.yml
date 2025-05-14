@@ -1,4 +1,4 @@
-name: OpenTofu Tests
+name: OpenTofu
 
 on:
   workflow_dispatch:
