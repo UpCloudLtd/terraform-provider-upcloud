@@ -1,0 +1,13 @@
+name: OpenTofu Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  Test:
+    uses: ./.github/workflows/acctest.yml
+    with:
+      tool: tofu
+    secrets: inherit
