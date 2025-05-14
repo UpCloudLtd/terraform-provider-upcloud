@@ -20,7 +20,7 @@ func TestAccDataSourceUpcloudManagedObjectStorageRegions(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "regions.#"),
 					resource.TestCheckTypeSetElemNestedAttrs(name, "regions.*", map[string]string{
-						"name":         "europe-2",
+						"name":         "europe-1",
 						"primary_zone": "fi-hel2",
 					}),
 				),
