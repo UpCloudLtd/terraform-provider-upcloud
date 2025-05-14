@@ -1,4 +1,4 @@
-name: UpCloud Terraform provider tests
+name: Terraform Tests
 
 on:
   pull_request:
@@ -8,45 +8,9 @@ on:
       - internal/**
       - upcloud/**
 
-concurrency:
-  group: ${{ github.repository }}-${{ github.workflow }}
-  cancel-in-progress: false
-
 jobs:
   Test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version-file: 'go.mod'
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
-        with:
-          terraform_wrapper: false
-      - name: Run unit tests
-        run: make test
-      - name: Run acceptance tests
-        env:
-          UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
-          UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
-        if: env.UPCLOUD_PASSWORD != ''
-        run: make testacc
-  Cleanup:
-    runs-on: ubuntu-latest
-    needs: Test
-    if: ${{ always() }}
-    steps:
-      - name: Install upctl
-        uses: UpCloudLtd/upcloud-cli-action@v0.1.1
-        with:
-          username: ${{ secrets.UPCLOUD_USERNAME }}
-          password: ${{ secrets.UPCLOUD_PASSWORD }}
-      - name: Purge resources
-        timeout-minutes: 5
-        run: upctl all purge --include *tf-acc-test* --exclude *persistent*
-      - name: List remaining resources
-        run: upctl all list --include *tf-acc-test* --exclude *persistent*
-        if: ${{ failure() }}
+    uses: ./.github/workflows/acctest.yml
+    with:
+      tool: terraform
+    secrets: inherit
