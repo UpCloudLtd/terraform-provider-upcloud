@@ -6,7 +6,6 @@ on:
       tool:
         description: 'Tool to use for the acceptance tests'
         required: true
-        default: tofu
         type: string
 
 concurrency:
@@ -45,6 +44,9 @@ jobs:
           echo "TF_ACC_PROVIDER_NAMESPACE=hashicorp" >> "$GITHUB_ENV"
           echo "TF_ACC_PROVIDER_HOST=registry.opentofu.org" >> "$GITHUB_ENV"
         if: inputs.tool == 'tofu'
+      - name: "Print ${{ inputs.tool }} version"
+        run: |
+          ${{ inputs.tool }} version
       - name: Run unit tests
         run: make test
       - name: Run acceptance tests
