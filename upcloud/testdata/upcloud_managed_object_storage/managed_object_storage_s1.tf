@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "tf-acc-test-objsto2-"
+  default = "tf-acc-test-objstov2-"
   type    = string
 }
 
@@ -31,7 +31,7 @@ resource "upcloud_network" "this" {
 }
 
 resource "upcloud_managed_object_storage" "this" {
-  name              = "tf-acc-test-objstov2-complex"
+  name              = "${var.prefix}complex"
   region            = var.region
   configured_status = "started"
 
@@ -55,7 +55,7 @@ resource "upcloud_managed_object_storage" "this" {
 }
 
 resource "upcloud_managed_object_storage" "minimal" {
-  name              = "tf-acc-test-objstov2-minimal"
+  name              = "${var.prefix}minimal"
   region            = var.region
   configured_status = "started"
 

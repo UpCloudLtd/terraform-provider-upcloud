@@ -1,8 +1,18 @@
+variable "prefix" {
+  default = "tf-acc-test-postgresql-props-"
+  type    = string
+}
+
+variable "zone" {
+  default = "fi-hel1"
+  type    = string
+}
+
 resource "upcloud_managed_database_postgresql" "postgresql_properties" {
-  name  = "postgresql-properties-test"
-  title = "postgresql-properties-test"
+  name  = "postgresql-props-test"
+  title = "${var.prefix}db"
   plan  = "1x1xCPU-2GB-25GB"
-  zone  = "fi-hel1"
+  zone  = var.zone
   properties {
     timezone                            = "Europe/Helsinki"
     admin_username                      = "demoadmin"

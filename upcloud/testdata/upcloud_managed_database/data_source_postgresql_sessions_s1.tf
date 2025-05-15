@@ -1,6 +1,6 @@
 resource "upcloud_managed_database_postgresql" "postgresql_sessions" {
   name  = "postgresql-sessions-test-1"
-  title = "postgresql-sessions-test-1"
+  title = "tf-acc-test-postgresql-sessions-1"
   plan  = "1x1xCPU-2GB-25GB"
   zone  = "fi-hel2"
 }

@@ -39,19 +39,14 @@ jobs:
     needs: Test
     if: ${{ always() }}
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
       - name: Install upctl
-        run: go install github.com/UpCloudLtd/upcloud-cli/v3/...@latest
+        uses: UpCloudLtd/upcloud-cli-action@v0.1.1
+        with:
+          username: ${{ secrets.UPCLOUD_USERNAME_ALT }}
+          password: ${{ secrets.UPCLOUD_PASSWORD_ALT }}
       - name: Purge resources
         timeout-minutes: 5
-        env:
-          UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME_ALT }}
-          UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD_ALT }}
         run: upctl all purge --include *tf-acc-test* --exclude *persistent*
       - name: List remaining resources
-        env:
-          UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME_ALT }}
-          UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD_ALT }}
         run: upctl all list --include *tf-acc-test* --exclude *persistent*
         if: ${{ failure() }}

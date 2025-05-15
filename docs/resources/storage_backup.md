@@ -27,7 +27,17 @@ resource "upcloud_storage_backup" "backup_1" {
 - `source_storage` (String) The UUID of the storage to back up.
 - `title` (String) Title of the backup.
 
+### Optional Attributes
+
+- `labels` (Map of String) User defined key-value pairs to classify the storage.
+
 ### Read-Only
 
 - `created_at` (String) Timestamp of the backup creation.
+- `encrypt` (Boolean) Sets if the storage is encrypted at rest.
 - `id` (String) ID of the created backup.
+- `size` (Number) The size of the storage in gigabytes.
+- `system_labels` (Map of String) System defined key-value pairs to classify the storage. The keys of system defined labels are prefixed with underscore and can not be modified by the user.
+- `tier` (String) The tier of the storage.
+- `type` (String) The type of the storage.
+- `zone` (String) The zone the storage is in, e.g. `de-fra1`.

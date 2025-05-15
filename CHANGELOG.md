@@ -5,9 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.22.0] - 2025-05-12
+
 ### Added
 
-- Added upcloud_storage_backup resource that creates a backup of a storage resource
+- Added upcloud_storage_backup resource that creates a backup of a storage resource.
+- upcloud_kubernetes_cluster: add support for upgrading cluster version.
 
 ## [5.21.0] - 2025-04-15
 
@@ -945,7 +948,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.21.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.22.0...HEAD
+[5.22.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.21.0...v5.22.0
 [5.21.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.5...v5.21.0
 [5.20.5]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.4...v5.20.5
 [5.20.4]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.20.3...v5.20.4

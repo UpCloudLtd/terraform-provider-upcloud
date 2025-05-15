@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -41,9 +42,8 @@ func (r *storageBackupResource) Configure(_ context.Context, req resource.Config
 
 type storageBackupModel struct {
 	SourceStorage types.String `tfsdk:"source_storage"`
-	Title         types.String `tfsdk:"title"`
-	ID            types.String `tfsdk:"id"`
 	CreatedAt     types.String `tfsdk:"created_at"`
+	storageCommonModel
 }
 
 func (r *storageBackupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -71,6 +71,40 @@ func (r *storageBackupResource) Schema(_ context.Context, _ resource.SchemaReque
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp of the backup creation.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"encrypt": schema.BoolAttribute{
+				MarkdownDescription: encryptDescription,
+				Computed:            true,
+			},
+			"labels":        utils.LabelsAttribute("storage"),
+			"system_labels": utils.SystemLabelsAttribute("storage"),
+			"size": schema.Int64Attribute{
+				MarkdownDescription: sizeDescription,
+				Computed:            true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
+			},
+			"tier": schema.StringAttribute{
+				MarkdownDescription: tierDescription,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"type": schema.StringAttribute{
+				MarkdownDescription: typeDescription,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"zone": schema.StringAttribute{
+				MarkdownDescription: "The zone the storage is in, e.g. `de-fra1`.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -110,8 +144,28 @@ func (r *storageBackupResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := utils.NilAsEmptyList(utils.LabelsMapToSlice(labelsMap))
+
+	if len(labels) > 0 {
+		backupDetails, err = r.client.ModifyStorage(ctx, &request.ModifyStorageRequest{
+			UUID:   backupDetails.UUID,
+			Labels: &labels,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to modify the backup",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+	}
+
 	data.CreatedAt = types.StringValue(backupDetails.Created.Format(time.RFC3339))
-	data.ID = types.StringValue(backupDetails.UUID)
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &backupDetails.Storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -144,9 +198,8 @@ func (r *storageBackupResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	data.ID = types.StringValue(backupDetails.UUID)
 	data.CreatedAt = types.StringValue(backupDetails.Created.Format(time.RFC3339))
-	data.Title = types.StringValue(backupDetails.Title)
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &backupDetails.Storage)...)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -166,28 +219,25 @@ func (r *storageBackupResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	updateRequired := false
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+	labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+
 	modifyStorageRequest := request.ModifyStorageRequest{
-		UUID: state.ID.ValueString(),
+		Labels: &labelsSlice,
+		Title:  data.Title.ValueString(),
+		UUID:   state.ID.ValueString(),
 	}
 
-	if data.Title.ValueString() != state.Title.ValueString() {
-		modifyStorageRequest.Title = data.Title.ValueString()
-		updateRequired = true
+	backupDetails, err := r.client.ModifyStorage(ctx, &modifyStorageRequest)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to update storage backup", utils.ErrorDiagnosticDetail(err))
+		return
 	}
 
-	if updateRequired {
-		_, err := r.client.ModifyStorage(ctx, &modifyStorageRequest)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to update storage backup", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-	}
-
-	data.ID = state.ID
-	data.CreatedAt = state.CreatedAt
-	data.SourceStorage = state.SourceStorage
-
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.storageCommonModel, &backupDetails.Storage)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 

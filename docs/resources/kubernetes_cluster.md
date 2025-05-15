@@ -93,7 +93,10 @@ resource "upcloud_kubernetes_cluster" "example2" {
 - `plan` (String) The pricing plan used for the cluster. You can list available plans with `upctl kubernetes plans`.
 - `private_node_groups` (Boolean) Enable private node groups. Private node groups requires a network that is routed through NAT gateway.
 - `storage_encryption` (String) Set default storage encryption strategy for all nodes in the cluster.
+- `upgrade_strategy_type` (String) The upgrade strategy to use when changing the cluster `version`. If not set, `manual` strategy will be used by default. When using `manual` strategy, you must replace the existing node-groups to update them.
 - `version` (String) Kubernetes version ID, e.g. `1.31`. You can list available version IDs with `upctl kubernetes versions`.
+
+    Note that when changing the cluster version, `upgrade_strategy` will be taken into account.
 
 ### Read-Only
 
