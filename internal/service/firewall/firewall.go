@@ -57,9 +57,9 @@ func (r *firewallRulesResource) Configure(_ context.Context, req resource.Config
 }
 
 type firewallRulesModel struct {
-	ID           types.String        `tfsdk:"id"`
-	ServerID     types.String        `tfsdk:"server_id"`
-	FirewallRule []firewallRuleModel `tfsdk:"firewall_rule"`
+	ID           types.String `tfsdk:"id"`
+	ServerID     types.String `tfsdk:"server_id"`
+	FirewallRule types.List   `tfsdk:"firewall_rule"`
 }
 
 type firewallRuleModel struct {
@@ -88,7 +88,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"server_id": schema.StringAttribute{
 				Required:    true,
-				Description: "The UUID of the server to be protected the firewall rules",
+				Description: "The UUID of the server to be protected with the firewall rules.",
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -97,7 +97,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"action": schema.StringAttribute{
-							Description: `The action to take on the packet. Possible values are "accept" and "drop".`,
+							Description: "Action to take if the rule conditions are met. Valid values `accept | drop`.",
 							Required:    true,
 							Validators: []validator.String{
 								stringvalidator.OneOf("accept", "drop"),
@@ -106,6 +106,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"comment": schema.StringAttribute{
 							Description: "A comment for the rule.",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(0, 250),
 							},
@@ -113,6 +114,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"destination_address_start": schema.StringAttribute{
 							Description: "The destination address range starts from this address",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty)),
 							},
@@ -120,6 +122,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"destination_address_end": schema.StringAttribute{
 							Description: "The destination address range ends from this address",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty)),
 							},
@@ -127,19 +130,21 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"destination_port_start": schema.StringAttribute{
 							Description: "The destination port range starts from this port number",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
-								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsPortNumber, validation.StringIsEmpty)),
+								portValidator{},
 							},
 						},
 						"destination_port_end": schema.StringAttribute{
 							Description: "The destination port range ends from this port number",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
-								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsPortNumber, validation.StringIsEmpty)),
+								portValidator{},
 							},
 						},
 						"direction": schema.StringAttribute{
-							Description: "The direction of network traffic this rule will be applied to. Possible values are `in` and `out`.",
+							Description: "The direction of network traffic this rule will be applied to. Valid values are `in` and `out`.",
 							Required:    true,
 							Validators: []validator.String{
 								stringvalidator.OneOf("in", "out"),
@@ -148,6 +153,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"family": schema.StringAttribute{
 							Description: "The address family of new firewall rule",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								stringvalidator.OneOf("IPv4", "IPv6"),
 							},
@@ -155,6 +161,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"icmp_type": schema.StringAttribute{
 							Description: "The ICMP type of the rule. Only valid if protocol is ICMP.",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(0, 255),
 							},
@@ -162,6 +169,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"protocol": schema.StringAttribute{
 							Description: "The protocol of the rule. Possible values are `` (empty), `tcp`, `udp`, `icmp`.",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								stringvalidator.OneOf("", "tcp", "udp", "icmp"),
 							},
@@ -169,6 +177,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"source_address_start": schema.StringAttribute{
 							Description: "The source address range starts from this address",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty)),
 							},
@@ -176,6 +185,7 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"source_address_end": schema.StringAttribute{
 							Description: "The source address range ends from this address",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
 								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsIPv4Address, validation.IsIPv6Address, validation.StringIsEmpty)),
 							},
@@ -183,15 +193,17 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 						"source_port_start": schema.StringAttribute{
 							Description: "The source port range starts from this port number",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
-								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsPortNumber, validation.StringIsEmpty)),
+								portValidator{},
 							},
 						},
 						"source_port_end": schema.StringAttribute{
 							Description: "The source port range ends from this port number",
 							Optional:    true,
+							Computed:    true,
 							Validators: []validator.String{
-								validatorutil.NewFrameworkStringValidator(validation.Any(validation.IsPortNumber, validation.StringIsEmpty)),
+								portValidator{},
 							},
 						},
 					},
@@ -201,33 +213,57 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 	}
 }
 
-func setValues(_ context.Context, data *firewallRulesModel, firewallRules *upcloud.FirewallRules) diag.Diagnostics {
+func setValues(ctx context.Context, data *firewallRulesModel, firewallRules *upcloud.FirewallRules) (diags diag.Diagnostics) {
 	if firewallRules == nil || firewallRules.FirewallRules == nil {
 		return nil
 	}
 
-	data.FirewallRule = make([]firewallRuleModel, len(firewallRules.FirewallRules))
-	for i, rule := range firewallRules.FirewallRules {
-		data.FirewallRule[i].Action = types.StringValue(rule.Action)
-		data.FirewallRule[i].Comment = types.StringValue(rule.Comment)
-		data.FirewallRule[i].DestinationAddressStart = types.StringValue(rule.DestinationAddressStart)
-		data.FirewallRule[i].DestinationAddressEnd = types.StringValue(rule.DestinationAddressEnd)
-		data.FirewallRule[i].DestinationPortStart = types.StringValue(rule.DestinationPortStart)
-		data.FirewallRule[i].DestinationPortEnd = types.StringValue(rule.DestinationPortEnd)
-		data.FirewallRule[i].Direction = types.StringValue(rule.Direction)
-		data.FirewallRule[i].Family = types.StringValue(rule.Family)
-		data.FirewallRule[i].ICMPType = types.StringValue(rule.ICMPType)
-		data.FirewallRule[i].Protocol = types.StringValue(rule.Protocol)
-		data.FirewallRule[i].SourceAddressStart = types.StringValue(rule.SourceAddressStart)
-		data.FirewallRule[i].SourceAddressEnd = types.StringValue(rule.SourceAddressEnd)
-		data.FirewallRule[i].SourcePortStart = types.StringValue(rule.SourcePortStart)
-		data.FirewallRule[i].SourcePortEnd = types.StringValue(rule.SourcePortEnd)
+	data.ID = types.StringValue(data.ServerID.ValueString())
+
+	var dataFirewallRules []firewallRuleModel
+	// data.FirewallRule is unknown when importing existing resource.
+	if data.FirewallRule.IsNull() || data.FirewallRule.IsUnknown() {
+		dataFirewallRules = make([]firewallRuleModel, len(firewallRules.FirewallRules))
+	} else {
+		diags.Append(data.FirewallRule.ElementsAs(ctx, &dataFirewallRules, false)...)
+		if diags.HasError() {
+			return
+		}
 	}
 
-	return nil
+	for i, rule := range firewallRules.FirewallRules {
+		dataFirewallRules[i].Action = types.StringValue(rule.Action)
+		dataFirewallRules[i].Comment = types.StringValue(rule.Comment)
+
+		dataFirewallRules[i].DestinationAddressStart = types.StringValue(rule.DestinationAddressStart)
+		dataFirewallRules[i].DestinationAddressEnd = types.StringValue(rule.DestinationAddressEnd)
+		dataFirewallRules[i].DestinationPortStart = types.StringValue(rule.DestinationPortStart)
+		dataFirewallRules[i].DestinationPortEnd = types.StringValue(rule.DestinationPortEnd)
+
+		dataFirewallRules[i].Direction = types.StringValue(rule.Direction)
+		dataFirewallRules[i].Family = types.StringValue(rule.Family)
+		dataFirewallRules[i].ICMPType = types.StringValue(rule.ICMPType)
+		dataFirewallRules[i].Protocol = types.StringValue(rule.Protocol)
+
+		dataFirewallRules[i].SourceAddressStart = types.StringValue(rule.SourceAddressStart)
+		dataFirewallRules[i].SourceAddressEnd = types.StringValue(rule.SourceAddressEnd)
+		dataFirewallRules[i].SourcePortStart = types.StringValue(rule.SourcePortStart)
+		dataFirewallRules[i].SourcePortEnd = types.StringValue(rule.SourcePortEnd)
+	}
+
+	data.FirewallRule, diags = types.ListValueFrom(ctx, data.FirewallRule.ElementType(ctx), dataFirewallRules)
+	return
 }
 
-func buildFirewallRules(_ context.Context, planFirewallRules []firewallRuleModel) ([]upcloud.FirewallRule, diag.Diagnostics) {
+func buildFirewallRules(ctx context.Context, plan firewallRulesModel) ([]upcloud.FirewallRule, diag.Diagnostics) {
+	var planFirewallRules []firewallRuleModel
+	var diags diag.Diagnostics
+
+	diags.Append(plan.FirewallRule.ElementsAs(ctx, &planFirewallRules, false)...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
 	firewallRules := make([]upcloud.FirewallRule, 0)
 	for _, rule := range planFirewallRules {
 		firewallRules = append(firewallRules, upcloud.FirewallRule{
@@ -259,7 +295,7 @@ func (r *firewallRulesResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	apiFirewallRules, diags := buildFirewallRules(ctx, data.FirewallRule)
+	apiFirewallRules, diags := buildFirewallRules(ctx, data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -291,7 +327,7 @@ func (r *firewallRulesResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	if data.ID.ValueString() == "" {
+	if data.ID.ValueString() == "" && data.ServerID.ValueString() == "" {
 		resp.State.RemoveResource(ctx)
 
 		return
@@ -324,7 +360,7 @@ func (r *firewallRulesResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	apiFirewallRules, diags := buildFirewallRules(ctx, data.FirewallRule)
+	apiFirewallRules, diags := buildFirewallRules(ctx, data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -368,9 +404,6 @@ func (r *firewallRulesResource) Delete(ctx context.Context, req resource.DeleteR
 		)
 		return
 	}
-
-	resp.Diagnostics.Append(setValues(ctx, &data, &upcloud.FirewallRules{FirewallRules: nil})...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *firewallRulesResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

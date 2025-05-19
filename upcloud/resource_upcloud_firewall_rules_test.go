@@ -302,7 +302,7 @@ func testUpcloudFirewallRulesInstanceConfigUpdate() string {
 				comment = "Allow SSH from this network"
 				destination_address_end = ""
 				destination_address_start = ""
-				destination_port_end = 22
+				destination_port_end = "22"
 				destination_port_start = 22
 				direction = "in"
 				family = "IPv4"
@@ -318,7 +318,7 @@ func testUpcloudFirewallRulesInstanceConfigUpdate() string {
 				destination_address_end = ""
 				destination_address_start = ""
 				destination_port_end = 22
-				destination_port_start = 22
+				destination_port_start = "22"
 				direction = "in"
 				family = "IPv4"
 				icmp_type = ""
