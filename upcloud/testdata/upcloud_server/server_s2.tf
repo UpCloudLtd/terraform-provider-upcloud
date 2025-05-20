@@ -21,6 +21,7 @@ resource "upcloud_network" "n1" {
 resource "upcloud_server" "server1" {
   hostname = "${var.prefix}server1"
   zone     = var.zone
+  plan     = "1xCPU-2GB"
 
   network_interface {
     type       = "private"
