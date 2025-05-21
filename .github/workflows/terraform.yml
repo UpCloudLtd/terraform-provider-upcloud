@@ -1,6 +1,9 @@
 name: Terraform
 
 on:
+  # TODO: remove this when switching to OpenTofu, see ./opentofu.yml
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
     paths:
       - .github/workflows/terraform.yml
