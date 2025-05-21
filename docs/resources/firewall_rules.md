@@ -57,11 +57,11 @@ resource "upcloud_firewall_rules" "example" {
 
 ### Required Attributes
 
-- `server_id` (String) The unique id of the server to be protected the firewall rules
+- `server_id` (String) The UUID of the server to be protected with the firewall rules.
 
 ### Blocks
 
-- `firewall_rule` (Block List, Min: 1, Max: 1000) A single firewall rule. The rules are evaluated in order. The maximum number of firewall rules per server is 1000.
+- `firewall_rule` (Block List) A single firewall rule. The rules are evaluated in order. The maximum number of firewall rules per server is 1000.
 
 	Typical firewall rule should have `action`, `direction`, `protocol`, `family` and at least one destination/source-address/port range.
 
@@ -80,19 +80,19 @@ resource "upcloud_firewall_rules" "example" {
 
 Required Attributes:
 
-- `action` (String) Action to take if the rule conditions are met. Valid values `accept | drop`
-- `direction` (String) The direction of network traffic this rule will be applied to
+- `action` (String) Action to take if the rule conditions are met. Valid values `accept | drop`.
+- `direction` (String) The direction of network traffic this rule will be applied to. Valid values are `in` and `out`.
 
 Optional Attributes:
 
-- `comment` (String) Freeform comment string for the rule
+- `comment` (String) A comment for the rule.
 - `destination_address_end` (String) The destination address range ends from this address
 - `destination_address_start` (String) The destination address range starts from this address
 - `destination_port_end` (String) The destination port range ends from this port number
 - `destination_port_start` (String) The destination port range starts from this port number
 - `family` (String) The address family of new firewall rule
-- `icmp_type` (String) The ICMP type
-- `protocol` (String) The protocol this rule will be applied to
+- `icmp_type` (String) The ICMP type of the rule. Only valid if protocol is ICMP.
+- `protocol` (String) The protocol of the rule. Possible values are `` (empty), `tcp`, `udp`, `icmp`.
 - `source_address_end` (String) The source address range ends from this address
 - `source_address_start` (String) The source address range starts from this address
 - `source_port_end` (String) The source port range ends from this port number
