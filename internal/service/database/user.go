@@ -163,7 +163,6 @@ func schemaValkeyUserAccessControl() map[string]*schema.Schema {
 			Description: "Set access control to all commands in specified categories.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			MaxItems:    1,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
@@ -172,7 +171,6 @@ func schemaValkeyUserAccessControl() map[string]*schema.Schema {
 			Description: "Set access control to Pub/Sub channels.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			MaxItems:    1,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
@@ -181,7 +179,6 @@ func schemaValkeyUserAccessControl() map[string]*schema.Schema {
 			Description: "Set access control to commands.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			MaxItems:    1,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
@@ -190,7 +187,6 @@ func schemaValkeyUserAccessControl() map[string]*schema.Schema {
 			Description: "Set access control to keys.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			MaxItems:    1,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},

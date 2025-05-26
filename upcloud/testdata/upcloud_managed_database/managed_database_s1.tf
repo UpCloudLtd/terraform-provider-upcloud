@@ -175,9 +175,9 @@ resource "upcloud_managed_database_user" "db_user_5" {
   username = "somename"
   password = "Superpass123"
   valkey_access_control {
-    categories = ["+@set"]
+    categories = ["+@all"]
     channels   = ["*"]
-    commands   = ["+set"]
+    commands   = ["+set", "+get", "+del"]
     keys       = ["key_*"]
   }
 }

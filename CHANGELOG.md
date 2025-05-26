@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Go version bump to 1.24
 
+### Fixed
+
+- upcloud_managed_database_user: allow adding multiple categories, channels, commands, and keys in `valkey_access_control`.
+
 ## [5.22.0] - 2025-05-12
 
 ### Added
