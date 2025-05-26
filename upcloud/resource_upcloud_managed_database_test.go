@@ -84,9 +84,9 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 
 					resource.TestCheckResourceAttr(userName2, "pg_access_control.0.allow_replication", "false"),
 
-					resource.TestCheckResourceAttr(userName5, "valkey_access_control.0.categories.0", "+@set"),
+					resource.TestCheckResourceAttr(userName5, "valkey_access_control.0.categories.0", "+@all"),
 					resource.TestCheckResourceAttr(userName5, "valkey_access_control.0.channels.0", "*"),
-					resource.TestCheckResourceAttr(userName5, "valkey_access_control.0.commands.0", "+set"),
+					resource.TestCheckResourceAttr(userName5, "valkey_access_control.0.commands.#", "3"),
 					resource.TestCheckResourceAttr(userName5, "valkey_access_control.0.keys.0", "key_*"),
 
 					resource.TestCheckResourceAttr(userName4, "opensearch_access_control.0.rules.0.index", ".opensearch-observability"),
