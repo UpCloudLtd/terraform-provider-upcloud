@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     upcloud = {
-      source = "registry.upcloud.com/upcloud/upcloud"
+      source  = "registry.upcloud.com/upcloud/upcloud"
       version = "~> 5.22.0"
     }
     cloudinit = {
@@ -12,7 +12,7 @@ terraform {
 }
 
 locals {
-  stripped_disk_id = replace(upcloud_storage.supabase_data_volume.id, "-", "")
+  stripped_disk_id  = replace(upcloud_storage.supabase_data_volume.id, "-", "")
   truncated_disk_id = substr(local.stripped_disk_id, 0, 20) # UpCloud truncates to 20 chars
   disk_path         = "/dev/disk/by-id/virtio-${local.truncated_disk_id}"
 }
@@ -20,49 +20,49 @@ locals {
 # Data source for Ubuntu cloud image (UpCloud template)
 data "upcloud_storage" "ubuntu_image" {
   type = "template"
-  id = var.supabase_template 
+  id   = var.supabase_template
 }
 
 # Create UpCloud storage volume for database persistence
 resource "upcloud_storage" "supabase_data_volume" {
-  size  = var.supabase_volume_size                     
-  zone  = var.zone             
-  tier  = "standard"              
+  size  = var.supabase_volume_size
+  zone  = var.zone
+  tier  = "standard"
   title = "supabase-data-volume"
 }
 
 # Create the UpCloud server for Supabase
 resource "upcloud_server" "supabase_server" {
-  zone              = var.zone
-  plan              = var.plan   
-  hostname          = "supabase-node"
-  metadata          = true
+  zone     = var.zone
+  plan     = var.plan
+  hostname = "supabase-node"
+  metadata = true
 
   network_interface {
     type = "public"
   }
 
   template {
-    storage = data.upcloud_storage.ubuntu_image.id  
-    size  = 25
+    storage = data.upcloud_storage.ubuntu_image.id
+    size    = 25
   }
 
   # Attach the data volume as secondary disk
   storage_devices {
-    storage = upcloud_storage.supabase_data_volume.id
-    type    = "disk"
-    address = "virtio"  
+    storage          = upcloud_storage.supabase_data_volume.id
+    type             = "disk"
+    address          = "virtio"
     address_position = 1
   }
 
   login {
-    user = "root"
-    keys = [file(var.ssh_public_key)] 
+    user            = "root"
+    keys            = [file(var.ssh_public_key)]
     create_password = false
   }
 
   user_data = data.template_cloudinit_config.supabase_cloudinit.rendered
-   
+
 }
 
 # Cloud-init script to set up Supabase
@@ -73,7 +73,7 @@ data "template_cloudinit_config" "supabase_cloudinit" {
   part {
     filename     = "setup.sh"
     content_type = "text/x-shellscript"
-    content = <<-EOT
+    content      = <<-EOT
       #!/bin/bash
       set -x
       echo "[cloud-init] Installing Docker..." 
