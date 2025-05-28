@@ -32,7 +32,7 @@ func getMissing(expected, found []string) []string {
 }
 
 func generateObjectStorageEnvVarKey(prefix, objectStorageName string) string {
-	name := strings.ToUpper(strings.Replace(objectStorageName, "-", "_", -1))
+	name := strings.ToUpper(strings.ReplaceAll(objectStorageName, "-", "_"))
 	return fmt.Sprintf("%s%s", prefix, name)
 }
 

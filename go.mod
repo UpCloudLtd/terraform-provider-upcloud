@@ -1,8 +1,6 @@
 module github.com/UpCloudLtd/terraform-provider-upcloud
 
-go 1.23.0
-
-toolchain go1.23.2
+go 1.24.3
 
 require (
 	github.com/UpCloudLtd/upcloud-go-api/v8 v8.18.0
