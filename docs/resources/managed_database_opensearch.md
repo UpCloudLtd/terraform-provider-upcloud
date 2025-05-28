@@ -93,6 +93,7 @@ Optional Attributes:
 - `action_auto_create_index_enabled` (Boolean) action.auto_create_index. Explicitly allow or block automatic creation of indices. Defaults to true.
 - `action_destructive_requires_name` (Boolean) Require explicit index names when deleting.
 - `automatic_utility_network_ip_filter` (Boolean) Automatic utility network IP Filter. Automatically allow connections from servers in the utility network within the same zone.
+- `cluster_filecache_remote_data_ratio` (Number) The limit of how much total remote data can be referenced. Defines a limit of how much total remote data can be referenced as a ratio of the size of the disk reserved for the file cache. This is designed to be a safeguard to prevent oversubscribing a cluster. Defaults to 0.
 - `cluster_max_shards_per_node` (Number) Controls the number of shards allowed in the cluster per data node.
 - `cluster_routing_allocation_balance_prefer_primary` (Boolean) When set to true, OpenSearch attempts to evenly distribute the primary shards between the cluster nodes. Enabling this setting does not always guarantee an equal number of primary shards on each node, especially in the event of a failover. Changing this setting to false after it was set to true does not invoke redistribution of primary shards. Default is false.
 - `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to node cpu count * 2.
@@ -104,6 +105,7 @@ Optional Attributes:
 - `enable_remote_backed_storage` (Boolean) Enable remote-backed storage.
 - `enable_searchable_snapshots` (Boolean) Enable searchable snapshots.
 - `enable_security_audit` (Boolean) Enable/Disable security audit.
+- `enable_snapshot_api` (Boolean) Enable/Disable snapshot API. Enable/Disable snapshot API for custom repositories, this requires security management to be enabled.
 - `http_max_content_length` (Number) Maximum content length for HTTP requests to the OpenSearch HTTP API, in bytes.
 - `http_max_header_size` (Number) The max size of allowed headers, in bytes.
 - `http_max_initial_line_length` (Number) The max length of an HTTP URL, in bytes.
@@ -126,6 +128,7 @@ Optional Attributes:
 - `keep_index_refresh_interval` (Boolean) Don't reset index.refresh_interval to the default value. Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
 - `knn_memory_circuit_breaker_enabled` (Boolean) Enable or disable KNN memory circuit breaker. Defaults to true.
 - `knn_memory_circuit_breaker_limit` (Number) Maximum amount of memory that can be used for KNN index. Defaults to 50% of the JVM heap size.
+- `node_search_cache_size` (String) The limit of how much total remote data can be referenced. Defines a limit of how much total remote data can be referenced as a ratio of the size of the disk reserved for the file cache. This is designed to be a safeguard to prevent oversubscribing a cluster. Defaults to 5gb. Requires restarting all OpenSearch nodes.
 - `override_main_response_version` (Boolean) Compatibility mode sets OpenSearch to report its version as 7.10 so clients continue to work. Default is false.
 - `plugins_alerting_filter_by_backend_roles` (Boolean) Enable or disable filtering of alerting by backend roles. Requires Security plugin. Defaults to false.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
@@ -149,12 +152,14 @@ Optional Attributes:
 Blocks:
 
 - `auth_failure_listeners` (Block List, Max: 1) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
+- `cluster_remote_store` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_remote_store))
 - `cluster_search_request_slowlog` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog))
 - `disk_watermarks` (Block List, Max: 1) Watermark settings. (see [below for nested schema](#nestedblock--properties--disk_watermarks))
 - `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
 - `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
 - `opensearch_dashboards` (Block List, Max: 1) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
+- `remote_store` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--remote_store))
 - `saml` (Block List, Max: 1) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
 - `search_backpressure` (Block List, Max: 1) Search Backpressure Settings. (see [below for nested schema](#nestedblock--properties--search_backpressure))
 - `search_insights_top_queries` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--search_insights_top_queries))
@@ -181,6 +186,17 @@ Optional Attributes:
 - `time_window_seconds` (Number) The window of time in which the value for `allowed_tries` is enforced.
 - `type` (String) The type of rate limiting.
 
+
+
+<a id="nestedblock--properties--cluster_remote_store"></a>
+### Nested Schema for `properties.cluster_remote_store`
+
+Optional Attributes:
+
+- `state_global_metadata_upload_timeout` (String) The amount of time to wait for the cluster state upload to complete. The amount of time to wait for the cluster state upload to complete. Defaults to 20s.
+- `state_metadata_manifest_upload_timeout` (String) The amount of time to wait for the manifest file upload to complete. The amount of time to wait for the manifest file upload to complete. The manifest file contains the details of each of the files uploaded for a single cluster state, both index metadata files and global metadata files. Defaults to 20s.
+- `translog_buffer_interval` (String) The default value of the translog buffer interval. The default value of the translog buffer interval used when performing periodic translog updates. This setting is only effective when the index setting `index.remote_store.translog.buffer_interval` is not present. Defaults to 650ms.
+- `translog_max_readers` (Number) The maximum number of open translog files for remote-backed indexes. Sets the maximum number of open translog files for remote-backed indexes. This limits the total number of translog files per shard. After reaching this limit, the remote store flushes the translog files. Default is 1000. The minimum required is 100.
 
 
 <a id="nestedblock--properties--cluster_search_request_slowlog"></a>
@@ -266,6 +282,17 @@ Optional Attributes:
 - `max_old_space_size` (Number) Limits the maximum amount of memory (in MiB) the OpenSearch Dashboards process can use. This sets the max_old_space_size option of the nodejs running the OpenSearch Dashboards. Note: the memory reserved by OpenSearch Dashboards is not available for OpenSearch.
 - `multiple_data_source_enabled` (Boolean) Enable or disable multiple data sources in OpenSearch Dashboards.
 - `opensearch_request_timeout` (Number) Timeout in milliseconds for requests made by OpenSearch Dashboards towards OpenSearch.
+
+
+<a id="nestedblock--properties--remote_store"></a>
+### Nested Schema for `properties.remote_store`
+
+Optional Attributes:
+
+- `segment_pressure_bytes_lag_variance_factor` (Number) The variance factor that is used to calculate the dynamic bytes lag threshold. The variance factor that is used together with the moving average to calculate the dynamic bytes lag threshold for activating remote segment backpressure. Defaults to 10.
+- `segment_pressure_consecutive_failures_limit` (Number) The minimum consecutive failure count for activating remote segment backpressure. The minimum consecutive failure count for activating remote segment backpressure. Defaults to 5.
+- `segment_pressure_enabled` (Boolean) Enables remote segment backpressure. Enables remote segment backpressure. Default is `true`.
+- `segment_pressure_time_lag_variance_factor` (Number) The variance factor that is used to calculate the dynamic bytes lag threshold. The variance factor that is used together with the moving average to calculate the dynamic time lag threshold for activating remote segment backpressure. Defaults to 10.
 
 
 <a id="nestedblock--properties--saml"></a>
