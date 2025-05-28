@@ -134,7 +134,7 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 	r.Tag.Name = d.Id()
 	if d.HasChange("description") {
 		_, newDescription := d.GetChange("description")
-		r.Tag.Description = newDescription.(string)
+		r.Description = newDescription.(string)
 	}
 	if d.HasChange("servers") {
 		_, newServers := d.GetChange("servers")
@@ -144,7 +144,7 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 		for i := range serversList {
 			serversList[i] = servers.List()[i].(string)
 		}
-		r.Tag.Servers = serversList
+		r.Servers = serversList
 	}
 
 	_, err := client.ModifyTag(ctx, r)
