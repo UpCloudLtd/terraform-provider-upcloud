@@ -46,7 +46,7 @@ func init() {
 			password, passwordOk := os.LookupEnv("UPCLOUD_PASSWORD")
 			token, tokenOk := os.LookupEnv("UPCLOUD_TOKEN")
 
-			if !(usernameOk && passwordOk || tokenOk) {
+			if (!usernameOk || !passwordOk) && !tokenOk {
 				return fmt.Errorf("UPCLOUD_USERNAME and UPCLOUD_PASSWORD or UPCLOUD_TOKEN must be set for acceptance tests")
 			}
 
@@ -331,7 +331,7 @@ func TestUpCloudObjectStorage_keys_env_vars_and_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-			name := strings.ToUpper(strings.Replace(name, "-", "_", -1))
+			name := strings.ToUpper(strings.ReplaceAll(name, "-", "_"))
 			accessKeyEnvVarName := fmt.Sprintf("%s%s", accessKeyEnvVarPrefix, name)
 			secretKeyEnvVarName := fmt.Sprintf("%s%s", secretKeyEnvVarPrefix, name)
 
