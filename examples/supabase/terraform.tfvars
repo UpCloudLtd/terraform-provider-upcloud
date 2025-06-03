@@ -1,0 +1,9 @@
+zone                        = "fi-hel1"
+plan                        = "2xCPU-4GB"
+ssh_public_key              = "~/.ssh/id_ed25519.pub"
+supabase_volume_size        = 50
+supabase_template           = "01000000-0000-4000-8000-000030240200" # Ubuntu Server 24.04 LTS (Noble Numbat)
+dashboard_username          = "supabase_admin"
+dashboard_password          = "SupabaseAdmin123!" # Example password, change as needed
+studio_default_organization = "My Supabase Org"
+studio_default_project      = "My Supabase Project"
