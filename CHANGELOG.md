@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_loadbalancer: create and update to wait for the `running` operational state, if `configured_status` is set to `started`
+
 ## [5.22.1] - 2025-06-05
 
 ### Changed

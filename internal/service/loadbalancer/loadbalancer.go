@@ -387,6 +387,13 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 
 	data.ID = types.StringValue(loadBalancer.UUID)
 
+	if data.ConfiguredStatus.ValueString() == string(upcloud.LoadBalancerConfiguredStatusStarted) {
+		resp.Diagnostics.Append(waitForLoadBalancerToBeRunning(ctx, r.client, loadBalancer.UUID)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -591,6 +598,12 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 
 	data.ID = types.StringValue(loadBalancer.UUID)
 
+	if data.ConfiguredStatus.ValueString() == string(upcloud.LoadBalancerConfiguredStatusStarted) {
+		resp.Diagnostics.Append(waitForLoadBalancerToBeRunning(ctx, r.client, loadBalancer.UUID)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
 	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -620,18 +633,36 @@ func (r *loadBalancerResource) ImportState(ctx context.Context, req resource.Imp
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func getLoadBalancerDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
-	c, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{
+func getLoadBalancerDetails(ctx context.Context, svc *service.Service, id ...string) (*utils.ResourceDetails, error) {
+	lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{
 		UUID: id[0],
 	})
 
-	return map[string]interface{}{"resource": "loadbalancer", "name": c.Name, "state": c.OperationalState}, err
+	details := &utils.ResourceDetails{
+		ResourceType: "loadbalancer",
+	}
+
+	if lb != nil {
+		details.Name = lb.Name
+		details.State = string(lb.OperationalState)
+		details.Running = lb.OperationalState == upcloud.LoadBalancerOperationalStateRunning
+	}
+
+	return details, err
 }
 
 func waitForLoadBalancerToBeDeleted(ctx context.Context, svc *service.Service, uuid string) (diags diag.Diagnostics) {
-	err := utils.WaitForResourceToBeDeleted(ctx, svc, getLoadBalancerDeleted, uuid)
+	err := utils.WaitForResourceToBeDeleted(ctx, svc, getLoadBalancerDetails, uuid)
 	if err != nil {
 		diags.AddError("Error waiting for loadbalancer to be deleted", err.Error())
+	}
+	return
+}
+
+func waitForLoadBalancerToBeRunning(ctx context.Context, svc *service.Service, uuid string) (diags diag.Diagnostics) {
+	err := utils.WaitForResourceToBeRunning(ctx, svc, getLoadBalancerDetails, uuid)
+	if err != nil {
+		diags.AddError("Error waiting for loadbalancer to be running", err.Error())
 	}
 	return
 }

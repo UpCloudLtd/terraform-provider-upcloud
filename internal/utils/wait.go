@@ -10,7 +10,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func WaitForResourceToBeDeleted(ctx context.Context, svc *service.Service, getDetails func(context.Context, *service.Service, ...string) (map[string]interface{}, error), id ...string) error {
+type ResourceDetails struct {
+	ResourceType string
+	Name         string
+	State        string
+	Running      bool
+}
+
+func (d *ResourceDetails) toMap() map[string]interface{} {
+	return map[string]interface{}{
+		"resource": d.ResourceType,
+		"name":     d.Name,
+		"state":    d.State,
+		"running":  d.Running,
+	}
+}
+
+func WaitForResourceToBeDeleted(ctx context.Context, svc *service.Service, getDetails func(context.Context, *service.Service, ...string) (*ResourceDetails, error), id ...string) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -25,7 +41,28 @@ func WaitForResourceToBeDeleted(ctx context.Context, svc *service.Service, getDe
 				return err
 			}
 
-			tflog.Info(ctx, "waiting for resource to be deleted", details)
+			tflog.Info(ctx, "waiting for resource to be deleted", details.toMap())
+		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func WaitForResourceToBeRunning(ctx context.Context, svc *service.Service, getDetails func(context.Context, *service.Service, ...string) (*ResourceDetails, error), id ...string) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			details, err := getDetails(ctx, svc, id...)
+			if err != nil {
+				return err
+			}
+
+			if details.Running {
+				return nil
+			}
+
+			tflog.Info(ctx, "waiting for resource to be running", details.toMap())
 		}
 		time.Sleep(5 * time.Second)
 	}
