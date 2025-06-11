@@ -361,14 +361,26 @@ func waitForGatewayToBeRunning(ctx context.Context, svc *service.Service, id str
 	return nil, fmt.Errorf("max retries (%d)reached while waiting for network gateway to be running", maxRetries)
 }
 
-func getGatewayDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
-	gw, err := svc.GetGateway(ctx, &request.GetGatewayRequest{UUID: id[0]})
+func getGatewayDetails(ctx context.Context, svc *service.Service, id ...string) (*utils.ResourceDetails, error) {
+	gw, err := svc.GetGateway(ctx, &request.GetGatewayRequest{
+		UUID: id[0],
+	})
 
-	return map[string]interface{}{"resource": "gateway", "name": gw.Name, "state": gw.OperationalState}, err
+	details := &utils.ResourceDetails{
+		ResourceType: "gateway",
+	}
+
+	if gw != nil {
+		details.Name = gw.Name
+		details.State = string(gw.OperationalState)
+		details.Running = gw.OperationalState == upcloud.GatewayOperationalStateRunning
+	}
+
+	return details, err
 }
 
 func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
-	return utils.WaitForResourceToBeDeleted(ctx, svc, getGatewayDeleted, id)
+	return utils.WaitForResourceToBeDeleted(ctx, svc, getGatewayDetails, id)
 }
 
 var validateName = validation.ToDiagFunc(validation.All(
