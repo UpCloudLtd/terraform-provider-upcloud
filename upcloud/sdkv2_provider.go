@@ -11,6 +11,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
+	"github.com/UpCloudLtd/upcloud-go-api/credentials"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -106,11 +107,15 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...
 
 	requestTimeout := time.Duration(d.Get("request_timeout_sec").(int)) * time.Second
 
-	cfg := config.Config{
+	creds, err := credentials.Parse(credentials.Credentials{
 		Username: d.Get("username").(string),
 		Password: d.Get("password").(string),
 		Token:    d.Get("token").(string),
+	})
+	if err != nil {
+		diag.FromErr(err)
 	}
+	cfg := config.NewFromCredentials(creds)
 
 	httpClient := retryablehttp.NewClient()
 	httpClient.RetryWaitMin = time.Duration(d.Get("retry_wait_min_sec").(int)) * time.Second
