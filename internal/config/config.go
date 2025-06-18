@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UpCloudLtd/upcloud-go-api/credentials"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -21,6 +22,14 @@ type Config struct {
 	Username string
 	Password string
 	Token    string
+}
+
+func NewFromCredentials(creds credentials.Credentials) Config {
+	return Config{
+		Username: creds.Username,
+		Password: creds.Password,
+		Token:    creds.Token,
+	}
 }
 
 func (c Config) WithAuth() (client.ConfigFn, error) {
