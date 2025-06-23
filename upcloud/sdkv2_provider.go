@@ -114,6 +114,7 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData, userAgents ...
 	})
 	if err != nil {
 		diag.FromErr(err)
+		return nil, diag.FromErr(err)
 	}
 	cfg := config.NewFromCredentials(creds)
 

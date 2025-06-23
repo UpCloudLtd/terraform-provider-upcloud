@@ -126,6 +126,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("No credentials defined", err.Error())
+		return
 	}
 	cfg := config.NewFromCredentials(creds)
 
