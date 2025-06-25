@@ -1,4 +1,5 @@
 .terraform
+.terraform*
 terraform.tfstate*
 terraform-provider-upcloud
 crash.log
