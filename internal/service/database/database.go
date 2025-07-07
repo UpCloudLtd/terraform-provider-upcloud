@@ -13,21 +13,17 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	sdkv2_diag "github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func serviceDescription(dbType string) string {
-	return fmt.Sprintf("This resource represents %s managed database. See UpCloud [Managed Databases](https://upcloud.com/products/managed-databases) product page for more details about the service.", dbType)
-}
-
-func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags sdkv2_diag.Diagnostics) {
 	client := meta.(*service.Service)
 	req := buildManagedDatabaseRequestFromResourceData(d)
 
 	details, err := client.CreateManagedDatabase(ctx, &req)
 	if err != nil {
-		return diag.FromErr(err)
+		return sdkv2_diag.FromErr(err)
 	}
 
 	d.SetId(details.UUID)
@@ -37,14 +33,14 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 	if _, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: details.UUID, DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
 		return append(
 			resourceDatabaseRead(ctx, d, meta),
-			diag.FromErr(err)[0],
+			sdkv2_diag.FromErr(err)[0],
 		)
 	}
 
 	if !d.Get("powered").(bool) {
 		_, err := client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
 		if err != nil {
-			return diag.FromErr(err)
+			return sdkv2_diag.FromErr(err)
 		}
 		tflog.Info(ctx, "managed database is powered off", map[string]interface{}{"uuid": details.UUID, "name": d.Get("name")})
 	}
@@ -52,8 +48,8 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 	if err = waitServiceNameToPropagate(ctx, details.ServiceURIParams.Host); err != nil {
 		// return warning if DNS name is not yet available
 		d := resourceDatabaseRead(ctx, d, meta)
-		d = append(d, diag.Diagnostic{
-			Severity: diag.Warning,
+		d = append(d, sdkv2_diag.Diagnostic{
+			Severity: sdkv2_diag.Warning,
 			Summary:  err.Error(),
 		})
 		return d
@@ -62,7 +58,7 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 	return diags
 }
 
-func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags sdkv2_diag.Diagnostics) {
 	var err error
 	client := meta.(*service.Service)
 	req := request.GetManagedDatabaseRequest{UUID: d.Id()}
@@ -74,24 +70,24 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 	tflog.Debug(ctx, "managed database read", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 	if details.Type == upcloud.ManagedDatabaseServiceTypePostgreSQL {
 		if err := d.Set("sslmode", details.ServiceURIParams.SSLMode); err != nil {
-			return diag.FromErr(err)
+			return sdkv2_diag.FromErr(err)
 		}
 	}
 
 	if err := resourceUpCloudManagedDatabaseSetCommonState(d, details); err != nil {
-		return diag.FromErr(err)
+		return sdkv2_diag.FromErr(err)
 	}
 	if len(details.Properties) > 0 {
 		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(d, details)}); err != nil {
-			return diag.FromErr(err)
+			return sdkv2_diag.FromErr(err)
 		}
 	}
 	return diags
 }
 
-func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) sdkv2_diag.Diagnostics {
 	client := meta.(*service.Service)
-	diags := diag.Diagnostics{}
+	diags := sdkv2_diag.Diagnostics{}
 
 	if d.HasChanges("plan", "title", "termination_protection", "zone",
 		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network", "labels", "additional_disk_space_gib") {
@@ -134,7 +130,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 		_, err := client.ModifyManagedDatabase(ctx, &req)
 		if err != nil {
-			return diag.FromErr(err)
+			return sdkv2_diag.FromErr(err)
 		}
 
 		tflog.Info(ctx, "managed database updated", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
@@ -151,13 +147,13 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	}
 	// Wait until database is in running (or stopped) state
 	if _, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: d.Id(), DesiredState: expectedState}); err != nil {
-		diags = append(diags, diag.FromErr(err)[0])
+		diags = append(diags, sdkv2_diag.FromErr(err)[0])
 	}
 
 	return append(diags, resourceDatabaseRead(ctx, d, meta)...)
 }
 
-func resourceDatabasePoweredUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+func resourceDatabasePoweredUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags sdkv2_diag.Diagnostics) {
 	client := meta.(*service.Service)
 
 	var err error
@@ -171,24 +167,24 @@ func resourceDatabasePoweredUpdate(ctx context.Context, d *schema.ResourceData, 
 		msg = "managed database is powered off"
 	}
 	if err != nil {
-		return diag.FromErr(err)
+		return sdkv2_diag.FromErr(err)
 	}
 	tflog.Info(ctx, msg, map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 
 	return diags
 }
 
-func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) sdkv2_diag.Diagnostics {
 	client := meta.(*service.Service)
 
 	req := request.DeleteManagedDatabaseRequest{UUID: d.Id()}
 	if err := client.DeleteManagedDatabase(ctx, &req); err != nil {
-		return diag.FromErr(err)
+		return sdkv2_diag.FromErr(err)
 	}
 
 	// Wait until database is deleted to be able to delete attached networks (if needed)
 	if err := waitForDatabaseToBeDeleted(ctx, client, d.Id()); err != nil {
-		return diag.FromErr(err)
+		return sdkv2_diag.FromErr(err)
 	}
 
 	tflog.Info(ctx, "managed database deleted", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
@@ -459,11 +455,11 @@ func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
 	return errors.New("max retries reached while waiting for service name to propagate")
 }
 
-func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *service.Service) (diags diag.Diagnostics) {
+func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *service.Service) (diags sdkv2_diag.Diagnostics) {
 	// Cannot proceed with upgrade if powered off
 	if !d.HasChange("powered") && !d.Get("powered").(bool) {
-		return append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+		return append(diags, sdkv2_diag.Diagnostic{
+			Severity: sdkv2_diag.Warning,
 			Summary:  fmt.Sprintf("Version upgrade for Managed Database %s(%s) skipped", d.Id(), d.Get("name")),
 			Detail:   "Cannot upgrade version for Managed Database when it is powered off",
 		})
@@ -475,8 +471,8 @@ func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *
 		DesiredState: upcloud.ManagedDatabaseStateRunning,
 	})
 	if err != nil {
-		return append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+		return append(diags, sdkv2_diag.Diagnostic{
+			Severity: sdkv2_diag.Warning,
 			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed; reached timeout when waiting for running state", d.Id(), d.Get("name")),
 			Detail:   err.Error(),
 		})
@@ -488,8 +484,8 @@ func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *
 		TargetVersion: target.(string),
 	})
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+		diags = append(diags, sdkv2_diag.Diagnostic{
+			Severity: sdkv2_diag.Error,
 			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed", d.Id(), d.Get("name")),
 			Detail:   err.Error(),
 		})
