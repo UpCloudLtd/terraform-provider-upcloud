@@ -37,6 +37,9 @@ import (
 )
 
 const (
+	serverDescription = `The UpCloud server resource allows the creation, update and deletion of [cloud servers](https://upcloud.com/products/cloud-servers).
+
+-> To deploy a GPU server, select a plan with ` + "`" + `GPU-` + "`" + ` prefix, e.g., ` + "`" + `GPU-8xCPU-64GB-1xL40S` + "`" + `. Use ` + "`" + `upctl zone devices` + "`" + ` command to list per zone GPU availability.`
 	serverTitleLength       int = 255
 	simpleBackupDescription     = `Simple backup schedule configuration
 
@@ -160,7 +163,7 @@ type simpleBackupModel struct {
 func (r *serverResource) getSchema(version int64) schema.Schema {
 	return schema.Schema{
 		Version:             version,
-		MarkdownDescription: "The UpCloud server resource allows the creation, update and deletion of a [cloud server](https://upcloud.com/products/cloud-servers).",
+		MarkdownDescription: serverDescription,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
