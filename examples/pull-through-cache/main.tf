@@ -17,11 +17,13 @@ terraform {
 
 provider "upcloud" {}
 
+// Generate the token for the pull through cache container registry.
 resource "random_password" "token" {
   length  = 32
   special = false
 }
 
+// If user has not provided a public SSH key, generate a new key pair.
 resource "tls_private_key" "key" {
   count = var.ssh_public_key != "" ? 0 : 1
 
@@ -69,6 +71,7 @@ resource "upcloud_server" "this" {
   }
 }
 
+// Use load balancer to provide HTTPS termination.
 resource "upcloud_loadbalancer" "this" {
   name = "${var.prefix}lb"
   zone = var.zone
