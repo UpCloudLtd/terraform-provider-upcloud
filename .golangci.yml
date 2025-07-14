@@ -36,6 +36,13 @@ linters:
     predeclared:
       ignore:
         - new
+    revive:
+      rules:
+        - name: var-naming
+          arguments:
+          - []
+          - []
+          - - skip-package-name-checks: true
   exclusions:
     generated: lax
     presets:
