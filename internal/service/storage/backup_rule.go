@@ -32,7 +32,7 @@ func BackupRuleBlock() schema.ListNestedBlock {
 					Required:    true,
 				},
 				"time": schema.StringAttribute{
-					Description: "The time of day when the backup is created",
+					Description: "The time of day (UTC) when the backup is created",
 					Required:    true,
 				},
 				"retention": schema.Int64Attribute{
