@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_managed_database_\*: Update available properties to match listing provided by the API, see #770 for details.
+
 ## [5.22.1] - 2025-06-05
 
 ### Changed
