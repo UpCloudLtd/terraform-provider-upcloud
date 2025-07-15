@@ -146,6 +146,7 @@ Optional Attributes:
 Blocks:
 
 - `migration` (Block List, Max: 1) Migrate data from existing server. (see [below for nested schema](#nestedblock--properties--migration))
+- `mysql_incremental_backup` (Block List, Max: 1) MySQL incremental backup configuration. (see [below for nested schema](#nestedblock--properties--mysql_incremental_backup))
 
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`
@@ -161,6 +162,15 @@ Optional Attributes:
 - `port` (Number) Port number of the server where to migrate data from.
 - `ssl` (Boolean) The server where to migrate data from is secured with SSL.
 - `username` (String) User name for authentication with the server where to migrate data from.
+
+
+<a id="nestedblock--properties--mysql_incremental_backup"></a>
+### Nested Schema for `properties.mysql_incremental_backup`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable incremental backups. Enable periodic incremental backups. When enabled, full_backup_week_schedule must be set. Incremental backups only store changes since the last backup, making them faster and more storage-efficient than full backups. This is particularly useful for large databases where daily full backups would be too time-consuming or expensive.
+- `full_backup_week_schedule` (String) Full backup week schedule. Comma-separated list of days of the week when full backups should be created. Valid values: mon, tue, wed, thu, fri, sat, sun.
 
 
 
