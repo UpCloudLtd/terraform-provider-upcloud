@@ -3,7 +3,6 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
@@ -19,6 +18,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/servergroup"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
+	"github.com/UpCloudLtd/upcloud-go-api/credentials"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -32,7 +32,7 @@ import (
 const (
 	usernameDescription       = "UpCloud username with API access. Can also be configured using the `UPCLOUD_USERNAME` environment variable."
 	passwordDescription       = "Password for UpCloud API user. Can also be configured using the `UPCLOUD_PASSWORD` environment variable."
-	tokenDescription          = "Token for authenticating to UpCloud API. Can also be configured using the `UPCLOUD_TOKEN` environment variable. (EXPERIMENTAL)"
+	tokenDescription          = "Token for authenticating to UpCloud API. Can also be configured using the `UPCLOUD_TOKEN` environment variable or using the system keyring. Use `upctl account login` command to save a token to the system keyring. (EXPERIMENTAL)"
 	requestTimeoutDescription = "The duration (in seconds) that the provider waits for an HTTP request towards UpCloud API to complete. Defaults to 120 seconds"
 )
 
@@ -111,17 +111,6 @@ func withInt64Default(val types.Int64, def int64) int64 {
 	return val.ValueInt64()
 }
 
-func withStringDefault(val types.String, def string) string {
-	if val.IsNull() {
-		return def
-	}
-	return val.ValueString()
-}
-
-func withEnvDefault(val types.String, env string) string {
-	return withStringDefault(val, os.Getenv(env))
-}
-
 func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var model upcloudProviderModel
 	if diags := req.Config.Get(ctx, &model); diags.HasError() {
@@ -130,11 +119,16 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	requestTimeout := time.Duration(withInt64Default(model.RequestTimeoutSec, 120)) * time.Second
-	cfg := config.Config{
-		Username: withEnvDefault(model.Username, "UPCLOUD_USERNAME"),
-		Password: withEnvDefault(model.Password, "UPCLOUD_PASSWORD"),
-		Token:    withEnvDefault(model.Token, "UPCLOUD_TOKEN"),
+	creds, err := credentials.Parse(credentials.Credentials{
+		Username: model.Username.ValueString(),
+		Password: model.Password.ValueString(),
+		Token:    model.Token.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("No credentials defined", err.Error())
+		return
 	}
+	cfg := config.NewFromCredentials(creds)
 
 	httpClient := retryablehttp.NewClient()
 	httpClient.RetryWaitMin = time.Duration(withInt64Default(model.RetryWaitMinSec, 1)) * time.Second

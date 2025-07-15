@@ -144,7 +144,7 @@ Required Attributes:
 
 - `interval` (String) The weekday when the backup is created
 - `retention` (Number) The number of days before a backup is automatically deleted
-- `time` (String) The time of day when the backup is created
+- `time` (String) The time of day (UTC) when the backup is created
 
 
 <a id="nestedblock--clone"></a>
