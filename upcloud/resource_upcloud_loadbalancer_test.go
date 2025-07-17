@@ -168,6 +168,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				// Refresh state to include backends, frontends and resolvers in the state.
 				Config: testDataS1,
 			},
+			// Ignore nodes and operational_state attributes as modifying sub resources can cause the load balancer and/or node operational_state to change.
 			verifyImportStep(lbName, "nodes", "operational_state"),
 			verifyImportStep(fe1Name),
 			verifyImportStep(be1Name),
