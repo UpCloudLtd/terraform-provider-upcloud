@@ -648,23 +648,13 @@ func buildTaints(ctx context.Context, dataTaints types.Set) ([]upcloud.Kubernete
 	return taints, respDiagnostics
 }
 
-func getNodeGroupDeleted(ctx context.Context, svc *service.Service, id ...string) (*utils.ResourceDetails, error) {
-	ng, err := svc.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
+func getNodeGroupDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	c, err := svc.GetKubernetesNodeGroup(ctx, &request.GetKubernetesNodeGroupRequest{
 		ClusterUUID: id[0],
 		Name:        id[1],
 	})
 
-	details := &utils.ResourceDetails{
-		ResourceType: "node-group",
-	}
-
-	if ng != nil {
-		details.Name = ng.Name
-		details.State = string(ng.State)
-		details.Running = ng.State == upcloud.KubernetesNodeGroupStateRunning
-	}
-
-	return details, err
+	return map[string]interface{}{"resource": "node-group", "name": c.Name, "state": c.State}, err
 }
 
 func waitForNodeGroupToBeDeleted(ctx context.Context, svc *service.Service, clusterUUID, name string) (diags diag.Diagnostics) {

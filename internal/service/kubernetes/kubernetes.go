@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"context"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"regexp"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -40,26 +39,14 @@ const (
 
 var resourceNameRegexp = regexp.MustCompile(resourceNameRegexpStr)
 
-func getClusterDetails(ctx context.Context, svc *service.Service, id ...string) (*utils.ResourceDetails, error) {
-	c, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{
-		UUID: id[0],
-	})
+func getClusterDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	c, err := svc.GetKubernetesCluster(ctx, &request.GetKubernetesClusterRequest{UUID: id[0]})
 
-	details := &utils.ResourceDetails{
-		ResourceType: "cluster",
-	}
-
-	if c != nil {
-		details.Name = c.Name
-		details.State = string(c.State)
-		details.Running = c.State == upcloud.KubernetesClusterStateRunning
-	}
-
-	return details, err
+	return map[string]interface{}{"resource": "cluster", "name": c.Name, "state": c.State}, err
 }
 
 func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id string) (diags diag.Diagnostics) {
-	err := utils.WaitForResourceToBeDeleted(ctx, svc, getClusterDetails, id)
+	err := utils.WaitForResourceToBeDeleted(ctx, svc, getClusterDeleted, id)
 	if err != nil {
 		diags.AddError("Error waiting for cluster to be deleted", err.Error())
 	}

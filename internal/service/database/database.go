@@ -412,26 +412,14 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 	return d.Set("primary_database", details.ServiceURIParams.DatabaseName)
 }
 
-func getDatabaseDetails(ctx context.Context, svc *service.Service, id ...string) (*utils.ResourceDetails, error) {
-	db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{
-		UUID: id[0],
-	})
+func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id[0]})
 
-	details := &utils.ResourceDetails{
-		ResourceType: "database",
-	}
-
-	if db != nil {
-		details.Name = db.Name
-		details.State = string(db.State)
-		details.Running = db.State == upcloud.ManagedDatabaseStateRunning
-	}
-
-	return details, err
+	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, err
 }
 
 func waitForDatabaseToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
-	return utils.WaitForResourceToBeDeleted(ctx, svc, getDatabaseDetails, id)
+	return utils.WaitForResourceToBeDeleted(ctx, svc, getDatabaseDeleted, id)
 }
 
 func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
