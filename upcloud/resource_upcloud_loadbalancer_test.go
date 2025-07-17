@@ -318,16 +318,16 @@ func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 			{
 				Config: testData,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, "operational_state", "running"),
 					resource.TestCheckResourceAttrSet(name, "maintenance_dow"),
 					resource.TestCheckResourceAttrSet(name, "maintenance_time"),
 				),
 			},
 			{
-				Config:                  testData,
-				ResourceName:            name,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"operational_state", "nodes"},
+				Config:            testData,
+				ResourceName:      name,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

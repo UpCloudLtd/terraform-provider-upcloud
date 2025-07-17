@@ -388,8 +388,15 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 	data.ID = types.StringValue(loadBalancer.UUID)
 
 	if data.ConfiguredStatus.ValueString() == string(upcloud.LoadBalancerConfiguredStatusStarted) {
-		resp.Diagnostics.Append(waitForLoadBalancerToBeRunning(ctx, r.client, loadBalancer.UUID)...)
-		if resp.Diagnostics.HasError() {
+		loadBalancer, err = r.client.WaitForLoadBalancerOperationalState(ctx, &request.WaitForLoadBalancerOperationalStateRequest{
+			UUID:         loadBalancer.UUID,
+			DesiredState: upcloud.LoadBalancerOperationalStateRunning,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Loadbalancer did not reach running state after creation",
+				utils.ErrorDiagnosticDetail(err),
+			)
 			return
 		}
 	}
@@ -599,8 +606,15 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 	data.ID = types.StringValue(loadBalancer.UUID)
 
 	if data.ConfiguredStatus.ValueString() == string(upcloud.LoadBalancerConfiguredStatusStarted) {
-		resp.Diagnostics.Append(waitForLoadBalancerToBeRunning(ctx, r.client, loadBalancer.UUID)...)
-		if resp.Diagnostics.HasError() {
+		loadBalancer, err = r.client.WaitForLoadBalancerOperationalState(ctx, &request.WaitForLoadBalancerOperationalStateRequest{
+			UUID:         loadBalancer.UUID,
+			DesiredState: upcloud.LoadBalancerOperationalStateRunning,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Loadbalancer did not reach running state after update",
+				utils.ErrorDiagnosticDetail(err),
+			)
 			return
 		}
 	}
@@ -626,43 +640,17 @@ func (r *loadBalancerResource) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	// wait before continuing so that all components destroyed
-	resp.Diagnostics.Append(waitForLoadBalancerToBeDeleted(ctx, r.client, data.ID.ValueString())...)
+	err := r.client.WaitForLoadBalancerDeletion(ctx, &request.WaitForLoadBalancerDeletionRequest{
+		UUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error waiting for loadbalancer to be deleted",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 }
 
 func (r *loadBalancerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-func getLoadBalancerDetails(ctx context.Context, svc *service.Service, id ...string) (*utils.ResourceDetails, error) {
-	lb, err := svc.GetLoadBalancer(ctx, &request.GetLoadBalancerRequest{
-		UUID: id[0],
-	})
-
-	details := &utils.ResourceDetails{
-		ResourceType: "loadbalancer",
-	}
-
-	if lb != nil {
-		details.Name = lb.Name
-		details.State = string(lb.OperationalState)
-		details.Running = lb.OperationalState == upcloud.LoadBalancerOperationalStateRunning
-	}
-
-	return details, err
-}
-
-func waitForLoadBalancerToBeDeleted(ctx context.Context, svc *service.Service, uuid string) (diags diag.Diagnostics) {
-	err := utils.WaitForResourceToBeDeleted(ctx, svc, getLoadBalancerDetails, uuid)
-	if err != nil {
-		diags.AddError("Error waiting for loadbalancer to be deleted", err.Error())
-	}
-	return
-}
-
-func waitForLoadBalancerToBeRunning(ctx context.Context, svc *service.Service, uuid string) (diags diag.Diagnostics) {
-	err := utils.WaitForResourceToBeRunning(ctx, svc, getLoadBalancerDetails, uuid)
-	if err != nil {
-		diags.AddError("Error waiting for loadbalancer to be running", err.Error())
-	}
-	return
 }
