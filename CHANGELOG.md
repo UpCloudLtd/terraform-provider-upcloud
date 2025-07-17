@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_loadbalancer: create and update to wait for the `running` operational state, if `configured_status` is set to `started`
+
+### Fixed
+
+- upcloud_loadbalancer: set nodes value on first apply. The nodes are available only after the load balancer reaches running state, so previously when the resource did not wait for running state the node information was not available after initial apply.
+
 ## [5.23.0] - 2025-07-16
 
 ### Added

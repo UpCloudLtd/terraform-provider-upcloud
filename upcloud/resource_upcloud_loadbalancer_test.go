@@ -168,6 +168,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				// Refresh state to include backends, frontends and resolvers in the state.
 				Config: testDataS1,
 			},
+			// Ignore nodes and operational_state attributes as modifying sub resources can cause the load balancer and/or node operational_state to change.
 			verifyImportStep(lbName, "nodes", "operational_state"),
 			verifyImportStep(fe1Name),
 			verifyImportStep(be1Name),
@@ -318,16 +319,16 @@ func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 			{
 				Config: testData,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, "operational_state", "running"),
 					resource.TestCheckResourceAttrSet(name, "maintenance_dow"),
 					resource.TestCheckResourceAttrSet(name, "maintenance_time"),
 				),
 			},
 			{
-				Config:                  testData,
-				ResourceName:            name,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"operational_state", "nodes"},
+				Config:            testData,
+				ResourceName:      name,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
