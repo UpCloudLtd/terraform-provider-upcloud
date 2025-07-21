@@ -40,6 +40,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_gateway: update gateway plan when `plan` field has changes.
 - upcloud_firewall_rules: handle rules added in the hub when updating state. Fixes _index out of range_ error that happens when updating default rule in the hub.
+- upcloud_kubernetes_node_group: remove too strict label key length validation.
 
 ## [5.24.0] - 2025-08-14
 
