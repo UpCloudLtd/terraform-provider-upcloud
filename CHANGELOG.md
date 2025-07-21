@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_kubernetes_node_group: remove too strict label key length validation.
+
 ## [5.23.1] - 2025-07-18
 
 ### Changed
