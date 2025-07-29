@@ -90,6 +90,7 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 					// Private IP will be re-assigned because it is not specified in the configuration
 					resource.TestCheckResourceAttr(this, "network_interface.3.index", "4"),
 					checkStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP4),
+					resource.TestCheckResourceAttr(this, "network_interface.3.additional_ip_address.#", "0"),
 					resource.TestCheckResourceAttr(this, "network_interface.4.index", "5"),
 					checkStringDoesNotChange(this, "network_interface.4.ip_address", &thisIP5),
 					// IP family change
@@ -106,6 +107,7 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 					// Private IP will be re-assigned because it is not specified in the configuration
 					resource.TestCheckResourceAttr(this, "network_interface.2.index", "4"),
 					checkStringDoesNotChange(this, "network_interface.2.ip_address", &thisIP4),
+					resource.TestCheckResourceAttr(this, "network_interface.2.additional_ip_address.#", "1"),
 					resource.TestCheckResourceAttr(this, "network_interface.3.index", "5"),
 					checkStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP5),
 					// IP family change
