@@ -52,6 +52,11 @@ resource "upcloud_server" "this" {
     index      = 4
     ip_address = "10.100.3.30"
     network    = upcloud_network.this.id
+
+    additional_ip_address {
+      ip_address        = "10.100.3.60"
+      ip_address_family = "IPv4"
+    }
   }
 
   network_interface {

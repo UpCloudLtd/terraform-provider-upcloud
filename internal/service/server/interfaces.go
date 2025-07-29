@@ -155,6 +155,10 @@ func shouldModifyInterface(plan networkInterfaceModel, addresses request.CreateN
 		return true
 	}
 
+	if len(iface.IPAddresses) != len(addresses) {
+		return true
+	}
+
 	for i, ip := range iface.IPAddresses {
 		if i >= len(addresses) {
 			return true
@@ -215,6 +219,47 @@ func setInterfaceValues(ctx context.Context, iface *upcloud.Interface, ipInState
 	ni.SourceIPFiltering = types.BoolValue(iface.SourceIPFiltering.Bool())
 
 	return
+}
+
+func updateServerNetworkInterfaceAddresses(ctx context.Context, svc *service.Service, serverUUID string, planAddresses request.CreateNetworkInterfaceIPAddressSlice, iface *upcloud.ServerInterface) error {
+	// Delete IP addresses that are not in the plan.
+interface_loop:
+	for _, i := range iface.IPAddresses {
+		for _, j := range planAddresses {
+			if i.Family == j.Family && i.Address == j.Address {
+				continue interface_loop
+			}
+		}
+		err := svc.DeleteIPAddressFromNetworkInterface(ctx, &request.DeleteIPAddressFromNetworkInterfaceRequest{
+			ServerUUID: serverUUID,
+			Index:      iface.Index,
+			Address:    i.Address,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Add IP addresses that are in the plan but not in the interface.
+plan_loop:
+	for _, j := range planAddresses {
+		for _, i := range iface.IPAddresses {
+			if i.Family == j.Family && i.Address == j.Address {
+				continue plan_loop
+			}
+		}
+		_, err := svc.AssignIPAddressToNetworkInterface(ctx, &request.AssignIPAddressToNetworkInterfaceRequest{
+			ServerUUID: serverUUID,
+			Index:      iface.Index,
+			Family:     j.Family,
+			Address:    j.Address,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, state, plan *serverModel) (diags diag.Diagnostics) {
@@ -287,7 +332,11 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 				Bootable:          upcloud.FromBool(planVal.Bootable.ValueBool()),
 			}
 			if iface.Type == upcloud.NetworkTypePrivate {
-				req.IPAddresses = addresses
+				err = updateServerNetworkInterfaceAddresses(ctx, svc, uuid, addresses, &iface)
+				if err != nil {
+					diags.AddError("Unable to update network interface addresses", utils.ErrorDiagnosticDetail(err))
+					return
+				}
 			}
 			modified, err = svc.ModifyNetworkInterface(ctx, &req)
 			if err != nil {

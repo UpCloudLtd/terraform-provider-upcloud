@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_server: assign and delete IP addresses from network interface when there are changes in `additional_ip_address` blocks of private network interfaces.
+
 ## [5.23.1] - 2025-07-18
 
 ### Changed
