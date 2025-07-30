@@ -1,5 +1,7 @@
 # UpCloud Terraform Provider
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/UpCloudLtd/terraform-provider-upcloud/badge)](https://scorecard.dev/viewer/?uri=github.com%2FUpCloudLtd%2Fterraform-provider-upcloud)
+
 This Terraform plugin allows managing different [UpCloud products](https://upcloud.com/products) with
 terraform.
 
