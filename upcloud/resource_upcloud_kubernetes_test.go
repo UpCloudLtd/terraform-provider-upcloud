@@ -43,6 +43,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 	g1Name := "upcloud_kubernetes_node_group.g1"
 	g2Name := "upcloud_kubernetes_node_group.g2"
 	g3Name := "upcloud_kubernetes_node_group.g3"
+	g4Name := "upcloud_kubernetes_node_group.g4"
 
 	s1Version, s2Version := getLatestVersions(t)
 
@@ -108,6 +109,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 						"cores":        "1",
 						"memory":       "2048",
 						"storage_size": "25",
+						"storage_tier": "maxiops",
 					}),
 				),
 			},
@@ -128,6 +130,16 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(cName, "version", s2Version),
 					resource.TestCheckResourceAttr(g1Name, "node_count", "1"),
 					resource.TestCheckResourceAttr(g2Name, "node_count", "2"),
+
+					// Cloud Native plan node group checks
+					resource.TestCheckResourceAttr(g4Name, "name", "cn-50g-storage"),
+					resource.TestCheckResourceAttr(g4Name, "plan", "CLOUDNATIVE-4xCPU-8GB"),
+					resource.TestCheckResourceAttr(g4Name, "node_count", "1"),
+					resource.TestCheckResourceAttr(g4Name, "cloud_native_plan.#", "1"),
+					resource.TestCheckTypeSetElemNestedAttrs(g4Name, "cloud_native_plan.*", map[string]string{
+						"storage_size": "50",
+						"storage_tier": "standard",
+					}),
 				),
 			},
 		},

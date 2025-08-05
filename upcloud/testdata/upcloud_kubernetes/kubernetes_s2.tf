@@ -87,6 +87,17 @@ resource "upcloud_kubernetes_node_group" "g3" {
   storage_encryption = "data-at-rest"
 }
 
+resource "upcloud_kubernetes_node_group" "g4" {
+  cluster    = upcloud_kubernetes_cluster.main.id
+  node_count = 1
+  name       = "cn-50g-storage"
+  plan       = "CLOUDNATIVE-4xCPU-8GB"
+  cloud_native_plan {
+    storage_size = 50
+    storage_tier = "standard"
+  }
+}
+
 data "upcloud_kubernetes_cluster" "main" {
   id = upcloud_kubernetes_cluster.main.id
 }
