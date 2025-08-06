@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.23.3] - 2025-08-06
+
 ## Fixed
 
 - upcloud_server: correctly handle metadata toggling on resource update when template is not set.
@@ -988,7 +990,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.2...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.3...HEAD
+[5.23.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.2...v5.23.3
 [5.23.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.1...v5.23.2
 [5.23.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.0...v5.23.1
 [5.23.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.22.1...v5.23.0
