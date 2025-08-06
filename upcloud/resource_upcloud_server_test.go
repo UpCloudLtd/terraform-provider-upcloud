@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"golang.org/x/crypto/ssh"
@@ -1279,6 +1280,32 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 						t.Logf("Server was restarted as expected when both hot resize and network changes were applied")
 						return nil
 					},
+				),
+			},
+		},
+	})
+}
+
+func TestUpcloudServer_metadataChange(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_metadata_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_metadata_s2.tf")
+
+	serverName := "upcloud_server.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(serverName, "metadata", "false"),
+				),
+			},
+			{
+				Config: testDataS2,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(serverName, "metadata", "true"),
 				),
 			},
 		},

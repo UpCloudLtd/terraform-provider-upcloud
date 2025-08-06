@@ -1305,7 +1305,7 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 	templatePlan, diags := getTemplate(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 
-	if !plan.SimpleBackup.Equal(state.SimpleBackup) {
+	if !plan.SimpleBackup.Equal(state.SimpleBackup) && templatePlan != nil {
 		replaced, diags := hasTemplateBackupRuleBeenReplacedWithSimpleBackups(ctx, state, plan)
 		resp.Diagnostics.Append(diags...)
 		if replaced {
@@ -1370,65 +1370,67 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}
 
-	if !templatePlan.Title.Equal(templateState.Title) ||
-		!templatePlan.Size.Equal(templateState.Size) ||
-		!templatePlan.BackupRule.Equal(templateState.BackupRule) {
-		apiReq := &request.ModifyStorageRequest{
-			UUID:  templatePlan.ID.ValueString(),
-			Size:  int(templatePlan.Size.ValueInt64()),
-			Title: templatePlan.Title.ValueString(),
+	if templateState != nil && templatePlan != nil {
+		if !templatePlan.Title.Equal(templateState.Title) ||
+			!templatePlan.Size.Equal(templateState.Size) ||
+			!templatePlan.BackupRule.Equal(templateState.BackupRule) {
+			apiReq := &request.ModifyStorageRequest{
+				UUID:  templatePlan.ID.ValueString(),
+				Size:  int(templatePlan.Size.ValueInt64()),
+				Title: templatePlan.Title.ValueString(),
+			}
+
+			replaced, diags := hasTemplateBackupRuleBeenReplacedWithSimpleBackups(ctx, state, plan)
+			resp.Diagnostics.Append(diags...)
+
+			if !templatePlan.BackupRule.Equal(templateState.BackupRule) && !replaced {
+				var backupRules []storage.BackupRuleModel
+				resp.Diagnostics.Append(templatePlan.BackupRule.ElementsAs(ctx, &backupRules, false)...)
+
+				apiReq.BackupRule = storage.BackupRule(backupRules[0])
+			}
+
+			storageDetails, err := r.client.ModifyStorage(ctx, apiReq)
+			if err != nil {
+				resp.Diagnostics.AddError("Unable to modify template storage", utils.ErrorDiagnosticDetail(err))
+			}
+
+			if !templatePlan.Size.Equal(templateState.Size) && templatePlan.FilesystemAutoresize.ValueBool() {
+				resp.Diagnostics.Append(storage.ResizeStoragePartitionAndFs(
+					ctx,
+					r.client,
+					storageDetails.UUID,
+					templatePlan.DeleteAutoresizeBackup.ValueBool(),
+				)...)
+			}
 		}
 
-		replaced, diags := hasTemplateBackupRuleBeenReplacedWithSimpleBackups(ctx, state, plan)
-		resp.Diagnostics.Append(diags...)
+		if !templatePlan.Address.Equal(templateState.Address) || !templatePlan.AddressPosition.Equal(templateState.AddressPosition) {
+			oldAddress := buildStorageDeviceAddress(
+				templateState.Address.ValueString(),
+				templateState.AddressPosition.ValueString(),
+			)
+			newAddress := buildStorageDeviceAddress(
+				templatePlan.Address.ValueString(),
+				templatePlan.AddressPosition.ValueString(),
+			)
 
-		if !templatePlan.BackupRule.Equal(templateState.BackupRule) && !replaced {
-			var backupRules []storage.BackupRuleModel
-			resp.Diagnostics.Append(templatePlan.BackupRule.ElementsAs(ctx, &backupRules, false)...)
+			if _, err := r.client.DetachStorage(ctx, &request.DetachStorageRequest{
+				ServerUUID: uuid,
+				Address:    oldAddress,
+			}); err != nil {
+				resp.Diagnostics.AddError("Unable to detach storage", utils.ErrorDiagnosticDetail(err))
+				return
+			}
 
-			apiReq.BackupRule = storage.BackupRule(backupRules[0])
-		}
-
-		storageDetails, err := r.client.ModifyStorage(ctx, apiReq)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to modify template storage", utils.ErrorDiagnosticDetail(err))
-		}
-
-		if !templatePlan.Size.Equal(templateState.Size) && templatePlan.FilesystemAutoresize.ValueBool() {
-			resp.Diagnostics.Append(storage.ResizeStoragePartitionAndFs(
-				ctx,
-				r.client,
-				storageDetails.UUID,
-				templatePlan.DeleteAutoresizeBackup.ValueBool(),
-			)...)
-		}
-	}
-
-	if !templatePlan.Address.Equal(templateState.Address) || !templatePlan.AddressPosition.Equal(templateState.AddressPosition) {
-		oldAddress := buildStorageDeviceAddress(
-			templateState.Address.ValueString(),
-			templateState.AddressPosition.ValueString(),
-		)
-		newAddress := buildStorageDeviceAddress(
-			templatePlan.Address.ValueString(),
-			templatePlan.AddressPosition.ValueString(),
-		)
-
-		if _, err := r.client.DetachStorage(ctx, &request.DetachStorageRequest{
-			ServerUUID: uuid,
-			Address:    oldAddress,
-		}); err != nil {
-			resp.Diagnostics.AddError("Unable to detach storage", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-
-		if _, err := r.client.AttachStorage(ctx, &request.AttachStorageRequest{
-			Address:     newAddress,
-			ServerUUID:  uuid,
-			StorageUUID: templatePlan.ID.ValueString(),
-		}); err != nil {
-			resp.Diagnostics.AddError("Unable to attach storage", utils.ErrorDiagnosticDetail(err))
-			return
+			if _, err := r.client.AttachStorage(ctx, &request.AttachStorageRequest{
+				Address:     newAddress,
+				ServerUUID:  uuid,
+				StorageUUID: templatePlan.ID.ValueString(),
+			}); err != nil {
+				resp.Diagnostics.AddError("Unable to attach storage", utils.ErrorDiagnosticDetail(err))
+				return
+			}
 		}
 	}
 

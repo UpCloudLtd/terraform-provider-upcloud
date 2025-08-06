@@ -45,6 +45,10 @@ func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(ctx context.Context, sta
 		return
 	}
 
+	if stateTemplate == nil || planTemplate == nil {
+		return
+	}
+
 	if plan.SimpleBackup.Equal(state.SimpleBackup) || planTemplate.BackupRule.Equal(stateTemplate.BackupRule) {
 		return
 	}
