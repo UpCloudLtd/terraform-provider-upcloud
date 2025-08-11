@@ -212,7 +212,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				},
 			},
 			"metadata": schema.BoolAttribute{
-				Description: "Is metadata service active for the server",
+				Description: "Is metadata service active for the server. The metadata service must be enabled when using recent cloud-init based templates.",
 				Optional:    true,
 			},
 			"cpu": schema.Int64Attribute{

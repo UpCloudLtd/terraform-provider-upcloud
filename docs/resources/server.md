@@ -21,8 +21,11 @@ resource "upcloud_server" "example" {
   zone     = "de-fra1"
   plan     = "1xCPU-1GB"
 
+  # The metadata service must be enabled when using recent cloud-init based templates.
+  metadata = true
+
   template {
-    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+    storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
     size    = 25
 
     backup_rule {
@@ -68,7 +71,7 @@ resource "upcloud_server" "example" {
 - `hot_resize` (Boolean) If set to true, allows changing the server plan without requiring a reboot. This enables hot resizing of the server. If hot resizing fails, the apply operation will fail.
 - `labels` (Map of String) User defined key-value pairs to classify the server.
 - `mem` (Number) The amount of memory for the server (in megabytes)
-- `metadata` (Boolean) Is metadata service active for the server
+- `metadata` (Boolean) Is metadata service active for the server. The metadata service must be enabled when using recent cloud-init based templates.
 - `nic_model` (String) The model of the server's network interfaces
 - `plan` (String) The pricing plan used for the server. You can list available server plans with `upctl server plans`
 - `server_group` (String) The UUID of a server group to attach this server to. Note that the server can also be attached to a server group via the `members` property of `upcloud_server_group`. Only one of the these should be defined at a time. This value is only updated if it has been set to non-zero value.

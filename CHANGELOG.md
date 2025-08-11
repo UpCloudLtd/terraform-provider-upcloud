@@ -5,9 +5,13 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_server: clarify metadata service usage in the documentation.
+
 ## [5.23.3] - 2025-08-06
 
-## Fixed
+### Fixed
 
 - upcloud_server: correctly handle metadata toggling on resource update when template is not set.
 
