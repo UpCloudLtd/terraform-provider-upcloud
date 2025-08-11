@@ -3,8 +3,11 @@ resource "upcloud_server" "example" {
   zone     = "de-fra1"
   plan     = "1xCPU-1GB"
 
+  # The metadata service must be enabled when using recent cloud-init based templates.
+  metadata = true
+
   template {
-    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+    storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
     size    = 25
 
     backup_rule {
