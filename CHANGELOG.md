@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+- upcloud_kubernetes_node_group: support storage tier and size customisation for GPU and Cloud Native node groups.
+
 ## [5.23.4] - 2025-08-11
 
 ### Changed

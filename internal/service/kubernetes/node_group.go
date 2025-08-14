@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	validatorutil "github.com/UpCloudLtd/terraform-provider-upcloud/internal/validator"
@@ -27,6 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -59,6 +61,8 @@ type kubernetesNodeGroupModel struct {
 	AntiAffinity         types.Bool   `tfsdk:"anti_affinity"`
 	Cluster              types.String `tfsdk:"cluster"`
 	CustomPlan           types.List   `tfsdk:"custom_plan"`
+	GPUPlan              types.List   `tfsdk:"gpu_plan"`
+	CloudNativePlan      types.List   `tfsdk:"cloud_native_plan"`
 	KubeletArgs          types.Set    `tfsdk:"kubelet_args"`
 	ID                   types.String `tfsdk:"id"`
 	Labels               types.Map    `tfsdk:"labels"`
@@ -74,6 +78,16 @@ type kubernetesNodeGroupModel struct {
 type customPlanModel struct {
 	Cores       types.Int64  `tfsdk:"cores"`
 	Memory      types.Int64  `tfsdk:"memory"`
+	StorageSize types.Int64  `tfsdk:"storage_size"`
+	StorageTier types.String `tfsdk:"storage_tier"`
+}
+
+type gpuPlanModel struct {
+	StorageSize types.Int64  `tfsdk:"storage_size"`
+	StorageTier types.String `tfsdk:"storage_tier"`
+}
+
+type cloudNativePlanModel struct {
 	StorageSize types.Int64  `tfsdk:"storage_size"`
 	StorageTier types.String `tfsdk:"storage_tier"`
 }
@@ -181,7 +195,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 		},
 		Blocks: map[string]schema.Block{
 			"custom_plan": schema.ListNestedBlock{
-				MarkdownDescription: "Resource properties for custom plan",
+				MarkdownDescription: "Resource properties for custom plan. This block is required for `custom` plans only.",
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
 					getCustomPlanPlanModifier(),
@@ -192,7 +206,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"cores": schema.Int64Attribute{
-							MarkdownDescription: "The number of CPU cores dedicated to individual node group nodes when using custom plan",
+							MarkdownDescription: "The number of CPU cores dedicated to individual node group nodes.",
 							Required:            true,
 							PlanModifiers: []planmodifier.Int64{
 								int64planmodifier.RequiresReplace(),
@@ -202,7 +216,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 							},
 						},
 						"memory": schema.Int64Attribute{
-							MarkdownDescription: "The amount of memory in megabytes to assign to individual node group node when using custom plan. Value needs to be divisible by 1024.",
+							MarkdownDescription: "The amount of memory in megabytes to assign to individual node group node. Value needs to be divisible by 1024.",
 							Required:            true,
 							PlanModifiers: []planmodifier.Int64{
 								int64planmodifier.RequiresReplace(),
@@ -219,13 +233,94 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 								int64planmodifier.RequiresReplace(),
 							},
 							Validators: []validator.Int64{
-								int64validator.Between(25, 1024),
+								int64validator.Between(25, 4096),
 							},
 						},
 						"storage_tier": schema.StringAttribute{
-							MarkdownDescription: fmt.Sprintf("The storage tier to use. Defaults to %s", upcloud.KubernetesStorageTierMaxIOPS),
+							MarkdownDescription: "The storage tier to use.",
 							Optional:            true,
 							Computed:            true,
+							Default:             stringdefault.StaticString(string(upcloud.KubernetesStorageTierMaxIOPS)),
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									string(upcloud.KubernetesStorageTierMaxIOPS),
+									string(upcloud.KubernetesStorageTierHDD),
+									string(upcloud.KubernetesStorageTierStandard),
+								),
+							},
+						},
+					},
+				},
+			},
+			"gpu_plan": schema.ListNestedBlock{
+				MarkdownDescription: "Resource properties for GPU plan storage configuration. This block is optional for GPU plans.",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+					getGPUPlanPlanModifier(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"storage_size": schema.Int64Attribute{
+							MarkdownDescription: "The size of the storage device in gigabytes.",
+							Optional:            true,
+							PlanModifiers: []planmodifier.Int64{
+								int64planmodifier.RequiresReplace(),
+							},
+							Validators: []validator.Int64{
+								int64validator.Between(25, 4096),
+							},
+						},
+						"storage_tier": schema.StringAttribute{
+							MarkdownDescription: "The storage tier to use.",
+							Optional:            true,
+							Computed:            true,
+							Default:             stringdefault.StaticString(string(upcloud.KubernetesStorageTierMaxIOPS)),
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									string(upcloud.KubernetesStorageTierMaxIOPS),
+									string(upcloud.KubernetesStorageTierHDD),
+									string(upcloud.KubernetesStorageTierStandard),
+								),
+							},
+						},
+					},
+				},
+			},
+			"cloud_native_plan": schema.ListNestedBlock{
+				MarkdownDescription: "Resource properties for Cloud Native plan storage configuration. This block is optional for Cloud Native plans.",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+					getCloudNativePlanPlanModifier(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"storage_size": schema.Int64Attribute{
+							MarkdownDescription: "The size of the storage device in gigabytes.",
+							Optional:            true,
+							PlanModifiers: []planmodifier.Int64{
+								int64planmodifier.RequiresReplace(),
+							},
+							Validators: []validator.Int64{
+								int64validator.Between(25, 4096),
+							},
+						},
+						"storage_tier": schema.StringAttribute{
+							MarkdownDescription: "The storage tier to use.",
+							Optional:            true,
+							Computed:            true,
+							Default:             stringdefault.StaticString(string(upcloud.KubernetesStorageTierMaxIOPS)),
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
 							},
@@ -329,8 +424,24 @@ func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.C
 		resp.Diagnostics.Append(data.SSHKeys.ElementsAs(ctx, &sshKeys, false)...)
 	}
 
-	customPlan, diags := buildCustomPlan(ctx, data.CustomPlan)
-	resp.Diagnostics.Append(diags...)
+	// Build the appropriate plan based on plan type
+	var customPlan *upcloud.KubernetesNodeGroupCustomPlan
+	var gpuPlan *upcloud.KubernetesNodeGroupGPUPlan
+	var cloudNativePlan *upcloud.KubernetesNodeGroupCloudNativePlan
+	var diags diag.Diagnostics
+
+	planType := data.Plan.ValueString()
+	if planType == "custom" {
+		customPlan, diags = buildCustomPlan(ctx, data.CustomPlan)
+		resp.Diagnostics.Append(diags...)
+	} else if strings.HasPrefix(planType, gpuPlanPrefix) {
+		gpuPlan, diags = buildGPUPlan(ctx, data.GPUPlan)
+		resp.Diagnostics.Append(diags...)
+	} else if strings.HasPrefix(planType, cloudNativePlanPrefix) {
+		cloudNativePlan, diags = buildCloudNativePlan(ctx, data.CloudNativePlan)
+		resp.Diagnostics.Append(diags...)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -361,6 +472,8 @@ func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.C
 			AntiAffinity:         data.AntiAffinity.ValueBool(),
 			UtilityNetworkAccess: data.UtilityNetworkAccess.ValueBoolPointer(),
 			CustomPlan:           customPlan,
+			GPUPlan:              gpuPlan,
+			CloudNativePlan:      cloudNativePlan,
 			StorageEncryption:    upcloud.StorageEncryption(data.StorageEncryption.ValueString()),
 		},
 	}
@@ -531,6 +644,7 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 	data.AntiAffinity = types.BoolValue(ng.AntiAffinity)
 	data.Cluster = types.StringValue(cluster)
 
+	// Handle custom plan
 	if isImport || !data.CustomPlan.IsNull() {
 		customPlans := make([]customPlanModel, 0)
 		if ng.CustomPlan != nil {
@@ -541,8 +655,33 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 				StorageTier: types.StringValue(string(ng.CustomPlan.StorageTier)),
 			})
 		}
-
 		data.CustomPlan, diags = types.ListValueFrom(ctx, data.CustomPlan.ElementType(ctx), customPlans)
+		respDiagnostics.Append(diags...)
+	}
+
+	// Handle GPU plan
+	if isImport || !data.GPUPlan.IsNull() {
+		gpuPlans := make([]gpuPlanModel, 0)
+		if ng.GPUPlan != nil {
+			gpuPlans = append(gpuPlans, gpuPlanModel{
+				StorageSize: types.Int64Value(int64(ng.GPUPlan.StorageSize)),
+				StorageTier: types.StringValue(string(ng.GPUPlan.StorageTier)),
+			})
+		}
+		data.GPUPlan, diags = types.ListValueFrom(ctx, data.GPUPlan.ElementType(ctx), gpuPlans)
+		respDiagnostics.Append(diags...)
+	}
+
+	// Handle Cloud Native plan
+	if isImport || !data.CloudNativePlan.IsNull() {
+		cloudNativePlans := make([]cloudNativePlanModel, 0)
+		if ng.CloudNativePlan != nil {
+			cloudNativePlans = append(cloudNativePlans, cloudNativePlanModel{
+				StorageSize: types.Int64Value(int64(ng.CloudNativePlan.StorageSize)),
+				StorageTier: types.StringValue(string(ng.CloudNativePlan.StorageTier)),
+			})
+		}
+		data.CloudNativePlan, diags = types.ListValueFrom(ctx, data.CloudNativePlan.ElementType(ctx), cloudNativePlans)
 		respDiagnostics.Append(diags...)
 	}
 
@@ -602,12 +741,23 @@ func buildCustomPlan(ctx context.Context, dataCustomPlans types.List) (*upcloud.
 
 	customPlans := make([]upcloud.KubernetesNodeGroupCustomPlan, 0)
 	for _, plan := range planCustomPlans {
-		customPlan := upcloud.KubernetesNodeGroupCustomPlan{
-			Cores:       int(plan.Cores.ValueInt64()),
-			Memory:      int(plan.Memory.ValueInt64()),
-			StorageSize: int(plan.StorageSize.ValueInt64()),
+		customPlan := upcloud.KubernetesNodeGroupCustomPlan{}
+
+		// Cores and Memory are only set for custom plans, not for GPU or Cloud Native plans
+		if !plan.Cores.IsNull() && !plan.Cores.IsUnknown() {
+			customPlan.Cores = int(plan.Cores.ValueInt64())
 		}
-		if !plan.StorageTier.IsNull() || !plan.StorageTier.IsUnknown() {
+		if !plan.Memory.IsNull() && !plan.Memory.IsUnknown() {
+			customPlan.Memory = int(plan.Memory.ValueInt64())
+		}
+
+		// StorageSize is optional for GPU and Cloud Native plans
+		if !plan.StorageSize.IsNull() && !plan.StorageSize.IsUnknown() {
+			customPlan.StorageSize = int(plan.StorageSize.ValueInt64())
+		}
+
+		// StorageTier is optional for all plan types
+		if !plan.StorageTier.IsNull() && !plan.StorageTier.IsUnknown() {
 			customPlan.StorageTier = upcloud.StorageTier(plan.StorageTier.ValueString())
 		}
 
@@ -615,6 +765,60 @@ func buildCustomPlan(ctx context.Context, dataCustomPlans types.List) (*upcloud.
 	}
 
 	return &customPlans[0], respDiagnostics
+}
+
+func buildGPUPlan(ctx context.Context, dataGPUPlans types.List) (*upcloud.KubernetesNodeGroupGPUPlan, diag.Diagnostics) {
+	var planGPUPlans []gpuPlanModel
+	respDiagnostics := dataGPUPlans.ElementsAs(ctx, &planGPUPlans, false)
+
+	if len(planGPUPlans) == 0 {
+		return nil, respDiagnostics
+	}
+
+	gpuPlans := make([]upcloud.KubernetesNodeGroupGPUPlan, 0)
+	for _, plan := range planGPUPlans {
+		gpuPlan := upcloud.KubernetesNodeGroupGPUPlan{}
+
+		// For GPU plans, only storage configuration is allowed
+		if !plan.StorageSize.IsNull() && !plan.StorageSize.IsUnknown() {
+			gpuPlan.StorageSize = int(plan.StorageSize.ValueInt64())
+		}
+
+		if !plan.StorageTier.IsNull() && !plan.StorageTier.IsUnknown() {
+			gpuPlan.StorageTier = upcloud.StorageTier(plan.StorageTier.ValueString())
+		}
+
+		gpuPlans = append(gpuPlans, gpuPlan)
+	}
+
+	return &gpuPlans[0], respDiagnostics
+}
+
+func buildCloudNativePlan(ctx context.Context, dataCloudNativePlans types.List) (*upcloud.KubernetesNodeGroupCloudNativePlan, diag.Diagnostics) {
+	var planCloudNativePlans []cloudNativePlanModel
+	respDiagnostics := dataCloudNativePlans.ElementsAs(ctx, &planCloudNativePlans, false)
+
+	if len(planCloudNativePlans) == 0 {
+		return nil, respDiagnostics
+	}
+
+	cloudNativePlans := make([]upcloud.KubernetesNodeGroupCloudNativePlan, 0)
+	for _, plan := range planCloudNativePlans {
+		cloudNativePlan := upcloud.KubernetesNodeGroupCloudNativePlan{}
+
+		// For Cloud Native plans, only storage configuration is allowed
+		if !plan.StorageSize.IsNull() && !plan.StorageSize.IsUnknown() {
+			cloudNativePlan.StorageSize = int(plan.StorageSize.ValueInt64())
+		}
+
+		if !plan.StorageTier.IsNull() && !plan.StorageTier.IsUnknown() {
+			cloudNativePlan.StorageTier = upcloud.StorageTier(plan.StorageTier.ValueString())
+		}
+
+		cloudNativePlans = append(cloudNativePlans, cloudNativePlan)
+	}
+
+	return &cloudNativePlans[0], respDiagnostics
 }
 
 func buildKubeletArgs(ctx context.Context, dataKubeletArgs types.Set) ([]upcloud.KubernetesKubeletArg, diag.Diagnostics) {
