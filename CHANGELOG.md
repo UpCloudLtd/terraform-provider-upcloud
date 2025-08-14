@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.24.0] - 2025-08-14
+
+### Added
+
 - upcloud_kubernetes_node_group: support storage tier and size customisation for GPU and Cloud Native node groups.
 
 ## [5.23.4] - 2025-08-11
@@ -998,7 +1002,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.4...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.24.0...HEAD
+[5.24.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.4...v5.24.0
 [5.23.4]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.3...v5.23.4
 [5.23.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.2...v5.23.3
 [5.23.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.1...v5.23.2
