@@ -1,6 +1,6 @@
 module github.com/UpCloudLtd/terraform-provider-upcloud
 
-go 1.24.3
+go 1.25.0
 
 require (
 	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.1
