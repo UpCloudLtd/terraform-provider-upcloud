@@ -78,7 +78,9 @@ resource "upcloud_kubernetes_node_group" "group" {
 
 ### Blocks
 
-- `custom_plan` (Block List) Resource properties for custom plan (see [below for nested schema](#nestedblock--custom_plan))
+- `cloud_native_plan` (Block List) Resource properties for Cloud Native plan storage configuration. This block is optional for Cloud Native plans. (see [below for nested schema](#nestedblock--cloud_native_plan))
+- `custom_plan` (Block List) Resource properties for custom plan. This block is required for `custom` plans only. (see [below for nested schema](#nestedblock--custom_plan))
+- `gpu_plan` (Block List) Resource properties for GPU plan storage configuration. This block is optional for GPU plans. (see [below for nested schema](#nestedblock--gpu_plan))
 - `kubelet_args` (Block Set) Additional arguments for kubelet for the nodes in this group. Configure the arguments without leading `--`. The API will prefix the arguments with `--` when preparing kubelet call.
 
     Note that these arguments will be passed directly to kubelet CLI on each worker node without any validation. Passing invalid arguments can break your whole cluster. Be extra careful when adding kubelet args. (see [below for nested schema](#nestedblock--kubelet_args))
@@ -88,18 +90,36 @@ resource "upcloud_kubernetes_node_group" "group" {
 
 - `id` (String) Computed ID of the node group. This is a combination of the cluster UUID and the node group name, separated with a `/`.
 
+<a id="nestedblock--cloud_native_plan"></a>
+### Nested Schema for `cloud_native_plan`
+
+Optional Attributes:
+
+- `storage_size` (Number) The size of the storage device in gigabytes.
+- `storage_tier` (String) The storage tier to use.
+
+
 <a id="nestedblock--custom_plan"></a>
 ### Nested Schema for `custom_plan`
 
 Required Attributes:
 
-- `cores` (Number) The number of CPU cores dedicated to individual node group nodes when using custom plan
-- `memory` (Number) The amount of memory in megabytes to assign to individual node group node when using custom plan. Value needs to be divisible by 1024.
+- `cores` (Number) The number of CPU cores dedicated to individual node group nodes.
+- `memory` (Number) The amount of memory in megabytes to assign to individual node group node. Value needs to be divisible by 1024.
 - `storage_size` (Number) The size of the storage device in gigabytes.
 
 Optional Attributes:
 
-- `storage_tier` (String) The storage tier to use. Defaults to maxiops
+- `storage_tier` (String) The storage tier to use.
+
+
+<a id="nestedblock--gpu_plan"></a>
+### Nested Schema for `gpu_plan`
+
+Optional Attributes:
+
+- `storage_size` (Number) The size of the storage device in gigabytes.
+- `storage_tier` (String) The storage tier to use.
 
 
 <a id="nestedblock--kubelet_args"></a>
