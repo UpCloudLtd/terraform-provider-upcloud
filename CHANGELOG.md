@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_gateway: update gateway plan when `plan` field has changes.
+
 ## [5.24.0] - 2025-08-14
 
 ### Added

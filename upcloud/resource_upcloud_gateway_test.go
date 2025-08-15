@@ -28,7 +28,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "name", "tf-acc-test-net-gateway-gw"),
 					resource.TestCheckResourceAttr(name, "zone", "pl-waw1"),
-					resource.TestCheckResourceAttr(name, "plan", "advanced"),
+					resource.TestCheckResourceAttr(name, "plan", "production"),
 					resource.TestCheckResourceAttr(name, "features.0", "nat"),
 					resource.TestCheckResourceAttr(name, "configured_status", "started"),
 					resource.TestCheckResourceAttr(name, "labels.%", "2"),
@@ -114,6 +114,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "name", "tf-acc-test-net-gateway-gw-renamed"),
+					resource.TestCheckResourceAttr(name, "plan", "advanced"),
 					resource.TestCheckResourceAttr(name, "configured_status", "stopped"),
 					resource.TestCheckResourceAttr(name, "labels.test", "net-gateway-tf"),
 					resource.TestCheckResourceAttr(name, "labels.owned-by", "team-devex"),

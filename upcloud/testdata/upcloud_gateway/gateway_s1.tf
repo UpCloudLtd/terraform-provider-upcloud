@@ -32,7 +32,7 @@ resource "upcloud_network" "this" {
 resource "upcloud_gateway" "this" {
   name     = "${var.prefix}gw"
   zone     = var.zone
-  plan     = "advanced"
+  plan     = "production"
   features = ["nat", "vpn"]
 
   router {
