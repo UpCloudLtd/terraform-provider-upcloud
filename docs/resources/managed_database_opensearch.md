@@ -249,9 +249,9 @@ Optional Attributes:
 
 Optional Attributes:
 
-- `mapping_nested_objects_limit` (Number) index.mapping.nested_objects.limit. The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. Default is 10000.
-- `number_of_replicas` (Number) The number of replicas each primary shard has.
-- `number_of_shards` (Number) The number of primary shards that an index should have.
+- `mapping_nested_objects_limit` (Number) (DEPRECATED) index.mapping.nested_objects.limit. The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. Default is 10000. Deprecated, use an index template instead.
+- `number_of_replicas` (Number) The number of replicas each primary shard has. Deprecated, use an index template instead.
+- `number_of_shards` (Number) The number of primary shards that an index should have. Deprecated, use an index template instead.
 
 
 <a id="nestedblock--properties--openid"></a>
