@@ -242,6 +242,10 @@ func resourceGatewayUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		req.Name = d.Get("name").(string)
 	}
 
+	if d.HasChange("plan") {
+		req.Plan = d.Get("plan").(string)
+	}
+
 	if d.HasChange("configured_status") {
 		req.ConfiguredStatus = upcloud.GatewayConfiguredStatus(d.Get("configured_status").(string))
 	}
