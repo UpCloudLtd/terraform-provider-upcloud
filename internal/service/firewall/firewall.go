@@ -232,6 +232,10 @@ func setValues(ctx context.Context, data *firewallRulesModel, firewallRules *upc
 	}
 
 	for i, rule := range firewallRules.FirewallRules {
+		if i >= len(dataFirewallRules) {
+			dataFirewallRules = append(dataFirewallRules, firewallRuleModel{})
+		}
+
 		dataFirewallRules[i].Action = types.StringValue(rule.Action)
 		dataFirewallRules[i].Comment = types.StringValue(rule.Comment)
 
