@@ -34,11 +34,13 @@ const (
 
 func ResourceGateway() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Network gateways connect SDN Private Networks to external IP networks.",
-		CreateContext: resourceGatewayCreate,
-		ReadContext:   resourceGatewayRead,
-		UpdateContext: resourceGatewayUpdate,
-		DeleteContext: resourceGatewayDelete,
+		EnableLegacyTypeSystemApplyErrors: true,
+		EnableLegacyTypeSystemPlanErrors:  true,
+		Description:                       "Network gateways connect SDN Private Networks to external IP networks.",
+		CreateContext:                     resourceGatewayCreate,
+		ReadContext:                       resourceGatewayRead,
+		UpdateContext:                     resourceGatewayUpdate,
+		DeleteContext:                     resourceGatewayDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -73,6 +75,8 @@ func ResourceGateway() *schema.Resource {
 				MaxItems:    1,
 				MinItems:    1,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Description: routerIDDescription,
@@ -108,6 +112,8 @@ func ResourceGateway() *schema.Resource {
 				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"address": {
 							Type:        schema.TypeString,
@@ -140,6 +146,8 @@ func ResourceGateway() *schema.Resource {
 				Computed:    true,
 				Type:        schema.TypeSet,
 				Elem: &schema.Resource{
+					EnableLegacyTypeSystemApplyErrors: true,
+					EnableLegacyTypeSystemPlanErrors:  true,
 					Schema: map[string]*schema.Schema{
 						"address": {
 							Type:        schema.TypeString,
