@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_kubernetes_node_group: taint key can contain printable ascii characters and must not start with an underscore.
+
 ## [5.24.1] - 2025-08-27
 
 ### Fixed
