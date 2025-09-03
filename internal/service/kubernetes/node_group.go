@@ -40,6 +40,12 @@ var (
 	_ resource.ResourceWithImportState = &kubernetesNodeGroupResource{}
 )
 
+var validTaintKeyRegExp = regexp.MustCompile("^[ -^`-~]+[ -~]*$") // Printable ASCII characters: ' ' (Space), ..., '^', '_', '`', ..., `~`
+
+const (
+	invalidTaintKeyMessage = "must only contain printable ASCII characters and must not start with an underscore"
+)
+
 func NewKubernetesNodeGroupResource() resource.Resource {
 	return &kubernetesNodeGroupResource{}
 }
@@ -389,7 +395,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 							MarkdownDescription: "Taint key.",
 							Required:            true,
 							Validators: []validator.String{
-								stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9-]+$"), "needs to match regexp ^[a-zA-Z0-9-]+$"),
+								stringvalidator.RegexMatches(validTaintKeyRegExp, invalidTaintKeyMessage),
 							},
 						},
 						"value": schema.StringAttribute{
