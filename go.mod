@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.1
-	github.com/UpCloudLtd/upcloud-go-api/v8 v8.25.0
+	github.com/UpCloudLtd/upcloud-go-api/v8 v8.26.0
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-uuid v1.0.3
@@ -16,7 +16,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.35.0
 	github.com/hashicorp/terraform-plugin-testing v1.11.0
 	github.com/minio/minio-go/v7 v7.0.10
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.36.0
 	golang.org/x/mod v0.21.0
 	gopkg.in/yaml.v3 v3.0.1

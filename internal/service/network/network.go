@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
@@ -58,13 +59,25 @@ type networkModel struct {
 }
 
 type ipNetworkModel struct {
-	Address          types.String `tfsdk:"address"`
-	DHCP             types.Bool   `tfsdk:"dhcp"`
-	DHCPDefaultRoute types.Bool   `tfsdk:"dhcp_default_route"`
-	DHCPDns          types.Set    `tfsdk:"dhcp_dns"`
-	DHCPRoutes       types.Set    `tfsdk:"dhcp_routes"`
-	Family           types.String `tfsdk:"family"`
-	Gateway          types.String `tfsdk:"gateway"`
+	Address                 types.String                  `tfsdk:"address"`
+	DHCP                    types.Bool                    `tfsdk:"dhcp"`
+	DHCPDefaultRoute        types.Bool                    `tfsdk:"dhcp_default_route"`
+	DHCPDns                 types.Set                     `tfsdk:"dhcp_dns"`
+	DHCPRoutes              types.Set                     `tfsdk:"dhcp_routes"`
+	Family                  types.String                  `tfsdk:"family"`
+	Gateway                 types.String                  `tfsdk:"gateway"`
+	DHCPRoutesConfiguration *dhcpRoutesConfigurationModel `tfsdk:"dhcp_routes_configuration"`
+}
+
+type dhcpRoutesConfigurationModel struct {
+	EffectiveRoutesAutoPopulation *effectiveRoutesAutoPopulationModel `tfsdk:"effective_routes_auto_population"`
+}
+
+type effectiveRoutesAutoPopulationModel struct {
+	Enabled             types.Bool `tfsdk:"enabled"`
+	ExcludeBySource     types.Set  `tfsdk:"exclude_by_source"`
+	FilterByDestination types.Set  `tfsdk:"filter_by_destination"`
+	FilterByRouteType   types.Set  `tfsdk:"filter_by_route_type"`
 }
 
 func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -179,6 +192,64 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							},
 						},
 					},
+					Blocks: map[string]schema.Block{
+						"dhcp_routes_configuration": schema.SingleNestedBlock{
+							Description: "Controls which effective routes are handed out to DHCP clients.",
+							Blocks: map[string]schema.Block{
+								"effective_routes_auto_population": schema.SingleNestedBlock{
+									Attributes: map[string]schema.Attribute{
+										"enabled": schema.BoolAttribute{
+											Description: "Enable auto-population of DHCP routes.",
+											Optional:    true,
+											Computed:    true,
+											Default:     booldefault.StaticBool(false),
+										},
+										"exclude_by_source": schema.SetAttribute{
+											Description: "Exclude routes by their source.",
+											Optional:    true,
+											Computed:    true,
+											ElementType: types.StringType,
+											Validators: []validator.Set{
+												setvalidator.SizeBetween(0, 2),
+												setvalidator.ValueStringsAre(
+													stringvalidator.OneOf(
+														"static-route",
+														"router-connected-networks",
+													),
+												),
+											},
+										},
+										"filter_by_route_type": schema.SetAttribute{
+											Description: "Only include routes of these types.",
+											Optional:    true,
+											Computed:    true,
+											ElementType: types.StringType,
+											Validators: []validator.Set{
+												setvalidator.SizeBetween(0, 2),
+												setvalidator.ValueStringsAre(
+													stringvalidator.OneOf(
+														"user",
+														"service",
+													),
+												),
+											},
+										},
+										"filter_by_destination": schema.SetAttribute{
+											Description: "Only include destinations matching these CIDRs.",
+											Optional:    true,
+											Computed:    true,
+											ElementType: types.StringType,
+											Validators: []validator.Set{
+												setvalidator.ValueStringsAre(
+													validatorutil.NewFrameworkStringValidator(validation.IsCIDR),
+												),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 				Validators: []validator.List{
 					listvalidator.IsRequired(),
@@ -222,6 +293,28 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 
 		ipNetworks[i].Family = types.StringValue(ipnet.Family)
 		ipNetworks[i].Gateway = types.StringValue(ipnet.Gateway)
+
+		effectiveRoutesAutoPopulation := ipnet.DHCPRoutesConfiguration.EffectiveRoutesAutoPopulation
+
+		ipNetworks[i].DHCPRoutesConfiguration = &dhcpRoutesConfigurationModel{
+			EffectiveRoutesAutoPopulation: &effectiveRoutesAutoPopulationModel{},
+		}
+
+		effectiveRouteAutoPopulationModel := ipNetworks[i].DHCPRoutesConfiguration.EffectiveRoutesAutoPopulation
+
+		effectiveRouteAutoPopulationModel.Enabled = utils.AsBool(effectiveRoutesAutoPopulation.Enabled)
+
+		excludeBySource, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(effectiveRoutesAutoPopulation.ExcludeBySource))
+		respDiagnostics.Append(diags...)
+		effectiveRouteAutoPopulationModel.ExcludeBySource = excludeBySource
+
+		filterByDestination, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(effectiveRoutesAutoPopulation.FilterByDestination))
+		respDiagnostics.Append(diags...)
+		effectiveRouteAutoPopulationModel.FilterByDestination = filterByDestination
+
+		filterByRouteType, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(effectiveRoutesAutoPopulation.FilterByRouteType))
+		respDiagnostics.Append(diags...)
+		effectiveRouteAutoPopulationModel.FilterByRouteType = filterByRouteType
 	}
 
 	var diags diag.Diagnostics
@@ -235,7 +328,7 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 	var planNetworks []ipNetworkModel
 	respDiagnostics := dataIPNetworks.ElementsAs(ctx, &planNetworks, false)
 
-	networks := make([]upcloud.IPNetwork, 0)
+	networks := make([]upcloud.IPNetwork, 0, len(planNetworks))
 
 	for _, ipnet := range planNetworks {
 		dhcpdns, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPDns)
@@ -244,7 +337,35 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 		dhcproutes, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPRoutes)
 		respDiagnostics.Append(diags...)
 
-		networks = append(networks, upcloud.IPNetwork{
+		effectiveRouteAutoPopulation := upcloud.EffectiveRoutesAutoPopulation{}
+		cfgModel := ipnet.DHCPRoutesConfiguration
+		if cfgModel != nil && cfgModel.EffectiveRoutesAutoPopulation != nil {
+			effectiveRoutesAutoPopulationModel := cfgModel.EffectiveRoutesAutoPopulation
+
+			effectiveRouteAutoPopulation.Enabled = utils.AsUpCloudBoolean(effectiveRoutesAutoPopulationModel.Enabled)
+
+			filterByDestination, diags := utils.SetAsSliceOfStrings(ctx, effectiveRoutesAutoPopulationModel.FilterByDestination)
+			respDiagnostics.Append(diags...)
+			effectiveRouteAutoPopulation.FilterByDestination = filterByDestination
+
+			rawExclude, diags := utils.SetAsSliceOfStrings(ctx, effectiveRoutesAutoPopulationModel.ExcludeBySource)
+			respDiagnostics.Append(diags...)
+			excludeBySource := make([]upcloud.NetworkRouteSource, len(rawExclude))
+			for i, v := range rawExclude {
+				excludeBySource[i] = upcloud.NetworkRouteSource(v)
+			}
+			effectiveRouteAutoPopulation.ExcludeBySource = excludeBySource
+
+			rawRouteType, diags := utils.SetAsSliceOfStrings(ctx, effectiveRoutesAutoPopulationModel.FilterByRouteType)
+			respDiagnostics.Append(diags...)
+			routeType := make([]upcloud.NetworkRouteType, len(rawRouteType))
+			for i, v := range rawRouteType {
+				routeType[i] = upcloud.NetworkRouteType(v)
+			}
+			effectiveRouteAutoPopulation.FilterByRouteType = routeType
+		}
+
+		ipNet := upcloud.IPNetwork{
 			Address:          ipnet.Address.ValueString(),
 			DHCP:             utils.AsUpCloudBoolean(ipnet.DHCP),
 			DHCPDefaultRoute: utils.AsUpCloudBoolean(ipnet.DHCPDefaultRoute),
@@ -252,7 +373,19 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 			DHCPRoutes:       dhcproutes,
 			Family:           ipnet.Family.ValueString(),
 			Gateway:          ipnet.Gateway.ValueString(),
-		})
+		}
+
+		// only assign if non-zero
+		if effectiveRouteAutoPopulation.Enabled != upcloud.Empty ||
+			len(effectiveRouteAutoPopulation.ExcludeBySource) > 0 ||
+			len(effectiveRouteAutoPopulation.FilterByDestination) > 0 ||
+			len(effectiveRouteAutoPopulation.FilterByRouteType) > 0 {
+			ipNet.DHCPRoutesConfiguration = upcloud.DHCPRoutesConfiguration{
+				EffectiveRoutesAutoPopulation: effectiveRouteAutoPopulation,
+			}
+		}
+
+		networks = append(networks, ipNet)
 	}
 
 	return networks, respDiagnostics
@@ -315,6 +448,7 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 	network, err := r.client.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{
 		UUID: data.ID.ValueString(),
 	})
+
 	if err != nil {
 		if utils.IsNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
