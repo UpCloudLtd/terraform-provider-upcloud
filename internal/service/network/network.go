@@ -448,7 +448,6 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 	network, err := r.client.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{
 		UUID: data.ID.ValueString(),
 	})
-
 	if err != nil {
 		if utils.IsNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
