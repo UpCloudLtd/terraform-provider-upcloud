@@ -213,8 +213,8 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 												setvalidator.SizeBetween(0, 2),
 												setvalidator.ValueStringsAre(
 													stringvalidator.OneOf(
-														"static-route",
-														"router-connected-networks",
+														string(upcloud.NetworkRouteSourceStaticSource),
+														string(upcloud.NetworkRouteSourceRouterConnectedNetwork),
 													),
 												),
 											},
@@ -228,8 +228,8 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 												setvalidator.SizeBetween(0, 2),
 												setvalidator.ValueStringsAre(
 													stringvalidator.OneOf(
-														"user",
-														"service",
+														string(upcloud.NetworkRouteTypeUser),
+														string(upcloud.NetworkRouteTypeService),
 													),
 												),
 											},
