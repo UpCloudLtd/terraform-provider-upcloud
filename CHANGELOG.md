@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer: add support for floating IP addresses.
+- upcloud_floating_ip_address: add `release_policy` field for managing if the address should be kept or released when removed from a resource.
+
 ## [5.24.2] - 2025-09-05
 
 ### Fixed
