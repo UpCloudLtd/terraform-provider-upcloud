@@ -498,17 +498,21 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
 	respDiagnostics.Append(diags...)
 
-	ipAddresses := make([]loadbalancerIPAddressModel, len(loadbalancer.IPAddresses))
-	for i, ip := range loadbalancer.IPAddresses {
-		dataIPAddress := loadbalancerIPAddressModel{
-			NetworkName: types.StringValue(ip.NetworkName),
-			Address:     types.StringValue(ip.Address),
+	if data.IPAddresses.IsNull() {
+		data.IPAddresses = types.SetNull(data.IPAddresses.ElementType(ctx))
+	} else {
+		ipAddresses := make([]loadbalancerIPAddressModel, len(loadbalancer.IPAddresses))
+		for i, ip := range loadbalancer.IPAddresses {
+			dataIPAddress := loadbalancerIPAddressModel{
+				NetworkName: types.StringValue(ip.NetworkName),
+				Address:     types.StringValue(ip.Address),
+			}
+			ipAddresses[i] = dataIPAddress
 		}
-		ipAddresses[i] = dataIPAddress
-	}
 
-	data.IPAddresses, diags = types.SetValueFrom(ctx, data.IPAddresses.ElementType(ctx), ipAddresses)
-	respDiagnostics.Append(diags...)
+		data.IPAddresses, diags = types.SetValueFrom(ctx, data.IPAddresses.ElementType(ctx), ipAddresses)
+		respDiagnostics.Append(diags...)
+	}
 
 	nodes := make([]loadbalancerNodeModel, len(loadbalancer.Nodes))
 	for i, node := range loadbalancer.Nodes {
@@ -595,18 +599,18 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func shouldAttachIPAddress(planIPAddresses loadbalancerIPAddressModel, stateIPAddresses []loadbalancerIPAddressModel) bool {
-	for _, ip := range stateIPAddresses {
-		if planIPAddresses.Address.Equal(ip.Address) && planIPAddresses.NetworkName.Equal(ip.NetworkName) {
+func shouldAttachIPAddress(planIPAddress loadbalancerIPAddressModel, lbIPAddresses []upcloud.LoadBalancerFloatingIPAddress) bool {
+	for _, ip := range lbIPAddresses {
+		if planIPAddress.Address.ValueString() == ip.Address && planIPAddress.NetworkName.ValueString() == ip.NetworkName {
 			return false
 		}
 	}
 	return true
 }
 
-func shouldRemoveIPAddress(stateIPAddress loadbalancerIPAddressModel, planIPAddresses []loadbalancerIPAddressModel) bool {
-	for _, ip := range planIPAddresses {
-		if stateIPAddress.Address.Equal(ip.Address) && stateIPAddress.NetworkName.Equal(ip.NetworkName) {
+func shouldRemoveIPAddress(lbIPAddress upcloud.LoadBalancerFloatingIPAddress, dataIPAddresses []loadbalancerIPAddressModel) bool {
+	for _, ip := range dataIPAddresses {
+		if lbIPAddress.Address == ip.Address.ValueString() && lbIPAddress.NetworkName == ip.NetworkName.ValueString() {
 			return false
 		}
 	}
@@ -628,19 +632,24 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	var stateIPAddresses []loadbalancerIPAddressModel
-	resp.Diagnostics.Append(state.IPAddresses.ElementsAs(ctx, &stateIPAddresses, false)...)
-	if resp.Diagnostics.HasError() {
+	lbIPAddresses, err := r.client.GetLoadBalancerIPAddresses(ctx, &request.GetLoadBalancerIPAddressesRequest{
+		ServiceUUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to get load balancer IP addresses",
+			utils.ErrorDiagnosticDetail(err),
+		)
 		return
 	}
 
-	// Delete IP addresses that are no longer in the plan
-	if !data.IPAddresses.Equal(state.IPAddresses) {
-		for _, ip := range stateIPAddresses {
+	// If IP addresses are configured in plan, remove IP addresses that are no longer in the plan
+	if !data.IPAddresses.IsNull() {
+		for _, ip := range lbIPAddresses {
 			if shouldRemoveIPAddress(ip, dataIPAddresses) {
 				if err := r.client.RemoveLoadBalancerIPAddress(ctx, &request.RemoveLoadBalancerIPAddressRequest{
 					ServiceUUID: data.ID.ValueString(),
-					Address:     ip.Address.ValueString(),
+					Address:     ip.Address,
 				}); err != nil {
 					resp.Diagnostics.AddError(
 						"Unable to remove IP address from the loadbalancer",
@@ -693,9 +702,9 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Attach IP addresses that are not in the state
-	if !data.IPAddresses.Equal(state.IPAddresses) {
+	if !data.IPAddresses.IsNull() {
 		for _, ip := range dataIPAddresses {
-			if shouldAttachIPAddress(ip, stateIPAddresses) {
+			if shouldAttachIPAddress(ip, lbIPAddresses) {
 				if _, err := r.client.AttachLoadBalancerIPAddress(ctx, &request.AttachLoadBalancerIPAddressRequest{
 					ServiceUUID: data.ID.ValueString(),
 					Address:     ip.Address.ValueString(),
