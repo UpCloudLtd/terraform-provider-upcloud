@@ -26,13 +26,25 @@ resource "upcloud_network" "lb_network" {
   }
 }
 
+resource "upcloud_floating_ip_address" "ip" {
+  count = 3
+
+  access         = "public"
+  family         = "IPv4"
+  release_policy = "keep"
+  zone           = var.zone
+}
+
 resource "upcloud_loadbalancer" "lb" {
   configured_status = "started"
   name              = "${var.basename}lb"
-  plan              = "development"
+  plan              = "production-small"
   zone              = var.zone
   maintenance_dow   = "monday"
   maintenance_time  = "00:01:01Z"
+
+  // Remove all IPs
+  ip_addresses = []
 
   # change: network names
   dynamic "networks" {

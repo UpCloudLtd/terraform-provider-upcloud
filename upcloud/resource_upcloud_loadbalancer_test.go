@@ -46,8 +46,9 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(lbName, "plan", "development"),
+					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "1"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "sunday"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_time", "20:01:01Z"),
 					resource.TestCheckResourceAttrSet(lbName, "dns_name"),
@@ -185,7 +186,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(lbName, "plan", "development"),
+					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "monday"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_time", "00:01:01Z"),
 					resource.TestCheckResourceAttr(lbName, "labels.%", "2"),
@@ -214,6 +216,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS3,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "network", ""),
 					resource.TestCheckResourceAttr(lbName, "networks.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "networks.0.name", "lan-0"),
@@ -242,6 +245,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS4,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "0"),
 					resource.TestCheckResourceAttr(lbName, "networks.0.name", "lan-a"),
 					resource.TestCheckResourceAttr(lbName, "networks.0.type", "private"),
 					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-b"),

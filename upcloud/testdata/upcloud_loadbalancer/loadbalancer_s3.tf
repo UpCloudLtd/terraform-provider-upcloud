@@ -25,13 +25,31 @@ resource "upcloud_network" "lb_network" {
   }
 }
 
+resource "upcloud_floating_ip_address" "ip" {
+  count = 3
+
+  access         = "public"
+  family         = "IPv4"
+  release_policy = "keep"
+  zone           = var.zone
+}
+
 resource "upcloud_loadbalancer" "lb" {
   configured_status = "started"
   name              = "${var.basename}lb"
-  plan              = "development"
+  plan              = "production-small"
   zone              = var.zone
   maintenance_dow   = "monday"
   maintenance_time  = "00:01:01Z"
+
+  // Remove 1 IP and attach 1 new floating IP address
+  ip_addresses = [
+    for ip in slice(upcloud_floating_ip_address.ip, 1, 3) :
+    {
+      address      = ip.ip_address
+      network_name = "public"
+    }
+  ]
 
   # change: from public → private to private → private
   dynamic "networks" {
