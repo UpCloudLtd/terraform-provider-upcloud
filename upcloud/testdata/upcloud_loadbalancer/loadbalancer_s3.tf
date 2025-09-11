@@ -51,7 +51,13 @@ resource "upcloud_loadbalancer" "lb" {
     }
   ]
 
-  # change: from public → private to private → private
+  networks {
+    type   = "public"
+    family = "IPv4"
+    name   = "public"
+  }
+
+  // Attach second private network
   dynamic "networks" {
     for_each = upcloud_network.lb_network
 

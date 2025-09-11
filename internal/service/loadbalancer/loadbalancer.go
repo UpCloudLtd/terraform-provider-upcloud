@@ -455,6 +455,9 @@ func waitForRunningState(ctx context.Context, client *service.Service, data load
 func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbalancer *upcloud.LoadBalancer) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
+	// Detect import: name is required, so it should be null only when resource is being imported
+	isImport := data.Name.IsNull()
+
 	backendNames := []string{}
 	for _, backend := range loadbalancer.Backends {
 		backendNames = append(backendNames, backend.Name)
@@ -498,7 +501,7 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
 	respDiagnostics.Append(diags...)
 
-	if data.IPAddresses.IsNull() {
+	if data.IPAddresses.IsNull() && !isImport {
 		data.IPAddresses = types.SetNull(data.IPAddresses.ElementType(ctx))
 	} else {
 		ipAddresses := make([]loadbalancerIPAddressModel, len(loadbalancer.IPAddresses))

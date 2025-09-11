@@ -46,7 +46,7 @@ resource "upcloud_loadbalancer" "lb" {
   // Remove all IPs
   ip_addresses = []
 
-  # change: network names
+  # Remove public network, change network names
   dynamic "networks" {
     for_each = upcloud_network.lb_network
 
