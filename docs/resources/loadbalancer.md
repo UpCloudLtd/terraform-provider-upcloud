@@ -59,6 +59,7 @@ resource "upcloud_loadbalancer" "lb" {
 ### Optional Attributes
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
+- `ip_addresses` (Attributes Set) Floating IP addresses connected to the load balancer. (see [below for nested schema](#nestedatt--ip_addresses))
 - `labels` (Map of String) User defined key-value pairs to classify the load balancer.
 - `maintenance_dow` (String) The day of the week on which maintenance will be performed. If not provided, we will randomly select a weekend day. Valid values `monday|tuesday|wednesday|thursday|friday|saturday|sunday`.
 - `maintenance_time` (String) The time at which the maintenance will begin in UTC. A 2-hour timeframe has been allocated for maintenance. During this period, the multi-node production plans will not experience any downtime, while the one-node plans will have a downtime of 1-2 minutes. If not provided, we will randomly select an off-peak time. Needs to be a valid time format in UTC HH:MM:SSZ, for example `20:01:01Z`.
@@ -77,6 +78,15 @@ resource "upcloud_loadbalancer" "lb" {
 - `nodes` (Attributes List) Nodes are instances running load balancer service (see [below for nested schema](#nestedatt--nodes))
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 - `resolvers` (List of String) Domain Name Resolvers.
+
+<a id="nestedatt--ip_addresses"></a>
+### Nested Schema for `ip_addresses`
+
+Required Attributes:
+
+- `address` (String) Floating IP address to attach to the load balancer.
+- `network_name` (String) Name of the network where to attach the IP address.
+
 
 <a id="nestedblock--networks"></a>
 ### Nested Schema for `networks`

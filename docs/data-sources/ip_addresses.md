@@ -36,5 +36,6 @@ Read-Only:
 - `mac` (String) MAC address of server interface to assign address to
 - `part_of_plan` (Boolean) Is the address a part of a plan
 - `ptr_record` (String) A reverse DNS record entry
+- `release_policy` (String) Release policy for the address
 - `server` (String) The unique identifier for a server
 - `zone` (String) Zone of address, required when assigning a detached floating IP address, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
