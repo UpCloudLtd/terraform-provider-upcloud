@@ -8,42 +8,47 @@ variable "zone" {
   default = "fi-hel2"
 }
 
-locals {
-  addresses = ["10.0.7.0/24", "10.0.8.0/24"]
-  names     = ["lan-a", "lan-b"]
-}
-
 resource "upcloud_network" "lb_network" {
-  count = length(local.addresses)
-
-  name = "${var.basename}net-${count.index}"
+  name = "${var.basename}net"
   zone = var.zone
-
   ip_network {
-    address = local.addresses[count.index]
+    address = "10.0.7.0/24"
     dhcp    = true
     family  = "IPv4"
   }
 }
 
+resource "upcloud_floating_ip_address" "ip" {
+  count = 3
+
+  access         = "public"
+  family         = "IPv4"
+  release_policy = "keep"
+  zone           = var.zone
+}
+
 resource "upcloud_loadbalancer" "lb" {
   configured_status = "started"
   name              = "${var.basename}lb"
-  plan              = "development"
+  plan              = "production-small"
   zone              = var.zone
   maintenance_dow   = "monday"
   maintenance_time  = "00:01:01Z"
 
-  # change: network names
-  dynamic "networks" {
-    for_each = upcloud_network.lb_network
+  // Remove all IPs
+  ip_addresses = []
 
-    content {
-      name    = local.names[networks.key]
-      type    = "private"
-      family  = "IPv4"
-      network = networks.value.id
-    }
+  networks {
+    type   = "public"
+    family = "IPv4"
+    name   = "public"
+  }
+
+  networks {
+    type    = "private"
+    family  = "IPv4"
+    name    = "private"
+    network = resource.upcloud_network.lb_network.id
   }
 }
 
@@ -53,18 +58,14 @@ resource "upcloud_loadbalancer_frontend" "lb_fe_1" {
   mode                 = "http"
   port                 = 8080
   default_backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
+
   properties {
     timeout_client         = 20
     inbound_proxy_protocol = true
   }
 
-  # change: add network listener
   networks {
-    name = "lan-a"
-  }
-
-  networks {
-    name = "lan-b"
+    name = "public"
   }
 }
 

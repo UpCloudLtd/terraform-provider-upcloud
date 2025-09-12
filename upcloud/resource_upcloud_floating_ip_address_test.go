@@ -28,19 +28,27 @@ func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckFloatingIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testUpcloudFloatingIPAddressBasicConfig(),
+				Config: testUpcloudFloatingIPAddressBasicConfig(""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr(resourceName, "mac_address"),
 					resource.TestCheckResourceAttr(resourceName, "zone", expectedZone),
 					resource.TestCheckResourceAttr(resourceName, "family", expectedFamily),
 					resource.TestCheckResourceAttr(resourceName, "access", expectedAccess),
 					resource.TestCheckResourceAttrSet(resourceName, "ip_address"),
+					// API default for release policy is "keep"
+					resource.TestCheckResourceAttr(resourceName, "release_policy", "keep"),
 				),
 			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config: testUpcloudFloatingIPAddressBasicConfig("release"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "release_policy", "release"),
+				),
 			},
 		},
 	})
@@ -149,12 +157,23 @@ func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testUpcloudFloatingIPAddressBasicConfig() string {
-	return `
+func testUpcloudFloatingIPAddressBasicConfig(releasePolicy string) string {
+	config := strings.Builder{}
+	config.WriteString(`
 		resource "upcloud_floating_ip_address" "test" {
 			zone = "fi-hel1"
+	`)
+
+	if releasePolicy != "" {
+		config.WriteString(fmt.Sprintf(`
+			release_policy = "%s"
+		`, releasePolicy))
+	}
+
+	config.WriteString(`
 		}
-`
+	`)
+	return config.String()
 }
 
 func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, assignedServerIndex int) string {

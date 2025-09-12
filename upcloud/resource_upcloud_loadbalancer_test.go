@@ -39,6 +39,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 		}
 	}
 
+	var uuid string
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProviderFactories,
@@ -46,8 +48,10 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(lbName, "plan", "development"),
+					checkStringDoesNotChange(lbName, "id", &uuid),
+					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "1"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "sunday"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_time", "20:01:01Z"),
 					resource.TestCheckResourceAttrSet(lbName, "dns_name"),
@@ -185,7 +189,9 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(lbName, "plan", "development"),
+					checkStringDoesNotChange(lbName, "id", &uuid),
+					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "monday"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_time", "00:01:01Z"),
 					resource.TestCheckResourceAttr(lbName, "labels.%", "2"),
@@ -214,11 +220,13 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS3,
 				Check: resource.ComposeTestCheckFunc(
+					checkStringDoesNotChange(lbName, "id", &uuid),
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "network", ""),
 					resource.TestCheckResourceAttr(lbName, "networks.#", "2"),
-					resource.TestCheckResourceAttr(lbName, "networks.0.name", "lan-0"),
-					resource.TestCheckResourceAttr(lbName, "networks.0.type", "private"),
-					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-1"),
+					resource.TestCheckResourceAttr(lbName, "networks.0.name", "public"),
+					resource.TestCheckResourceAttr(lbName, "networks.0.type", "public"),
+					resource.TestCheckResourceAttr(lbName, "networks.1.name", "private"),
 					resource.TestCheckResourceAttr(lbName, "networks.1.type", "private"),
 					resource.TestCheckResourceAttr(lbName, "labels.%", "0"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "name", "lb-fe-1-r1-test"),
@@ -242,10 +250,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS4,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(lbName, "networks.0.name", "lan-a"),
-					resource.TestCheckResourceAttr(lbName, "networks.0.type", "private"),
-					resource.TestCheckResourceAttr(lbName, "networks.1.name", "lan-b"),
-					resource.TestCheckResourceAttr(lbName, "networks.1.type", "private"),
+					checkStringDoesNotChange(lbName, "id", &uuid),
+					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "0"),
 				),
 			},
 		},
