@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.25.0] - 2025-09-12
+
 ### Added
 
 - upcloud_loadbalancer: add support for floating IP addresses.
@@ -1020,7 +1022,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.24.2...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.25.0...HEAD
+[5.25.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.24.2...v5.25.0
 [5.24.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.24.1...v5.24.2
 [5.24.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.24.0...v5.24.1
 [5.24.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.23.4...v5.24.0
