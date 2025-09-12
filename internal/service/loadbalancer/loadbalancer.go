@@ -646,24 +646,26 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	// If IP addresses are configured in plan, remove IP addresses that are no longer in the plan
-	if !data.IPAddresses.IsNull() {
-		for _, ip := range lbIPAddresses {
-			if shouldRemoveIPAddress(ip, dataIPAddresses) {
-				if err := r.client.RemoveLoadBalancerIPAddress(ctx, &request.RemoveLoadBalancerIPAddressRequest{
-					ServiceUUID: data.ID.ValueString(),
-					Address:     ip.Address,
-				}); err != nil {
-					resp.Diagnostics.AddError(
-						"Unable to remove IP address from the loadbalancer",
-						utils.ErrorDiagnosticDetail(err),
-					)
-					return
-				}
+	// Remove IP addresses that are no longer in the plan
+	// This removes all IP addresses when value is null or an empty set
+	didRemoveIPAddresses := false
+	for _, ip := range lbIPAddresses {
+		if shouldRemoveIPAddress(ip, dataIPAddresses) {
+			if err := r.client.RemoveLoadBalancerIPAddress(ctx, &request.RemoveLoadBalancerIPAddressRequest{
+				ServiceUUID: data.ID.ValueString(),
+				Address:     ip.Address,
+			}); err != nil {
+				resp.Diagnostics.AddError(
+					"Unable to remove IP address from the loadbalancer",
+					utils.ErrorDiagnosticDetail(err),
+				)
+				return
 			}
+			didRemoveIPAddresses = true
 		}
+	}
 
-		// Wait until load balancer is in running state before continuing
+	if didRemoveIPAddresses {
 		_, diags := waitForRunningState(ctx, r.client, data, "removing IP addresses")
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
@@ -704,7 +706,7 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		}
 	}
 
-	// Attach IP addresses that are not in the state
+	// Attach IP addresses that are not already attached
 	if !data.IPAddresses.IsNull() {
 		for _, ip := range dataIPAddresses {
 			if shouldAttachIPAddress(ip, lbIPAddresses) {
