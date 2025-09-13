@@ -117,7 +117,7 @@ Optional Attributes:
 - `log_line_prefix` (String) Choose from one of the available log formats.
 - `log_min_duration_statement` (Number) Log statements that take more than this number of milliseconds to run, -1 disables.
 - `log_temp_files` (Number) Log statements for each temporary file created larger than this number of kilobytes, -1 disables.
-- `max_connections` (Number) PostgreSQL maximum number of concurrent connections to the database server. Changing this parameter causes a service restart.
+- `max_connections` (Number) Sets the PostgreSQL maximum number of concurrent connections to the database server. This is a limited-release parameter. Contact your account team to confirm your eligibility. You cannot decrease this parameter value when set. For services with a read replica, first increase the read replica's value. After the change is applied to the replica, you can increase the primary service's value. Changing this parameter causes a service restart.
 - `max_files_per_process` (Number) PostgreSQL maximum number of files that can be open per process. The default is `1000` (upstream default). Changing this parameter causes a service restart.
 - `max_locks_per_transaction` (Number) PostgreSQL maximum locks per transaction. Changing this parameter causes a service restart.
 - `max_logical_replication_workers` (Number) PostgreSQL maximum logical replication workers (taken from the pool of max_parallel_workers). The default is `4` (upstream default). Changing this parameter causes a service restart.
@@ -186,19 +186,25 @@ Optional Attributes:
 Optional Attributes:
 
 - `feature_enabled` (Boolean) Enable pgaudit extension. Enable pgaudit extension. When enabled, pgaudit extension will be automatically installed.Otherwise, extension will be uninstalled but auditing configurations will be preserved.
-- `log` (List of String) Specifies which classes of statements will be logged by session audit logging.
-- `log_catalog` (Boolean) Specifies that session logging should be enabled in the casewhere all relations in a statement are in pg_catalog.
-- `log_client` (Boolean) Specifies whether log messages will be visible to a client process such as psql.
-- `log_level` (String) Specifies the log level that will be used for log entries.
-- `log_max_string_length` (Number) Crop parameters representation and whole statements if they exceed this threshold. A (default) value of -1 disable the truncation.
-- `log_nested_statements` (Boolean) This GUC allows to turn off logging nested statements, that is, statements that are executed as part of another ExecutorRun.
-- `log_parameter` (Boolean) Specifies that audit logging should include the parameters that were passed with the statement.
-- `log_parameter_max_size` (Number) Specifies that parameter values longer than this setting (in bytes) should not be logged, but replaced with <long param suppressed>.
-- `log_relation` (Boolean) Specifies whether session audit logging should create a separate log entry for each relation (TABLE, VIEW, etc.) referenced in a SELECT or DML statement.
-- `log_rows` (Boolean) Specifies that audit logging should include the rows retrieved or affected by a statement. When enabled the rows field will be included after the parameter field.
-- `log_statement` (Boolean) Specifies whether logging will include the statement text and parameters (if enabled).
-- `log_statement_once` (Boolean) Specifies whether logging will include the statement text and parameters with the first log entry for a statement/substatement combination or with every entry.
-- `role` (String) Specifies the master role to use for object audit logging.
+- `log` (List of String) Log. Specifies which classes of statements will be logged by session audit logging.
+- `log_catalog` (Boolean) Log Catalog. Specifies that session logging should be enabled in the case where all relations
+in a statement are in pg_catalog.
+- `log_client` (Boolean) Log Client. Specifies whether log messages will be visible to a client process such as psql.
+- `log_level` (String) Log level. Specifies the log level that will be used for log entries.
+- `log_max_string_length` (Number) Log Max String Length. Crop parameters representation and whole statements if they exceed this threshold.
+A (default) value of -1 disable the truncation.
+- `log_nested_statements` (Boolean) Log Nested Statements. This GUC allows to turn off logging nested statements, that is, statements that are
+executed as part of another ExecutorRun.
+- `log_parameter` (Boolean) Log Parameter. Specifies that audit logging should include the parameters that were passed with the statement.
+- `log_parameter_max_size` (Number) Log Parameter Max Size. Specifies that parameter values longer than this setting (in bytes) should not be logged,
+but replaced with <long param suppressed>.
+- `log_relation` (Boolean) Log Relation. Specifies whether session audit logging should create a separate log entry
+for each relation (TABLE, VIEW, etc.) referenced in a SELECT or DML statement.
+- `log_rows` (Boolean) Log Rows.
+- `log_statement` (Boolean) Log Statement. Specifies whether logging will include the statement text and parameters (if enabled).
+- `log_statement_once` (Boolean) Log Statement Once. Specifies whether logging will include the statement text and parameters with
+the first log entry for a statement/substatement combination or with every entry.
+- `role` (String) Role. Specifies the master role to use for object audit logging.
 
 
 <a id="nestedblock--properties--pgbouncer"></a>
@@ -223,7 +229,7 @@ Optional Attributes:
 
 Optional Attributes:
 
-- `max_failover_replication_time_lag` (Number) Number of seconds of master unavailability before triggering database failover to standby.
+- `max_failover_replication_time_lag` (Number) Max Failover Replication Time Lag. Number of seconds of master unavailability before triggering database failover to standby.
 
 
 <a id="nestedblock--properties--timescaledb"></a>
