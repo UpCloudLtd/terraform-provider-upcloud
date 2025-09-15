@@ -346,22 +346,31 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 		// API always returns ERA with enabled defaulting to false.
 		era := ipnet.DHCPRoutesConfiguration.EffectiveRoutesAutoPopulation
 		enabledTF := utils.AsBool(era.Enabled)
-		fbdSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(era.FilterByDestination))
+
+		var fbdStrings []string
+		if era.FilterByDestination != nil {
+			fbdStrings = *era.FilterByDestination
+		}
+		fbdSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(fbdStrings))
 		respDiagnostics.Append(diags...)
 
-		ebsStrings := make([]string, len(era.ExcludeBySource))
-		for i, v := range era.ExcludeBySource {
-			ebsStrings[i] = string(v)
+		var ebsStrings []string
+		if era.ExcludeBySource != nil {
+			ebsStrings = make([]string, len(*era.ExcludeBySource))
+			for i, v := range *era.ExcludeBySource {
+				ebsStrings[i] = string(v)
+			}
 		}
 		ebsSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ebsStrings))
-		respDiagnostics.Append(diags...)
 
-		frtStrings := make([]string, len(era.FilterByRouteType))
-		for i, v := range era.FilterByRouteType {
-			frtStrings[i] = string(v)
+		var frtStrings []string
+		if era.FilterByRouteType != nil {
+			frtStrings = make([]string, len(*era.FilterByRouteType))
+			for i, v := range *era.FilterByRouteType {
+				frtStrings[i] = string(v)
+			}
 		}
 		frtSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(frtStrings))
-		respDiagnostics.Append(diags...)
 
 		switch {
 		case !outerPresent:
@@ -498,9 +507,9 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 			ipNet.DHCPRoutesConfiguration = upcloud.DHCPRoutesConfiguration{
 				EffectiveRoutesAutoPopulation: upcloud.EffectiveRoutesAutoPopulation{
 					Enabled:             upcloud.FromBool(false),
-					FilterByDestination: []string{},
-					ExcludeBySource:     []upcloud.NetworkRouteSource{},
-					FilterByRouteType:   []upcloud.NetworkRouteType{},
+					FilterByDestination: &[]string{},
+					ExcludeBySource:     &[]upcloud.NetworkRouteSource{},
+					FilterByRouteType:   &[]upcloud.NetworkRouteType{},
 				},
 			}
 		} else {
@@ -513,9 +522,9 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 				ipNet.DHCPRoutesConfiguration = upcloud.DHCPRoutesConfiguration{
 					EffectiveRoutesAutoPopulation: upcloud.EffectiveRoutesAutoPopulation{
 						Enabled:             upcloud.FromBool(false),
-						FilterByDestination: []string{},
-						ExcludeBySource:     []upcloud.NetworkRouteSource{},
-						FilterByRouteType:   []upcloud.NetworkRouteType{},
+						FilterByDestination: &[]string{},
+						ExcludeBySource:     &[]upcloud.NetworkRouteSource{},
+						FilterByRouteType:   &[]upcloud.NetworkRouteType{},
 					},
 				}
 			} else {
@@ -557,9 +566,9 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 				ipNet.DHCPRoutesConfiguration = upcloud.DHCPRoutesConfiguration{
 					EffectiveRoutesAutoPopulation: upcloud.EffectiveRoutesAutoPopulation{
 						Enabled:             enabledUC,
-						FilterByDestination: fbd,
-						ExcludeBySource:     ebs,
-						FilterByRouteType:   frt,
+						FilterByDestination: &fbd,
+						ExcludeBySource:     &ebs,
+						FilterByRouteType:   &frt,
 					},
 				}
 			}
