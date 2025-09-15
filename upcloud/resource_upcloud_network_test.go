@@ -313,7 +313,7 @@ func TestAccUpcloudNetwork_DHCPRoutesConfiguration(t *testing.T) {
 							gateway            = "10.20.0.1"
 
 							dhcp_routes_configuration = {
-								effective_routes_auto_population {
+								effective_routes_auto_population = {
 									enabled = true
 
 									filter_by_destination = [
