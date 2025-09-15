@@ -377,6 +377,11 @@ func TestAccUpcloudNetwork_DHCPRoutesConfiguration(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.filter_by_route_type.#", "0"),
 				),
 			},
+			{
+				ResourceName:      "upcloud_network.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
