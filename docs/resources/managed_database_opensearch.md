@@ -98,7 +98,9 @@ Optional Attributes:
 - `cluster_routing_allocation_balance_prefer_primary` (Boolean) When set to true, OpenSearch attempts to evenly distribute the primary shards between the cluster nodes. Enabling this setting does not always guarantee an equal number of primary shards on each node, especially in the event of a failover. Changing this setting to false after it was set to true does not invoke redistribution of primary shards. Default is false.
 - `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to node cpu count * 2.
 - `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name.
-- `elasticsearch_version` (String) Elasticsearch major version.
+- `custom_keystores` (List of String) OpenSearch custom keystores. Allow to register custom keystores in OpenSearch.
+- `custom_repos` (List of String) OpenSearch custom repositories. Allow to register object storage repositories in OpenSearch.
+- `elasticsearch_version` (String) Elasticsearch version.
 - `email_sender_name` (String) Sender name placeholder to be used in Opensearch Dashboards and Opensearch keystore. This should be identical to the Sender name defined in Opensearch dashboards.
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
 - `email_sender_username` (String) Sender username for Opensearch alerts.
@@ -147,7 +149,7 @@ Optional Attributes:
 - `thread_pool_search_throttled_size` (Number) search_throttled thread pool size. Size for the thread pool. See documentation for exact details. Do note this may have maximum value depending on CPU count - value is automatically lowered if set to higher than maximum value.
 - `thread_pool_write_queue_size` (Number) write thread pool queue size. Size for the thread pool queue. See documentation for exact details.
 - `thread_pool_write_size` (Number) write thread pool size. Size for the thread pool. See documentation for exact details. Do note this may have maximum value depending on CPU count - value is automatically lowered if set to higher than maximum value.
-- `version` (String) OpenSearch major version.
+- `version` (String) OpenSearch version.
 
 Blocks:
 
@@ -249,9 +251,9 @@ Optional Attributes:
 
 Optional Attributes:
 
-- `mapping_nested_objects_limit` (Number) index.mapping.nested_objects.limit. The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. Default is 10000.
-- `number_of_replicas` (Number) The number of replicas each primary shard has.
-- `number_of_shards` (Number) The number of primary shards that an index should have.
+- `mapping_nested_objects_limit` (Number) (DEPRECATED) index.mapping.nested_objects.limit. The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. Default is 10000. Deprecated, use an index template instead.
+- `number_of_replicas` (Number) The number of replicas each primary shard has. Deprecated, use an index template instead.
+- `number_of_shards` (Number) The number of primary shards that an index should have. Deprecated, use an index template instead.
 
 
 <a id="nestedblock--properties--openid"></a>
