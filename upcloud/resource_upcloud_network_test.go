@@ -284,8 +284,8 @@ func TestAccUpcloudNetwork_DHCPRoutesConfiguration(t *testing.T) {
 							family             = "IPv4"
 							gateway            = "10.20.0.1"
 
-							dhcp_routes_configuration {
-								effective_routes_auto_population {
+							dhcp_routes_configuration = {
+								effective_routes_auto_population = {
 									enabled = true
 								}
 							}
@@ -312,7 +312,7 @@ func TestAccUpcloudNetwork_DHCPRoutesConfiguration(t *testing.T) {
 							family             = "IPv4"
 							gateway            = "10.20.0.1"
 
-							dhcp_routes_configuration {
+							dhcp_routes_configuration = {
 								effective_routes_auto_population {
 									enabled = true
 
@@ -355,8 +355,8 @@ func TestAccUpcloudNetwork_DHCPRoutesConfiguration(t *testing.T) {
 							family             = "IPv4"
 							gateway            = "10.20.0.1"
 
-							dhcp_routes_configuration {
-								effective_routes_auto_population {
+							dhcp_routes_configuration = {
+								effective_routes_auto_population = {
 									enabled = true
 
 									// Explicitly clear all filters

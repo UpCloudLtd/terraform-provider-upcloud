@@ -285,13 +285,14 @@ func detectDHCPInputShape(ctx context.Context, obj types.Object) (outerPresent b
 	d2 := cfg.EffectiveRoutesAutoPopulation.As(ctx, &era, basetypes.ObjectAsOptions{})
 	diags.Append(d2...)
 
-	hasEnabled := !(era.Enabled.IsNull() || era.Enabled.IsUnknown())
-	hasFBD := !(era.FilterByDestination.IsNull() || era.FilterByDestination.IsUnknown())
-	hasEBS := !(era.ExcludeBySource.IsNull() || era.ExcludeBySource.IsUnknown())
-	hasFBRT := !(era.FilterByRouteType.IsNull() || era.FilterByRouteType.IsUnknown())
+	hasEnabled := !era.Enabled.IsNull() && !era.Enabled.IsUnknown()
+	hasFBD := !era.FilterByDestination.IsNull() && !era.FilterByDestination.IsUnknown()
+	hasEBS := !era.ExcludeBySource.IsNull() && !era.ExcludeBySource.IsUnknown()
+	hasFBRT := !era.FilterByRouteType.IsNull() && !era.FilterByRouteType.IsUnknown()
 
 	// inner is explicitly empty only if none of the inner attributes were provided
-	return true, true, !(hasEnabled || hasFBD || hasEBS || hasFBRT), diags
+	isInnerExplicitEmpty := !hasEnabled && !hasFBD && !hasEBS && !hasFBRT
+	return true, true, isInnerExplicitEmpty, diags
 }
 
 func setValues(ctx context.Context, data *networkModel, network *upcloud.Network) diag.Diagnostics {
@@ -362,6 +363,7 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 			}
 		}
 		ebsSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(ebsStrings))
+		respDiagnostics.Append(diags...)
 
 		var frtStrings []string
 		if era.FilterByRouteType != nil {
@@ -371,6 +373,7 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 			}
 		}
 		frtSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(frtStrings))
+		respDiagnostics.Append(diags...)
 
 		switch {
 		case !outerPresent:
