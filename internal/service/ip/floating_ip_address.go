@@ -44,12 +44,13 @@ func (r *floatingIPResource) Configure(_ context.Context, req resource.Configure
 }
 
 type floatingIPModel struct {
-	ID      types.String `tfsdk:"id"`
-	Address types.String `tfsdk:"ip_address"`
-	Access  types.String `tfsdk:"access"`
-	Family  types.String `tfsdk:"family"`
-	MAC     types.String `tfsdk:"mac_address"`
-	Zone    types.String `tfsdk:"zone"`
+	ID            types.String `tfsdk:"id"`
+	Address       types.String `tfsdk:"ip_address"`
+	Access        types.String `tfsdk:"access"`
+	Family        types.String `tfsdk:"family"`
+	MAC           types.String `tfsdk:"mac_address"`
+	ReleasePolicy types.String `tfsdk:"release_policy"`
+	Zone          types.String `tfsdk:"zone"`
 }
 
 func (r *floatingIPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -99,8 +100,23 @@ func (r *floatingIPResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			"mac_address": schema.StringAttribute{
 				MarkdownDescription: "MAC address of a server interface to assign address to.",
 				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.String{
 					validatorutil.NewFrameworkStringValidator(validation.IsMACAddress),
+				},
+			},
+			"release_policy": schema.StringAttribute{
+				MarkdownDescription: "The release policy of the floating IP address.",
+				Computed:            true,
+				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.IPAddressReleasePolicyKeep),
+						string(upcloud.IPAddressReleasePolicyRelease),
+					),
 				},
 			},
 			"zone": schema.StringAttribute{
@@ -121,6 +137,7 @@ func setValues(data *floatingIPModel, ip *upcloud.IPAddress) {
 	data.Address = types.StringValue(ip.Address)
 	data.Access = types.StringValue(ip.Access)
 	data.Family = types.StringValue(ip.Family)
+	data.ReleasePolicy = types.StringValue(string(ip.ReleasePolicy))
 	data.Zone = types.StringValue(ip.Zone)
 
 	if ip.MAC == "" {
@@ -139,11 +156,12 @@ func (r *floatingIPResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	apiReq := request.AssignIPAddressRequest{
-		Floating: upcloud.True,
-		Access:   data.Access.ValueString(),
-		Family:   data.Family.ValueString(),
-		MAC:      data.MAC.ValueString(),
-		Zone:     data.Zone.ValueString(),
+		Floating:      upcloud.True,
+		Access:        data.Access.ValueString(),
+		Family:        data.Family.ValueString(),
+		MAC:           data.MAC.ValueString(),
+		ReleasePolicy: upcloud.IPAddressReleasePolicy(data.ReleasePolicy.ValueString()),
+		Zone:          data.Zone.ValueString(),
 	}
 
 	ip, err := r.client.AssignIPAddress(ctx, &apiReq)
@@ -193,12 +211,20 @@ func (r *floatingIPResource) Read(ctx context.Context, req resource.ReadRequest,
 }
 
 func (r *floatingIPResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data floatingIPModel
+	var data, state floatingIPModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	apiReq := request.ModifyIPAddressRequest{
-		IPAddress: data.ID.ValueString(),
-		MAC:       data.MAC.ValueString(),
+		IPAddress:     data.ID.ValueString(),
+		ReleasePolicy: upcloud.IPAddressReleasePolicy(data.ReleasePolicy.ValueString()),
+	}
+
+	if !data.MAC.Equal(state.MAC) {
+		apiReq.MAC = data.MAC.ValueString()
 	}
 
 	ip, err := r.client.ModifyIPAddress(ctx, &apiReq)

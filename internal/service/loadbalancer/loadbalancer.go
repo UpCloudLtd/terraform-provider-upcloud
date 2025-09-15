@@ -52,6 +52,7 @@ type loadBalancerModel struct {
 	DNSName          types.String `tfsdk:"dns_name"`
 	Frontends        types.List   `tfsdk:"frontends"`
 	ID               types.String `tfsdk:"id"`
+	IPAddresses      types.Set    `tfsdk:"ip_addresses"`
 	Labels           types.Map    `tfsdk:"labels"`
 	MaintenanceDOW   types.String `tfsdk:"maintenance_dow"`
 	MaintenanceTime  types.String `tfsdk:"maintenance_time"`
@@ -63,6 +64,11 @@ type loadBalancerModel struct {
 	Plan             types.String `tfsdk:"plan"`
 	Resolvers        types.List   `tfsdk:"resolvers"`
 	Zone             types.String `tfsdk:"zone"`
+}
+
+type loadbalancerIPAddressModel struct {
+	NetworkName types.String `tfsdk:"network_name"`
+	Address     types.String `tfsdk:"address"`
 }
 
 type loadbalancerNetworkModel struct {
@@ -150,6 +156,22 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"ip_addresses": schema.SetNestedAttribute{
+				MarkdownDescription: "Floating IP addresses connected to the load balancer.",
+				Optional:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"network_name": schema.StringAttribute{
+							MarkdownDescription: "Name of the network where to attach the IP address.",
+							Required:            true,
+						},
+						"address": schema.StringAttribute{
+							Description: "Floating IP address to attach to the load balancer.",
+							Required:    true,
+						},
+					},
 				},
 			},
 			"labels": utils.LabelsAttribute("load balancer"),
@@ -361,12 +383,27 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 		}
 	}
 
+	var ipAddresses []request.LoadBalancerIPAddress
+	if !data.IPAddresses.IsNull() && !data.IPAddresses.IsUnknown() {
+		var ipAddressModels []loadbalancerIPAddressModel
+		resp.Diagnostics.Append(data.IPAddresses.ElementsAs(ctx, &ipAddressModels, false)...)
+
+		for _, ipAddressModel := range ipAddressModels {
+			ip := request.LoadBalancerIPAddress{
+				NetworkName: ipAddressModel.NetworkName.ValueString(),
+				Address:     ipAddressModel.Address.ValueString(),
+			}
+			ipAddresses = append(ipAddresses, ip)
+		}
+	}
+
 	apiReq := request.CreateLoadBalancerRequest{
 		Name:             data.Name.ValueString(),
 		Plan:             data.Plan.ValueString(),
 		Zone:             data.Zone.ValueString(),
 		NetworkUUID:      data.Network.ValueString(),
 		Networks:         networks,
+		IPAddresses:      ipAddresses,
 		ConfiguredStatus: upcloud.LoadBalancerConfiguredStatus(data.ConfiguredStatus.ValueString()),
 		Frontends:        []request.LoadBalancerFrontend{},
 		Backends:         []request.LoadBalancerBackend{},
@@ -387,26 +424,39 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 
 	data.ID = types.StringValue(loadBalancer.UUID)
 
-	if data.ConfiguredStatus.ValueString() == string(upcloud.LoadBalancerConfiguredStatusStarted) {
-		loadBalancer, err = r.client.WaitForLoadBalancerOperationalState(ctx, &request.WaitForLoadBalancerOperationalStateRequest{
-			UUID:         loadBalancer.UUID,
-			DesiredState: upcloud.LoadBalancerOperationalStateRunning,
-		})
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Loadbalancer did not reach running state after creation",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return
-		}
+	loadBalancer, diags := waitForRunningState(ctx, r.client, data, "creation")
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
+func waitForRunningState(ctx context.Context, client *service.Service, data loadBalancerModel, action string) (lb *upcloud.LoadBalancer, diags diag.Diagnostics) {
+	if data.ConfiguredStatus.ValueString() == string(upcloud.LoadBalancerConfiguredStatusStarted) {
+		var err error
+		lb, err = client.WaitForLoadBalancerOperationalState(ctx, &request.WaitForLoadBalancerOperationalStateRequest{
+			UUID:         data.ID.ValueString(),
+			DesiredState: upcloud.LoadBalancerOperationalStateRunning,
+		})
+		if err != nil {
+			diags.AddError(
+				"Loadbalancer did not reach running state after "+action,
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+	}
+	return
+}
+
 func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbalancer *upcloud.LoadBalancer) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
+
+	// Detect import: name is required, so it should be null only when resource is being imported
+	isImport := data.Name.IsNull()
 
 	backendNames := []string{}
 	for _, backend := range loadbalancer.Backends {
@@ -450,6 +500,22 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 
 	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
 	respDiagnostics.Append(diags...)
+
+	if data.IPAddresses.IsNull() && !isImport {
+		data.IPAddresses = types.SetNull(data.IPAddresses.ElementType(ctx))
+	} else {
+		ipAddresses := make([]loadbalancerIPAddressModel, len(loadbalancer.IPAddresses))
+		for i, ip := range loadbalancer.IPAddresses {
+			dataIPAddress := loadbalancerIPAddressModel{
+				NetworkName: types.StringValue(ip.NetworkName),
+				Address:     types.StringValue(ip.Address),
+			}
+			ipAddresses[i] = dataIPAddress
+		}
+
+		data.IPAddresses, diags = types.SetValueFrom(ctx, data.IPAddresses.ElementType(ctx), ipAddresses)
+		respDiagnostics.Append(diags...)
+	}
 
 	nodes := make([]loadbalancerNodeModel, len(loadbalancer.Nodes))
 	for i, node := range loadbalancer.Nodes {
@@ -536,6 +602,24 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
+func shouldAttachIPAddress(planIPAddress loadbalancerIPAddressModel, lbIPAddresses []upcloud.LoadBalancerFloatingIPAddress) bool {
+	for _, ip := range lbIPAddresses {
+		if planIPAddress.Address.ValueString() == ip.Address && planIPAddress.NetworkName.ValueString() == ip.NetworkName {
+			return false
+		}
+	}
+	return true
+}
+
+func shouldRemoveIPAddress(lbIPAddress upcloud.LoadBalancerFloatingIPAddress, dataIPAddresses []loadbalancerIPAddressModel) bool {
+	for _, ip := range dataIPAddresses {
+		if lbIPAddress.Address == ip.Address.ValueString() && lbIPAddress.NetworkName == ip.NetworkName.ValueString() {
+			return false
+		}
+	}
+	return true
+}
+
 func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data, state loadBalancerModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -543,6 +627,50 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	var dataIPAddresses []loadbalancerIPAddressModel
+	resp.Diagnostics.Append(data.IPAddresses.ElementsAs(ctx, &dataIPAddresses, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	lbIPAddresses, err := r.client.GetLoadBalancerIPAddresses(ctx, &request.GetLoadBalancerIPAddressesRequest{
+		ServiceUUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to get load balancer IP addresses",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	// Remove IP addresses that are no longer in the plan
+	// This removes all IP addresses when value is null or an empty set
+	didRemoveIPAddresses := false
+	for _, ip := range lbIPAddresses {
+		if shouldRemoveIPAddress(ip, dataIPAddresses) {
+			if err := r.client.RemoveLoadBalancerIPAddress(ctx, &request.RemoveLoadBalancerIPAddressRequest{
+				ServiceUUID: data.ID.ValueString(),
+				Address:     ip.Address,
+			}); err != nil {
+				resp.Diagnostics.AddError(
+					"Unable to remove IP address from the loadbalancer",
+					utils.ErrorDiagnosticDetail(err),
+				)
+				return
+			}
+			didRemoveIPAddresses = true
+		}
+	}
+
+	if didRemoveIPAddresses {
+		_, diags := waitForRunningState(ctx, r.client, data, "removing IP addresses")
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// Ensure network renaming is handled before modifying the load balancer
@@ -578,6 +706,25 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		}
 	}
 
+	// Attach IP addresses that are not already attached
+	if !data.IPAddresses.IsNull() {
+		for _, ip := range dataIPAddresses {
+			if shouldAttachIPAddress(ip, lbIPAddresses) {
+				if _, err := r.client.AttachLoadBalancerIPAddress(ctx, &request.AttachLoadBalancerIPAddressRequest{
+					ServiceUUID: data.ID.ValueString(),
+					Address:     ip.Address.ValueString(),
+					NetworkName: ip.NetworkName.ValueString(),
+				}); err != nil {
+					resp.Diagnostics.AddError(
+						"Unable to attach IP address to the loadbalancer",
+						utils.ErrorDiagnosticDetail(err),
+					)
+					return
+				}
+			}
+		}
+	}
+
 	var labelsMap map[string]string
 	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
 		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
@@ -605,19 +752,12 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 
 	data.ID = types.StringValue(loadBalancer.UUID)
 
-	if data.ConfiguredStatus.ValueString() == string(upcloud.LoadBalancerConfiguredStatusStarted) {
-		loadBalancer, err = r.client.WaitForLoadBalancerOperationalState(ctx, &request.WaitForLoadBalancerOperationalStateRequest{
-			UUID:         loadBalancer.UUID,
-			DesiredState: upcloud.LoadBalancerOperationalStateRunning,
-		})
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Loadbalancer did not reach running state after update",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return
-		}
+	loadBalancer, diags := waitForRunningState(ctx, r.client, data, "update")
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+
 	resp.Diagnostics.Append(setLoadBalancerValues(ctx, &data, loadBalancer)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

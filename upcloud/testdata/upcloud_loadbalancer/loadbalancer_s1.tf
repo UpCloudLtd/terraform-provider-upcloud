@@ -18,13 +18,31 @@ resource "upcloud_network" "lb_network" {
   }
 }
 
+resource "upcloud_floating_ip_address" "ip" {
+  count = 3
+
+  access         = "public"
+  family         = "IPv4"
+  release_policy = "keep"
+  zone           = var.zone
+}
+
 resource "upcloud_loadbalancer" "lb" {
   configured_status = "started"
   name              = "${var.basename}lb"
-  plan              = "development"
+  plan              = "production-small"
   zone              = var.zone
   maintenance_dow   = "sunday"
   maintenance_time  = "20:01:01Z"
+
+  // Attach 1 floating IP address on create
+  ip_addresses = [
+    for ip in slice(upcloud_floating_ip_address.ip, 0, 1) :
+    {
+      address      = ip.ip_address
+      network_name = "public"
+    }
+  ]
 
   networks {
     type   = "public"

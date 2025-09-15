@@ -40,15 +40,16 @@ type ipAddressesDataSourceModel struct {
 }
 
 type ipAddressesAddressesModel struct {
-	Access     types.String `tfsdk:"access"`
-	Address    types.String `tfsdk:"address"`
-	Family     types.String `tfsdk:"family"`
-	Floating   types.Bool   `tfsdk:"floating"`
-	MAC        types.String `tfsdk:"mac"`
-	PartOfPlan types.Bool   `tfsdk:"part_of_plan"`
-	PTRRecord  types.String `tfsdk:"ptr_record"`
-	Server     types.String `tfsdk:"server"`
-	Zone       types.String `tfsdk:"zone"`
+	Access        types.String `tfsdk:"access"`
+	Address       types.String `tfsdk:"address"`
+	Family        types.String `tfsdk:"family"`
+	Floating      types.Bool   `tfsdk:"floating"`
+	MAC           types.String `tfsdk:"mac"`
+	PartOfPlan    types.Bool   `tfsdk:"part_of_plan"`
+	PTRRecord     types.String `tfsdk:"ptr_record"`
+	ReleasePolicy types.String `tfsdk:"release_policy"`
+	Server        types.String `tfsdk:"server"`
+	Zone          types.String `tfsdk:"zone"`
 }
 
 func (d *ipAddressesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -92,6 +93,10 @@ func (d *ipAddressesDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 							Computed:            true,
 							MarkdownDescription: "A reverse DNS record entry",
 						},
+						"release_policy": schema.StringAttribute{
+							Computed:            true,
+							MarkdownDescription: "Release policy for the address",
+						},
 						"server": schema.StringAttribute{
 							Computed:            true,
 							MarkdownDescription: "The unique identifier for a server",
@@ -132,6 +137,7 @@ func (d *ipAddressesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		address.MAC = types.StringValue(ipAddress.MAC)
 		address.PartOfPlan = types.BoolValue(ipAddress.PartOfPlan.Bool())
 		address.PTRRecord = types.StringValue(ipAddress.PTRRecord)
+		address.ReleasePolicy = types.StringValue(string(ipAddress.ReleasePolicy))
 		address.Server = types.StringValue(ipAddress.ServerUUID)
 		address.Zone = types.StringValue(ipAddress.Zone)
 
