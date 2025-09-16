@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_zones: remove deprecation message
 
+### Added
+
+- upcloud_network: add support for dhcp_routes_configuration and effective_routes_auto_population
+
 ## [5.25.0] - 2025-09-12
 
 ### Added
