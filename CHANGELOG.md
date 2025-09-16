@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_zones: remove deprecation message
+
 ## [5.25.0] - 2025-09-12
 
 ### Added
