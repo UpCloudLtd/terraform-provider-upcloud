@@ -374,12 +374,14 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 		frtSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(frtStrings))
 		respDiagnostics.Append(diags...)
 
-		// when importing this resource into terraform only the id will be set. Special case below
+		// only materialize if API has non-default content
 		isImportLike := (data.IPNetwork.IsNull() || data.IPNetwork.IsUnknown())
+		hasEnabledTrue := !enabledTF.IsNull() && !enabledTF.IsUnknown() && enabledTF.ValueBool()
+		hasAnyFilters := len(fbdStrings) > 0 || len(ebsStrings) > 0 || len(frtStrings) > 0
 
 		switch {
 		case !outerPresent:
-			if isImportLike {
+			if isImportLike && (hasEnabledTrue || hasAnyFilters) {
 				// Import path case: materialize API values
 				eraObj, d1 := types.ObjectValue(
 					effectiveRoutesAutoPopulationAttrTypes,
