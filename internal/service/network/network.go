@@ -313,7 +313,6 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 
 	ipNetworks := make([]ipNetworkModel, len(network.IPNetworks))
 
-	// Read the current input (Plan during Create/Update; State during Read)
 	var inputIPNets []ipNetworkModel
 	if !data.IPNetwork.IsNull() && !data.IPNetwork.IsUnknown() {
 		diags := data.IPNetwork.ElementsAs(ctx, &inputIPNets, false)
@@ -344,7 +343,7 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 			outerPresent, innerProvided, innerExplicitEmpty = op, ip, iee
 		}
 
-		// API always returns ERA with enabled defaulting to false.
+		// API values
 		era := ipnet.DHCPRoutesConfiguration.EffectiveRoutesAutoPopulation
 		enabledTF := utils.AsBool(era.Enabled)
 
@@ -377,7 +376,25 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 
 		switch {
 		case !outerPresent:
-			ipNetworks[i].DHCPRoutesConfiguration = types.ObjectNull(dhcpRoutesConfigurationAttrTypes)
+			// No prior shape => materialize API values (import/read)
+			eraObj, d1 := types.ObjectValue(
+				effectiveRoutesAutoPopulationAttrTypes,
+				map[string]attr.Value{
+					"enabled":               enabledTF,
+					"filter_by_destination": fbdSetFromAPI,
+					"exclude_by_source":     ebsSetFromAPI,
+					"filter_by_route_type":  frtSetFromAPI,
+				},
+			)
+			respDiagnostics.Append(d1...)
+			cfgObj, d2 := types.ObjectValue(
+				dhcpRoutesConfigurationAttrTypes,
+				map[string]attr.Value{
+					"effective_routes_auto_population": eraObj,
+				},
+			)
+			respDiagnostics.Append(d2...)
+			ipNetworks[i].DHCPRoutesConfiguration = cfgObj
 
 		case outerPresent && !innerProvided:
 			cfgObj, d := types.ObjectValue(
