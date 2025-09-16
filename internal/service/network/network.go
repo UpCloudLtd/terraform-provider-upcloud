@@ -374,27 +374,35 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 		frtSetFromAPI, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(frtStrings))
 		respDiagnostics.Append(diags...)
 
+		// when importing this resource into terraform only the id will be set. Special case below
+		isImportLike := (data.IPNetwork.IsNull() || data.IPNetwork.IsUnknown())
+
 		switch {
 		case !outerPresent:
-			// No prior shape => materialize API values (import/read)
-			eraObj, d1 := types.ObjectValue(
-				effectiveRoutesAutoPopulationAttrTypes,
-				map[string]attr.Value{
-					"enabled":               enabledTF,
-					"filter_by_destination": fbdSetFromAPI,
-					"exclude_by_source":     ebsSetFromAPI,
-					"filter_by_route_type":  frtSetFromAPI,
-				},
-			)
-			respDiagnostics.Append(d1...)
-			cfgObj, d2 := types.ObjectValue(
-				dhcpRoutesConfigurationAttrTypes,
-				map[string]attr.Value{
-					"effective_routes_auto_population": eraObj,
-				},
-			)
-			respDiagnostics.Append(d2...)
-			ipNetworks[i].DHCPRoutesConfiguration = cfgObj
+			if isImportLike {
+				// Import path case: materialize API values
+				eraObj, d1 := types.ObjectValue(
+					effectiveRoutesAutoPopulationAttrTypes,
+					map[string]attr.Value{
+						"enabled":               enabledTF,
+						"filter_by_destination": fbdSetFromAPI,
+						"exclude_by_source":     ebsSetFromAPI,
+						"filter_by_route_type":  frtSetFromAPI,
+					},
+				)
+				respDiagnostics.Append(d1...)
+				cfgObj, d2 := types.ObjectValue(
+					dhcpRoutesConfigurationAttrTypes,
+					map[string]attr.Value{
+						"effective_routes_auto_population": eraObj,
+					},
+				)
+				respDiagnostics.Append(d2...)
+				ipNetworks[i].DHCPRoutesConfiguration = cfgObj
+			} else {
+				// Normal path: user didn’t set the block -> keep it null in state
+				ipNetworks[i].DHCPRoutesConfiguration = types.ObjectNull(dhcpRoutesConfigurationAttrTypes)
+			}
 
 		case outerPresent && !innerProvided:
 			cfgObj, d := types.ObjectValue(
