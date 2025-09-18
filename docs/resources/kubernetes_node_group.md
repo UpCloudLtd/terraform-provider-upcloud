@@ -99,7 +99,7 @@ resource "upcloud_kubernetes_node_group" "group_cloud_native" {
 - `anti_affinity` (Boolean) If set to true, nodes in this group will be placed on separate compute hosts. Please note that anti-affinity policy is considered 'best effort' and enabling it does not fully guarantee that the nodes will end up on different hardware.
 - `labels` (Map of String) User defined key-value pairs to classify the node_group.
 - `ssh_keys` (Set of String) You can optionally select SSH keys to be added as authorized keys to the nodes in this node group. This allows you to connect to the nodes via SSH once they are running.
-- `storage_encryption` (String) The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable.
+- `storage_encryption` (String) The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable. Valid values are `data-at-rest` and `none`.
 - `utility_network_access` (Boolean) If set to false, nodes in this group will not have access to utility network.
 
 ### Blocks
