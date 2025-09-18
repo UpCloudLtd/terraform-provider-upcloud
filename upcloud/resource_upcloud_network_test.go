@@ -265,6 +265,127 @@ func TestAccUpCloudNetwork_labels(t *testing.T) {
 	})
 }
 
+func TestAccUpcloudNetwork_DHCPRoutesConfiguration(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create with DHCP routes auto-population enabled, no filters
+				Config: `
+					resource "upcloud_network" "test" {
+						name = "tf-acc-test-dhcp-routes"
+						zone = "fi-hel1"
+
+						ip_network {
+							address            = "10.20.0.0/24"
+							dhcp               = true
+							dhcp_default_route = true
+							family             = "IPv4"
+							gateway            = "10.20.0.1"
+
+							dhcp_routes_configuration = {
+								effective_routes_auto_population = {
+									enabled = true
+								}
+							}
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp", "true"),
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_default_route", "true"),
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.enabled", "true"),
+				),
+			},
+			{
+				// Step 2: Update with filters
+				Config: `
+					resource "upcloud_network" "test" {
+						name = "tf-acc-test-dhcp-routes"
+						zone = "fi-hel1"
+
+						ip_network {
+							address            = "10.20.0.0/24"
+							dhcp               = true
+							dhcp_default_route = true
+							family             = "IPv4"
+							gateway            = "10.20.0.1"
+
+							dhcp_routes_configuration = {
+								effective_routes_auto_population = {
+									enabled = true
+
+									filter_by_destination = [
+										"10.30.0.0/24",
+										"172.16.0.0/22"
+									]
+
+									exclude_by_source = [
+										"static-route",
+									]
+
+									filter_by_route_type = [
+										"service",
+									]
+								}
+							}
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.enabled", "true"),
+					resource.TestCheckTypeSetElemAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.filter_by_destination.*", "10.30.0.0/24"),
+					resource.TestCheckTypeSetElemAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.filter_by_destination.*", "172.16.0.0/22"),
+					resource.TestCheckTypeSetElemAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.exclude_by_source.*", "static-route"),
+					resource.TestCheckTypeSetElemAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.filter_by_route_type.*", "service"),
+				),
+			},
+			{
+				// Step 3: Clear filters
+				Config: `
+					resource "upcloud_network" "test" {
+						name = "tf-acc-test-dhcp-routes"
+						zone = "fi-hel1"
+
+						ip_network {
+							address            = "10.20.0.0/24"
+							dhcp               = true
+							dhcp_default_route = true
+							family             = "IPv4"
+							gateway            = "10.20.0.1"
+
+							dhcp_routes_configuration = {
+								effective_routes_auto_population = {
+									enabled = true
+
+									// Explicitly clear all filters
+									filter_by_destination = []
+									exclude_by_source     = []
+									filter_by_route_type  = []
+								}
+							}
+						}
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.enabled", "true"),
+
+					// Empty sets should have size 0
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.filter_by_destination.#", "0"),
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.exclude_by_source.#", "0"),
+					resource.TestCheckResourceAttr("upcloud_network.test", "ip_network.0.dhcp_routes_configuration.effective_routes_auto_population.filter_by_route_type.#", "0"),
+				),
+			},
+			{
+				ResourceName:      "upcloud_network.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccNetworkConfig(name string, zone string, address string, gateway string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string) string {
 	return testAccNetworkConfigWithFamily(name, zone, address, gateway, "IPv4", dhcp, dhcpDefaultRoute, router, dhcpDNS, dhcpRoutes, nil)
 }
