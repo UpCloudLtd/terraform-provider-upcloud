@@ -70,7 +70,25 @@ Optional Attributes:
 - `dhcp_default_route` (Boolean) Is the gateway the DHCP default route?
 - `dhcp_dns` (Set of String) The DNS servers given by DHCP
 - `dhcp_routes` (Set of String) The additional DHCP classless static routes given by DHCP
+- `dhcp_routes_configuration` (Attributes) DHCP routes auto-population configuration. (see [below for nested schema](#nestedatt--ip_network--dhcp_routes_configuration))
 - `gateway` (String) Gateway address given by DHCP
+
+<a id="nestedatt--ip_network--dhcp_routes_configuration"></a>
+### Nested Schema for `ip_network.dhcp_routes_configuration`
+
+Optional Attributes:
+
+- `effective_routes_auto_population` (Attributes) Automatically populate effective routes. (see [below for nested schema](#nestedatt--ip_network--dhcp_routes_configuration--effective_routes_auto_population))
+
+<a id="nestedatt--ip_network--dhcp_routes_configuration--effective_routes_auto_population"></a>
+### Nested Schema for `ip_network.dhcp_routes_configuration.effective_routes_auto_population`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable route auto-population.
+- `exclude_by_source` (Set of String) Exclude routes coming from specific sources (router-connected-networks, static-route).
+- `filter_by_destination` (Set of String) CIDR destinations to include when auto-populating routes.
+- `filter_by_route_type` (Set of String) Include only routes of given types (service, user).
 
 ## Import
 
