@@ -175,7 +175,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				},
 			},
 			"storage_encryption": schema.StringAttribute{
-				MarkdownDescription: "The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable.",
+				MarkdownDescription: "The storage encryption strategy to use for the nodes in this group. If not set, the cluster's storage encryption strategy will be used, if applicable. Valid values are `data-at-rest` and `none`.",
 				Computed:            true,
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
