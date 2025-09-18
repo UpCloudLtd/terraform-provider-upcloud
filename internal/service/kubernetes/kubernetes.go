@@ -15,7 +15,7 @@ const (
 	clientCertificateDescription        = "TLS authentication client certificate, encoded (PEM)."
 	clientKeyDescription                = "Key to pair with `client_certificate`, encoded (PEM)."
 	clusterCACertificateDescription     = "TLS authentication root certificate bundle, encoded (PEM)."
-	clusterStorageEncryptionDescription = "Set default storage encryption strategy for all nodes in the cluster."
+	clusterStorageEncryptionDescription = "Set default storage encryption strategy for all nodes in the cluster. Valid values are `data-at-rest` and `none`."
 	controlPlaneIPFilterDescription     = "IP addresses or IP ranges in CIDR format which are allowed to access the cluster control plane. To allow access from any source, use `[\"0.0.0.0/0\"]`. To deny access from all sources, use `[]`. Values set here do not restrict access to node groups or exposed Kubernetes services."
 	hostDescription                     = "Hostname of the cluster API. Defined as URI."
 	idDescription                       = "UUID of the cluster."
