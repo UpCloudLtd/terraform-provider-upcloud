@@ -256,7 +256,7 @@ func setValues(ctx context.Context, data *firewallRulesModel, firewallRules *upc
 	}
 
 	data.FirewallRule, diags = types.ListValueFrom(ctx, data.FirewallRule.ElementType(ctx), dataFirewallRules)
-	return
+	return diags
 }
 
 func buildFirewallRules(ctx context.Context, plan firewallRulesModel) ([]upcloud.FirewallRule, diag.Diagnostics) {
