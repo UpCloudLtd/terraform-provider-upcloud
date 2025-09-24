@@ -686,12 +686,12 @@ func getIndexFromNetworking(networking *upcloud.Networking, iface networkInterfa
 	for _, n := range networking.Interfaces {
 		if n.Type == iface.Type.ValueString() && n.MAC == iface.MACAddress.ValueString() {
 			index = n.Index
-			return
+			return index, diags
 		}
 	}
 
 	diags.AddError("Unable to find index", fmt.Sprintf("Unable to find index for interface %s", iface.MACAddress.ValueString()))
-	return
+	return 0, diags
 }
 
 func attributeIPAddressFamily(description string) schema.StringAttribute {

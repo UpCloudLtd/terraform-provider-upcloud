@@ -218,7 +218,7 @@ func setInterfaceValues(ctx context.Context, iface *upcloud.Interface, ipInState
 	ni.Bootable = types.BoolValue(iface.Bootable.Bool())
 	ni.SourceIPFiltering = types.BoolValue(iface.SourceIPFiltering.Bool())
 
-	return
+	return ni, diags
 }
 
 func updateServerNetworkInterfaceAddresses(ctx context.Context, svc *service.Service, serverUUID string, planAddresses request.CreateNetworkInterfaceIPAddressSlice, iface *upcloud.ServerInterface) error {

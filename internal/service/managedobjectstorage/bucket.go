@@ -126,7 +126,7 @@ func getBucket(ctx context.Context, serviceUUID, name string, client *service.Se
 			"Unable to read managed object storage buckets",
 			utils.ErrorDiagnosticDetail(err),
 		)
-		return
+		return nil, diags
 	}
 
 	for _, b := range buckets {
@@ -135,7 +135,7 @@ func getBucket(ctx context.Context, serviceUUID, name string, client *service.Se
 			break
 		}
 	}
-	return
+	return bucket, diags
 }
 
 func (r *managedObjectStorageBucketResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {

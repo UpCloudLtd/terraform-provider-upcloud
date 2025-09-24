@@ -446,10 +446,10 @@ func waitForRunningState(ctx context.Context, client *service.Service, data load
 				"Loadbalancer did not reach running state after "+action,
 				utils.ErrorDiagnosticDetail(err),
 			)
-			return
+			return nil, diags
 		}
 	}
-	return
+	return lb, diags
 }
 
 func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbalancer *upcloud.LoadBalancer) diag.Diagnostics {

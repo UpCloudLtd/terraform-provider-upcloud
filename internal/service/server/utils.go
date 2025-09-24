@@ -43,26 +43,26 @@ func hasTemplateBackupRuleBeenReplacedWithSimpleBackups(ctx context.Context, sta
 	diags.Append(d...)
 
 	if diags.HasError() {
-		return
+		return false, diags
 	}
 
 	if stateTemplate == nil || planTemplate == nil {
-		return
+		return false, diags
 	}
 
 	if plan.SimpleBackup.Equal(state.SimpleBackup) || planTemplate.BackupRule.Equal(stateTemplate.BackupRule) {
-		return
+		return false, diags
 	}
 
 	if plan.SimpleBackup.IsNull() {
-		return
+		return false, diags
 	}
 
 	if planTemplate.BackupRule.IsNull() {
 		yes = true
 	}
 
-	return
+	return yes, diags
 }
 
 func sliceToMap(input []string) map[string]bool {

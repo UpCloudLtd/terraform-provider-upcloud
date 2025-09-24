@@ -13,5 +13,5 @@ func unmarshalID(id string) (serviceUUID, domainName string, diags diag.Diagnost
 			utils.ErrorDiagnosticDetail(err),
 		)
 	}
-	return
+	return serviceUUID, domainName, diags
 }

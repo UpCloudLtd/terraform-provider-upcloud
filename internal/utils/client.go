@@ -9,7 +9,7 @@ import (
 
 func GetClientFromProviderData(providerData any) (client *service.Service, diags diag.Diagnostics) {
 	if providerData == nil {
-		return
+		return nil, diags
 	}
 
 	client, ok := providerData.(*service.Service)
@@ -20,5 +20,5 @@ func GetClientFromProviderData(providerData any) (client *service.Service, diags
 		)
 	}
 
-	return
+	return client, diags
 }

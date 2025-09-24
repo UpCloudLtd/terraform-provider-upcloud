@@ -146,7 +146,7 @@ func getTagChange(oldTags, newTags []string) (tagsToAdd, tagsToDelete []string) 
 		}
 	}
 
-	return
+	return tagsToAdd, tagsToDelete
 }
 
 func tagsHasChange(oldTags, newTags []string) bool {

@@ -50,5 +50,5 @@ func waitForClusterToBeDeleted(ctx context.Context, svc *service.Service, id str
 	if err != nil {
 		diags.AddError("Error waiting for cluster to be deleted", err.Error())
 	}
-	return
+	return diags
 }
