@@ -52,7 +52,7 @@ func (c Config) NewUpCloudServiceConnection(httpClient *http.Client, requestTime
 		"",
 		client.WithHTTPClient(httpClient),
 		client.WithTimeout(requestTimeout),
-		client.WithLogger(logDebug),
+		client.WithLogger(logDebugf),
 		authFn,
 	)
 
@@ -70,7 +70,7 @@ func DefaultUserAgent() string {
 }
 
 // logDebug converts slog style key-value varargs to a map compatible with tflog methods and calls tflog.Debug.
-func logDebug(ctx context.Context, format string, args ...any) {
+func logDebugf(ctx context.Context, format string, args ...any) {
 	meta := make(map[string]interface{})
 	for i := 0; i < len(args); i += 2 {
 		key := fmt.Sprintf("%+v", args[i])
