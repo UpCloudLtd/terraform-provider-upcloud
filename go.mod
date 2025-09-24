@@ -3,6 +3,7 @@ module github.com/UpCloudLtd/terraform-provider-upcloud
 go 1.25.0
 
 require (
+	github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210930073303-cc664e35078d
 	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.1
 	github.com/UpCloudLtd/upcloud-go-api/v8 v8.28.0
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
@@ -25,7 +26,6 @@ require (
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	github.com/ProtonMail/go-crypto v1.1.0-alpha.2 // indirect
-	github.com/UpCloudLtd/upcloud-go-api v0.0.0-20210930073303-cc664e35078d // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
