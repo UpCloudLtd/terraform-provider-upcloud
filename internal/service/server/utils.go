@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -117,14 +118,14 @@ func changeRequiresServerStop(state, plan serverModel, stateDevices, planDevices
 		stateDev, exists := stateMap[storageUUID]
 
 		if !exists {
-			if planDev.Address.ValueString() == "ide" || planDev.Type.ValueString() == "cdrom" {
+			if planDev.Address.ValueString() == "ide" || planDev.Type.ValueString() == upcloud.StorageTypeCDROM {
 				return true
 			}
 			continue
 		}
 
 		if planDev.Address.ValueString() == "ide" || stateDev.Address.ValueString() == "ide" ||
-			planDev.Type.ValueString() == "cdrom" || stateDev.Type.ValueString() == "cdrom" {
+			planDev.Type.ValueString() == upcloud.StorageTypeCDROM || stateDev.Type.ValueString() == upcloud.StorageTypeCDROM {
 			if planDev.Address.ValueString() != stateDev.Address.ValueString() ||
 				planDev.AddressPosition.ValueString() != stateDev.AddressPosition.ValueString() ||
 				planDev.Storage.ValueString() != stateDev.Storage.ValueString() ||
@@ -144,7 +145,7 @@ func changeRequiresServerStop(state, plan serverModel, stateDevices, planDevices
 	for uuid, stateDev := range stateMap {
 		_, exists := planMap[uuid]
 		if !exists {
-			if stateDev.Address.ValueString() == "ide" || stateDev.Type.ValueString() == "cdrom" {
+			if stateDev.Address.ValueString() == "ide" || stateDev.Type.ValueString() == upcloud.StorageTypeCDROM {
 				return true
 			}
 		}
