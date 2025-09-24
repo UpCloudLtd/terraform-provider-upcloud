@@ -833,7 +833,10 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 	r.updateNetworkInterfacesPlan(ctx, server, state, plan, resp)
 
 	// Host might change if server is migrated to different host, so update host here instead of using state for unknown.
-	if !changeRequiresServerStop(*state, *plan) {
+	var stateDevices, planDevices []storageDeviceModel
+	resp.Diagnostics.Append(state.StorageDevices.ElementsAs(ctx, &stateDevices, false)...)
+	resp.Diagnostics.Append(plan.StorageDevices.ElementsAs(ctx, &planDevices, false)...)
+	if !changeRequiresServerStop(*state, *plan, stateDevices, planDevices) {
 		plan.Host = types.Int64Value(int64(server.Host))
 	}
 
@@ -1232,7 +1235,10 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// Determine what changes are needed
 	planChanged := !plan.Plan.Equal(state.Plan)
 	hotResizeEnabled := plan.HotResize.ValueBool()
-	needsServerStop := changeRequiresServerStop(state, plan)
+	var stateDevices, planDevices []storageDeviceModel
+	resp.Diagnostics.Append(state.StorageDevices.ElementsAs(ctx, &stateDevices, false)...)
+	resp.Diagnostics.Append(plan.StorageDevices.ElementsAs(ctx, &planDevices, false)...)
+	needsServerStop := changeRequiresServerStop(state, plan, stateDevices, planDevices)
 
 	// Server stop is required for certain changes - this takes precedence over hot resize
 	if needsServerStop {

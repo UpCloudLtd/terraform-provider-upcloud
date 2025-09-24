@@ -72,7 +72,7 @@ func sliceToMap(input []string) map[string]bool {
 	return output
 }
 
-func changeRequiresServerStop(state, plan serverModel) bool {
+func changeRequiresServerStop(state, plan serverModel, stateDevices, planDevices []storageDeviceModel) bool {
 	// Only allow hot resize if it's enabled in the plan and not changing (i.e., it was also enabled in the state)
 	if plan.HotResize.ValueBool() && state.HotResize.ValueBool() &&
 		!plan.Plan.Equal(state.Plan) &&
@@ -102,11 +102,58 @@ func changeRequiresServerStop(state, plan serverModel) bool {
 		}
 	}
 
+	// Decode storage devices from state and plan
+	// Index state devices by Storage UUID for easy lookup
+	stateMap := make(map[string]storageDeviceModel)
+	for _, dev := range stateDevices {
+		if !dev.Storage.IsNull() {
+			stateMap[dev.Storage.ValueString()] = dev
+		}
+	}
+
+	// If the storage device with address ide or type cdrom is added, removed or modified in the plan, then we need to stop
+	for _, planDev := range planDevices {
+		storageUUID := planDev.Storage.ValueString()
+		stateDev, exists := stateMap[storageUUID]
+
+		if !exists {
+			if planDev.Address.ValueString() == "ide" || planDev.Type.ValueString() == "cdrom" {
+				return true
+			}
+			continue
+		}
+
+		if planDev.Address.ValueString() == "ide" || stateDev.Address.ValueString() == "ide" ||
+			planDev.Type.ValueString() == "cdrom" || stateDev.Type.ValueString() == "cdrom" {
+			if planDev.Address.ValueString() != stateDev.Address.ValueString() ||
+				planDev.AddressPosition.ValueString() != stateDev.AddressPosition.ValueString() ||
+				planDev.Storage.ValueString() != stateDev.Storage.ValueString() ||
+				planDev.Type.ValueString() != stateDev.Type.ValueString() {
+				return true
+			}
+		}
+	}
+
+	planMap := make(map[string]storageDeviceModel)
+	for _, dev := range planDevices {
+		if !dev.Storage.IsNull() {
+			planMap[dev.Storage.ValueString()] = dev
+		}
+	}
+
+	for uuid, stateDev := range stateMap {
+		_, exists := planMap[uuid]
+		if !exists {
+			if stateDev.Address.ValueString() == "ide" || stateDev.Type.ValueString() == "cdrom" {
+				return true
+			}
+		}
+	}
+
 	return !plan.Plan.Equal(state.Plan) ||
 		!plan.Timezone.Equal(state.Timezone) ||
 		!plan.VideoModel.Equal(state.VideoModel) ||
 		!plan.NICModel.Equal(state.NICModel) ||
 		!plan.Template.Equal(state.Template) ||
-		!plan.StorageDevices.Equal(state.StorageDevices) ||
 		!plan.NetworkInterfaces.Equal(state.NetworkInterfaces)
 }
