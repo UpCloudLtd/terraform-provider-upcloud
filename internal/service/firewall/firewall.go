@@ -227,7 +227,7 @@ func setValues(ctx context.Context, data *firewallRulesModel, firewallRules *upc
 	} else {
 		diags.Append(data.FirewallRule.ElementsAs(ctx, &dataFirewallRules, false)...)
 		if diags.HasError() {
-			return
+			return diags
 		}
 	}
 
