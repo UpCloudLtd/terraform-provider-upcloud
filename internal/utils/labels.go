@@ -18,10 +18,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var validLabelKeyRegExp = regexp.MustCompile("^[ -^`-~]+[ -~]*$") // Printable ASCII characters: ' ' (Space), ..., '^', '_', '`', ..., `~`
+var ValidLabelKeyRegExp = regexp.MustCompile("^[ -^`-~]+[ -~]*$") // Printable ASCII characters: ' ' (Space), ..., '^', '_', '`', ..., `~`
 
 const (
-	invalidLabelKeyMessage = "must only contain printable ASCII characters and must not start with an underscore"
+	InvalidLabelKeyMessage = "must only contain printable ASCII characters and must not start with an underscore"
 )
 
 func labelsDescription(resource string) string {
@@ -63,7 +63,7 @@ func ReadOnlyLabelsAttribute(resource string) schema.Attribute {
 	}
 }
 
-func LabelsAttribute(resource string, additionalPlanModifiers ...planmodifier.Map) schema.Attribute {
+func LabelsAttributeWithValidators(resource string, keysAre []validator.String, valueStringsAre []validator.String, additionalPlanModifiers ...planmodifier.Map) schema.Attribute {
 	description := labelsDescription(resource)
 	planModifiers := []planmodifier.Map{
 		unconfiguredAsEmpty{},
@@ -78,12 +78,24 @@ func LabelsAttribute(resource string, additionalPlanModifiers ...planmodifier.Ma
 		Description:   description,
 		PlanModifiers: planModifiers,
 		Validators: []validator.Map{
-			mapvalidator.KeysAre(
-				stringvalidator.LengthBetween(2, 32),
-				stringvalidator.RegexMatches(validLabelKeyRegExp, invalidLabelKeyMessage)),
-			mapvalidator.ValueStringsAre(stringvalidator.LengthBetween(0, 255)),
+			mapvalidator.KeysAre(keysAre...),
+			mapvalidator.ValueStringsAre(valueStringsAre...),
 		},
 	}
+}
+
+func LabelsAttribute(resource string, additionalPlanModifiers ...planmodifier.Map) schema.Attribute {
+	return LabelsAttributeWithValidators(
+		resource,
+		[]validator.String{
+			stringvalidator.LengthBetween(2, 32),
+			stringvalidator.RegexMatches(ValidLabelKeyRegExp, InvalidLabelKeyMessage),
+		},
+		[]validator.String{
+			stringvalidator.LengthBetween(0, 255),
+		},
+		additionalPlanModifiers...,
+	)
 }
 
 func SystemLabelsAttribute(resource string) schema.Attribute {
@@ -157,6 +169,6 @@ func LabelsSliceToSystemLabelsMap(s []upcloud.Label) map[string]string {
 
 var ValidateLabelsDiagFunc = validation.AllDiag(
 	validation.MapKeyLenBetween(2, 32),
-	validation.MapKeyMatch(validLabelKeyRegExp, invalidLabelKeyMessage),
+	validation.MapKeyMatch(ValidLabelKeyRegExp, InvalidLabelKeyMessage),
 	validation.MapValueLenBetween(0, 255),
 )
