@@ -76,7 +76,7 @@ func buildNetworkOpts(ctx context.Context, data serverModel) (req []request.Crea
 		if !iface.AdditionalIPAddresses.IsNull() {
 			if r.Type != upcloud.NetworkTypePrivate {
 				diags.AddError("Invalid configuration", "additional_ip_address can only be set for private network interfaces")
-				return
+				return nil, diags
 			}
 
 			var additionalIPAddresses []additionalIPAddressModel
@@ -93,5 +93,5 @@ func buildNetworkOpts(ctx context.Context, data serverModel) (req []request.Crea
 		req = append(req, r)
 	}
 
-	return
+	return req, diags
 }

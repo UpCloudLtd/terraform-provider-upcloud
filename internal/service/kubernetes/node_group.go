@@ -872,5 +872,5 @@ func waitForNodeGroupToBeDeleted(ctx context.Context, svc *service.Service, clus
 	if err != nil {
 		diags.AddError("Error waiting for node group to be deleted", err.Error())
 	}
-	return
+	return diags
 }

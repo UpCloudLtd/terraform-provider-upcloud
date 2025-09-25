@@ -347,7 +347,10 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := changeRequiresServerStop(tt.state, tt.plan)
+			var stateDevices, planDevices []storageDeviceModel
+			tt.state.StorageDevices.ElementsAs(t.Context(), &stateDevices, false)
+			tt.plan.StorageDevices.ElementsAs(t.Context(), &planDevices, false)
+			result := changeRequiresServerStop(tt.state, tt.plan, stateDevices, planDevices)
 			if result != tt.expectShutdown {
 				t.Errorf("changeRequiresServerStop() = %v, want %v", result, tt.expectShutdown)
 			}

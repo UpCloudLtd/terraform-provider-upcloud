@@ -218,7 +218,7 @@ func setInterfaceValues(ctx context.Context, iface *upcloud.Interface, ipInState
 	ni.Bootable = types.BoolValue(iface.Bootable.Bool())
 	ni.SourceIPFiltering = types.BoolValue(iface.SourceIPFiltering.Bool())
 
-	return
+	return ni, diags
 }
 
 func updateServerNetworkInterfaceAddresses(ctx context.Context, svc *service.Service, serverUUID string, planAddresses request.CreateNetworkInterfaceIPAddressSlice, iface *upcloud.ServerInterface) error {
@@ -270,11 +270,11 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 	})
 	if err != nil {
 		diags.AddError("Unable to read server details", utils.ErrorDiagnosticDetail(err))
-		return
+		return diags
 	}
 	if s.State != upcloud.ServerStateStopped {
 		diags.AddError("Invalid server state", "Server needs to be stopped to alter networks")
-		return
+		return diags
 	}
 
 	var networkInterfacesPlan []networkInterfaceModel
@@ -307,7 +307,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 			})
 			if err != nil {
 				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
-				return
+				return diags
 			}
 		}
 
@@ -318,7 +318,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 		addresses, d := addressesFromResourceData(ctx, svc, *planVal)
 		diags.Append(d...)
 		if diags.HasError() {
-			return
+			return diags
 		}
 
 		modified := (*upcloud.Interface)(&iface)
@@ -335,13 +335,13 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 				err = updateServerNetworkInterfaceAddresses(ctx, svc, uuid, addresses, &iface)
 				if err != nil {
 					diags.AddError("Unable to update network interface addresses", utils.ErrorDiagnosticDetail(err))
-					return
+					return diags
 				}
 			}
 			modified, err = svc.ModifyNetworkInterface(ctx, &req)
 			if err != nil {
 				diags.AddError("Unable to modify network interface", utils.ErrorDiagnosticDetail(err))
-				return
+				return diags
 			}
 		}
 		modifiedInterfaces[modified.Index] = modified
@@ -363,7 +363,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 		addresses, d := addressesFromResourceData(ctx, svc, val)
 		diags.Append(d...)
 		if diags.HasError() {
-			return
+			return diags
 		}
 
 		t := val.Type.ValueString()
@@ -379,7 +379,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 			})
 			if err != nil {
 				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
-				return
+				return diags
 			}
 		}
 
@@ -394,7 +394,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 		})
 		if err != nil {
 			diags.AddError("Unable to create network interface", utils.ErrorDiagnosticDetail(err))
-			return
+			return diags
 		}
 		newNetworkInterfaces[i], d = setInterfaceValues(ctx, iface, val.IPAddress)
 		diags.Append(d...)
@@ -402,7 +402,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 
 	plan.NetworkInterfaces, d = types.ListValueFrom(ctx, plan.NetworkInterfaces.ElementType(ctx), newNetworkInterfaces)
 	diags.Append(d...)
-	return
+	return diags
 }
 
 func addressesFromResourceData(ctx context.Context, svc *service.Service, data networkInterfaceModel) (addresses request.CreateNetworkInterfaceIPAddressSlice, diags diag.Diagnostics) {
@@ -420,12 +420,12 @@ func addressesFromResourceData(ctx context.Context, svc *service.Service, data n
 			network, err := svc.GetNetworkDetails(ctx, &request.GetNetworkDetailsRequest{UUID: net})
 			if err != nil {
 				diags.AddError("Unable to read network details", utils.ErrorDiagnosticDetail(err))
-				return
+				return nil, diags
 			}
 			ip.Address, err = resolveInterfaceIPAddress(network, v)
 			if err != nil {
 				diags.AddError("Unable to resolve interface IP address", err.Error())
-				return
+				return nil, diags
 			}
 		}
 	}
@@ -437,7 +437,7 @@ func addressesFromResourceData(ctx context.Context, svc *service.Service, data n
 
 		if len(additionalIPAddresses) > 0 && !isPrivate {
 			diags.AddError("Invalid configuration", "additional_ip_address can only be set for private network interfaces")
-			return
+			return nil, diags
 		}
 
 		for _, ipAddress := range additionalIPAddresses {

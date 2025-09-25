@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_storage: vitrio and scsi storage devices can be attached while server in started state
+
 ## [5.26.0] - 2025-09-18
 
 ### Fixed

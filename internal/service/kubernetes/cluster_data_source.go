@@ -56,12 +56,12 @@ func (m *kubernetesClusterDataModel) setB64Decoded(field string, encoded string)
 			fmt.Sprintf("Unable to decode base64 encoded value of %s", field),
 			utils.ErrorDiagnosticDetail(err),
 		)
-		return
+		return diags
 	}
 
 	value := types.StringValue(string(decoded))
 	reflect.ValueOf(m).Elem().FieldByName(field).Set(reflect.ValueOf(value))
-	return
+	return diags
 }
 
 func (d *kubernetesClusterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

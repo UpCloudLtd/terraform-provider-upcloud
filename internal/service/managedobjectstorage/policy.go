@@ -318,7 +318,7 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 			"Unable to normalize object storage policy document",
 			utils.ErrorDiagnosticDetail(err),
 		)
-		return
+		return diags
 	}
 
 	unescaped, err := url.QueryUnescape(document)

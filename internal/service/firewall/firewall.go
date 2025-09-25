@@ -227,7 +227,7 @@ func setValues(ctx context.Context, data *firewallRulesModel, firewallRules *upc
 	} else {
 		diags.Append(data.FirewallRule.ElementsAs(ctx, &dataFirewallRules, false)...)
 		if diags.HasError() {
-			return
+			return diags
 		}
 	}
 
@@ -256,7 +256,7 @@ func setValues(ctx context.Context, data *firewallRulesModel, firewallRules *upc
 	}
 
 	data.FirewallRule, diags = types.ListValueFrom(ctx, data.FirewallRule.ElementType(ctx), dataFirewallRules)
-	return
+	return diags
 }
 
 func buildFirewallRules(ctx context.Context, plan firewallRulesModel) ([]upcloud.FirewallRule, diag.Diagnostics) {

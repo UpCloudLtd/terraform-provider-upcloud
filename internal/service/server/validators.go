@@ -16,7 +16,7 @@ import (
 
 func validatePlan(ctx context.Context, service *service.Service, plan types.String) (diags diag.Diagnostics) {
 	if plan.IsNull() {
-		return
+		return diags
 	}
 
 	plans, err := service.GetPlans(ctx)
@@ -25,13 +25,13 @@ func validatePlan(ctx context.Context, service *service.Service, plan types.Stri
 			"Unable to fetch available plans",
 			utils.ErrorDiagnosticDetail(err),
 		)
-		return
+		return diags
 	}
 
 	availablePlans := make([]string, 0)
 	for _, p := range plans.Plans {
 		if p.Name == plan.ValueString() {
-			return
+			return diags
 		}
 		availablePlans = append(availablePlans, p.Name)
 	}
@@ -41,7 +41,7 @@ func validatePlan(ctx context.Context, service *service.Service, plan types.Stri
 		"Invalid plan",
 		fmt.Sprintf("expected plan to be one of [%s], got %s", strings.Join(availablePlans, ", "), plan.ValueString()),
 	)
-	return
+	return diags
 }
 
 func validateZone(ctx context.Context, service *service.Service, zone types.String) (diags diag.Diagnostics) {
@@ -51,7 +51,7 @@ func validateZone(ctx context.Context, service *service.Service, zone types.Stri
 			"Unable to fetch available plans",
 			utils.ErrorDiagnosticDetail(err),
 		)
-		return
+		return diags
 	}
 	availableZones := make([]string, 0)
 	for _, z := range zones.Zones {
@@ -65,7 +65,7 @@ func validateZone(ctx context.Context, service *service.Service, zone types.Stri
 		"Invalid zone",
 		fmt.Sprintf("expected zone to be one of [%s], got %s", strings.Join(availableZones, ", "), zone.ValueString()),
 	)
-	return
+	return diags
 }
 
 type noDuplicateTagsValidator struct{}
@@ -80,10 +80,10 @@ func (v noDuplicateTagsValidator) Description(_ context.Context) string {
 func getTags(ctx context.Context, value basetypes.SetValue) (tags []string, diags diag.Diagnostics) {
 	if value.IsNull() || value.IsUnknown() {
 		tags = nil
-		return
+		return tags, diags
 	}
 	diags.Append(value.ElementsAs(ctx, &tags, false)...)
-	return
+	return tags, diags
 }
 
 // MarkdownDescription describes the validation in Markdown.
@@ -127,7 +127,7 @@ func validateTagsChangeRequiresMainAccount(ctx context.Context, service *service
 				"Unable to determine account details",
 				utils.ErrorDiagnosticDetail(err),
 			)
-			return
+			return diags
 		}
 		if isSubaccount {
 			diags.AddAttributeError(
@@ -137,5 +137,5 @@ func validateTagsChangeRequiresMainAccount(ctx context.Context, service *service
 			)
 		}
 	}
-	return
+	return diags
 }
