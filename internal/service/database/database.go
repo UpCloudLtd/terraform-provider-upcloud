@@ -21,11 +21,6 @@ func serviceDescription(dbType string) string {
 	return fmt.Sprintf("This resource represents %s managed database. See UpCloud [Managed Databases](https://upcloud.com/products/managed-databases) product page for more details about the service.", dbType)
 }
 
-var resourceUpcloudManagedDatabaseModifiableStates = []upcloud.ManagedDatabaseState{
-	upcloud.ManagedDatabaseStateRunning,
-	upcloud.ManagedDatabaseState("rebalancing"),
-}
-
 func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	client := meta.(*service.Service)
 	req := buildManagedDatabaseRequestFromResourceData(d)
@@ -99,7 +94,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	diags := diag.Diagnostics{}
 
 	if d.HasChanges("plan", "title", "termination_protection", "zone",
-		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network", "labels") {
+		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network", "labels", "additional_disk_space_gib") {
 		req := request.ModifyManagedDatabaseRequest{UUID: d.Id()}
 		req.Plan = d.Get("plan").(string)
 		req.Title = d.Get("title").(string)
@@ -107,6 +102,11 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		if d.HasChanges("maintenance_window_dow", "maintenance_window_time") {
 			req.Maintenance.DayOfWeek = d.Get("maintenance_window_dow").(string)
 			req.Maintenance.Time = d.Get("maintenance_window_time").(string)
+		}
+
+		if d.HasChanges("additional_disk_space_gib") {
+			additionalDiskSpaceGiB := d.Get("additional_disk_space_gib").(int)
+			req.AdditionalDiskSpaceGiB = &additionalDiskSpaceGiB
 		}
 
 		if d.HasChange("labels") {
@@ -143,6 +143,14 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	// Modify powered state if no PostgreSQL version update is requested
 	if d.HasChange("powered") && !d.HasChange("properties.0.version") {
 		return append(diags, resourceDatabasePoweredUpdate(ctx, d, client)...)
+	}
+
+	// Wait until database is in running state
+	if _, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: d.Id(), DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
+		return append(
+			resourceDatabaseRead(ctx, d, meta),
+			diag.FromErr(err)[0],
+		)
 	}
 
 	return diags
@@ -190,13 +198,14 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 func buildManagedDatabaseRequestFromResourceData(d *schema.ResourceData) request.CreateManagedDatabaseRequest {
 	terminationProtection := d.Get("termination_protection").(bool)
 	req := request.CreateManagedDatabaseRequest{
-		HostNamePrefix:        d.Get("name").(string),
-		Plan:                  d.Get("plan").(string),
-		Title:                 d.Get("title").(string),
-		TerminationProtection: &terminationProtection,
-		Labels:                utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
-		Type:                  upcloud.ManagedDatabaseServiceType(d.Get("type").(string)),
-		Zone:                  d.Get("zone").(string),
+		AdditionalDiskSpaceGiB: d.Get("additional_disk_space_gib").(int),
+		HostNamePrefix:         d.Get("name").(string),
+		Plan:                   d.Get("plan").(string),
+		Title:                  d.Get("title").(string),
+		TerminationProtection:  &terminationProtection,
+		Labels:                 utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
+		Type:                   upcloud.ManagedDatabaseServiceType(d.Get("type").(string)),
+		Zone:                   d.Get("zone").(string),
 	}
 
 	if d.HasChange("network") {
@@ -351,6 +360,9 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 		nodeStates = append(nodeStates, nodeState)
 	}
 
+	if err = d.Set("additional_disk_space_gib", details.AdditionalDiskSpaceGiB); err != nil {
+		return err
+	}
 	if err = d.Set("name", details.Name); err != nil {
 		return err
 	}
@@ -459,7 +471,10 @@ func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *
 	// Attempt to upgrade version after database is powered on
 	// Upgrade is only allowed when database is in "Running" state, so we have to wait for that after powering it on
 	if d.HasChange("powered") && d.Get("powered").(bool) {
-		_, err := resourceUpCloudManagedDatabaseWaitState(ctx, d.Id(), client, time.Minute*15, upcloud.ManagedDatabaseStateRunning)
+		_, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+			UUID:         d.Id(),
+			DesiredState: upcloud.ManagedDatabaseStateRunning,
+		})
 		if err != nil {
 			return append(diags, diag.Diagnostic{
 				Severity: diag.Warning,
