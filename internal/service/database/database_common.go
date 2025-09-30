@@ -117,6 +117,12 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"additional_disk_space_gib": {
+			Description: "Additional disk space in GiB",
+			Type:        schema.TypeInt,
+			Computed:    true,
+			Optional:    true,
+		},
 	}
 }
 

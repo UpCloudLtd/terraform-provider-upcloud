@@ -241,8 +241,10 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(fmt.Errorf("cannot create a user while managed database %v (%v) is powered off", serviceDetails.Name, serviceID))
 	}
 
-	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
-		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
+	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         serviceID,
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -335,8 +337,10 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	if utils.UnmarshalID(d.Id(), &serviceID, &username) != nil {
 		return diag.FromErr(err)
 	}
-	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
-		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
+	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         serviceID,
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -412,8 +416,10 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	if err := utils.UnmarshalID(d.Id(), &serviceID, &username); err != nil {
 		return diag.FromErr(err)
 	}
-	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
-		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
+	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         serviceID,
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}

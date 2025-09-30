@@ -46,6 +46,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(pg1Name, "additional_disk_space_gib", "20"),
 					resource.TestCheckResourceAttr(pg1Name, "name", withPrefixDB("pg-1")),
 					resource.TestCheckResourceAttr(pg1Name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(pg1Name, "title", withPrefixDB("pg-1")),
@@ -59,6 +60,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttrSet(pg1Name, "service_uri"),
 					resource.TestCheckResourceAttr(pg1Name, "network.#", "0"),
 
+					resource.TestCheckResourceAttr(pg2Name, "additional_disk_space_gib", "0"),
 					resource.TestCheckResourceAttr(pg2Name, "name", withPrefixDB("pg-2")),
 					resource.TestCheckResourceAttr(pg2Name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(pg2Name, "title", withPrefixDB("pg-2")),
@@ -67,6 +69,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
 					resource.TestCheckResourceAttr(pg2Name, "network.#", "1"),
 
+					resource.TestCheckResourceAttr(msql1Name, "additional_disk_space_gib", "10"),
 					resource.TestCheckResourceAttr(msql1Name, "name", withPrefixDB("mysql-1")),
 					resource.TestCheckResourceAttr(msql1Name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(msql1Name, "title", withPrefixDB("mysql-1")),
@@ -112,6 +115,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(pg1Name, "additional_disk_space_gib", "40"),
 					resource.TestCheckResourceAttr(pg1Name, "title", withPrefixDB("pg-1-updated")),
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_time", "11:00:00"),
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_dow", "thursday"),
@@ -120,11 +124,13 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "14"),
 					resource.TestCheckResourceAttr(pg1Name, "powered", "false"),
 
+					resource.TestCheckResourceAttr(pg2Name, "additional_disk_space_gib", "20"),
 					resource.TestCheckResourceAttr(pg2Name, "title", withPrefixDB("pg-2-updated")),
 					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
 					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
 					resource.TestCheckResourceAttr(pg2Name, "network.#", "1"),
 
+					resource.TestCheckResourceAttr(msql1Name, "additional_disk_space_gib", "0"),
 					resource.TestCheckResourceAttr(msql1Name, "title", withPrefixDB("mysql-1-updated")),
 					resource.TestCheckResourceAttr(msql1Name, "network.#", "1"),
 
