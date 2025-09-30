@@ -62,8 +62,9 @@ resource "upcloud_kubernetes_node_group" "g2" {
   cluster    = upcloud_kubernetes_cluster.main.id
   node_count = 1
   labels = {
-    env       = "qa"
-    managedBy = "tf"
+    env                                                       = "qa"
+    managedBy                                                 = "tf"
+    "node.kubernetes.io/exclude-from-external-load-balancers" = ""
   }
   name = "medium"
   plan = "2xCPU-4GB"
