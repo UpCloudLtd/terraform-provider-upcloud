@@ -82,8 +82,8 @@ resource "upcloud_server" "family" {
   }
 
   network_interface {
-    type  = "public"
-    index = 1
+    type              = "public"
+    index             = 1
     ip_address_family = "IPv4"
   }
   template {

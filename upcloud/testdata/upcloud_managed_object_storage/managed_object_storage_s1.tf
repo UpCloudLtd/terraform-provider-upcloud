@@ -64,5 +64,5 @@ resource "upcloud_managed_object_storage" "minimal" {
 
 resource "upcloud_managed_object_storage_bucket" "this" {
   service_uuid = upcloud_managed_object_storage.minimal.id
-  name = "bucket"
+  name         = "bucket"
 }

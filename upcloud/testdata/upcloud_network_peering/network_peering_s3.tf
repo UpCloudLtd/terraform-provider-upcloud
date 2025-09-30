@@ -9,7 +9,7 @@ variable "zone" {
 }
 
 locals {
-  cidr = ["172.18.221.0/24", "172.18.222.0/24"]
+  cidr           = ["172.18.221.0/24", "172.18.222.0/24"]
   peering_labels = [{}, null]
   peering_status = ["active", "disabled"]
 }
@@ -35,9 +35,9 @@ resource "upcloud_network" "this" {
 }
 
 resource "upcloud_network_peering" "this" {
-  count  = 2
-  name   = "${var.prefix}peering-${count.index}-to-${(count.index + 1) % 2}"
-  labels = local.peering_labels[count.index]
+  count             = 2
+  name              = "${var.prefix}peering-${count.index}-to-${(count.index + 1) % 2}"
+  labels            = local.peering_labels[count.index]
   configured_status = local.peering_status[count.index]
 
   network {
