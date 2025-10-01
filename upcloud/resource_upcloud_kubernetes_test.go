@@ -85,7 +85,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(g1Name, "ssh_keys.#", "1"),
 					resource.TestCheckResourceAttr(g2Name, "ssh_keys.#", "1"),
 					resource.TestCheckResourceAttr(g1Name, "labels.%", "2"),
-					resource.TestCheckResourceAttr(g2Name, "labels.%", "2"),
+					resource.TestCheckResourceAttr(g2Name, "labels.%", "3"),
 					resource.TestCheckResourceAttr(g1Name, "labels.env", "dev"),
 					resource.TestCheckResourceAttr(g1Name, "labels.managedBy", "tf"),
 					resource.TestCheckTypeSetElemAttr(g1Name, "ssh_keys.*", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3fnjc8UrsYDNU8365mL3lnOPQJg18V42Lt8U/8Sm+r testt_test"),
