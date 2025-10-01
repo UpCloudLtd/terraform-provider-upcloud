@@ -115,7 +115,8 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 			},
 			{
 				// Refresh state to include node-groups in the state.
-				Config: testDataS1,
+				Config:          testDataS1,
+				ConfigVariables: variables(s1Version),
 			},
 			verifyImportStep(cName, "state"),
 			verifyImportStep(g1Name),
