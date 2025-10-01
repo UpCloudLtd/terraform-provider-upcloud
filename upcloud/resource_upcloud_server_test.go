@@ -362,9 +362,14 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
-						
+						metadata = true
+
+						login {
+							password_delivery = "none"
+						}
+
 						template {
-							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 							size = 10
 						}
 					
@@ -396,9 +401,14 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
+						metadata = true
+
+						login {
+							password_delivery = "none"
+						}
 						
 						template {
-							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 							size = 10
 						}
 					
@@ -437,9 +447,14 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
+						metadata = true
+
+						login {
+							password_delivery = "none"
+						}
 						
 						template {
-							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 							size = 10
 						}
 					
@@ -479,9 +494,14 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
+						metadata = true
+
+						login {
+							password_delivery = "none"
+						}
 						
 						template {
-							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 							size = 10
 						}
 					
@@ -519,9 +539,14 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						zone = "pl-waw1"
 						plan = "1xCPU-1GB"
 						hostname = "tf-acc-test-server-storage-simple-backup"
+						metadata = true
+
+						login {
+							password_delivery = "none"
+						}
 						
 						template {
-							storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+							storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 							size = 10
 
 							backup_rule {
