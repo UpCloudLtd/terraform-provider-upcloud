@@ -137,7 +137,7 @@ resource "upcloud_server" "example" {
 
   # Provision the server with Ubuntu
   template {
-    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+    storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 
     # Use all the space allotted by the selected simple plan
     size = 25
