@@ -197,8 +197,8 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
       value = "PATCH"
     }
     http_status {
-      method  = "equal"
-      value   = 301
+      method = "equal"
+      value  = 301
     }
     http_status_range {
       range_start = 200
@@ -258,12 +258,12 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     tcp_reject {}
     set_forwarded_headers {}
     set_request_header {
-      header  = "Test-Request-Header"
-      value = "asd123"
+      header = "Test-Request-Header"
+      value  = "asd123"
     }
     set_response_header {
-      header  = "Test-Response-Header"
-      value = "321dsa"
+      header = "Test-Response-Header"
+      value  = "321dsa"
     }
   }
 }

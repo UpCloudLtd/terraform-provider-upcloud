@@ -133,7 +133,12 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				MarkdownDescription: "Computed ID of the node group. This is a combination of the cluster UUID and the node group name, separated with a `/`.",
 				Computed:            true,
 			},
-			"labels": utils.LabelsAttribute("node_group", mapplanmodifier.RequiresReplace()),
+			"labels": utils.LabelsAttributeWithValidators(
+				"node_group",
+				[]validator.String{stringvalidator.RegexMatches(utils.ValidLabelKeyRegExp, utils.InvalidLabelKeyMessage)},
+				[]validator.String{stringvalidator.LengthBetween(0, 255)},
+				mapplanmodifier.RequiresReplace(),
+			),
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the node group. Needs to be unique within a cluster.",
 				Required:            true,

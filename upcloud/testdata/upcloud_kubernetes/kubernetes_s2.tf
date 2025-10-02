@@ -63,8 +63,9 @@ resource "upcloud_kubernetes_node_group" "g2" {
   # scale node count up
   node_count = 2
   labels = {
-    env       = "qa"
-    managedBy = "tf"
+    env                                                       = "qa"
+    managedBy                                                 = "tf"
+    "node.kubernetes.io/exclude-from-external-load-balancers" = ""
   }
   name = "medium"
   plan = "2xCPU-4GB"

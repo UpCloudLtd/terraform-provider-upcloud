@@ -6,16 +6,19 @@ resource "upcloud_server" "example" {
   hostname = "terraform.example.tld"
   zone     = "de-fra1"
   plan     = "1xCPU-1GB"
+  metadata = true
+
+  login {
+    password_delivery = "none"
+  }
 
   template {
-    storage = "Ubuntu Server 20.04 LTS (Focal Fossa)"
-    size    = 25
+    storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
   }
 
   network_interface {
     type = "utility"
   }
-
 }
 
 resource "upcloud_firewall_rules" "example" {

@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - upcloud_managed_object_storage_policy: proper handling of description so it fires a policy recreation only when there is a change 
+- upcloud_kubernetes_node_group: remove too strict label key length validation.
 
 ## [5.27.0] - 2025-09-25
 

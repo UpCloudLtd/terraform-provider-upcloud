@@ -16,13 +16,13 @@ func TestAccDataSourceUpCloudStorage(t *testing.T) {
 			{
 				Config: dataSourceUpCloudStorageTestTemplateConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(templateResourceName, "id", "01000000-0000-4000-8000-000030200200"),
+					resource.TestCheckResourceAttr(templateResourceName, "id", "01000000-0000-4000-8000-000030240200"),
 					resource.TestCheckResourceAttr(templateResourceName, "type", "template"),
-					resource.TestCheckResourceAttr(templateResourceName, "name", "Ubuntu Server 20.04 LTS (Focal Fossa)"),
+					resource.TestCheckResourceAttr(templateResourceName, "name", "Ubuntu Server 24.04 LTS (Noble Numbat)"),
 					resource.TestCheckResourceAttr(templateResourceName, "access_type", "public"),
-					resource.TestCheckResourceAttr(templateResourceName, "size", "4"),
+					resource.TestCheckResourceAttr(templateResourceName, "size", "10"),
 					resource.TestCheckResourceAttr(templateResourceName, "state", "online"),
-					resource.TestCheckResourceAttr("data.upcloud_storage.regex", "id", "01000000-0000-4000-8000-000020060100"),
+					resource.TestCheckResourceAttr("data.upcloud_storage.regex", "id", "01000000-0000-4000-8000-000020080100"),
 				),
 			},
 			{
@@ -46,12 +46,12 @@ func dataSourceUpCloudStorageTestTemplateConfig() string {
 	return `
 	data "upcloud_storage" "ubuntu_template" {
 		type = "template"
-		name = "Ubuntu Server 20.04 LTS (Focal Fossa)"
+		name = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 	}
 	data "upcloud_storage" "regex" {
 		type = "template"
 		access_type = "public"
-		name_regex = "^Debian GNU/Linux [0-1]{2} \\(Bullseye\\)$"
+		name_regex = "^Debian GNU/Linux [1-3]{2} \\(Trixie\\)$"
 	}
 	`
 }
