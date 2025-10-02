@@ -144,10 +144,19 @@ func setPolicyValues(_ context.Context, data *policyModel, policy *upcloud.Manag
 	data.AttachmentCount = types.Int64Value(int64(policy.AttachmentCount))
 	data.CreatedAt = types.StringValue(policy.CreatedAt.String())
 	data.DefaultVersionID = types.StringValue(policy.DefaultVersionID)
-	data.Description = types.StringValue(policy.Description)
 	data.Name = types.StringValue(policy.Name)
 	data.System = types.BoolValue(policy.System)
 	data.UpdatedAt = types.StringValue(policy.UpdatedAt.String())
+
+	if policy.Description == "" {
+		if !data.Description.IsNull() && data.Description.ValueString() == "" {
+			data.Description = types.StringValue("")
+		} else {
+			data.Description = types.StringNull()
+		}
+	} else {
+		data.Description = types.StringValue(policy.Description)
+	}
 
 	apiDocument, diags := normalizePolicyDocument(policy.Document)
 	respDiagnostics.Append(diags...)
@@ -181,9 +190,12 @@ func (r *managedObjectStoragePolicyResource) Create(ctx context.Context, req res
 
 	apiReq := &request.CreateManagedObjectStoragePolicyRequest{
 		Name:        data.Name.ValueString(),
-		Description: data.Description.ValueString(),
 		Document:    data.Document.ValueString(),
 		ServiceUUID: data.ServiceUUID.ValueString(),
+	}
+
+	if !data.Description.IsNull() && !data.Description.IsUnknown() {
+		apiReq.Description = data.Description.ValueString()
 	}
 
 	policy, err := r.client.CreateManagedObjectStoragePolicy(ctx, apiReq)
