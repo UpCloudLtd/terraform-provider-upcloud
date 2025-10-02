@@ -86,9 +86,10 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   maintenance_window_dow    = "thursday"
   powered                   = false
 
+  // Upgrade version from 16 to 17
   properties {
     ip_filter = []
-    version   = 14
+    version   = 17
   }
 }
 
@@ -101,7 +102,7 @@ resource "upcloud_managed_database_postgresql" "pg2" {
   powered                   = true
 
   properties {
-    version = 14
+    version = 17
   }
 
   // No change in network

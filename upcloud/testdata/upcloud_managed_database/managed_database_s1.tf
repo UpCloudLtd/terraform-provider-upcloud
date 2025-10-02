@@ -72,7 +72,7 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   properties {
     public_access = true
     ip_filter     = ["10.0.0.1/32"]
-    version       = 13
+    version       = 16
   }
 }
 
@@ -84,7 +84,7 @@ resource "upcloud_managed_database_postgresql" "pg2" {
   powered = true
 
   properties {
-    version = 14
+    version = 17
   }
 
   // Attach network on create
