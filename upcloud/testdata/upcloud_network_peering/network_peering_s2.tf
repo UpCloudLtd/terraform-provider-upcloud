@@ -39,9 +39,9 @@ resource "upcloud_network" "this" {
 }
 
 resource "upcloud_network_peering" "this" {
-  count  = 2
-  name   = "${var.prefix}peering-${count.index}-to-${(count.index + 1) % 2}-renamed"
-  labels = local.peering_labels[count.index]
+  count             = 2
+  name              = "${var.prefix}peering-${count.index}-to-${(count.index + 1) % 2}-renamed"
+  labels            = local.peering_labels[count.index]
   configured_status = local.peering_status[count.index]
 
   network {
