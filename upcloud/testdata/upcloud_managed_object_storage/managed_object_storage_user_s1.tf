@@ -15,9 +15,9 @@ resource "upcloud_managed_object_storage" "user" {
 }
 
 resource "upcloud_managed_object_storage_policy" "user" {
-  description  = "Allow get access to the users."
-  name         = "get-user-policy"
-  document     = urlencode(jsonencode({
+  description = "Allow get access to the users."
+  name        = "get-user-policy"
+  document = urlencode(jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -32,9 +32,8 @@ resource "upcloud_managed_object_storage_policy" "user" {
 }
 
 resource "upcloud_managed_object_storage_policy" "escape" {
-  description  = "Allow write access to bucket."
-  name         = "put-object-policy"
-  document     = urlencode(jsonencode({
+  name = "put-object-policy"
+  document = urlencode(jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
