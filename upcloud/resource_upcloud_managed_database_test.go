@@ -55,7 +55,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_time", "10:00:00"),
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_dow", "friday"),
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.ip_filter.0", "10.0.0.1/32"),
-					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "13"),
+					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "16"),
 					resource.TestCheckResourceAttr(pg1Name, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
 					resource.TestCheckResourceAttrSet(pg1Name, "service_uri"),
 					resource.TestCheckResourceAttr(pg1Name, "network.#", "0"),
@@ -66,7 +66,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg2Name, "title", withPrefixDB("pg-2")),
 					resource.TestCheckResourceAttr(pg2Name, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
-					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
+					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "17"),
 					resource.TestCheckResourceAttr(pg2Name, "network.#", "1"),
 
 					resource.TestCheckResourceAttr(msql1Name, "additional_disk_space_gib", "10"),
@@ -121,13 +121,13 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg1Name, "maintenance_window_dow", "thursday"),
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.public_access", "false"),
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.ip_filter.#", "0"),
-					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "14"),
+					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "17"),
 					resource.TestCheckResourceAttr(pg1Name, "powered", "false"),
 
 					resource.TestCheckResourceAttr(pg2Name, "additional_disk_space_gib", "20"),
 					resource.TestCheckResourceAttr(pg2Name, "title", withPrefixDB("pg-2-updated")),
 					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
-					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "14"),
+					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "17"),
 					resource.TestCheckResourceAttr(pg2Name, "network.#", "1"),
 
 					resource.TestCheckResourceAttr(msql1Name, "additional_disk_space_gib", "0"),
