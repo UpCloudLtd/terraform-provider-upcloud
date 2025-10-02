@@ -13,6 +13,7 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 
 	storage := "upcloud_managed_object_storage.user"
 	policy := "upcloud_managed_object_storage_policy.user"
+	escapePolicy := "upcloud_managed_object_storage_policy.escape"
 	user := "upcloud_managed_object_storage_user.user"
 	userAccessKey := "upcloud_managed_object_storage_user_access_key.user"
 	userPolicy := "upcloud_managed_object_storage_user_policy.user"
@@ -47,6 +48,12 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 			{
 				Config:            testDataS1,
 				ResourceName:      userPolicy,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      escapePolicy,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

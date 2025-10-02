@@ -32,8 +32,7 @@ resource "upcloud_managed_object_storage_policy" "user" {
 }
 
 resource "upcloud_managed_object_storage_policy" "escape" {
-  description = "Allow write access to bucket."
-  name        = "put-object-policy"
+  name = "put-object-policy"
   document = urlencode(jsonencode({
     Version = "2012-10-17"
     Statement = [
