@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_object_storage_policy: proper handling of description so it fires a policy recreation only when there is a change 
+
 ## [5.27.0] - 2025-09-25
 
 ### Fixed
