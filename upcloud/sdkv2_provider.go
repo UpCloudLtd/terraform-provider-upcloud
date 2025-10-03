@@ -9,7 +9,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/objectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 	"github.com/UpCloudLtd/upcloud-go-api/credentials"
 	"github.com/hashicorp/go-retryablehttp"
@@ -69,7 +68,6 @@ func Provider() *schema.Provider {
 			"upcloud_gateway":                                gateway.ResourceGateway(),
 			"upcloud_gateway_connection":                     gateway.ResourceConnection(),
 			"upcloud_gateway_connection_tunnel":              gateway.ResourceTunnel(),
-			"upcloud_object_storage":                         objectstorage.ResourceObjectStorage(),
 			"upcloud_managed_database_postgresql":            database.ResourcePostgreSQL(),
 			"upcloud_managed_database_mysql":                 database.ResourceMySQL(),
 			"upcloud_managed_database_redis":                 database.ResourceRedis(),
