@@ -82,12 +82,12 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   plan                      = "1x1xCPU-2GB-25GB"
   title                     = "${var.prefix}pg-1-updated"
   zone                      = var.zone
-  maintenance_window_time   = "11:00:00"
-  maintenance_window_dow    = "thursday"
+  # maintenance_window_time   = "11:00:00"
+  # maintenance_window_dow    = "thursday"
   powered                   = false
 
   properties {
-    ip_filter = []
+    # ip_filter = []
     version   = 16
   }
 }
@@ -98,9 +98,12 @@ resource "upcloud_managed_database_postgresql" "pg2" {
   plan                      = "1x1xCPU-2GB-25GB"
   title                     = "${var.prefix}pg-2-updated"
   zone                      = var.zone
+  maintenance_window_time   = "11:00:00"
+  maintenance_window_dow    = "thursday"
   powered                   = true
 
   properties {
+    ip_filter = []
     version = 17
   }
 
