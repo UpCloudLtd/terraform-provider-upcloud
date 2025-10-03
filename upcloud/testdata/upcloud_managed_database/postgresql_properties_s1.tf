@@ -14,6 +14,9 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
   plan  = "1x1xCPU-2GB-25GB"
   zone  = var.zone
   properties {
+    // Test version upgrade from 16 to 17
+    version = 16
+
     timezone                            = "Europe/Helsinki"
     admin_username                      = "demoadmin"
     admin_password                      = "2VCNXEV6SVfpr3"
@@ -63,7 +66,6 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     track_commit_timestamp              = "on"
     track_functions                     = "all"
     track_io_timing                     = "on"
-    version                             = "15"
     wal_sender_timeout                  = 60000
     wal_writer_delay                    = 10
     work_mem                            = 1024
