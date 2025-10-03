@@ -118,7 +118,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"additional_disk_space_gib": {
-			Description: "Additional disk space in GiB",
+			Description: "Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.",
 			Type:        schema.TypeInt,
 			Computed:    true,
 			Optional:    true,
