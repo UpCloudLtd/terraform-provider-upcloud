@@ -78,8 +78,10 @@ func resourceLogicalDatabaseCreate(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(fmt.Errorf("setting character_set or collation is only possible for PostgreSQL service"))
 	}
 
-	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
-		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
+	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         serviceID,
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -164,8 +166,10 @@ func resourceLogicalDatabaseDelete(ctx context.Context, d *schema.ResourceData, 
 	if err := utils.UnmarshalID(d.Id(), &serviceID, &name); err != nil {
 		return diag.FromErr(err)
 	}
-	serviceDetails, err = resourceUpCloudManagedDatabaseWaitState(ctx, serviceID, meta,
-		d.Timeout(schema.TimeoutCreate), resourceUpcloudManagedDatabaseModifiableStates...)
+	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         serviceID,
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}

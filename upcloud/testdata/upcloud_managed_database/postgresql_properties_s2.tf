@@ -14,6 +14,10 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
   plan  = "1x1xCPU-2GB-25GB"
   zone  = var.zone
   properties {
+    // Test version upgrade from 16 to 17
+    version = 17
+
+    timezone                               = "Europe/Helsinki"
     pg_stat_monitor_pgsm_max_buckets       = 10
     pg_stat_monitor_pgsm_enable_query_plan = true
     log_temp_files                         = 16
