@@ -147,13 +147,10 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Wait until database is in running state
 	if _, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: d.Id(), DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
-		return append(
-			resourceDatabaseRead(ctx, d, meta),
-			diag.FromErr(err)[0],
-		)
+		diags = append(diags, diag.FromErr(err)[0])
 	}
 
-	return diags
+	return append(diags, resourceDatabaseRead(ctx, d, meta)...)
 }
 
 func resourceDatabasePoweredUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
