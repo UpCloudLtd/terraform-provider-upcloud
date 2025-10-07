@@ -465,23 +465,20 @@ func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *
 		})
 	}
 
-	// Attempt to upgrade version after database is powered on
-	// Upgrade is only allowed when database is in "Running" state, so we have to wait for that after powering it on
-	if d.HasChange("powered") && d.Get("powered").(bool) {
-		_, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
-			UUID:         d.Id(),
-			DesiredState: upcloud.ManagedDatabaseStateRunning,
+	// Wait until database is in running state before attempting to upgrade version.
+	_, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         d.Id(),
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
+	if err != nil {
+		return append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed; reached timeout when waiting for running state", d.Id(), d.Get("name")),
+			Detail:   err.Error(),
 		})
-		if err != nil {
-			return append(diags, diag.Diagnostic{
-				Severity: diag.Warning,
-				Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed; reached timeout when waiting for running state", d.Id(), d.Get("name")),
-				Detail:   err.Error(),
-			})
-		}
 	}
 
-	_, err := client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
+	_, err = client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
 		UUID:          d.Id(),
 		TargetVersion: d.Get("properties.0.version").(string),
 	})
