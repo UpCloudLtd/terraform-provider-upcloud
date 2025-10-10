@@ -133,6 +133,7 @@ Optional Attributes:
 - `max_sync_workers_per_subscription` (Number) Maximum number of synchronization workers per subscription. The default is `2`.
 - `max_wal_senders` (Number) PostgreSQL maximum WAL senders. The default is `20`. Changing this parameter causes a service restart.
 - `max_worker_processes` (Number) Sets the maximum number of background processes that the system can support. The default is `8`. Changing this parameter causes a service restart.
+- `node_count` (Number) Number of nodes for the service.
 - `password_encryption` (String, Sensitive) Chooses the algorithm for encrypting passwords.
 - `pg_partman_bgw_interval` (Number) Sets the time interval in seconds to run pg_partman's scheduled tasks. The default is `3600`.
 - `pg_partman_bgw_role` (String) Controls which role to use for pg_partman's scheduled background tasks.
