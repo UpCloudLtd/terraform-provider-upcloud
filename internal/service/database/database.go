@@ -478,9 +478,10 @@ func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *
 		})
 	}
 
+	_, target := d.GetChange("properties.0.version")
 	_, err = client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
 		UUID:          d.Id(),
-		TargetVersion: d.Get("properties.0.version").(string),
+		TargetVersion: target.(string),
 	})
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{

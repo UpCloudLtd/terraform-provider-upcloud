@@ -84,11 +84,11 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   zone                      = var.zone
   # maintenance_window_time   = "11:00:00"
   # maintenance_window_dow    = "thursday"
-  powered                   = false
+  powered = false
 
   properties {
     # ip_filter = []
-    version   = 16
+    version = 16
   }
 }
 
@@ -104,7 +104,7 @@ resource "upcloud_managed_database_postgresql" "pg2" {
 
   properties {
     ip_filter = []
-    version = 17
+    version   = 17
   }
 
   // No change in network

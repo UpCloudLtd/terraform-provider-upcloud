@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_managed_database_\*: Add `additional_disk_space_gib` field.
 
+### Fixed
+
+- upcloud_managed_database_\*: use correct version in database version upgrade call.
+
 ## [5.28.0] - 2025-10-02
 
 ### Fixed

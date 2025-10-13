@@ -67,12 +67,12 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   zone                      = var.zone
   # maintenance_window_time = "10:00:00"
   # maintenance_window_dow  = "friday"
-  powered                   = true
+  powered = true
 
   properties {
     # public_access = true
     # ip_filter     = ["10.0.0.1/32"]
-    version       = 16
+    version = 16
   }
 }
 
@@ -88,7 +88,7 @@ resource "upcloud_managed_database_postgresql" "pg2" {
   properties {
     public_access = true
     ip_filter     = ["10.0.0.1/32"]
-    version = 17
+    version       = 17
   }
 
   // Attach network on create
