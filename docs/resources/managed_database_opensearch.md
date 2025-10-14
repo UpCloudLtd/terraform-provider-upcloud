@@ -97,7 +97,7 @@ Optional Attributes:
 - `cluster_max_shards_per_node` (Number) Controls the number of shards allowed in the cluster per data node.
 - `cluster_routing_allocation_balance_prefer_primary` (Boolean) When set to true, OpenSearch attempts to evenly distribute the primary shards between the cluster nodes. Enabling this setting does not always guarantee an equal number of primary shards on each node, especially in the event of a failover. Changing this setting to false after it was set to true does not invoke redistribution of primary shards. Default is false.
 - `cluster_routing_allocation_node_concurrent_recoveries` (Number) Concurrent incoming/outgoing shard recoveries per node. How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to node cpu count * 2.
-- `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name.
+- `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name. When you set a custom domain for a service deployed in a VPC, the service certificate is only created for the public-* hostname and the custom domain.
 - `custom_keystores` (List of String) OpenSearch custom keystores. Allow to register custom keystores in OpenSearch.
 - `custom_repos` (List of String) OpenSearch custom repositories. Allow to register object storage repositories in OpenSearch.
 - `elasticsearch_version` (String) Elasticsearch version.
@@ -159,6 +159,7 @@ Blocks:
 - `disk_watermarks` (Block List, Max: 1) Watermark settings. (see [below for nested schema](#nestedblock--properties--disk_watermarks))
 - `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
+- `jwt` (Block List, Max: 1) OpenSearch JWT Configuration. (see [below for nested schema](#nestedblock--properties--jwt))
 - `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
 - `opensearch_dashboards` (Block List, Max: 1) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
 - `remote_store` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--remote_store))
@@ -254,6 +255,22 @@ Optional Attributes:
 - `mapping_nested_objects_limit` (Number) (DEPRECATED) index.mapping.nested_objects.limit. The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. Default is 10000. Deprecated, use an index template instead.
 - `number_of_replicas` (Number) The number of replicas each primary shard has. Deprecated, use an index template instead.
 - `number_of_shards` (Number) The number of primary shards that an index should have. Deprecated, use an index template instead.
+
+
+<a id="nestedblock--properties--jwt"></a>
+### Nested Schema for `properties.jwt`
+
+Optional Attributes:
+
+- `enabled` (Boolean) Enable or disable OpenSearch JWT authentication. Enables or disables JWT-based authentication for OpenSearch. When enabled, users can authenticate using JWT tokens.
+- `jwt_clock_skew_tolerance_seconds` (Number) JWT clock skew tolerance in seconds. The maximum allowed time difference in seconds between the JWT issuer's clock and the OpenSearch server's clock. This helps prevent token validation failures due to minor time synchronization issues.
+- `jwt_header` (String) HTTP header name for JWT token. The HTTP header name where the JWT token is transmitted. Typically 'Authorization' for Bearer tokens.
+- `jwt_url_parameter` (String) URL parameter name for JWT token. If the JWT token is transmitted as a URL parameter instead of an HTTP header, specify the parameter name here.
+- `required_audience` (String) Required JWT audience. If specified, the JWT must contain an 'aud' claim that matches this value. This provides additional security by ensuring the JWT was issued for the expected audience.
+- `required_issuer` (String) Required JWT issuer. If specified, the JWT must contain an 'iss' claim that matches this value. This provides additional security by ensuring the JWT was issued by the expected issuer.
+- `roles_key` (String) JWT claim key for roles. The key in the JWT payload that contains the user's roles. If specified, roles will be extracted from the JWT for authorization.
+- `signing_key` (String) JWT signing key. The secret key used to sign and verify JWT tokens. This should be a secure, randomly generated key HMAC key or public RSA/ECDSA key.
+- `subject_key` (String) JWT claim key for subject. The key in the JWT payload that contains the user's subject identifier. If not specified, the 'sub' claim is used by default.
 
 
 <a id="nestedblock--properties--openid"></a>
