@@ -16,6 +16,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 - upcloud_object_storage: removed support for legacy object storage resources. This is treated as non-breaking change as all users have been migrated to the new managed product.
+- upcloud_managed_database_redis: removed support for deprecated Redis service. This is treated as non-breaking change as all users have been migrated to Valkey.
 
 ## [5.28.0] - 2025-10-02
 
