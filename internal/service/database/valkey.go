@@ -21,7 +21,7 @@ func ResourceValkey() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: utils.JoinSchemas(
-			schemaDatabaseCommon(),
+			schemaDatabaseCommon(upcloud.ManagedDatabaseServiceTypeValkey),
 			schemaValkeyEngine(),
 		),
 	}

@@ -145,8 +145,12 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		return append(diags, resourceDatabasePoweredUpdate(ctx, d, client)...)
 	}
 
-	// Wait until database is in running state
-	if _, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: d.Id(), DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
+	expectedState := upcloud.ManagedDatabaseStateRunning
+	if !d.Get("powered").(bool) {
+		expectedState = upcloud.ManagedDatabaseStateStopped
+	}
+	// Wait until database is in running (or stopped) state
+	if _, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: d.Id(), DesiredState: expectedState}); err != nil {
 		diags = append(diags, diag.FromErr(err)[0])
 	}
 
