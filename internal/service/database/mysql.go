@@ -21,7 +21,7 @@ func ResourceMySQL() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: utils.JoinSchemas(
-			schemaDatabaseCommon(),
+			schemaDatabaseCommon(upcloud.ManagedDatabaseServiceTypeMySQL),
 			schemaMySQLEngine(),
 		),
 	}

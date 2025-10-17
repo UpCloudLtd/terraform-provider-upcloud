@@ -24,7 +24,7 @@ func ResourceRedis() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: utils.JoinSchemas(
-			schemaDatabaseCommon(),
+			schemaDatabaseCommon(upcloud.ManagedDatabaseServiceTypeRedis), //nolint:staticcheck // To be removed when Redis support has been removed
 			schemaRedisEngine(),
 		),
 	}

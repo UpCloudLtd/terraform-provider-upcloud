@@ -42,13 +42,13 @@ resource "upcloud_managed_database_redis" "example_2" {
 ### Required Attributes
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
-- `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.
+- `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans redis`.
 - `title` (String) Title of a managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
 
-- `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
+- `additional_disk_space_gib` (Number) Not supported for `redis` databases. Should be left unconfigured.
 - `labels` (Map of String) User defined key-value pairs to classify the managed database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
