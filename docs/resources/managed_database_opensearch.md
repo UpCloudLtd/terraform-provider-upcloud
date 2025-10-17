@@ -48,6 +48,7 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 ### Optional Attributes
 
 - `access_control` (Boolean) Enables users access control for OpenSearch service. User access control rules will only be enforced if this attribute is enabled.
+- `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
 - `extended_access_control` (Boolean) Grant access to top-level `_mget`, `_msearch` and `_bulk` APIs. Users are limited to perform operations on indices based on the user-specific access control rules.
 - `labels` (Map of String) User defined key-value pairs to classify the managed database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
