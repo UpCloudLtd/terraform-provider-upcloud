@@ -12,6 +12,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - upcloud_managed_database_\*: use correct version in database version upgrade call.
+- upcloud_managed_database_\*: Return an error if database reaches an error state during create or modify operations. Previously, the provider would wait for running state until timeout was reached without reporting the error.
 
 ### Removed
 
