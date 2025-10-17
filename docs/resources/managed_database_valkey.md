@@ -46,6 +46,7 @@ resource "upcloud_managed_database_valkey" "example_2" {
 
 ### Optional Attributes
 
+- `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
 - `labels` (Map of String) User defined key-value pairs to classify the managed database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
