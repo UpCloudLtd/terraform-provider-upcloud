@@ -77,29 +77,34 @@ resource "upcloud_network" "msql1" {
 }
 
 resource "upcloud_managed_database_postgresql" "pg1" {
-  name                    = "${var.prefix}pg-1"
-  plan                    = "1x1xCPU-2GB-25GB"
-  title                   = "${var.prefix}pg-1-updated"
-  zone                    = var.zone
-  maintenance_window_time = "11:00:00"
-  maintenance_window_dow  = "thursday"
-  powered                 = false
+  additional_disk_space_gib = 40
+  name                      = "${var.prefix}pg-1"
+  plan                      = "1x1xCPU-2GB-25GB"
+  title                     = "${var.prefix}pg-1-updated"
+  zone                      = var.zone
+  # maintenance_window_time   = "11:00:00"
+  # maintenance_window_dow    = "thursday"
+  powered = false
 
   properties {
-    ip_filter = []
-    version   = 14
+    # ip_filter = []
+    version = 16
   }
 }
 
 resource "upcloud_managed_database_postgresql" "pg2" {
-  name    = "${var.prefix}pg-2"
-  plan    = "1x1xCPU-2GB-25GB"
-  title   = "${var.prefix}pg-2-updated"
-  zone    = var.zone
-  powered = true
+  additional_disk_space_gib = 20
+  name                      = "${var.prefix}pg-2"
+  plan                      = "1x1xCPU-2GB-25GB"
+  title                     = "${var.prefix}pg-2-updated"
+  zone                      = var.zone
+  maintenance_window_time   = "11:00:00"
+  maintenance_window_dow    = "thursday"
+  powered                   = true
 
   properties {
-    version = 14
+    ip_filter = []
+    version   = 17
   }
 
   // No change in network
@@ -112,10 +117,11 @@ resource "upcloud_managed_database_postgresql" "pg2" {
 }
 
 resource "upcloud_managed_database_mysql" "msql1" {
-  name  = "${var.prefix}mysql-1"
-  plan  = "1x1xCPU-2GB-25GB"
-  title = "${var.prefix}mysql-1-updated"
-  zone  = var.zone
+  additional_disk_space_gib = 0
+  name                      = "${var.prefix}mysql-1"
+  plan                      = "1x1xCPU-2GB-25GB"
+  title                     = "${var.prefix}mysql-1-updated"
+  zone                      = var.zone
 
   // Attach network in modify
   network {
