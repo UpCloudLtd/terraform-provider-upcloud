@@ -16,7 +16,7 @@ import (
 func schemaDatabaseCommon(dbType upcloud.ManagedDatabaseServiceType) map[string]*schema.Schema {
 	planDescription := fmt.Sprintf("Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans %s`.", dbType)
 	additionalDiskDescription := "Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed."
-	if dbType == upcloud.ManagedDatabaseServiceTypeValkey || dbType == upcloud.ManagedDatabaseServiceTypeRedis { //nolint:staticcheck // Redis check to be removed when Redis support has been removed
+	if dbType == upcloud.ManagedDatabaseServiceTypeValkey {
 		additionalDiskDescription = fmt.Sprintf("Not supported for `%s` databases. Should be left unconfigured.", dbType)
 	}
 
