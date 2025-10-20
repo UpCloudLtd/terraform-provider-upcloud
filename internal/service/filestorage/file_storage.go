@@ -11,6 +11,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -19,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var (
@@ -56,6 +58,21 @@ type fileStorageModel struct {
 	Size             types.Int64  `tfsdk:"size"`
 	Zone             types.String `tfsdk:"zone"`
 	ConfiguredStatus types.String `tfsdk:"configured_status"`
+	Network          types.Object `tfsdk:"network"`
+}
+
+type networkAttachmentModel struct {
+	UUID      types.String `tfsdk:"uuid"`
+	Name      types.String `tfsdk:"name"`
+	Family    types.String `tfsdk:"family"`
+	IPAddress types.String `tfsdk:"ip_address"`
+}
+
+var networkAttrTypes = map[string]attr.Type{
+	"uuid":       types.StringType,
+	"name":       types.StringType,
+	"family":     types.StringType,
+	"ip_address": types.StringType,
 }
 
 func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -74,6 +91,7 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name string that consists only of letters (a–z, A–Z), digits (0–9), underscores (_), or hyphens (-) — with at least one character, and nothing else allowed (no spaces, symbols, or accents): %s", resourceNameRegexp)),
+					stringvalidator.LengthBetween(1, 64),
 				},
 			},
 			"size": schema.Int64Attribute{
@@ -101,6 +119,35 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 					),
 				},
 			},
+			"network": schema.SingleNestedAttribute{
+				Optional: true,
+				Attributes: map[string]schema.Attribute{
+					"uuid": schema.StringAttribute{
+						Description: "UUID of an existing private network to attach",
+						Required:    true,
+					},
+					"name": schema.StringAttribute{
+						Description: "Attachment name (unique per this service)",
+						Required:    true,
+						Validators: []validator.String{
+							stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name string that consists only of letters (a–z, A–Z), digits (0–9), underscores (_), or hyphens (-) — with at least one character, and nothing else allowed (no spaces, symbols, or accents): %s", resourceNameRegexp)),
+							stringvalidator.LengthBetween(1, 64),
+						},
+					},
+					"family": schema.StringAttribute{
+						Description: "IP family, e.g. IPv4",
+						Required:    true,
+						Validators: []validator.String{
+							stringvalidator.OneOf(upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6),
+						},
+					},
+					"ip_address": schema.StringAttribute{
+						Description: "IP address to assign (optional, auto-assign otherwise)",
+						Optional:    true,
+						Computed:    true,
+					},
+				},
+			},
 		},
 	}
 }
@@ -111,6 +158,18 @@ func setFileStorageModel(_ context.Context, data *fileStorageModel, fileStorage 
 	data.Size = types.Int64Value(int64(fileStorage.SizeGiB))
 	data.Zone = types.StringValue(fileStorage.Zone)
 	data.ConfiguredStatus = types.StringValue(string(fileStorage.ConfiguredStatus))
+	if len(fileStorage.Networks) > 0 {
+		var diags diag.Diagnostics
+		data.Network, diags = types.ObjectValue(networkAttrTypes, map[string]attr.Value{
+			"uuid":       types.StringValue(fileStorage.Networks[0].UUID),
+			"name":       types.StringValue(fileStorage.Networks[0].Name),
+			"family":     types.StringValue(fileStorage.Networks[0].Family),
+			"ip_address": types.StringValue(fileStorage.Networks[0].IPAddress),
+		})
+		if diags.HasError() {
+			return diags
+		}
+	}
 	return nil
 }
 
@@ -122,12 +181,43 @@ func (r *fileStorageResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	fileStorage, err := r.client.CreateFileStorage(ctx, &request.CreateFileStorageRequest{
+	if data.Name.IsUnknown() || data.Zone.IsUnknown() || data.Size.IsUnknown() || data.ConfiguredStatus.IsUnknown() {
+		resp.Diagnostics.AddError("Invalid plan", "One or more required fields are unknown at apply time.")
+		return
+	}
+
+	fileStorageRequest := request.CreateFileStorageRequest{
 		Name:             data.Name.ValueString(),
 		SizeGiB:          int(data.Size.ValueInt64()),
 		Zone:             data.Zone.ValueString(),
 		ConfiguredStatus: upcloud.FileStorageConfiguredStatus(data.ConfiguredStatus.ValueString()),
-	})
+	}
+
+	if !data.Network.IsNull() && !data.Network.IsUnknown() {
+		var net networkAttachmentModel
+		resp.Diagnostics.Append(data.Network.As(ctx, &net, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if net.UUID.IsUnknown() || net.Name.IsUnknown() || net.Family.IsUnknown() {
+			resp.Diagnostics.AddError(
+				"Invalid network block",
+				"One or more required fields in 'network' are not known at apply time.",
+			)
+			return
+		}
+
+		fileStorageRequest.Networks = []upcloud.FileStorageNetwork{
+			{
+				UUID:      net.UUID.ValueString(),
+				Name:      net.Name.ValueString(),
+				Family:    net.Family.ValueString(),
+				IPAddress: net.IPAddress.ValueString(),
+			},
+		}
+	}
+
+	fileStorage, err := r.client.CreateFileStorage(ctx, &fileStorageRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create file storage", err.Error())
 		return
@@ -170,32 +260,72 @@ func (r *fileStorageResource) Read(ctx context.Context, req resource.ReadRequest
 }
 
 func (r *fileStorageResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data fileStorageModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
+	var plan, state fileStorageModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var fileStoragePlan upcloud.FileStorage
-	fileStoragePlan.UUID = data.ID.ValueString()
-	fileStoragePlan.Name = data.Name.ValueString()
-	fileStoragePlan.SizeGiB = int(data.Size.ValueInt64())
-	fileStoragePlan.ConfiguredStatus = upcloud.FileStorageConfiguredStatus(data.ConfiguredStatus.ValueString())
+	if plan.Name.IsUnknown() || plan.Zone.IsUnknown() || plan.Size.IsUnknown() || plan.ConfiguredStatus.IsUnknown() {
+		resp.Diagnostics.AddError("Invalid plan", "One or more required fields are unknown at apply time.")
+		return
+	}
 
-	fileStorage, err := r.client.ModifyFileStorage(ctx, &request.ModifyFileStorageRequest{
-		UUID:             fileStoragePlan.UUID,
-		Name:             &fileStoragePlan.Name,
-		SizeGiB:          &fileStoragePlan.SizeGiB,
-		ConfiguredStatus: &fileStoragePlan.ConfiguredStatus,
-	})
+	uuid := state.ID.ValueString()
+	name := plan.Name.ValueString()
+	sizeGiB := int(plan.Size.ValueInt64())
+	configuredStatus := upcloud.FileStorageConfiguredStatus(plan.ConfiguredStatus.ValueString())
+	patch := &request.ModifyFileStorageRequest{
+		UUID:             uuid,
+		Name:             &name,
+		SizeGiB:          &sizeGiB,
+		ConfiguredStatus: &configuredStatus,
+	}
+
+	if plan.Network.IsNull() && !state.Network.IsNull() {
+		patch.Networks = &[]upcloud.FileStorageNetwork{}
+	} else if !plan.Network.IsNull() && !plan.Network.IsUnknown() {
+		var net networkAttachmentModel
+		resp.Diagnostics.Append(plan.Network.As(ctx, &net, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// Compare against previous state to see if something changed
+		var prev networkAttachmentModel
+		if !state.Network.IsNull() && !state.Network.IsUnknown() {
+			resp.Diagnostics.Append(state.Network.As(ctx, &prev, basetypes.ObjectAsOptions{})...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+
+		changed := prev.UUID.ValueString() != net.UUID.ValueString() ||
+			prev.Name.ValueString() != net.Name.ValueString() ||
+			prev.Family.ValueString() != net.Family.ValueString() ||
+			prev.IPAddress.ValueString() != net.IPAddress.ValueString()
+
+		if changed || state.Network.IsNull() {
+			patch.Networks = &[]upcloud.FileStorageNetwork{
+				{
+					UUID:      net.UUID.ValueString(),
+					Name:      net.Name.ValueString(),
+					Family:    net.Family.ValueString(),
+					IPAddress: net.IPAddress.ValueString(),
+				},
+			}
+		}
+	}
+
+	fileStorage, err := r.client.ModifyFileStorage(ctx, patch)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update file storage", err.Error())
 		return
 	}
 
-	resp.Diagnostics.Append(setFileStorageModel(ctx, &data, fileStorage)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(setFileStorageModel(ctx, &plan, fileStorage)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *fileStorageResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
