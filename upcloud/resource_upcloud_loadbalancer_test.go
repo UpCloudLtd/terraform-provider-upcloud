@@ -212,8 +212,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_rise", "3"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_url", "/"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.health_check_expected_status", "200"),
-					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
-					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", "v2"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", "Sticky-Session"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", "v1"),
 					resource.TestCheckResourceAttr(be2sm1Name, "weight", "0"),
 				),
 			},
@@ -245,6 +245,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.header.0.inverse", "true"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.url_param.0.inverse", "true"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "matchers.0.num_members_up.0.inverse", "true"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", "Session"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", "v2"),
 				),
 			},
 			{
@@ -252,6 +254,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					checkStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "0"),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
+					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),
 				),
 			},
 		},
