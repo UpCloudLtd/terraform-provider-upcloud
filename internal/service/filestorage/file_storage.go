@@ -59,6 +59,7 @@ type fileStorageModel struct {
 	Zone             types.String `tfsdk:"zone"`
 	ConfiguredStatus types.String `tfsdk:"configured_status"`
 	Network          types.Object `tfsdk:"network"`
+	Labels           types.Map    `tfsdk:"labels"`
 }
 
 type networkAttachmentModel struct {
@@ -119,6 +120,7 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 					),
 				},
 			},
+			"labels": utils.LabelsAttribute("file storage"),
 			"network": schema.SingleNestedAttribute{
 				Optional: true,
 				Attributes: map[string]schema.Attribute{
@@ -152,12 +154,18 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 	}
 }
 
-func setFileStorageModel(_ context.Context, data *fileStorageModel, fileStorage *upcloud.FileStorage) diag.Diagnostics {
+func setFileStorageModel(ctx context.Context, data *fileStorageModel, fileStorage *upcloud.FileStorage) diag.Diagnostics {
 	data.ID = types.StringValue(fileStorage.UUID)
 	data.Name = types.StringValue(fileStorage.Name)
 	data.Size = types.Int64Value(int64(fileStorage.SizeGiB))
 	data.Zone = types.StringValue(fileStorage.Zone)
 	data.ConfiguredStatus = types.StringValue(string(fileStorage.ConfiguredStatus))
+	var diags diag.Diagnostics
+	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(fileStorage.Labels))
+	if diags.HasError() {
+		return diags
+	}
+
 	if len(fileStorage.Networks) > 0 {
 		var diags diag.Diagnostics
 		data.Network, diags = types.ObjectValue(networkAttrTypes, map[string]attr.Value{
@@ -186,11 +194,17 @@ func (r *fileStorageResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+
 	fileStorageRequest := request.CreateFileStorageRequest{
 		Name:             data.Name.ValueString(),
 		SizeGiB:          int(data.Size.ValueInt64()),
 		Zone:             data.Zone.ValueString(),
 		ConfiguredStatus: upcloud.FileStorageConfiguredStatus(data.ConfiguredStatus.ValueString()),
+		Labels:           utils.LabelsMapToSlice(labels),
 	}
 
 	if !data.Network.IsNull() && !data.Network.IsUnknown() {
@@ -272,15 +286,22 @@ func (r *fileStorageResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
+	var labels map[string]string
+	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+
 	uuid := state.ID.ValueString()
 	name := plan.Name.ValueString()
 	sizeGiB := int(plan.Size.ValueInt64())
 	configuredStatus := upcloud.FileStorageConfiguredStatus(plan.ConfiguredStatus.ValueString())
+	labelsSlice := utils.LabelsMapToSlice(labels)
 	patch := &request.ModifyFileStorageRequest{
 		UUID:             uuid,
 		Name:             &name,
 		SizeGiB:          &sizeGiB,
 		ConfiguredStatus: &configuredStatus,
+		Labels:           &labelsSlice,
 	}
 
 	if plan.Network.IsNull() && !state.Network.IsNull() {
