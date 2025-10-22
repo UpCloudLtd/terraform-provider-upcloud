@@ -354,22 +354,28 @@ func setBackendValues(ctx context.Context, data *backendModel, backend *upcloud.
 	return respDiagnostics
 }
 
-func buildBackendProperties(ctx context.Context, dataProperties types.List) (*upcloud.LoadBalancerBackendProperties, diag.Diagnostics) {
+func buildBackendProperties(ctx context.Context, dataProperties types.List) (*upcloud.LoadBalancerBackendProperties, request.ModifyLoadBalancerBackendClearProperties, diag.Diagnostics) {
+	clearProperties := request.ModifyLoadBalancerBackendClearProperties{}
+
 	if dataProperties.IsNull() {
-		return nil, nil
+		return nil, clearProperties, nil
 	}
 
 	var planProperties []backendPropertiesModel
 	diags := dataProperties.ElementsAs(ctx, &planProperties, false)
 	if diags.HasError() {
-		return nil, diags
+		return nil, clearProperties, diags
 	}
 
 	if len(planProperties) != 1 {
-		return nil, nil
+		return nil, clearProperties, nil
 	}
 
 	properties := planProperties[0]
+
+	clearProperties.OutboundProxyProtocol = properties.OutboundProxyProtocol.ValueString() == ""
+	clearProperties.StickySessionCookieName = properties.StickySessionCookieName.ValueString() == ""
+
 	return &upcloud.LoadBalancerBackendProperties{
 		TimeoutServer:             int(properties.TimeoutServer.ValueInt64()),
 		TimeoutTunnel:             int(properties.TimeoutTunnel.ValueInt64()),
@@ -386,7 +392,7 @@ func buildBackendProperties(ctx context.Context, dataProperties types.List) (*up
 		TLSVerify:                 properties.TLSVerify.ValueBoolPointer(),
 		TLSUseSystemCA:            properties.TLSUseSystemCA.ValueBoolPointer(),
 		HTTP2Enabled:              properties.HTTP2Enabled.ValueBoolPointer(),
-	}, diags
+	}, clearProperties, diags
 }
 
 func (r *backendResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -397,7 +403,7 @@ func (r *backendResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	properties, diags := buildBackendProperties(ctx, data.Properties)
+	properties, _, diags := buildBackendProperties(ctx, data.Properties)
 	resp.Diagnostics.Append(diags...)
 
 	data.ID = types.StringValue(utils.MarshalID(data.LoadBalancer.ValueString(), data.Name.ValueString()))
@@ -483,7 +489,7 @@ func (r *backendResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	properties, diags := buildBackendProperties(ctx, data.Properties)
+	properties, clearProperties, diags := buildBackendProperties(ctx, data.Properties)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -494,9 +500,10 @@ func (r *backendResource) Update(ctx context.Context, req resource.UpdateRequest
 		ServiceUUID: loadBalancer,
 		Name:        name,
 		Backend: request.ModifyLoadBalancerBackend{
-			Name:       data.Name.ValueString(),
-			Resolver:   data.ResolverName.ValueStringPointer(),
-			Properties: properties,
+			Name:            data.Name.ValueString(),
+			Resolver:        data.ResolverName.ValueStringPointer(),
+			Properties:      properties,
+			ClearProperties: clearProperties,
 		},
 	}
 

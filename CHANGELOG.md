@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_loadbalancer_backend: fix disabling (i.e., changing value to empty string) `outbound_proxy_protocol` and `sticky_session_cookie_name` properties.
+
 ## [5.29.0] - 2025-10-20
 
 ### Added
