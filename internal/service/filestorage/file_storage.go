@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -60,6 +61,7 @@ type fileStorageModel struct {
 	ConfiguredStatus types.String `tfsdk:"configured_status"`
 	Network          types.Object `tfsdk:"network"`
 	Labels           types.Map    `tfsdk:"labels"`
+	Shares           types.Set    `tfsdk:"share"`
 }
 
 type networkAttachmentModel struct {
@@ -76,6 +78,28 @@ var networkAttrTypes = map[string]attr.Type{
 	"ip_address": types.StringType,
 }
 
+type shareACLModel struct {
+	Target     types.String `tfsdk:"target"`
+	Permission types.String `tfsdk:"permission"`
+}
+
+type shareModel struct {
+	Name types.String `tfsdk:"name"`
+	Path types.String `tfsdk:"path"`
+	ACL  types.Set    `tfsdk:"acl"`
+}
+
+var shareACLAttrTypes = map[string]attr.Type{
+	"target":     types.StringType,
+	"permission": types.StringType,
+}
+
+var shareAttrTypes = map[string]attr.Type{
+	"name": types.StringType,
+	"path": types.StringType,
+	"acl":  types.SetType{ElemType: types.ObjectType{AttrTypes: shareACLAttrTypes}},
+}
+
 func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Resource for managing UpCloud file storages.",
@@ -88,16 +112,16 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Name of the file storage.",
-				Required:            true,
+				Description: "Name of the file storage service.",
+				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name string that consists only of letters (a–z, A–Z), digits (0–9), underscores (_), or hyphens (-) — with at least one character, and nothing else allowed (no spaces, symbols, or accents): %s", resourceNameRegexp)),
 					stringvalidator.LengthBetween(1, 64),
 				},
 			},
 			"size": schema.Int64Attribute{
-				MarkdownDescription: "Size of the file storage in GB.",
-				Required:            true,
+				Description: "Size of the file storage in GB.",
+				Required:    true,
 				Validators: []validator.Int64{
 					int64validator.AtLeast(250),
 					int64validator.AtMost(25000),
@@ -111,8 +135,8 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 			"configured_status": schema.StringAttribute{
-				MarkdownDescription: "The service configured status indicates the service's current intended status. Managed by the customer.",
-				Required:            true,
+				Description: "The service configured status indicates the service's current intended status. Managed by the customer.",
+				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(upcloud.FileStorageConfiguredStatusStarted),
@@ -151,6 +175,51 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 		},
+		Blocks: map[string]schema.Block{
+			"share": schema.SetNestedBlock{
+				Description: "List of shares exported by this file storage.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							Description: "Unique name of the share (1–64 chars).",
+							Required:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthBetween(1, 64),
+								stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name string that consists only of letters (a–z, A–Z), digits (0–9), underscores (_), or hyphens (-) — with at least one character, and nothing else allowed (no spaces, symbols, or accents): %s", resourceNameRegexp)),
+							},
+						},
+						"path": schema.StringAttribute{
+							Description: "Absolute path exported by the share (e.g. `/public`).",
+							Required:    true,
+						},
+					},
+					Blocks: map[string]schema.Block{
+						"acl": schema.SetNestedBlock{
+							Description: "Access control entries (1–50).",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"target": schema.StringAttribute{
+										Description: "Target IP/CIDR or '*'.",
+										Required:    true,
+									},
+									"permission": schema.StringAttribute{
+										Description: "Access level: 'ro' or 'rw'.",
+										Required:    true,
+										Validators: []validator.String{
+											stringvalidator.OneOf("ro", "rw"),
+										},
+									},
+								},
+							},
+							Validators: []validator.Set{
+								setvalidator.SizeAtLeast(1),
+								setvalidator.SizeAtMost(50),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -178,6 +247,28 @@ func setFileStorageModel(ctx context.Context, data *fileStorageModel, fileStorag
 			return diags
 		}
 	}
+
+	if len(fileStorage.Shares) > 0 {
+		shareObjects := make([]attr.Value, len(fileStorage.Shares))
+		for i, sh := range fileStorage.Shares {
+			aclObjects := make([]attr.Value, len(sh.ACL))
+			for j, a := range sh.ACL {
+				aclObjects[j], _ = types.ObjectValue(shareACLAttrTypes, map[string]attr.Value{
+					"target":     types.StringValue(a.Target),
+					"permission": types.StringValue(string(a.Permission)),
+				})
+			}
+			aclSet, _ := types.SetValue(types.ObjectType{AttrTypes: shareACLAttrTypes}, aclObjects)
+
+			shareObjects[i], _ = types.ObjectValue(shareAttrTypes, map[string]attr.Value{
+				"name": types.StringValue(sh.Name),
+				"path": types.StringValue(sh.Path),
+				"acl":  aclSet,
+			})
+		}
+		data.Shares, _ = types.SetValue(types.ObjectType{AttrTypes: shareAttrTypes}, shareObjects)
+	}
+
 	return nil
 }
 
@@ -229,6 +320,35 @@ func (r *fileStorageResource) Create(ctx context.Context, req resource.CreateReq
 				IPAddress: net.IPAddress.ValueString(),
 			},
 		}
+	}
+
+	if !data.Shares.IsNull() && !data.Shares.IsUnknown() {
+		var shareList []shareModel
+		resp.Diagnostics.Append(data.Shares.ElementsAs(ctx, &shareList, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		shares := make([]upcloud.FileStorageShare, len(shareList))
+		for i, s := range shareList {
+			var aclEntries []shareACLModel
+			resp.Diagnostics.Append(s.ACL.ElementsAs(ctx, &aclEntries, false)...)
+
+			acls := make([]upcloud.FileStorageACL, len(aclEntries))
+			for j, a := range aclEntries {
+				acls[j] = upcloud.FileStorageACL{
+					Target:     a.Target.ValueString(),
+					Permission: upcloud.FileStorageACLPermission(a.Permission.ValueString()),
+				}
+			}
+
+			shares[i] = upcloud.FileStorageShare{
+				Name: s.Name.ValueString(),
+				Path: s.Path.ValueString(),
+				ACL:  acls,
+			}
+		}
+		fileStorageRequest.Shares = shares
 	}
 
 	fileStorage, err := r.client.CreateFileStorage(ctx, &fileStorageRequest)
@@ -339,6 +459,37 @@ func (r *fileStorageResource) Update(ctx context.Context, req resource.UpdateReq
 		}
 	}
 
+	if !plan.Shares.IsNull() && !plan.Shares.IsUnknown() {
+		var shareList []shareModel
+		resp.Diagnostics.Append(plan.Shares.ElementsAs(ctx, &shareList, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		shares := make([]upcloud.FileStorageShare, len(shareList))
+		for i, s := range shareList {
+			var aclEntries []shareACLModel
+			resp.Diagnostics.Append(s.ACL.ElementsAs(ctx, &aclEntries, false)...)
+
+			acls := make([]upcloud.FileStorageACL, len(aclEntries))
+			for j, a := range aclEntries {
+				acls[j] = upcloud.FileStorageACL{
+					Target:     a.Target.ValueString(),
+					Permission: upcloud.FileStorageACLPermission(a.Permission.ValueString()),
+				}
+			}
+
+			shares[i] = upcloud.FileStorageShare{
+				Name: s.Name.ValueString(),
+				Path: s.Path.ValueString(),
+				ACL:  acls,
+			}
+		}
+		patch.Shares = &shares
+	} else if plan.Shares.IsNull() && !state.Shares.IsNull() {
+		patch.Shares = &[]upcloud.FileStorageShare{} // clear all shares
+	}
+
 	fileStorage, err := r.client.ModifyFileStorage(ctx, patch)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update file storage", err.Error())
@@ -362,6 +513,12 @@ func (r *fileStorageResource) Delete(ctx context.Context, req resource.DeleteReq
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete file storage", err.Error())
+		return
+	}
+
+	err = r.client.WaitForFileStorageDeletion(ctx, &request.WaitForFileStorageDeletionRequest{UUID: data.ID.ValueString()})
+	if err != nil {
+		resp.Diagnostics.AddError("File storage deletion did not complete on time, please check the resource", err.Error())
 		return
 	}
 }
