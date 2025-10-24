@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -13,10 +15,14 @@ import (
 // Basic Lifecycle Test
 // -----------------------------------------------------------------------------
 func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
+	configStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_cfg1.tf")
+	configStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_cfg2.tf")
+	configStep3 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_cfg3.tf")
+	configStep4 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_cfg4.tf")
+
+	prefix := "tf-acc-test-file-storage-"
 	rName := fmt.Sprintf("file-storage-%s", acctest.RandString(5))
 	netName := fmt.Sprintf("file-storage-net-%s", acctest.RandString(5))
-
-	// Randomize subnet to avoid CIDR overlap conflicts
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("172.16.%d.0/24", subnet)
 	storageIP := fmt.Sprintf("172.16.%d.11", subnet)
@@ -31,10 +37,11 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 			// Step 1: Create
 			// -----------------------------------------------------------------
 			{
-				Config: testAccFileStorageConfigStep1(rName, netName, cidr, storageIP, aclTarget),
+				Config:          configStep1,
+				ConfigVariables: stepVars(prefix, netName, rName, cidr, storageIP, aclTarget, aclTarget2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccFileStorageExists("upcloud_file_storage.example"),
-					resource.TestCheckResourceAttr("upcloud_file_storage.example", "name", rName),
+					resource.TestCheckResourceAttr("upcloud_file_storage.example", "name", prefix+rName),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "size", "250"),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "configured_status", "stopped"),
@@ -49,7 +56,8 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 			// Step 2: Update (add label + new share + start service)
 			// -----------------------------------------------------------------
 			{
-				Config: testAccFileStorageConfigStep2(rName, netName, cidr, storageIP, aclTarget, aclTarget2),
+				Config:          configStep2,
+				ConfigVariables: stepVars(prefix, netName, rName, cidr, storageIP, aclTarget, aclTarget2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccFileStorageExists("upcloud_file_storage.example"),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "configured_status", "started"),
@@ -63,7 +71,8 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 			// Step 3: Remove network and shares, replace labels completely
 			// -----------------------------------------------------------------
 			{
-				Config: testAccFileStorageConfigStep3(netName, cidr, rName),
+				Config:          configStep3,
+				ConfigVariables: stepVars(prefix, netName, rName, cidr, storageIP, aclTarget, aclTarget2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccFileStorageExists("upcloud_file_storage.example"),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "share.#", "0"),
@@ -74,10 +83,11 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 				),
 			},
 			// -----------------------------------------------------------------
-			// Step 4: Re-attach to network again (stabilize test cleanup)
+			// Step 4: Re-attach to network again
 			// -----------------------------------------------------------------
 			{
-				Config: testAccFileStorageConfigStep4(rName, netName, cidr, storageIP),
+				Config:          configStep4,
+				ConfigVariables: stepVars(prefix, netName, rName, cidr, storageIP, aclTarget, aclTarget2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccFileStorageExists("upcloud_file_storage.example"),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "network.family", "IPv4"),
@@ -92,10 +102,11 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 // Import Test
 // -----------------------------------------------------------------------------
 func TestAccUpCloudFileStorage_import(t *testing.T) {
+	configStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_cfg1.tf")
+
+	prefix := "tf-acc-test-file-storage-"
 	rName := fmt.Sprintf("file-storage-import-%s", acctest.RandString(5))
 	netName := fmt.Sprintf("file-storage-net-import-%s", acctest.RandString(5))
-
-	// Randomize subnet to avoid conflicts
 	subnet := acctest.RandIntRange(0, 250)
 	cidr := fmt.Sprintf("172.16.%d.0/24", subnet)
 	storageIP := fmt.Sprintf("172.16.%d.11", subnet)
@@ -107,7 +118,8 @@ func TestAccUpCloudFileStorage_import(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create
 			{
-				Config: testAccFileStorageConfigStep1(rName, netName, cidr, storageIP, aclTarget),
+				Config:          configStep1,
+				ConfigVariables: stepVars(prefix, netName, rName, cidr, storageIP, aclTarget, "none"),
 			},
 			// Import
 			{
@@ -119,169 +131,6 @@ func TestAccUpCloudFileStorage_import(t *testing.T) {
 	})
 }
 
-// -----------------------------------------------------------------------------
-// Helper Config Builders
-// -----------------------------------------------------------------------------
-
-func testAccFileStorageConfigStep1(rName, netName, cidr, storageIP, aclTarget string) string {
-	return fmt.Sprintf(`
-		resource "upcloud_network" "this" {
-			name = "%s"
-			zone = "fi-hel2"
-
-			ip_network {
-				address = "%s"
-				dhcp    = true
-				family  = "IPv4"
-			}
-		}
-
-		resource "upcloud_file_storage" "example" {
-			name              = "%s"
-			size              = 250
-			zone              = "fi-hel2"
-			configured_status = "stopped"
-
-			labels = {
-				environment = "staging"
-				customer    = "example-customer"
-			}
-
-			share {
-				name = "write-to-project"
-				path = "/project"
-				acl {
-					target     = "%s"
-					permission = "rw"
-				}
-			}
-
-			network = {
-				family     = "IPv4"
-				name       = "example-private-net"
-				uuid       = upcloud_network.this.id
-				ip_address = "%s"
-			}
-		}
-		`, netName, cidr, rName, aclTarget, storageIP)
-}
-
-func testAccFileStorageConfigStep2(rName, netName, cidr, storageIP, aclTarget, aclTarget2 string) string {
-	return fmt.Sprintf(`
-		resource "upcloud_network" "this" {
-			name = "%s"
-			zone = "fi-hel2"
-
-			ip_network {
-				address = "%s"
-				dhcp    = true
-				family  = "IPv4"
-			}
-		}
-
-		resource "upcloud_file_storage" "example" {
-			name              = "%s_v2"
-			size              = 250
-			zone              = "fi-hel2"
-			configured_status = "started"
-
-			labels = {
-				environment = "staging"
-				customer    = "example-customer"
-				env         = "test"
-			}
-
-			share {
-				name = "write-to-project"
-				path = "/project"
-				acl {
-				target     = "%s"
-				permission = "rw"
-				}
-			}
-
-			share {
-				name = "read-only"
-				path = "/public"
-				acl {
-				target     = "%s"
-				permission = "ro"
-				}
-			}
-
-			network = {
-				family     = "IPv4"
-				name       = "example-private-net"
-				uuid       = upcloud_network.this.id
-				ip_address = "%s"
-			}
-		}
-		`, netName, cidr, rName, aclTarget, aclTarget2, storageIP)
-}
-
-func testAccFileStorageConfigStep3(netName, cidr, rName string) string {
-	return fmt.Sprintf(`
-		resource "upcloud_network" "this" {
-			name = "%s"
-			zone = "fi-hel2"
-
-			ip_network {
-				address = "%s"
-				dhcp    = true
-				family  = "IPv4"
-			}
-		}
-		resource "upcloud_file_storage" "example" {
-			name              = "%s_v3"
-			size              = 250
-			zone              = "fi-hel2"
-			configured_status = "started"
-
-			labels = {
-				single = "onlyone"
-			}
-		}
-		`, netName, cidr, rName)
-}
-
-// Step 4 — Re-attach network to allow clean destroy
-func testAccFileStorageConfigStep4(rName, netName, cidr, storageIP string) string {
-	return fmt.Sprintf(`
-		resource "upcloud_network" "this" {
-			name = "%s"
-			zone = "fi-hel2"
-
-			ip_network {
-				address = "%s"
-				dhcp    = true
-				family  = "IPv4"
-			}
-		}
-
-		resource "upcloud_file_storage" "example" {
-			name              = "%s_v4"
-			size              = 250
-			zone              = "fi-hel2"
-			configured_status = "stopped"
-
-			labels = {
-				single = "onlyone"
-			}
-
-			network = {
-				family     = "IPv4"
-				name       = "example-private-net-readd"
-				uuid       = upcloud_network.this.id
-				ip_address = "%s"
-			}
-		}
-	`, netName, cidr, rName, storageIP)
-}
-
-// -----------------------------------------------------------------------------
-// Helper Check
-// -----------------------------------------------------------------------------
-
 func testAccFileStorageExists(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		_, ok := s.RootModule().Resources[resourceName]
@@ -289,5 +138,17 @@ func testAccFileStorageExists(resourceName string) resource.TestCheckFunc {
 			return fmt.Errorf("not found: %s", resourceName)
 		}
 		return nil
+	}
+}
+
+func stepVars(prefix, netName, rName, cidr, storageIP, aclTarget, aclTarget2 string) map[string]config.Variable {
+	return map[string]config.Variable{
+		"prefix":            config.StringVariable(prefix),
+		"net-name":          config.StringVariable(netName),
+		"file-storage-name": config.StringVariable(rName),
+		"cidr":              config.StringVariable(cidr),
+		"network-ip-addrs":  config.StringVariable(storageIP),
+		"acl-1-ip":          config.StringVariable(aclTarget),
+		"acl-2-ip":          config.StringVariable(aclTarget2),
 	}
 }
