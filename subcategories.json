@@ -59,6 +59,7 @@
     "loadbalancer_static_backend_member.md": "Load Balancer",
     "kubernetes_cluster.md": "Kubernetes",
     "kubernetes_node_group.md": "Kubernetes",
-    "tag.md": "Cloud"
+    "tag.md": "Cloud",
+    "file_storage.md": "File Storage"
   }
 }
