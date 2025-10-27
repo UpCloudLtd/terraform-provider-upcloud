@@ -8,7 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - upcloud_managed_database_\*: Add `additional_disk_space_gib` field.
-- add support for file storage
+- add support for file storage (EXPERIMENTAL)
 
 ### Fixed
 

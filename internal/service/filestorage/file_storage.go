@@ -101,7 +101,7 @@ var shareAttrTypes = map[string]attr.Type{
 
 func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Resource for managing UpCloud file storages.",
+		Description: "Resource for managing UpCloud file storages (EXPERIMENTAL)",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
