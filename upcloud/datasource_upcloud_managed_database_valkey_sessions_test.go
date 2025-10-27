@@ -12,8 +12,8 @@ func TestAccDataSourceUpcloudManagedDatabaseValkeySessions(t *testing.T) {
 
 	name := "data.upcloud_managed_database_valkey_sessions.valkey_sessions"
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

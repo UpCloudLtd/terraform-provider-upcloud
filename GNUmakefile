@@ -35,6 +35,15 @@ test: fmtcheck
 testacc: fmtcheck
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -parallel=8 -timeout 240m
 
+testacc-kubernetes:
+	TF_ACC=1 go test ./upcloud/kubernetes -v -parallel=4 -count=1 -timeout=150m
+
+testacc-database:
+	TF_ACC=1 go test ./upcloud/database -v -parallel=4 -count=1 -timeout=150m
+
+testacc-objectstorage:
+	TF_ACC=1 go test ./upcloud/objectstorage -v -parallel=4 -count=1 -timeout=150m
+
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -ge 1 ]; then \

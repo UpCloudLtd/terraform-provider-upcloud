@@ -23,8 +23,8 @@ func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 	expectedAccess := "public"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFloatingIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -61,8 +61,8 @@ func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
 	expectedAccess := "public"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"test"}, 0),
@@ -89,8 +89,8 @@ func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
 	secondServerResourceName := "upcloud_server.second"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"first", "second"}, 0),

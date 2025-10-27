@@ -31,8 +31,8 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 	)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -66,8 +66,8 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false, []string{"10.0.0.2"}, []string{"192.168.0.0/24"}),
@@ -112,8 +112,8 @@ func TestAccUpCloudNetwork_withRouter(t *testing.T) {
 	config := testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, true, nil, nil)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -146,8 +146,8 @@ func TestAccUpCloudNetwork_amendWithRouter(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkConfig(netName, "fi-hel1", cidr, gateway, true, false, false, nil, nil),
@@ -188,8 +188,8 @@ func TestAccUpCloudNetwork_FamilyValidation(t *testing.T) {
 	gateway := fmt.Sprintf("10.0.%d.1", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccNetworkConfigWithFamily(netName, "fi-hel1", cidr, gateway, "rubbish", true, false, false, nil, nil, nil),
@@ -231,8 +231,8 @@ func TestAccUpCloudNetwork_labels(t *testing.T) {
 	)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config1,
@@ -267,8 +267,8 @@ func TestAccUpCloudNetwork_labels(t *testing.T) {
 
 func TestAccUpcloudNetwork_DHCPRoutesConfiguration(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create with DHCP routes auto-population enabled, no filters
