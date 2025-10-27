@@ -76,7 +76,7 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccFileStorageExists("upcloud_file_storage.example"),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "share.#", "0"),
-					resource.TestCheckNoResourceAttr("upcloud_file_storage.example", "network"),
+					resource.TestCheckResourceAttr("upcloud_file_storage.example", "network.#", "0"),
 					resource.TestCheckResourceAttr("upcloud_file_storage.example", "labels.single", "onlyone"),
 					resource.TestCheckNoResourceAttr("upcloud_file_storage.example", "labels.environment"),
 					resource.TestCheckNoResourceAttr("upcloud_file_storage.example", "labels.customer"),
@@ -90,8 +90,9 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 				ConfigVariables: stepVars(prefix, netName, rName, cidr, storageIP, aclTarget, aclTarget2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccFileStorageExists("upcloud_file_storage.example"),
-					resource.TestCheckResourceAttr("upcloud_file_storage.example", "network.family", "IPv4"),
-					resource.TestCheckResourceAttr("upcloud_file_storage.example", "network.ip_address", storageIP),
+					resource.TestCheckResourceAttr("upcloud_file_storage.example", "network.0.family", "IPv4"),
+					resource.TestCheckResourceAttr("upcloud_file_storage.example", "network.0.ip_address", storageIP),
+					resource.TestCheckResourceAttr("upcloud_file_storage.example", "network.#", "1"),
 				),
 			},
 		},

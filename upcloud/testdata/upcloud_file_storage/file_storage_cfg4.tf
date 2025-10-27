@@ -44,10 +44,10 @@ resource "upcloud_file_storage" "example" {
         single = "onlyone"
     }
 
-    network = {
-        family     = "IPv4"
-        name       = "example-private-net-readd"
-        uuid       = upcloud_network.this.id
-        ip_address = "${var.network-ip-addrs}"
-    }
+  network {
+    family     = "IPv4"
+    name       = "example-private-net-readd"
+    uuid       = upcloud_network.this.id
+    ip_address = "${var.network-ip-addrs}"
+  }
 }

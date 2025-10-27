@@ -1,5 +1,6 @@
+// Create network for the File Storage
 resource "upcloud_network" "this" {
-  name = "file-storage-net-test-8"
+  name = "file-storage-net-test"
   zone = "fi-hel2"
 
   ip_network {
@@ -9,11 +10,11 @@ resource "upcloud_network" "this" {
   }
 }
 
-resource upcloud_file_storage "example" {
-  name             = "example-file-storage-test-8"
+resource "upcloud_file_storage" "example" {
+  name             = "example-file-storage-test"
   size             = 250
   zone             = "fi-hel2"
-  configured_status = "started"
+  configured_status = "stopped"
 
   labels = {
     environment = "staging"
@@ -29,7 +30,7 @@ resource upcloud_file_storage "example" {
     }
   }
 
-  network = {
+  network {
     family = "IPv4"
     name   = "example-private-net"
     uuid   = upcloud_network.this.id

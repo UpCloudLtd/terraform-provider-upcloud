@@ -21,7 +21,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var (
@@ -59,7 +58,7 @@ type fileStorageModel struct {
 	Size             types.Int64  `tfsdk:"size"`
 	Zone             types.String `tfsdk:"zone"`
 	ConfiguredStatus types.String `tfsdk:"configured_status"`
-	Network          types.Object `tfsdk:"network"`
+	Networks         types.Set    `tfsdk:"network"`
 	Labels           types.Map    `tfsdk:"labels"`
 	Shares           types.Set    `tfsdk:"share"`
 }
@@ -145,37 +144,42 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 			"labels": utils.LabelsAttribute("file storage"),
-			"network": schema.SingleNestedAttribute{
-				Optional: true,
-				Attributes: map[string]schema.Attribute{
-					"uuid": schema.StringAttribute{
-						Description: "UUID of an existing private network to attach",
-						Required:    true,
-					},
-					"name": schema.StringAttribute{
-						Description: "Attachment name (unique per this service)",
-						Required:    true,
-						Validators: []validator.String{
-							stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name string that consists only of letters (a–z, A–Z), digits (0–9), underscores (_), or hyphens (-) — with at least one character, and nothing else allowed (no spaces, symbols, or accents): %s", resourceNameRegexp)),
-							stringvalidator.LengthBetween(1, 64),
-						},
-					},
-					"family": schema.StringAttribute{
-						Description: "IP family, e.g. IPv4",
-						Required:    true,
-						Validators: []validator.String{
-							stringvalidator.OneOf(upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6),
-						},
-					},
-					"ip_address": schema.StringAttribute{
-						Description: "IP address to assign (optional, auto-assign otherwise)",
-						Optional:    true,
-						Computed:    true,
-					},
-				},
-			},
 		},
 		Blocks: map[string]schema.Block{
+			"network": schema.SetNestedBlock{
+				Description: "Network attached to this file storage (currently supports at most one of these blocks).",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"uuid": schema.StringAttribute{
+							Description: "UUID of an existing private network to attach.",
+							Required:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "Attachment name (unique per this service).",
+							Required:    true,
+							Validators: []validator.String{
+								stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name string that consists only of letters (a–z, A–Z), digits (0–9), underscores (_), or hyphens (-): %s", resourceNameRegexp)),
+								stringvalidator.LengthBetween(1, 64),
+							},
+						},
+						"family": schema.StringAttribute{
+							Description: "IP family, e.g. IPv4.",
+							Required:    true,
+							Validators: []validator.String{
+								stringvalidator.OneOf(upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6),
+							},
+						},
+						"ip_address": schema.StringAttribute{
+							Description: "IP address to assign (optional, auto-assign otherwise).",
+							Optional:    true,
+							Computed:    true,
+						},
+					},
+				},
+				Validators: []validator.Set{
+					setvalidator.SizeAtMost(1),
+				},
+			},
 			"share": schema.SetNestedBlock{
 				Description: "List of shares exported by this file storage.",
 				NestedObject: schema.NestedBlockObject{
@@ -236,13 +240,19 @@ func setFileStorageModel(ctx context.Context, data *fileStorageModel, fileStorag
 	}
 
 	if len(fileStorage.Networks) > 0 {
-		var diags diag.Diagnostics
-		data.Network, diags = types.ObjectValue(networkAttrTypes, map[string]attr.Value{
-			"uuid":       types.StringValue(fileStorage.Networks[0].UUID),
-			"name":       types.StringValue(fileStorage.Networks[0].Name),
-			"family":     types.StringValue(fileStorage.Networks[0].Family),
-			"ip_address": types.StringValue(fileStorage.Networks[0].IPAddress),
-		})
+		networkObjects := make([]attr.Value, len(fileStorage.Networks))
+		for i, n := range fileStorage.Networks {
+			networkObjects[i], diags = types.ObjectValue(networkAttrTypes, map[string]attr.Value{
+				"uuid":       types.StringValue(n.UUID),
+				"name":       types.StringValue(n.Name),
+				"family":     types.StringValue(n.Family),
+				"ip_address": types.StringValue(n.IPAddress),
+			})
+			if diags.HasError() {
+				return diags
+			}
+		}
+		data.Networks, diags = types.SetValue(types.ObjectType{AttrTypes: networkAttrTypes}, networkObjects)
 		if diags.HasError() {
 			return diags
 		}
@@ -253,20 +263,29 @@ func setFileStorageModel(ctx context.Context, data *fileStorageModel, fileStorag
 		for i, sh := range fileStorage.Shares {
 			aclObjects := make([]attr.Value, len(sh.ACL))
 			for j, a := range sh.ACL {
-				aclObjects[j], _ = types.ObjectValue(shareACLAttrTypes, map[string]attr.Value{
+				aclObjects[j], diags = types.ObjectValue(shareACLAttrTypes, map[string]attr.Value{
 					"target":     types.StringValue(a.Target),
 					"permission": types.StringValue(string(a.Permission)),
 				})
+				if diags.HasError() {
+					return diags
+				}
 			}
 			aclSet, _ := types.SetValue(types.ObjectType{AttrTypes: shareACLAttrTypes}, aclObjects)
 
-			shareObjects[i], _ = types.ObjectValue(shareAttrTypes, map[string]attr.Value{
+			shareObjects[i], diags = types.ObjectValue(shareAttrTypes, map[string]attr.Value{
 				"name": types.StringValue(sh.Name),
 				"path": types.StringValue(sh.Path),
 				"acl":  aclSet,
 			})
+			if diags.HasError() {
+				return diags
+			}
 		}
-		data.Shares, _ = types.SetValue(types.ObjectType{AttrTypes: shareAttrTypes}, shareObjects)
+		data.Shares, diags = types.SetValue(types.ObjectType{AttrTypes: shareAttrTypes}, shareObjects)
+		if diags.HasError() {
+			return diags
+		}
 	}
 
 	return nil
@@ -298,27 +317,28 @@ func (r *fileStorageResource) Create(ctx context.Context, req resource.CreateReq
 		Labels:           utils.LabelsMapToSlice(labels),
 	}
 
-	if !data.Network.IsNull() && !data.Network.IsUnknown() {
-		var net networkAttachmentModel
-		resp.Diagnostics.Append(data.Network.As(ctx, &net, basetypes.ObjectAsOptions{})...)
+	if !data.Networks.IsNull() && !data.Networks.IsUnknown() {
+		var nets []networkAttachmentModel
+		resp.Diagnostics.Append(data.Networks.ElementsAs(ctx, &nets, false)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		if net.UUID.IsUnknown() || net.Name.IsUnknown() || net.Family.IsUnknown() {
-			resp.Diagnostics.AddError(
-				"Invalid network block",
-				"One or more required fields in 'network' are not known at apply time.",
-			)
+
+		if len(nets) > 1 {
+			resp.Diagnostics.AddError("Invalid number of networks", "Currently only one network attachment is supported.")
 			return
 		}
 
-		fileStorageRequest.Networks = []upcloud.FileStorageNetwork{
-			{
-				UUID:      net.UUID.ValueString(),
-				Name:      net.Name.ValueString(),
-				Family:    net.Family.ValueString(),
-				IPAddress: net.IPAddress.ValueString(),
-			},
+		if len(nets) == 1 {
+			n := nets[0]
+			fileStorageRequest.Networks = []upcloud.FileStorageNetwork{
+				{
+					UUID:      n.UUID.ValueString(),
+					Name:      n.Name.ValueString(),
+					Family:    n.Family.ValueString(),
+					IPAddress: n.IPAddress.ValueString(),
+				},
+			}
 		}
 	}
 
@@ -424,38 +444,41 @@ func (r *fileStorageResource) Update(ctx context.Context, req resource.UpdateReq
 		Labels:           &labelsSlice,
 	}
 
-	if plan.Network.IsNull() && !state.Network.IsNull() {
+	var planNets, stateNets []networkAttachmentModel
+	if !plan.Networks.IsNull() && !plan.Networks.IsUnknown() {
+		resp.Diagnostics.Append(plan.Networks.ElementsAs(ctx, &planNets, false)...)
+	}
+	if !state.Networks.IsNull() && !state.Networks.IsUnknown() {
+		resp.Diagnostics.Append(state.Networks.ElementsAs(ctx, &stateNets, false)...)
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	switch {
+	case len(planNets) == 0 && len(stateNets) > 0:
+		// Detach all
 		patch.Networks = &[]upcloud.FileStorageNetwork{}
-	} else if !plan.Network.IsNull() && !plan.Network.IsUnknown() {
-		var net networkAttachmentModel
-		resp.Diagnostics.Append(plan.Network.As(ctx, &net, basetypes.ObjectAsOptions{})...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
 
-		// Compare against previous state to see if something changed
+	case len(planNets) == 1:
+		n := planNets[0]
 		var prev networkAttachmentModel
-		if !state.Network.IsNull() && !state.Network.IsUnknown() {
-			resp.Diagnostics.Append(state.Network.As(ctx, &prev, basetypes.ObjectAsOptions{})...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
+		if len(stateNets) == 1 {
+			prev = stateNets[0]
 		}
 
-		changed := prev.UUID.ValueString() != net.UUID.ValueString() ||
-			prev.Name.ValueString() != net.Name.ValueString() ||
-			prev.Family.ValueString() != net.Family.ValueString() ||
-			prev.IPAddress.ValueString() != net.IPAddress.ValueString()
+		changed := prev.UUID.ValueString() != n.UUID.ValueString() ||
+			prev.Name.ValueString() != n.Name.ValueString() ||
+			prev.Family.ValueString() != n.Family.ValueString() ||
+			prev.IPAddress.ValueString() != n.IPAddress.ValueString()
 
-		if changed || state.Network.IsNull() {
-			patch.Networks = &[]upcloud.FileStorageNetwork{
-				{
-					UUID:      net.UUID.ValueString(),
-					Name:      net.Name.ValueString(),
-					Family:    net.Family.ValueString(),
-					IPAddress: net.IPAddress.ValueString(),
-				},
-			}
+		if changed || len(stateNets) == 0 {
+			patch.Networks = &[]upcloud.FileStorageNetwork{{
+				UUID:      n.UUID.ValueString(),
+				Name:      n.Name.ValueString(),
+				Family:    n.Family.ValueString(),
+				IPAddress: n.IPAddress.ValueString(),
+			}}
 		}
 	}
 

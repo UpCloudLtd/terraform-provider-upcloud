@@ -60,7 +60,7 @@ resource "upcloud_file_storage" "example" {
         }
     }
 
-    network = {
+    network {
         family     = "IPv4"
         name       = "example-private-net"
         uuid       = upcloud_network.this.id
