@@ -33,7 +33,7 @@ test: fmtcheck
 		xargs -t -n4 go test $(TESTARGS) -timeout=300s -parallel=4 -count=1
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -parallel=32 -timeout 240m
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -parallel=8 -timeout 240m
 
 vet:
 	@echo "go vet ."
