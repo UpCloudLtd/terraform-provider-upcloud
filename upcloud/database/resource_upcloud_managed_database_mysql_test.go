@@ -10,8 +10,8 @@ import (
 )
 
 func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/mysql_properties_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/mysql_properties_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s2.tf")
 
 	name := "upcloud_managed_database_mysql.mysql_properties"
 	prop := func(name string) string {

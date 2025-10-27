@@ -7,6 +7,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
+	uc "github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
@@ -16,8 +17,8 @@ func withPrefixDB(text string) string {
 }
 
 func TestAccUpcloudManagedDatabase(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s2.tf")
 
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
@@ -57,7 +58,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					// resource.TestCheckResourceAttr(pg1Name, "maintenance_window_dow", "friday"),
 					// resource.TestCheckResourceAttr(pg1Name, "properties.0.ip_filter.0", "10.0.0.1/32"),
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.version", "16"),
-					resource.TestCheckResourceAttr(pg1Name, "type", string(upcloud.ManagedDatabaseServiceTypePostgreSQL)),
+					resource.TestCheckResourceAttr(pg1Name, "type", string(uc.ManagedDatabaseServiceTypePostgreSQL)),
 					resource.TestCheckResourceAttrSet(pg1Name, "service_uri"),
 					resource.TestCheckResourceAttr(pg1Name, "network.#", "0"),
 
@@ -167,7 +168,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 }
 
 func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
-	testdata := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/termination_protection.tf")
+	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/termination_protection.tf")
 	db := "upcloud_managed_database_mysql.this.0"
 
 	variables := func(dbCount int32, powered bool, termination_protection bool) map[string]config.Variable {

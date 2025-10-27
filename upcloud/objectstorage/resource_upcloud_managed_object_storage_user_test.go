@@ -9,8 +9,8 @@ import (
 )
 
 func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_user_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_user_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_user_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_user_s2.tf")
 
 	storage := "upcloud_managed_object_storage.user"
 	policy := "upcloud_managed_object_storage_policy.user"
