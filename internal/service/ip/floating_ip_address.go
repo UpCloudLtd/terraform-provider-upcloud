@@ -227,7 +227,7 @@ func (r *floatingIPResource) Update(ctx context.Context, req resource.UpdateRequ
 		apiReq.MAC = data.MAC.ValueString()
 	}
 
-	ip1, err := r.client.ModifyIPAddress(ctx, &apiReq)
+	ip, err := r.client.ModifyIPAddress(ctx, &apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify floating IP address",
@@ -236,7 +236,7 @@ func (r *floatingIPResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	setValues(&data, ip1)
+	setValues(&data, ip)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
