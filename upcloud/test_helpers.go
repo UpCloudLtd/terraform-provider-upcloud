@@ -15,6 +15,8 @@ var (
 	testAccProvider          *schema.Provider
 )
 
+const debianTemplateUUID = "01000000-0000-4000-8000-000020070100"
+
 func init() {
 	testAccProvider = Provider()
 	TestAccProviderFactories = make(map[string]func() (tfprotov6.ProviderServer, error))
