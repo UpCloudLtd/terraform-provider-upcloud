@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.30.0] - 2025-10-29
+
+### Added
+
+- add support for file storage (EXPERIMENTAL)
+
 ## [5.29.1] - 2025-10-22
 
 ### Fixed
@@ -16,7 +22,6 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - upcloud_managed_database_\*: Add `additional_disk_space_gib` field.
-- add support for file storage (EXPERIMENTAL)
 
 ### Fixed
 
@@ -1067,7 +1072,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.29.1...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.30.0...HEAD
+[5.30.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.28.0...v5.29.0
 [5.28.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.27.0...v5.28.0
