@@ -25,7 +25,6 @@ resource "upcloud_gateway" "this" {
   name = "gateway-example-gw"
   zone = "pl-waw1"
 
-  # Not all gateway plans allow VPN feature.
   # For more info see https://upcloud.com/resources/docs/networking#nat-and-vpn-gateways
   features = ["vpn"]
   plan     = "advanced"
