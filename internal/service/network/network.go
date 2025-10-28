@@ -50,13 +50,14 @@ func (r *networkResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 type networkModel struct {
-	Name      types.String `tfsdk:"name"`
-	ID        types.String `tfsdk:"id"`
-	Type      types.String `tfsdk:"type"`
-	Zone      types.String `tfsdk:"zone"`
-	Router    types.String `tfsdk:"router"`
-	IPNetwork types.List   `tfsdk:"ip_network"`
-	Labels    types.Map    `tfsdk:"labels"`
+	Name            types.String `tfsdk:"name"`
+	ID              types.String `tfsdk:"id"`
+	Type            types.String `tfsdk:"type"`
+	Zone            types.String `tfsdk:"zone"`
+	Router          types.String `tfsdk:"router"`
+	IPNetwork       types.List   `tfsdk:"ip_network"`
+	Labels          types.Map    `tfsdk:"labels"`
+	EffectiveRoutes types.List   `tfsdk:"effective_routes"`
 }
 
 type ipNetworkModel struct {
@@ -68,6 +69,7 @@ type ipNetworkModel struct {
 	Family                  types.String `tfsdk:"family"`
 	Gateway                 types.String `tfsdk:"gateway"`
 	DHCPRoutesConfiguration types.Object `tfsdk:"dhcp_routes_configuration"`
+	DHCPEffectiveRoutes     types.List   `tfsdk:"dhcp_effective_routes"`
 }
 
 type dhcpRoutesConfigurationModel struct {
@@ -92,6 +94,20 @@ var dhcpRoutesConfigurationAttrTypes = map[string]attr.Type{
 	"effective_routes_auto_population": types.ObjectType{
 		AttrTypes: effectiveRoutesAutoPopulationAttrTypes,
 	},
+}
+
+var dhcpEffectiveRouteAttrTypes = map[string]attr.Type{
+	"auto_populated": types.BoolType,
+	"route":          types.StringType,
+	"nexthop":        types.StringType,
+}
+
+var effectiveRouteAttrTypes = map[string]attr.Type{
+	"source":             types.StringType,
+	"route":              types.StringType,
+	"nexthop":            types.StringType,
+	"type":               types.StringType,
+	"source_resource_id": types.StringType,
 }
 
 func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -127,6 +143,34 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"router": schema.StringAttribute{
 				Description: "UUID of a router to attach to this network.",
 				Optional:    true,
+			},
+			"effective_routes": schema.ListNestedAttribute{
+				Computed:    true,
+				Description: "Effective routes applied to this network (read-only).",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"source": schema.StringAttribute{
+							Computed:    true,
+							Description: "Origin of the route (e.g., static-route, router-connected-networks).",
+						},
+						"route": schema.StringAttribute{
+							Computed:    true,
+							Description: "Destination CIDR of the route.",
+						},
+						"nexthop": schema.StringAttribute{
+							Computed:    true,
+							Description: "Next hop address for this route.",
+						},
+						"type": schema.StringAttribute{
+							Computed:    true,
+							Description: "Route type (service or user).",
+						},
+						"source_resource_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "UUID of the source resource that provided this route, if applicable.",
+						},
+					},
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -205,7 +249,6 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 								stringplanmodifier.UseStateForUnknown(),
 							},
 						},
-
 						"dhcp_routes_configuration": schema.SingleNestedAttribute{
 							Optional:    true,
 							Description: "DHCP routes auto-population configuration.",
@@ -248,6 +291,26 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 												),
 											},
 										},
+									},
+								},
+							},
+						},
+						"dhcp_effective_routes": schema.ListNestedAttribute{
+							Computed:    true,
+							Description: "Routes provided to DHCP clients in this subnet (read-only).",
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"auto_populated": schema.BoolAttribute{
+										Computed:    true,
+										Description: "Whether the route was auto-populated by DHCP.",
+									},
+									"route": schema.StringAttribute{
+										Computed:    true,
+										Description: "Destination prefix (CIDR) of the DHCP route.",
+									},
+									"nexthop": schema.StringAttribute{
+										Computed:    true,
+										Description: "Next hop address for this DHCP route.",
 									},
 								},
 							},
@@ -334,6 +397,31 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 
 		ipNetworks[i].Family = types.StringValue(ipnet.Family)
 		ipNetworks[i].Gateway = types.StringValue(ipnet.Gateway)
+
+		if len(ipnet.DHCPEffectiveRoutes) > 0 {
+			routes := make([]attr.Value, 0, len(ipnet.DHCPEffectiveRoutes))
+			for _, r := range ipnet.DHCPEffectiveRoutes {
+				obj, diags := types.ObjectValue(dhcpEffectiveRouteAttrTypes, map[string]attr.Value{
+					"auto_populated": types.BoolValue(bool(r.AutoPopulated.Bool())),
+					"route":          types.StringValue(r.Route),
+					"nexthop":        types.StringValue(r.Nexthop),
+				})
+				respDiagnostics.Append(diags...)
+				routes = append(routes, obj)
+			}
+
+			dhcpRoutesTF, diags := types.ListValue(
+				types.ObjectType{AttrTypes: dhcpEffectiveRouteAttrTypes},
+				routes,
+			)
+			respDiagnostics.Append(diags...)
+			ipNetworks[i].DHCPEffectiveRoutes = dhcpRoutesTF
+		} else {
+			ipNetworks[i].DHCPEffectiveRoutes = types.ListValueMust(
+				types.ObjectType{AttrTypes: dhcpEffectiveRouteAttrTypes},
+				[]attr.Value{},
+			)
+		}
 
 		// Figure out the user's intended shape for dhcp_routes_configuration
 		var outerPresent, innerProvided, innerExplicitEmpty bool
@@ -501,6 +589,33 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 			respDiagnostics.Append(d2...)
 			ipNetworks[i].DHCPRoutesConfiguration = cfgObj
 		}
+	}
+
+	if len(network.EffectiveRoutes) > 0 {
+		routes := make([]attr.Value, 0, len(network.EffectiveRoutes))
+		for _, r := range network.EffectiveRoutes {
+			obj, diags := types.ObjectValue(effectiveRouteAttrTypes, map[string]attr.Value{
+				"source":             types.StringValue(string(r.Source)),
+				"route":              types.StringValue(r.Route),
+				"nexthop":            types.StringValue(r.Nexthop),
+				"type":               types.StringValue(string(r.Type)),
+				"source_resource_id": types.StringValue(r.SourceResourceID),
+			})
+			respDiagnostics.Append(diags...)
+			routes = append(routes, obj)
+		}
+
+		effRoutesTF, diags := types.ListValue(
+			types.ObjectType{AttrTypes: effectiveRouteAttrTypes},
+			routes,
+		)
+		respDiagnostics.Append(diags...)
+		data.EffectiveRoutes = effRoutesTF
+	} else {
+		data.EffectiveRoutes = types.ListValueMust(
+			types.ObjectType{AttrTypes: effectiveRouteAttrTypes},
+			[]attr.Value{},
+		)
 	}
 
 	var diags diag.Diagnostics

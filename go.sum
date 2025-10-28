@@ -15,6 +15,8 @@ github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.1 h1:eTfQsv58ufALOk9BZ7WbS
 github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.1/go.mod h1:7OtVs2UqtfvjkC1HfE+Oud0MnbMv7qUWnbEgxnTAqts=
 github.com/UpCloudLtd/upcloud-go-api/v8 v8.29.2 h1:6SC/xLzhMQl9MaY3kn/iu1nbvuizU4zYy+SXojXFyYI=
 github.com/UpCloudLtd/upcloud-go-api/v8 v8.29.2/go.mod h1:NBh1d/ip1bhdAIhuPWbyPme7tbLzDTV7dhutUmU1vg8=
+github.com/UpCloudLtd/upcloud-go-api/v8 v8.30.1-0.20251028104901-fc7bbf7a730b h1:Majcmeg71DnEiYJfQSc4HgOFptfnDmu7IuyqeZNGEYQ=
+github.com/UpCloudLtd/upcloud-go-api/v8 v8.30.1-0.20251028104901-fc7bbf7a730b/go.mod h1:NBh1d/ip1bhdAIhuPWbyPme7tbLzDTV7dhutUmU1vg8=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
 github.com/agext/levenshtein v1.2.3/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/apparentlymart/go-textseg/v12 v12.0.0/go.mod h1:S/4uRK2UtaQttw1GenVJEynmyUenKwP++x/+DdGV/Ec=
