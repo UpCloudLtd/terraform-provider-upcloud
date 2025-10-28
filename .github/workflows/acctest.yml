@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [default, kubernetes, database, objectstorage]
+        group: [unittests, core, kubernetes, database, objectstorage]
 
     steps:
       - name: Checkout source code
@@ -58,7 +58,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          if [ "${{ matrix.group }}" == "default" ]; then
+          if [ "${{ matrix.group }}" == "unittests" ]; then
             make test
           fi
 
@@ -68,7 +68,7 @@ jobs:
           UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
         if: env.UPCLOUD_PASSWORD != ''
         run: |
-          if [ "${{ matrix.group }}" == "default" ]; then
+          if [ "${{ matrix.group }}" == "core" ]; then
             make testacc
           else
             make testacc-${{ matrix.group }}
