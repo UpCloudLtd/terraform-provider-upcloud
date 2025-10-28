@@ -57,7 +57,10 @@ jobs:
         run: ${{ inputs.tool }} version
 
       - name: Run unit tests
-        run: make test
+        run: |
+          if [ "${{ matrix.group }}" == "default" ]; then
+            make test
+          fi
 
       - name: Run ${{ matrix.group }} acceptance tests
         env:
