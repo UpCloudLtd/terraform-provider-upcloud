@@ -23,7 +23,7 @@ func ResourceOpenSearch() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: utils.JoinSchemas(
-			schemaDatabaseCommon(),
+			schemaDatabaseCommon(upcloud.ManagedDatabaseServiceTypeOpenSearch),
 			schemaOpenSearchEngine(),
 			schemaOpenSearchAccessControl(),
 		),

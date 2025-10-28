@@ -116,7 +116,8 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
     timeout_server          = 20
     timeout_tunnel          = 4000
     health_check_type       = "http"
-    outbound_proxy_protocol = "v2"
+    outbound_proxy_protocol = "v1"
+    sticky_session_cookie_name = "Sticky-Session"
   }
 }
 

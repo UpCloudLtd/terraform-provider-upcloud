@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.29.1] - 2025-10-22
+
+### Fixed
+
+- upcloud_loadbalancer_backend: fix disabling (i.e., changing value to empty string) `outbound_proxy_protocol` and `sticky_session_cookie_name` properties.
+
+## [5.29.0] - 2025-10-20
+
 ### Added
 
 - upcloud_managed_database_\*: Add `additional_disk_space_gib` field.
@@ -13,6 +21,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - upcloud_managed_database_\*: use correct version in database version upgrade call.
+- upcloud_managed_database_\*: Return an error if database reaches an error state during create or modify operations. Previously, the provider would wait for running state until timeout was reached without reporting the error.
+
+### Removed
+
+- upcloud_object_storage: removed support for legacy object storage resources. This is treated as non-breaking change as all users have been migrated to the new managed product.
 
 ## [5.28.0] - 2025-10-02
 
@@ -1054,7 +1067,9 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.28.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.29.1...HEAD
+[5.29.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.29.0...v5.29.1
+[5.29.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.28.0...v5.29.0
 [5.28.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.27.0...v5.28.0
 [5.27.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.26.0...v5.27.0
 [5.26.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.25.0...v5.26.0

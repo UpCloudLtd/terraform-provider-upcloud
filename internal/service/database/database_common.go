@@ -13,7 +13,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func schemaDatabaseCommon() map[string]*schema.Schema {
+func schemaDatabaseCommon(dbType upcloud.ManagedDatabaseServiceType) map[string]*schema.Schema {
+	planDescription := fmt.Sprintf("Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans %s`.", dbType)
+	additionalDiskDescription := "Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed."
+	if dbType == upcloud.ManagedDatabaseServiceTypeValkey || dbType == upcloud.ManagedDatabaseServiceTypeRedis { //nolint:staticcheck // Redis check to be removed when Redis support has been removed
+		additionalDiskDescription = fmt.Sprintf("Not supported for `%s` databases. Should be left unconfigured.", dbType)
+	}
+
 	return map[string]*schema.Schema{
 		"name": {
 			Description:  "Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account",
@@ -48,7 +54,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 		"network":     schemaDatabaseNetwork(),
 		"node_states": schemaDatabaseNodeStates(),
 		"plan": {
-			Description: "Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans <type>`.",
+			Description: planDescription,
 			Type:        schema.TypeString,
 			Required:    true,
 		},
@@ -118,7 +124,7 @@ func schemaDatabaseCommon() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"additional_disk_space_gib": {
-			Description: "Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.",
+			Description: additionalDiskDescription,
 			Type:        schema.TypeInt,
 			Computed:    true,
 			Optional:    true,

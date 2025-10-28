@@ -22,7 +22,7 @@ func ResourcePostgreSQL() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: utils.JoinSchemas(
-			schemaDatabaseCommon(),
+			schemaDatabaseCommon(upcloud.ManagedDatabaseServiceTypePostgreSQL),
 			schemaPostgreSQLEngine(),
 		),
 	}
