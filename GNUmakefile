@@ -29,7 +29,7 @@ generate:
 
 test: fmtcheck
 	@echo "Running unit tests (excluding acceptance tests in upcloud/)"
-	TF_ACC=0 go test $$(go list ./... | grep -v 'vendor' | grep -vE '/upcloud($|/)') -v -timeout=240m -parallel=4 -count=1
+	go test $$(go list ./... | grep -v 'vendor' | grep -vE '/upcloud($|/)') -v -timeout=240m -parallel=4 -count=1
 
 testacc: fmtcheck
 	@echo "Running acceptance tests in ./upcloud only..."
