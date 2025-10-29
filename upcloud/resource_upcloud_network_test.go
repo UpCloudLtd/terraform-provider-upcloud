@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -260,6 +262,51 @@ func TestAccUpCloudNetwork_labels(t *testing.T) {
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "labels.%", "0"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudNetwork_EffectiveRoutes(t *testing.T) {
+	configStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_network/network_cfg1.tf")
+
+	prefix := "tf-acc-test-network-"
+	netName := fmt.Sprintf("file-storage-net-%s", acctest.RandString(5))
+	routerName := fmt.Sprintf("network-router-%s", acctest.RandString(5))
+	randOctet := acctest.RandIntRange(10, 250)
+	networkCIDR := fmt.Sprintf("10.%d.0.0/24", randOctet)
+	gatewayIP := fmt.Sprintf("10.%d.0.1", randOctet)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: configStep1,
+				ConfigVariables: map[string]config.Variable{
+					"prefix":       config.StringVariable(prefix),
+					"net-name":     config.StringVariable(netName),
+					"router-name":  config.StringVariable(routerName),
+					"network-cidr": config.StringVariable(networkCIDR),
+					"gateway-ip":   config.StringVariable(gatewayIP),
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("upcloud_network.test", "effective_routes.#"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_network.test", "effective_routes.*", map[string]string{
+						"route": "192.168.0.0/24",
+					}),
+					resource.TestCheckResourceAttrSet("upcloud_network.test", "ip_network.0.dhcp_effective_routes.#"),
+					resource.TestCheckTypeSetElemNestedAttrs("upcloud_network.test", "ip_network.0.dhcp_effective_routes.*", map[string]string{
+						"route":   "192.168.0.0/24",
+						"nexthop": fmt.Sprintf("%s", gatewayIP),
+					}),
+				),
+			},
+			{
+				// Import verification ensures state matches real API
+				ResourceName:      "upcloud_network.test",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
