@@ -9,7 +9,7 @@ import (
 )
 
 func TestAccDataSourceUpcloudManagedDatabasePostgreSQLSessions(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/data_source_postgresql_sessions_s1.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/data_source_postgresql_sessions_s1.tf")
 
 	name := "data.upcloud_managed_database_postgresql_sessions.postgresql_sessions"
 	resource.ParallelTest(t, resource.TestCase{

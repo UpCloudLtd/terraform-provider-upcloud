@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccDataSourceUpcloudManagedDatabaseOpenSearchIndices(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/data_source_opensearch_indices_s1.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/data_source_opensearch_indices_s1.tf")
 
 	name := "data.upcloud_managed_database_opensearch_indices.opensearch_indices"
 	prop := func(name string) string {
