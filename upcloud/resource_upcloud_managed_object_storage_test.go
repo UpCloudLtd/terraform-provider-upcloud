@@ -80,7 +80,7 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 		},
 		{
 			labels:  `test-validation-fails-if-label-name-too-long = ""`,
-			errorRe: regexp.MustCompile(`Map key lengths should be in the range \(2 - 32\)`),
+			errorRe: regexp.MustCompile(`string length must be between 2 and 32`),
 		},
 		{
 			labels:  `test-validation-fails-åäö = "invalid-characters-in-key"`,
