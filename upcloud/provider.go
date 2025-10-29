@@ -172,6 +172,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		managedobjectstorage.NewManagedObjectStorageBucketResource,
 		managedobjectstorage.NewManagedObjectStorageCustomDomainResource,
 		managedobjectstorage.NewManagedObjectStoragePolicyResource,
+		managedobjectstorage.NewManagedObjectStorageUserResource,
 		network.NewNetworkResource,
 		networkpeering.NewNetworkPeeringResource,
 		router.NewRouterResource,
