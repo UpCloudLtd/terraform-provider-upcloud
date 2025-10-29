@@ -1,9 +1,10 @@
-package upcloud
+package database
 
 import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -12,8 +13,8 @@ func TestAccDataSourceUpcloudManagedDatabasePostgreSQLSessions(t *testing.T) {
 
 	name := "data.upcloud_managed_database_postgresql_sessions.postgresql_sessions"
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
