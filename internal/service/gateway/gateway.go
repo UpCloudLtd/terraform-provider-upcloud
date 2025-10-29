@@ -20,7 +20,7 @@ import (
 const (
 	nameDescription             = "Gateway name. Needs to be unique within the account."
 	zoneDescription             = "Zone in which the gateway will be hosted, e.g. `de-fra1`."
-	featuresDescription         = "Features enabled for the gateway. Note that VPN feature is currently in beta, for more details see https://upcloud.com/resources/docs/networking#nat-and-vpn-gateways."
+	featuresDescription         = "Features enabled for the gateway. For more details, see [documentation](https://upcloud.com/resources/docs/networking#nat-and-vpn-gateways)."
 	routerDescription           = "Attached Router from where traffic is routed towards the network gateway service."
 	routerIDDescription         = "ID of the router attached to the gateway."
 	configuredStatusDescription = "The service configured status indicates the service's current intended status. Managed by the customer."
