@@ -145,7 +145,7 @@ func (r *managedObjectStorageUserResource) Read(ctx context.Context, req resourc
 	err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &username)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage policy ID",
+			"Unable to unmarshal managed object storage user ID",
 			utils.ErrorDiagnosticDetail(err),
 		)
 		return
@@ -161,7 +161,7 @@ func (r *managedObjectStorageUserResource) Read(ctx context.Context, req resourc
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
-				"Unable to read managed object storage policy details",
+				"Unable to read managed object storage user details",
 				utils.ErrorDiagnosticDetail(err),
 			)
 		}
