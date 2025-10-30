@@ -173,27 +173,7 @@ func (r *managedObjectStorageUserResource) Read(ctx context.Context, req resourc
 }
 
 func (r *managedObjectStorageUserResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data userModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	user, err := r.client.GetManagedObjectStorageUser(ctx, &request.GetManagedObjectStorageUserRequest{
-		Username:    data.Username.ValueString(),
-		ServiceUUID: data.ServiceUUID.ValueString(),
-	})
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read managed object storage user details",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(setUserValues(ctx, &data, user)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	// All configurable attributes require replace, so Update method is only required to satisfy the interface.
 }
 
 func (r *managedObjectStorageUserResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
