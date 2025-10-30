@@ -9,7 +9,7 @@ import (
 )
 
 func TestAccDataSourceUpcloudManagedObjectStoragePolicies(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/data_source_managed_object_storage_policies_s1.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/data_source_managed_object_storage_policies_s1.tf")
 
 	name := "data.upcloud_managed_object_storage_policies.this"
 	resource.ParallelTest(t, resource.TestCase{
