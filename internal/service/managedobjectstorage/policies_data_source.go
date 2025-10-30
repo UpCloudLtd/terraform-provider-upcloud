@@ -35,6 +35,7 @@ func (d *managedObjectStoragePoliciesDataSource) Configure(_ context.Context, re
 
 type managedObjectStoragePoliciesModel struct {
 	Policies    []managedObjectStoragePolicyModel `tfsdk:"policies"`
+	ID          types.String                      `tfsdk:"id"`
 	ServiceUUID types.String                      `tfsdk:"service_uuid"`
 }
 
@@ -55,6 +56,11 @@ func (d *managedObjectStoragePoliciesDataSource) Schema(_ context.Context, _ dat
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Policies available for a Managed Object Storage resource. See `managed_object_storage_user_policy` for attaching to a user.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:           true,
+				Description:        "The ID of this resource (same as `service_uuid`)",
+				DeprecationMessage: "Contains the same value as `service_uuid`. Use `service_uuid` instead.",
+			},
 			"policies": schema.SetNestedAttribute{
 				Description: "Policies.",
 				Computed:    true,
