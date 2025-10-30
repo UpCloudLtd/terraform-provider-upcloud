@@ -64,17 +64,16 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_tag":                                    tag.ResourceTag(),
-			"upcloud_gateway":                                gateway.ResourceGateway(),
-			"upcloud_gateway_connection":                     gateway.ResourceConnection(),
-			"upcloud_gateway_connection_tunnel":              gateway.ResourceTunnel(),
-			"upcloud_managed_database_postgresql":            database.ResourcePostgreSQL(),
-			"upcloud_managed_database_mysql":                 database.ResourceMySQL(),
-			"upcloud_managed_database_opensearch":            database.ResourceOpenSearch(),
-			"upcloud_managed_database_valkey":                database.ResourceValkey(),
-			"upcloud_managed_database_user":                  database.ResourceUser(),
-			"upcloud_managed_database_logical_database":      database.ResourceLogicalDatabase(),
-			"upcloud_managed_object_storage_user_access_key": managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
+			"upcloud_tag":                               tag.ResourceTag(),
+			"upcloud_gateway":                           gateway.ResourceGateway(),
+			"upcloud_gateway_connection":                gateway.ResourceConnection(),
+			"upcloud_gateway_connection_tunnel":         gateway.ResourceTunnel(),
+			"upcloud_managed_database_postgresql":       database.ResourcePostgreSQL(),
+			"upcloud_managed_database_mysql":            database.ResourceMySQL(),
+			"upcloud_managed_database_opensearch":       database.ResourceOpenSearch(),
+			"upcloud_managed_database_valkey":           database.ResourceValkey(),
+			"upcloud_managed_database_user":             database.ResourceUser(),
+			"upcloud_managed_database_logical_database": database.ResourceLogicalDatabase(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
