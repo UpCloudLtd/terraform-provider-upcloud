@@ -44,17 +44,9 @@ func (r *managedObjectStoragePolicyResource) Configure(_ context.Context, req re
 }
 
 type policyModel struct {
-	ARN              types.String `tfsdk:"arn"`
-	AttachmentCount  types.Int64  `tfsdk:"attachment_count"`
-	CreatedAt        types.String `tfsdk:"created_at"`
-	DefaultVersionID types.String `tfsdk:"default_version_id"`
-	Description      types.String `tfsdk:"description"`
-	Document         types.String `tfsdk:"document"`
-	ID               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	ServiceUUID      types.String `tfsdk:"service_uuid"`
-	System           types.Bool   `tfsdk:"system"`
-	UpdatedAt        types.String `tfsdk:"updated_at"`
+	managedObjectStoragePolicyModel
+
+	ID types.String `tfsdk:"id"`
 }
 
 func (r *managedObjectStoragePolicyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
