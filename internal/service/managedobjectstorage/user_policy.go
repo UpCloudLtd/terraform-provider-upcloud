@@ -164,27 +164,7 @@ func (r *managedObjectStorageUserPolicyResource) Read(ctx context.Context, req r
 }
 
 func (r *managedObjectStorageUserPolicyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data userPolicyModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var serviceUUID, username, name string
-	err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &username, &name)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage user policy ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-	data.ServiceUUID = types.StringValue(serviceUUID)
-	data.Username = types.StringValue(username)
-	data.Name = types.StringValue(name)
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	// All configurable attributes require replace, so Update method is only required to satisfy the interface.
 }
 
 func (r *managedObjectStorageUserPolicyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
