@@ -33,7 +33,7 @@ test: fmtcheck
 
 testacc: fmtcheck
 	@echo "Running acceptance tests in ./upcloud only..."
-	TF_ACC=1 go test ./upcloud $(TESTARGS) -v -parallel=8 -timeout=240m
+	TF_ACC=1 go test ./upcloud $(TESTARGS) -v -parallel=14 -timeout=240m
 
 testacc-kubernetes:
 	@echo "Running acceptance tests in ./upcloud/kubernetes only..."
