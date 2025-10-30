@@ -66,6 +66,12 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	})
 }
 
+func ignoreWhitespaceDiff(str string) *regexp.Regexp {
+	ws := regexp.MustCompile(`\s+`)
+	re := ws.ReplaceAllString(str, `\s+`)
+	return regexp.MustCompile(re)
+}
+
 func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_e.tf")
 
@@ -76,23 +82,23 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	}{
 		{
 			labels:  `t = "too-short-key"`,
-			errorRe: regexp.MustCompile(`Map key lengths should be in the range \(2 - 32\)`),
+			errorRe: ignoreWhitespaceDiff(`string length must be between 2 and 32`),
 		},
 		{
 			labels:  `test-validation-fails-if-label-name-too-long = ""`,
-			errorRe: regexp.MustCompile(`string length must be between 2 and 32`),
+			errorRe: ignoreWhitespaceDiff(`string length must be between 2 and 32`),
 		},
 		{
 			labels:  `test-validation-fails-åäö = "invalid-characters-in-key"`,
-			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
+			errorRe: ignoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
 		},
 		{
 			labels:  `_key = "key-starts-with-underscore"`,
-			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
+			errorRe: ignoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
 		},
 		{
 			labels:  `test-validation-fails = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam egestas dolor vitae erat egestas, vel malesuada nisi ullamcorper. Aenean suscipit turpis quam, ut interdum lorem varius dignissim. Morbi eu erat bibendum, tincidunt turpis id, porta enim. Pellentesque..."`,
-			errorRe: regexp.MustCompile(`Map value lengths should be in the range \(0 - 255\)`),
+			errorRe: ignoreWhitespaceDiff(`string length must be between 0 and 255`),
 		},
 	}
 	var steps []resource.TestStep
