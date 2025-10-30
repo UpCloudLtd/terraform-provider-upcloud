@@ -298,7 +298,7 @@ func TestAccUpcloudNetwork_EffectiveRoutes(t *testing.T) {
 					resource.TestCheckResourceAttrSet("upcloud_network.test", "ip_network.0.dhcp_effective_routes.#"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_network.test", "ip_network.0.dhcp_effective_routes.*", map[string]string{
 						"route":   "192.168.0.0/24",
-						"nexthop": fmt.Sprintf("%s", gatewayIP),
+						"nexthop": gatewayIP,
 					}),
 				),
 			},

@@ -402,7 +402,7 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 			routes := make([]attr.Value, 0, len(ipnet.DHCPEffectiveRoutes))
 			for _, r := range ipnet.DHCPEffectiveRoutes {
 				obj, diags := types.ObjectValue(dhcpEffectiveRouteAttrTypes, map[string]attr.Value{
-					"auto_populated": types.BoolValue(bool(r.AutoPopulated.Bool())),
+					"auto_populated": types.BoolValue(r.AutoPopulated.Bool()),
 					"route":          types.StringValue(r.Route),
 					"nexthop":        types.StringValue(r.Nexthop),
 				})
