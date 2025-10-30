@@ -21,7 +21,7 @@ var (
 	_ resource.ResourceWithImportState = &managedObjectStorageUserPolicyResource{}
 )
 
-func NewManagedObjectStorageUserPolicyResource() resource.Resource {
+func NewUserPolicyResource() resource.Resource {
 	return &managedObjectStorageUserPolicyResource{}
 }
 
@@ -132,14 +132,12 @@ func (r *managedObjectStorageUserPolicyResource) Read(ctx context.Context, req r
 	}
 
 	var serviceUUID, username, name string
-	err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &username, &name)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage user policy ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &username, &name)...)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	data.ServiceUUID = types.StringValue(serviceUUID)
 	data.Username = types.StringValue(username)
 	data.Name = types.StringValue(name)
@@ -172,11 +170,9 @@ func (r *managedObjectStorageUserPolicyResource) Delete(ctx context.Context, req
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	var serviceUUID, username, name string
-	if err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &username, &name); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage user policy ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &username, &name)...)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
