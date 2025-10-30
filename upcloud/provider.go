@@ -195,6 +195,7 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 		ip.NewIPAddressesDataSource,
 		kubernetes.NewKubernetesClusterDataSource,
 		loadbalancer.NewDNSChallengeDomainDataSource,
+		managedobjectstorage.NewPoliciesDataSource,
 		managedobjectstorage.NewRegionsDataSource,
 		storage.NewStorageDataSource,
 	}

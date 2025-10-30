@@ -3,126 +3,144 @@ package managedobjectstorage
 import (
 	"context"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func schemaPolicy() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"arn": {
-			Description: "Policy ARN.",
-			Computed:    true,
-			Type:        schema.TypeString,
-		},
-		"attachment_count": {
-			Description: "Attachment count.",
-			Computed:    true,
-			Type:        schema.TypeInt,
-		},
-		"created_at": {
-			Description: "Creation time.",
-			Computed:    true,
-			Type:        schema.TypeString,
-		},
-		"default_version_id": {
-			Description: "Default version id.",
-			Computed:    true,
-			Type:        schema.TypeString,
-		},
-		"description": {
-			Description: "Description of the policy.",
-			Optional:    true,
-			ForceNew:    true,
-			Type:        schema.TypeString,
-		},
-		"document": {
-			Description: "Policy document, URL-encoded compliant with RFC 3986.",
-			Required:    true,
-			ForceNew:    true,
-			Type:        schema.TypeString,
-		},
-		"name": {
-			Description: "Policy name.",
-			Required:    true,
-			ForceNew:    true,
-			Type:        schema.TypeString,
-		},
-		"service_uuid": {
-			Description: "Managed Object Storage service UUID.",
-			Required:    true,
-			ForceNew:    true,
-			Type:        schema.TypeString,
-		},
-		"system": {
-			Description: "Defines whether the policy was set up by the system.",
-			Computed:    true,
-			Type:        schema.TypeBool,
-		},
-		"updated_at": {
-			Description: "Update time.",
-			Computed:    true,
-			Type:        schema.TypeString,
-		},
-	}
+func NewPoliciesDataSource() datasource.DataSource {
+	return &managedObjectStoragePoliciesDataSource{}
 }
 
-func DataSourceManagedObjectStoragePolicies() *schema.Resource {
-	return &schema.Resource{
-		Description: "Policies available for a Managed Object Storage resource. See `managed_object_storage_user_policy` for attaching to a user.",
-		ReadContext: dataSourcePoliciesRead,
-		Schema: map[string]*schema.Schema{
-			"policies": {
+var (
+	_ datasource.DataSource              = &managedObjectStoragePoliciesDataSource{}
+	_ datasource.DataSourceWithConfigure = &managedObjectStoragePoliciesDataSource{}
+)
+
+type managedObjectStoragePoliciesDataSource struct {
+	client *service.Service
+}
+
+func (d *managedObjectStoragePoliciesDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_managed_object_storage_policies"
+}
+
+func (d *managedObjectStoragePoliciesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type managedObjectStoragePoliciesModel struct {
+	Policies    []managedObjectStoragePolicyModel `tfsdk:"policies"`
+	ServiceUUID types.String                      `tfsdk:"service_uuid"`
+}
+
+type managedObjectStoragePolicyModel struct {
+	ARN              types.String `tfsdk:"arn"`
+	AttachmentCount  types.Int64  `tfsdk:"attachment_count"`
+	CreatedAt        types.String `tfsdk:"created_at"`
+	DefaultVersionID types.String `tfsdk:"default_version_id"`
+	Description      types.String `tfsdk:"description"`
+	Document         types.String `tfsdk:"document"`
+	Name             types.String `tfsdk:"name"`
+	ServiceUUID      types.String `tfsdk:"service_uuid"`
+	System           types.Bool   `tfsdk:"system"`
+	UpdatedAt        types.String `tfsdk:"updated_at"`
+}
+
+func (d *managedObjectStoragePoliciesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "Policies available for a Managed Object Storage resource. See `managed_object_storage_user_policy` for attaching to a user.",
+		Attributes: map[string]schema.Attribute{
+			"policies": schema.SetNestedAttribute{
 				Description: "Policies.",
-				Type:        schema.TypeSet,
 				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: schemaPolicy(),
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"arn": schema.StringAttribute{
+							Description: "Policy ARN.",
+							Computed:    true,
+						},
+						"attachment_count": schema.Int64Attribute{
+							Description: "Number of attachments.",
+							Computed:    true,
+						},
+						"created_at": schema.StringAttribute{
+							Description: "Creation time.",
+							Computed:    true,
+						},
+						"default_version_id": schema.StringAttribute{
+							Description: "Default version ID.",
+							Computed:    true,
+						},
+						"description": schema.StringAttribute{
+							Description: "Policy description.",
+							Computed:    true,
+						},
+						"document": schema.StringAttribute{
+							Description: "Policy document.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "Policy name.",
+							Computed:    true,
+						},
+						"service_uuid": schema.StringAttribute{
+							Description: "Service UUID.",
+							Computed:    true,
+						},
+						"system": schema.BoolAttribute{
+							Description: "Whether the policy is a system policy.",
+							Computed:    true,
+						},
+						"updated_at": schema.StringAttribute{
+							Description: "Last updated time.",
+							Computed:    true,
+						},
+					},
 				},
 			},
-			"service_uuid": {
-				Description: "Service UUID.",
+			"service_uuid": schema.StringAttribute{
 				Required:    true,
-				Type:        schema.TypeString,
+				Description: "Service UUID.",
 			},
 		},
 	}
 }
 
-func dataSourcePoliciesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	serviceUUID := d.Get("service_uuid").(string)
+func (d *managedObjectStoragePoliciesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data managedObjectStoragePoliciesModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	policies, err := svc.GetManagedObjectStoragePolicies(ctx, &request.GetManagedObjectStoragePoliciesRequest{ServiceUUID: serviceUUID})
+	policies, err := d.client.GetManagedObjectStoragePolicies(ctx, &request.GetManagedObjectStoragePoliciesRequest{
+		ServiceUUID: data.ServiceUUID.ValueString(),
+	})
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to read managed object-storage policies",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	d.SetId(serviceUUID)
-
-	return setManagedObjectStoragePoliciesData(d, policies)
-}
-
-func setManagedObjectStoragePoliciesData(d *schema.ResourceData, policies []upcloud.ManagedObjectStoragePolicy) (diags diag.Diagnostics) {
-	policyMaps := make([]map[string]interface{}, 0)
-	for _, policy := range policies {
-		policyMaps = append(policyMaps, map[string]interface{}{
-			"arn":                policy.ARN,
-			"attachment_count":   policy.AttachmentCount,
-			"created_at":         policy.CreatedAt.String(),
-			"default_version_id": policy.DefaultVersionID,
-			"description":        policy.Description,
-			"document":           policy.Document,
-			"name":               policy.Name,
-			"system":             policy.System,
-			"updated_at":         policy.UpdatedAt.String(),
-		})
-	}
-	if err := d.Set("policies", policyMaps); err != nil {
-		return diag.FromErr(err)
+	data.Policies = make([]managedObjectStoragePolicyModel, len(policies))
+	for i, policy := range policies {
+		data.Policies[i].ARN = types.StringValue(policy.ARN)
+		data.Policies[i].AttachmentCount = types.Int64Value(int64(policy.AttachmentCount))
+		data.Policies[i].CreatedAt = types.StringValue(policy.CreatedAt.String())
+		data.Policies[i].DefaultVersionID = types.StringValue(policy.DefaultVersionID)
+		data.Policies[i].Description = types.StringValue(policy.Description)
+		data.Policies[i].Document = types.StringValue(policy.Document)
+		data.Policies[i].Name = types.StringValue(policy.Name)
+		data.Policies[i].System = types.BoolValue(policy.System)
+		data.Policies[i].UpdatedAt = types.StringValue(policy.UpdatedAt.String())
 	}
 
-	return diags
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 	"github.com/UpCloudLtd/upcloud-go-api/credentials"
@@ -83,7 +82,6 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
 			"upcloud_managed_database_valkey_sessions":     database.DataSourceSessionsValkey(),
-			"upcloud_managed_object_storage_policies":      managedobjectstorage.DataSourceManagedObjectStoragePolicies(),
 		},
 
 		ConfigureContextFunc: providerConfigureWithDefaultUserAgent,
