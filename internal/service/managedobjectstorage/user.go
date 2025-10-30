@@ -73,7 +73,7 @@ func (r *managedObjectStorageUserResource) Schema(_ context.Context, _ resource.
 				},
 			},
 			"username": schema.StringAttribute{
-				Description: "Username.",
+				Description: "Custom usernames for accessing the object storage. No relation to UpCloud API accounts. See `upcloud_managed_object_storage_user_access_key` for managing access keys and `upcloud_managed_object_storage_user_policy` for managing policies.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
