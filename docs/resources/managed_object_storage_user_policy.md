@@ -49,4 +49,4 @@ resource "upcloud_managed_object_storage_user_policy" "this" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the user. ID is in {object storage UUID}/{username}/{policy name} format.

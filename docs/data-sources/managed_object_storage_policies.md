@@ -33,21 +33,21 @@ data "upcloud_Managed_object_storage_policies" "this" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `policies` (Set of Object) Policies. (see [below for nested schema](#nestedatt--policies))
+- `id` (String, Deprecated) The ID of this resource (same as `service_uuid`)
+- `policies` (Attributes Set) Policies. (see [below for nested schema](#nestedatt--policies))
 
 <a id="nestedatt--policies"></a>
 ### Nested Schema for `policies`
 
 Read-Only:
 
-- `arn` (String)
-- `attachment_count` (Number)
-- `created_at` (String)
-- `default_version_id` (String)
-- `description` (String)
-- `document` (String)
-- `name` (String)
-- `service_uuid` (String)
-- `system` (Boolean)
-- `updated_at` (String)
+- `arn` (String) Policy ARN.
+- `attachment_count` (Number) Number of attachments.
+- `created_at` (String) Creation time.
+- `default_version_id` (String) Default version ID.
+- `description` (String) Policy description.
+- `document` (String) Policy document.
+- `name` (String) Policy name.
+- `service_uuid` (String) Service UUID.
+- `system` (Boolean) Whether the policy is a system policy.
+- `updated_at` (String) Last updated time.

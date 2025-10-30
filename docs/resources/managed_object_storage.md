@@ -57,7 +57,7 @@ resource "upcloud_managed_object_storage" "this" {
 
 - `configured_status` (String) Service status managed by the end user.
 - `name` (String) Name of the Managed Object Storage service. Must be unique within account.
-- `region` (String) Region in which the service will be hosted, see `upcloud_managed_object_storage_regions` data source.
+- `region` (String) Region in which the service will be hosted, see `upcloud_managed_object_storage_regions` data source or use `upctl object-storage regions` to list available regions.
 
 ### Optional Attributes
 
@@ -70,17 +70,17 @@ resource "upcloud_managed_object_storage" "this" {
 ### Read-Only
 
 - `created_at` (String) Creation time.
-- `endpoint` (Set of Object) Endpoints for accessing the Managed Object Storage service. (see [below for nested schema](#nestedatt--endpoint))
-- `id` (String) The ID of this resource.
+- `endpoint` (Attributes Set) Endpoints for accessing the Managed Object Storage service. (see [below for nested schema](#nestedatt--endpoint))
+- `id` (String) The UUID of the managed object storage instance.
 - `operational_state` (String) Operational state of the Managed Object Storage service.
-- `updated_at` (String) Creation time.
+- `updated_at` (String) Update time.
 
 <a id="nestedblock--network"></a>
 ### Nested Schema for `network`
 
 Required Attributes:
 
-- `family` (String) Network family. IPv6 currently not supported.
+- `family` (String) Network family. Currently only `IPv4` is supported.
 - `name` (String) Network name. Must be unique within the service.
 - `type` (String) Network type.
 
@@ -94,7 +94,7 @@ Optional Attributes:
 
 Read-Only:
 
-- `domain_name` (String)
-- `iam_url` (String)
-- `sts_url` (String)
-- `type` (String)
+- `domain_name` (String) Domain name of the endpoint.
+- `iam_url` (String) URL for IAM.
+- `sts_url` (String) URL for STS.
+- `type` (String) Type of the endpoint (`private` / `public`).
