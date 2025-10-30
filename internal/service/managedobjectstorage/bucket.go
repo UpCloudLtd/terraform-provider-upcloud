@@ -22,7 +22,7 @@ var (
 	_ resource.ResourceWithImportState = &managedObjectStorageBucketResource{}
 )
 
-func NewManagedObjectStorageBucketResource() resource.Resource {
+func NewBucketResource() resource.Resource {
 	return &managedObjectStorageBucketResource{}
 }
 
@@ -151,8 +151,8 @@ func (r *managedObjectStorageBucketResource) Read(ctx context.Context, req resou
 		return
 	}
 
-	serviceUUID, name, diags := unmarshalID(data.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	var serviceUUID, name string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &name)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -180,14 +180,14 @@ func (r *managedObjectStorageBucketResource) Update(ctx context.Context, req res
 		return
 	}
 
-	serviceUUID, domainName, diags := unmarshalID(state.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	var serviceUUID, name string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &name)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	bucket, diags := getBucket(ctx, serviceUUID, domainName, r.client)
+	bucket, diags := getBucket(ctx, serviceUUID, name, r.client)
 	resp.Diagnostics.Append(diags...)
 	if bucket == nil {
 		resp.Diagnostics.AddError(
@@ -205,8 +205,8 @@ func (r *managedObjectStorageBucketResource) Delete(ctx context.Context, req res
 	var data bucketModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	serviceUUID, name, diags := unmarshalID(data.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	var serviceUUID, name string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &name)...)
 
 	if resp.Diagnostics.HasError() {
 		return

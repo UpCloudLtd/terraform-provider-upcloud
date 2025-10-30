@@ -24,7 +24,7 @@ var (
 	_ resource.ResourceWithImportState = &managedObjectStorageUserAccessKeyResource{}
 )
 
-func NewManagedObjectStorageUserAccessKeyResource() resource.Resource {
+func NewUserAccessKeyResource() resource.Resource {
 	return &managedObjectStorageUserAccessKeyResource{}
 }
 
@@ -173,12 +173,9 @@ func (r *managedObjectStorageUserAccessKeyResource) Read(ctx context.Context, re
 	}
 
 	var serviceUUID, username, accessKeyID string
-	err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &username, &accessKeyID)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage user access key ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &username, &accessKeyID)...)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -238,11 +235,9 @@ func (r *managedObjectStorageUserAccessKeyResource) Delete(ctx context.Context, 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	var serviceUUID, username, accessKeyID string
-	if err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &username, &accessKeyID); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage user access key ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &username, &accessKeyID)...)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
