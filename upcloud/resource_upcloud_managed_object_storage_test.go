@@ -26,7 +26,7 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(minimal, "name", "tf-acc-test-objstov2-minimal"),
 					resource.TestCheckResourceAttr(this, "name", "tf-acc-test-objstov2-complex"),
-					resource.TestCheckResourceAttr(this, "region", "europe-1"),
+					resource.TestCheckResourceAttr(this, "region", "europe-3"),
 					resource.TestCheckResourceAttr(this, "configured_status", "started"),
 					resource.TestCheckResourceAttr(this, "labels.%", "2"),
 					resource.TestCheckResourceAttr(this, "labels.test", "objsto2-tf"),
