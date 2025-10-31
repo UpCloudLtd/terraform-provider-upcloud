@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 - upcloud_managed_database_redis: removed support for deprecated Redis service. This is treated as non-breaking change as all users have been migrated to Valkey.
+- upcloud_network: add support for effective_routes and dhcp_effective_routes fields
 
 ## [5.30.0] - 2025-10-29
 
