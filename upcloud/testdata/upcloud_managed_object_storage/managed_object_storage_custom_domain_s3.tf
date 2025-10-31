@@ -14,7 +14,7 @@ variable "region" {
 }
 
 resource "upcloud_managed_object_storage" "this" {
-  name              = "${var.prefix}-objsto"
+  name              = "${var.prefix}objsto"
   region            = var.region
   configured_status = "started"
 

@@ -183,10 +183,6 @@ func (r *managedObjectStorageResource) Schema(_ context.Context, _ resource.Sche
 				Validators: []validator.Set{
 					setvalidator.SizeBetween(0, 8),
 				},
-				// PlanModifiers: []planmodifier.Set{
-				// 	setplanmodifier.RequiresReplace(),
-				// 	getNetworksPlanModifier(),
-				// },
 			},
 		},
 	}
