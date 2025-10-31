@@ -63,3 +63,20 @@ resource "upcloud_managed_object_storage_user_policy" "user" {
   username     = upcloud_managed_object_storage_user.user.username
   service_uuid = upcloud_managed_object_storage.user.id
 }
+
+resource "upcloud_managed_object_storage_user" "readonly" {
+  username     = "${var.prefix}user"
+  service_uuid = upcloud_managed_object_storage.user.id
+}
+
+resource "upcloud_managed_object_storage_user_access_key" "readonly" {
+  username     = upcloud_managed_object_storage_user.readonly.username
+  service_uuid = upcloud_managed_object_storage.user.id
+  status       = "Inactive"
+}
+
+resource "upcloud_managed_object_storage_user_policy" "readonly" {
+  name         = "ECSS3ReadOnlyAccess" // Predefined policy
+  username     = upcloud_managed_object_storage_user.readonly.username
+  service_uuid = upcloud_managed_object_storage.user.id
+}
