@@ -4,7 +4,7 @@ variable "prefix" {
 }
 
 variable "region" {
-  default = "europe-1"
+  default = "europe-3"
   type    = string
 }
 
@@ -65,7 +65,7 @@ resource "upcloud_managed_object_storage_user_policy" "user" {
 }
 
 resource "upcloud_managed_object_storage_user" "readonly" {
-  username     = "${var.prefix}user"
+  username     = "${var.prefix}readonly-user"
   service_uuid = upcloud_managed_object_storage.user.id
 }
 
