@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -1141,6 +1142,10 @@ func TestUpcloudServer_hotResize(t *testing.T) {
 			},
 			{
 				// Step 2: Apply hot resize to 1xCPU-2GB
+				PreConfig: func() {
+					t.Log("Waiting 45 seconds to ensure the server is fully initialized before hot resize")
+					time.Sleep(45 * time.Second)
+				},
 				Config: configHotResize("1xCPU-2GB", true, false, false, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
