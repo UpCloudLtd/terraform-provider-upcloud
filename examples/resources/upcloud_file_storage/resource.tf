@@ -11,14 +11,14 @@ resource "upcloud_network" "this" {
 }
 
 resource "upcloud_file_storage" "example" {
-  name             = "example-file-storage-test"
-  size             = 250
-  zone             = "fi-hel2"
+  name              = "example-file-storage-test"
+  size              = 250
+  zone              = "fi-hel2"
   configured_status = "stopped"
 
   labels = {
     environment = "staging"
-    customer = "example-customer"
+    customer    = "example-customer"
   }
 
   share {
@@ -31,9 +31,9 @@ resource "upcloud_file_storage" "example" {
   }
 
   network {
-    family = "IPv4"
-    name   = "example-private-net"
-    uuid   = upcloud_network.this.id
+    family     = "IPv4"
+    name       = "example-private-net"
+    uuid       = upcloud_network.this.id
     ip_address = "172.16.8.11"
   }
 }

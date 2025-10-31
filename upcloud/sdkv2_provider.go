@@ -7,7 +7,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/managedobjectstorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 	"github.com/UpCloudLtd/upcloud-go-api/credentials"
@@ -64,20 +63,16 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_tag":                                    tag.ResourceTag(),
-			"upcloud_gateway":                                gateway.ResourceGateway(),
-			"upcloud_gateway_connection":                     gateway.ResourceConnection(),
-			"upcloud_gateway_connection_tunnel":              gateway.ResourceTunnel(),
-			"upcloud_managed_database_postgresql":            database.ResourcePostgreSQL(),
-			"upcloud_managed_database_mysql":                 database.ResourceMySQL(),
-			"upcloud_managed_database_opensearch":            database.ResourceOpenSearch(),
-			"upcloud_managed_database_valkey":                database.ResourceValkey(),
-			"upcloud_managed_database_user":                  database.ResourceUser(),
-			"upcloud_managed_database_logical_database":      database.ResourceLogicalDatabase(),
-			"upcloud_managed_object_storage":                 managedobjectstorage.ResourceManagedObjectStorage(),
-			"upcloud_managed_object_storage_user":            managedobjectstorage.ResourceManagedObjectStorageUser(),
-			"upcloud_managed_object_storage_user_access_key": managedobjectstorage.ResourceManagedObjectStorageUserAccessKey(),
-			"upcloud_managed_object_storage_user_policy":     managedobjectstorage.ResourceManagedObjectStorageUserPolicy(),
+			"upcloud_tag":                               tag.ResourceTag(),
+			"upcloud_gateway":                           gateway.ResourceGateway(),
+			"upcloud_gateway_connection":                gateway.ResourceConnection(),
+			"upcloud_gateway_connection_tunnel":         gateway.ResourceTunnel(),
+			"upcloud_managed_database_postgresql":       database.ResourcePostgreSQL(),
+			"upcloud_managed_database_mysql":            database.ResourceMySQL(),
+			"upcloud_managed_database_opensearch":       database.ResourceOpenSearch(),
+			"upcloud_managed_database_valkey":           database.ResourceValkey(),
+			"upcloud_managed_database_user":             database.ResourceUser(),
+			"upcloud_managed_database_logical_database": database.ResourceLogicalDatabase(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
@@ -87,7 +82,6 @@ func Provider() *schema.Provider {
 			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
 			"upcloud_managed_database_valkey_sessions":     database.DataSourceSessionsValkey(),
-			"upcloud_managed_object_storage_policies":      managedobjectstorage.DataSourceManagedObjectStoragePolicies(),
 		},
 
 		ConfigureContextFunc: providerConfigureWithDefaultUserAgent,

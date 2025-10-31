@@ -23,7 +23,7 @@ var (
 	_ resource.ResourceWithImportState = &managedObjectStorageCustomDomainResource{}
 )
 
-func NewManagedObjectStorageCustomDomainResource() resource.Resource {
+func NewCustomDomainResource() resource.Resource {
 	return &managedObjectStorageCustomDomainResource{}
 }
 
@@ -120,8 +120,8 @@ func (r *managedObjectStorageCustomDomainResource) Read(ctx context.Context, req
 		return
 	}
 
-	serviceUUID, domainName, diags := unmarshalID(data.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	var serviceUUID, domainName string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &domainName)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -158,8 +158,8 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 		return
 	}
 
-	serviceUUID, domainName, diags := unmarshalID(state.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	var serviceUUID, domainName string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(state.ID.ValueString(), &serviceUUID, &domainName)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -190,8 +190,8 @@ func (r *managedObjectStorageCustomDomainResource) Delete(ctx context.Context, r
 	var data customDomainModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	serviceUUID, domainName, diags := unmarshalID(data.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	var serviceUUID, domainName string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &domainName)...)
 
 	if resp.Diagnostics.HasError() {
 		return
