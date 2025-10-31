@@ -4,12 +4,12 @@ variable "prefix" {
 }
 
 variable "zone" {
-  default = "fi-hel1"
+  default = "se-sto1"
   type    = string
 }
 
 variable "region" {
-  default = "europe-1"
+  default = "europe-3"
   type    = string
 }
 

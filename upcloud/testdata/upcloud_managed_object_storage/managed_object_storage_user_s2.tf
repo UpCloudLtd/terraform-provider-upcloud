@@ -4,7 +4,7 @@ variable "prefix" {
 }
 
 variable "region" {
-  default = "europe-1"
+  default = "europe-3"
   type    = string
 }
 
