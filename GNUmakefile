@@ -28,12 +28,28 @@ generate:
 	go generate ./...
 
 test: fmtcheck
-	go test $(TEST) || exit 1
-	echo $(TEST) | \
-		xargs -t -n4 go test $(TESTARGS) -timeout=300s -parallel=4 -count=1
+	@echo "Running unit tests (excluding acceptance tests in upcloud/)"
+	go test $$(go list ./... | grep -v 'vendor' | grep -vE '/upcloud($|/)') $(TESTARGS) -v -timeout=20m -parallel=4 -count=1
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -parallel=32 -timeout 240m
+	@echo "Running acceptance tests in ./upcloud only..."
+	TF_ACC=1 go test ./upcloud $(TESTARGS) -v -parallel=14 -timeout=240m
+
+testacc-kubernetes:
+	@echo "Running acceptance tests in ./upcloud/kubernetes only..."
+	TF_ACC=1 go test ./upcloud/kubernetes $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-database:
+	@echo "Running acceptance tests in ./upcloud/database only..."
+	TF_ACC=1 go test ./upcloud/database $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-objectstorage:
+	@echo "Running acceptance tests in ./upcloud/objectstorage only..."
+	TF_ACC=1 go test ./upcloud/objectstorage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-slowtests:
+	@echo "Running slow acceptance tests in ./upcloud/slowtests..."
+	TF_ACC=1 go test ./upcloud/slowtests $(TESTARGS) -v -parallel=4 -timeout=150m
 
 vet:
 	@echo "go vet ."

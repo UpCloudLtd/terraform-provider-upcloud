@@ -49,8 +49,8 @@ func TestAccDataSourceUpCloudZone_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps:                    steps,
 	})
 }
