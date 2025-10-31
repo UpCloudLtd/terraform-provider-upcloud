@@ -153,6 +153,23 @@ func (r *managedObjectStorageUserAccessKeyResource) Create(ctx context.Context, 
 		return
 	}
 
+	// Status can be set only after creation
+	if data.Status.ValueString() != string(accessKey.Status) {
+		_, err = r.client.ModifyManagedObjectStorageUserAccessKey(ctx, &request.ModifyManagedObjectStorageUserAccessKeyRequest{
+			ServiceUUID: data.ServiceUUID.ValueString(),
+			Username:    data.Username.ValueString(),
+			AccessKeyID: accessKey.AccessKeyID,
+			Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(data.Status.ValueString()),
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to set managed object storage user access key status",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+	}
+
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.Username.ValueString(), accessKey.AccessKeyID))
 
 	resp.Diagnostics.Append(setUserAccessKeyValues(ctx, &data, accessKey)...)
@@ -183,7 +200,7 @@ func (r *managedObjectStorageUserAccessKeyResource) Read(ctx context.Context, re
 	data.Username = types.StringValue(username)
 	data.AccessKeyID = types.StringValue(accessKeyID)
 
-	user, err := r.client.GetManagedObjectStorageUserAccessKey(ctx, &request.GetManagedObjectStorageUserAccessKeyRequest{
+	accessKey, err := r.client.GetManagedObjectStorageUserAccessKey(ctx, &request.GetManagedObjectStorageUserAccessKeyRequest{
 		Username:    username,
 		ServiceUUID: serviceUUID,
 		AccessKeyID: accessKeyID,
@@ -200,7 +217,9 @@ func (r *managedObjectStorageUserAccessKeyResource) Read(ctx context.Context, re
 		return
 	}
 
-	resp.Diagnostics.Append(setUserAccessKeyValues(ctx, &data, user)...)
+	data.Status = types.StringValue(string(accessKey.Status))
+
+	resp.Diagnostics.Append(setUserAccessKeyValues(ctx, &data, accessKey)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
