@@ -159,7 +159,7 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 	}
 
 	var serviceUUID, domainName string
-	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &domainName)...)
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(state.ID.ValueString(), &serviceUUID, &domainName)...)
 
 	if resp.Diagnostics.HasError() {
 		return

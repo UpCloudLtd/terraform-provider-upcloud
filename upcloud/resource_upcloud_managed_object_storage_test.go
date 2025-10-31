@@ -7,6 +7,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccUpcloudManagedObjectStorage(t *testing.T) {
@@ -123,6 +124,7 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s2.tf")
 	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s3.tf")
 
+	objsto := "upcloud_managed_object_storage.this"
 	customDomain := "upcloud_managed_object_storage_custom_domain.this"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -146,9 +148,21 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(customDomain, "domain_name", "obj.example.com"),
 				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction(customDomain, plancheck.ResourceActionUpdate),
+					},
+				},
 			},
 			{
 				Config: testDataS3,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction(customDomain, plancheck.ResourceActionDestroy),
+					},
+				},
 			},
 		},
 	})
