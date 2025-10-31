@@ -163,6 +163,36 @@ func TestAccUpcloudGateway(t *testing.T) {
 	})
 }
 
+func TestAccUpcloudGateway_Minimal(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/upcloud_gateway/gateway_minimal.tf")
+	name := "upcloud_gateway.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testData,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, "name", "tf-acc-test-net-gateway-gw"),
+					resource.TestCheckResourceAttr(name, "zone", "pl-waw1"),
+				),
+			},
+			{
+				Config:             testData,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				Config:            testData,
+				ResourceName:      name,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccUpcloudGateway_LabelsValidation(t *testing.T) {
 	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_gateway/gateway_e.tf")
 
