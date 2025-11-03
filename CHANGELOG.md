@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_database_postgresql: support for Postgres 18
+
+### Changed
+
+- upcloud_managed_database_\*: Update available properties to match listing provided by the API, see #852 for details.
+
 ### Removed
 
 - upcloud_managed_database_redis: removed support for deprecated Redis service. This is treated as non-breaking change as all users have been migrated to Valkey.
