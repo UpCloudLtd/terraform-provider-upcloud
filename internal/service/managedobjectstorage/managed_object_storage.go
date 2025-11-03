@@ -413,6 +413,15 @@ func (r *managedObjectStorageResource) Delete(ctx context.Context, req resource.
 			utils.ErrorDiagnosticDetail(err),
 		)
 	}
+
+	if err := r.client.WaitForManagedObjectStorageDeletion(ctx, &request.WaitForManagedObjectStorageDeletionRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Error while waiting for managed object storage to be deleted",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 }
 
 func (r *managedObjectStorageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
