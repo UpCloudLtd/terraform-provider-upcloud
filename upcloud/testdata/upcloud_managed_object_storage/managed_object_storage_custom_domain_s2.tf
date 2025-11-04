@@ -4,17 +4,17 @@ variable "prefix" {
 }
 
 variable "zone" {
-  default = "fi-hel1"
+  default = "se-sto1"
   type    = string
 }
 
 variable "region" {
-  default = "europe-1"
+  default = "europe-3"
   type    = string
 }
 
 resource "upcloud_managed_object_storage" "this" {
-  name              = "${var.prefix}-objsto"
+  name              = "${var.prefix}objsto"
   region            = var.region
   configured_status = "started"
 
