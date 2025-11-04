@@ -7,6 +7,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccUpcloudManagedObjectStorage(t *testing.T) {
@@ -26,7 +27,7 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(minimal, "name", "tf-acc-test-objstov2-minimal"),
 					resource.TestCheckResourceAttr(this, "name", "tf-acc-test-objstov2-complex"),
-					resource.TestCheckResourceAttr(this, "region", "europe-1"),
+					resource.TestCheckResourceAttr(this, "region", "europe-3"),
 					resource.TestCheckResourceAttr(this, "configured_status", "started"),
 					resource.TestCheckResourceAttr(this, "labels.%", "2"),
 					resource.TestCheckResourceAttr(this, "labels.test", "objsto2-tf"),
@@ -66,6 +67,12 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	})
 }
 
+func ignoreWhitespaceDiff(str string) *regexp.Regexp {
+	ws := regexp.MustCompile(`\s+`)
+	re := ws.ReplaceAllString(str, `\s+`)
+	return regexp.MustCompile(re)
+}
+
 func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_e.tf")
 
@@ -76,23 +83,23 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	}{
 		{
 			labels:  `t = "too-short-key"`,
-			errorRe: regexp.MustCompile(`Map key lengths should be in the range \(2 - 32\)`),
+			errorRe: ignoreWhitespaceDiff(`string length must be between 2 and 32`),
 		},
 		{
 			labels:  `test-validation-fails-if-label-name-too-long = ""`,
-			errorRe: regexp.MustCompile(`Map key lengths should be in the range \(2 - 32\)`),
+			errorRe: ignoreWhitespaceDiff(`string length must be between 2 and 32`),
 		},
 		{
 			labels:  `test-validation-fails-åäö = "invalid-characters-in-key"`,
-			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
+			errorRe: ignoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
 		},
 		{
 			labels:  `_key = "key-starts-with-underscore"`,
-			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
+			errorRe: ignoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
 		},
 		{
 			labels:  `test-validation-fails = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam egestas dolor vitae erat egestas, vel malesuada nisi ullamcorper. Aenean suscipit turpis quam, ut interdum lorem varius dignissim. Morbi eu erat bibendum, tincidunt turpis id, porta enim. Pellentesque..."`,
-			errorRe: regexp.MustCompile(`Map value lengths should be in the range \(0 - 255\)`),
+			errorRe: ignoreWhitespaceDiff(`string length must be between 0 and 255`),
 		},
 	}
 	var steps []resource.TestStep
@@ -117,6 +124,7 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s2.tf")
 	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s3.tf")
 
+	objsto := "upcloud_managed_object_storage.this"
 	customDomain := "upcloud_managed_object_storage_custom_domain.this"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -140,9 +148,21 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(customDomain, "domain_name", "obj.example.com"),
 				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction(customDomain, plancheck.ResourceActionUpdate),
+					},
+				},
 			},
 			{
 				Config: testDataS3,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction(customDomain, plancheck.ResourceActionDestroy),
+					},
+				},
 			},
 		},
 	})

@@ -37,4 +37,4 @@ resource "upcloud_managed_object_storage_user" "this" {
 
 - `arn` (String) User ARN.
 - `created_at` (String) Creation time.
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the user. ID is in {object storage UUID}/{username} format.
