@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Deprecated
+
+- upcloud_Managed_object_storage_policies: `id` field contains the same value as `service_uuid` field and will be removed in a future release.
+
 ## [5.31.0] - 2025-11-04
 
 ### Added
