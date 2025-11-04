@@ -13,8 +13,8 @@ func TestAccUpCloudHosts_basic(t *testing.T) {
 	resourceName := "data.upcloud_hosts.empty"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudHostsConfigEmpty(),

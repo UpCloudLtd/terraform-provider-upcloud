@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -41,8 +42,8 @@ func configCustomPlan(cpu, mem int) string {
 
 func TestUpcloudServer_customPlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configCustomPlan(1, 1024),
@@ -83,8 +84,8 @@ func TestUpcloudServer_minimal(t *testing.T) {
 		}`, debianTemplateUUID)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -135,8 +136,8 @@ func TestUpcloudServer_basic(t *testing.T) {
 		}`, debianTemplateUUID)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -190,8 +191,8 @@ func configSimple(hostname, plan, zone string) string {
 
 func TestUpcloudServer_changePlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configSimple("tf-acc-test-server-change-plan", "1xCPU-2GB", "fi-hel1"),
@@ -213,8 +214,8 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 
 func TestUpcloudServer_developerPlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configSimple("tf-acc-test-server-dev-plan", "DEV-1xCPU-1GB", "fi-hel1"),
@@ -283,8 +284,8 @@ func configBackupRule(time, interval string, retention int) string {
 
 func TestUpcloudServer_simpleBackup(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// basic setup
@@ -340,8 +341,8 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 
 func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// basic setup
@@ -605,8 +606,8 @@ func configTags(tags ...string) string {
 
 func TestUpcloudServer_updateTags(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Setup server with tags
@@ -672,8 +673,8 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 	var serverID string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccServerNetworkInterfaceConfig(
@@ -950,8 +951,8 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 
 func TestUpcloudServer_updatePreChecks(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configSimple("tf-acc-test-server-update-pre-checks", "1xCPU-1GB", "fi-hel2"),
@@ -972,8 +973,8 @@ func TestUpcloudServer_updatePreChecks(t *testing.T) {
 
 func TestUpcloudServer_createPreChecks(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Test creating with invalid plan
@@ -1124,8 +1125,8 @@ func TestUpcloudServer_hotResize(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create a server with 1xCPU-1GB plan and capture uptime
@@ -1141,6 +1142,10 @@ func TestUpcloudServer_hotResize(t *testing.T) {
 			},
 			{
 				// Step 2: Apply hot resize to 1xCPU-2GB
+				PreConfig: func() {
+					t.Log("Waiting 45 seconds to ensure the server is fully initialized before hot resize")
+					time.Sleep(45 * time.Second)
+				},
 				Config: configHotResize("1xCPU-2GB", true, false, false, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
@@ -1180,8 +1185,8 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create a server with 1xCPU-1GB plan and hot_resize=true, and capture uptime
@@ -1318,8 +1323,8 @@ func TestUpcloudServer_metadataChange(t *testing.T) {
 	serverName := "upcloud_server.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

@@ -1,10 +1,11 @@
-package upcloud
+package kubernetes
 
 import (
 	"context"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -36,8 +37,8 @@ func getLatestVersions(t *testing.T) (string, string) {
 }
 
 func TestAccUpcloudKubernetes(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_s2.tf")
 
 	cName := "upcloud_kubernetes_cluster.main"
 	g1Name := "upcloud_kubernetes_node_group.g1"
@@ -65,8 +66,8 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:          testDataS1,
@@ -148,15 +149,15 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 }
 
 func TestAccUpcloudKubernetes_labels(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_labels_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s3.tf")
 
 	cluster := "upcloud_kubernetes_cluster.main"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -190,13 +191,13 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 }
 
 func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_storage_encryption_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_kubernetes/kubernetes_storage_encryption_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_storage_encryption_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_storage_encryption_s2.tf")
 	nodeGroup := "upcloud_kubernetes_node_group.main"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

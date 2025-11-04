@@ -3,7 +3,7 @@
 
 resource "upcloud_server" "example" {
   firewall = true
-  hostname = "terraform.example.tld"
+  hostname = "terraform.example.tld1"
   zone     = "de-fra1"
   plan     = "1xCPU-1GB"
   metadata = true

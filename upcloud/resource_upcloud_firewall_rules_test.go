@@ -19,8 +19,8 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -67,8 +67,8 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 	resourceName := "upcloud_firewall_rules.my_rule"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -94,8 +94,8 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
