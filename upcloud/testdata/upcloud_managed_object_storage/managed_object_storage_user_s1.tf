@@ -47,6 +47,22 @@ resource "upcloud_managed_object_storage_policy" "escape" {
   service_uuid = upcloud_managed_object_storage.user.id
 }
 
+resource "upcloud_managed_object_storage_policy" "action_as_string" {
+  name = "delete-object-policy"
+  document = urlencode(jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "s3:DeleteObject"
+        Resource = "arn:aws:s3:::bucket/*"
+        Effect   = "Allow"
+        Sid      = "DeleteObject"
+      }
+    ]
+  }))
+  service_uuid = upcloud_managed_object_storage.user.id
+}
+
 resource "upcloud_managed_object_storage_user" "user" {
   username     = "${var.prefix}user"
   service_uuid = upcloud_managed_object_storage.user.id

@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_network: add support for effective_routes and dhcp_effective_routes fields
 
+### Fixed
+
+- upcloud_managed_object_storage_policy: when comparing policy documents, treat string value in `Action` field as equal to list containing that string as its only item, e.g. `"s3:PutObject"` vs. `["s3:PutObject"]`.
+
 ## [5.31.1] - 2025-11-13
 
 ### Changed
