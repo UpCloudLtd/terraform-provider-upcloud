@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_network: add support for effective_routes and dhcp_effective_routes fields
+
 ## [5.31.1] - 2025-11-13
 
 ### Changed
