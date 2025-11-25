@@ -326,10 +326,21 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 		return "", errToDiags(err)
 	}
 
-	var unmarshaled interface{}
+	var unmarshaled map[string]interface{}
 	err = json.Unmarshal([]byte(unescaped), &unmarshaled)
 	if err != nil {
 		return "", errToDiags(err)
+	}
+
+	// Use list type for Action field, because API converts single string to list.
+	if statements, ok := unmarshaled["Statement"].([]interface{}); ok {
+		for _, statement := range statements {
+			if statement, ok := statement.(map[string]interface{}); ok {
+				if action, ok := statement["Action"].(string); ok {
+					statement["Action"] = []string{action}
+				}
+			}
+		}
 	}
 
 	marshaled, err := json.Marshal(unmarshaled)
