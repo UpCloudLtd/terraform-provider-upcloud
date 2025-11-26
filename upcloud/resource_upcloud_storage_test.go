@@ -31,8 +31,8 @@ const (
 
 func TestAccUpCloudStorage_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -173,8 +173,8 @@ func TestAccUpCloudStorage_import(t *testing.T) {
 	expectedZone := "fi-hel1"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -196,8 +196,8 @@ func TestAccUpCloudStorage_ImportAndTemplatize(t *testing.T) {
 	var storageDetails upcloud.StorageDetails
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -228,8 +228,8 @@ func TestAccUpCloudStorage_StorageImportDirect(t *testing.T) {
 	sha256sum := hex.EncodeToString((*sum).Sum(nil))
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -274,8 +274,8 @@ func TestAccUpCloudStorage_StorageImportDirectCompressed(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -303,8 +303,8 @@ func TestAccUpCloudStorage_StorageHashValidation(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -321,8 +321,8 @@ func TestAccUpCloudStorage_StorageHashValidation(t *testing.T) {
 
 func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -337,8 +337,8 @@ func TestAccUpCloudStorage_StorageImportValidation(t *testing.T) {
 
 func TestAccUpCloudStorage_CloneImportValidation(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -354,8 +354,8 @@ func TestAccUpCloudStorage_CloneStorage(t *testing.T) {
 	var storageDetailsClone upcloud.StorageDetails
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -565,8 +565,8 @@ func TestAccUpCloudStorageBackup_basic(t *testing.T) {
 	updatedBackupTitle := "tf-acc-test-storage-backup-updated"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageBackupDestroy,
 		Steps: []resource.TestStep{
 			// Step 1: Create Storage and Backup
@@ -644,8 +644,8 @@ func TestAccUpCloudStorageBackup_labels(t *testing.T) {
 	title := "tf-acc-test-storage-backup-labels"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		CheckDestroy:             testAccCheckStorageBackupDestroy,
 		Steps: []resource.TestStep{
 			// Step 1: Create the backup resource

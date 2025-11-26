@@ -18,7 +18,7 @@ resource "upcloud_network" "main" {
   router = upcloud_router.main.id
 
   ip_network {
-    address = "172.23.9.0/24"
+    address = "172.23.119.0/24"
     dhcp    = true
     family  = "IPv4"
   }
@@ -30,6 +30,7 @@ resource "upcloud_kubernetes_cluster" "main" {
   storage_encryption      = "data-at-rest"
   zone                    = var.zone
   control_plane_ip_filter = ["0.0.0.0/0"]
+  version                 = "1.32"
 }
 
 resource "upcloud_kubernetes_node_group" "main" {
