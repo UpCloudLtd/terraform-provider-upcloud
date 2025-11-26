@@ -18,7 +18,6 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	this := "upcloud_managed_object_storage.this"
 	minimal := "upcloud_managed_object_storage.minimal"
 	bucket := "upcloud_managed_object_storage_bucket.this"
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
