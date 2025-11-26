@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/UpCloudLtd/upcloud-go-api/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework/diag"

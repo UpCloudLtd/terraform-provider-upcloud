@@ -4,7 +4,7 @@ variable "prefix" {
 }
 
 variable "region" {
-  default = "europe-1"
+  default = "europe-3"
   type    = string
 }
 
@@ -47,6 +47,22 @@ resource "upcloud_managed_object_storage_policy" "escape" {
   service_uuid = upcloud_managed_object_storage.user.id
 }
 
+resource "upcloud_managed_object_storage_policy" "action_as_string" {
+  name = "delete-object-policy"
+  document = urlencode(jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "s3:DeleteObject"
+        Resource = "arn:aws:s3:::bucket/*"
+        Effect   = "Allow"
+        Sid      = "DeleteObject"
+      }
+    ]
+  }))
+  service_uuid = upcloud_managed_object_storage.user.id
+}
+
 resource "upcloud_managed_object_storage_user" "user" {
   username     = "${var.prefix}user"
   service_uuid = upcloud_managed_object_storage.user.id
@@ -61,5 +77,22 @@ resource "upcloud_managed_object_storage_user_access_key" "user" {
 resource "upcloud_managed_object_storage_user_policy" "user" {
   name         = upcloud_managed_object_storage_policy.user.name
   username     = upcloud_managed_object_storage_user.user.username
+  service_uuid = upcloud_managed_object_storage.user.id
+}
+
+resource "upcloud_managed_object_storage_user" "readonly" {
+  username     = "${var.prefix}readonly-user"
+  service_uuid = upcloud_managed_object_storage.user.id
+}
+
+resource "upcloud_managed_object_storage_user_access_key" "readonly" {
+  username     = upcloud_managed_object_storage_user.readonly.username
+  service_uuid = upcloud_managed_object_storage.user.id
+  status       = "Inactive"
+}
+
+resource "upcloud_managed_object_storage_user_policy" "readonly" {
+  name         = "ECSS3ReadOnlyAccess" // Predefined policy
+  username     = upcloud_managed_object_storage_user.readonly.username
   service_uuid = upcloud_managed_object_storage.user.id
 }

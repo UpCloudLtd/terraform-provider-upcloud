@@ -53,6 +53,7 @@ resource "upcloud_router" "example_router" {
 
 ### Read-Only
 
+- `effective_routes` (Attributes Set) Effective routes applied to this network (read-only). (see [below for nested schema](#nestedatt--effective_routes))
 - `id` (String) UUID of the network.
 - `type` (String) The network type
 
@@ -73,6 +74,10 @@ Optional Attributes:
 - `dhcp_routes_configuration` (Attributes) DHCP routes auto-population configuration. (see [below for nested schema](#nestedatt--ip_network--dhcp_routes_configuration))
 - `gateway` (String) Gateway address given by DHCP
 
+Read-Only:
+
+- `dhcp_effective_routes` (Attributes Set) Routes provided to DHCP clients in this subnet (read-only). (see [below for nested schema](#nestedatt--ip_network--dhcp_effective_routes))
+
 <a id="nestedatt--ip_network--dhcp_routes_configuration"></a>
 ### Nested Schema for `ip_network.dhcp_routes_configuration`
 
@@ -89,6 +94,30 @@ Optional Attributes:
 - `exclude_by_source` (Set of String) Exclude routes coming from specific sources (router-connected-networks, static-route).
 - `filter_by_destination` (Set of String) CIDR destinations to include when auto-populating routes.
 - `filter_by_route_type` (Set of String) Include only routes of given types (service, user).
+
+
+
+<a id="nestedatt--ip_network--dhcp_effective_routes"></a>
+### Nested Schema for `ip_network.dhcp_effective_routes`
+
+Read-Only:
+
+- `auto_populated` (Boolean) Whether the route was auto-populated by DHCP.
+- `nexthop` (String) Next hop address for this DHCP route.
+- `route` (String) Destination prefix (CIDR) of the DHCP route.
+
+
+
+<a id="nestedatt--effective_routes"></a>
+### Nested Schema for `effective_routes`
+
+Read-Only:
+
+- `nexthop` (String) Next hop address for this route.
+- `route` (String) Destination CIDR of the route.
+- `source` (String) Origin of the route (e.g., static-route, router-connected-networks).
+- `source_resource_id` (String) UUID of the source resource that provided this route, if applicable.
+- `type` (String) Route type (service or user).
 
 ## Import
 

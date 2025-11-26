@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -85,6 +87,9 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"server_id": schema.StringAttribute{
 				Required:    true,
@@ -218,8 +223,6 @@ func setValues(ctx context.Context, data *firewallRulesModel, firewallRules *upc
 		return nil
 	}
 
-	data.ID = types.StringValue(data.ServerID.ValueString())
-
 	var dataFirewallRules []firewallRuleModel
 	// data.FirewallRule is unknown when importing existing resource.
 	if data.FirewallRule.IsNull() || data.FirewallRule.IsUnknown() {
@@ -299,6 +302,8 @@ func (r *firewallRulesResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	data.ID = types.StringValue(data.ServerID.ValueString())
+
 	apiFirewallRules, diags := buildFirewallRules(ctx, data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -331,14 +336,16 @@ func (r *firewallRulesResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	if data.ID.ValueString() == "" && data.ServerID.ValueString() == "" {
+	if data.ID.ValueString() == "" {
 		resp.State.RemoveResource(ctx)
 
 		return
 	}
 
+	data.ServerID = types.StringValue(data.ID.ValueString())
+
 	firewallRules, err := r.client.GetFirewallRules(ctx, &request.GetFirewallRulesRequest{
-		ServerUUID: data.ServerID.ValueString(),
+		ServerUUID: data.ID.ValueString(),
 	})
 	if err != nil {
 		if utils.IsNotFoundError(err) {
@@ -411,5 +418,5 @@ func (r *firewallRulesResource) Delete(ctx context.Context, req resource.DeleteR
 }
 
 func (r *firewallRulesResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("server_id"), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

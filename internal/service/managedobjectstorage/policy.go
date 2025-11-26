@@ -26,7 +26,7 @@ var (
 	_ resource.ResourceWithImportState = &managedObjectStoragePolicyResource{}
 )
 
-func NewManagedObjectStoragePolicyResource() resource.Resource {
+func NewPolicyResource() resource.Resource {
 	return &managedObjectStoragePolicyResource{}
 }
 
@@ -44,17 +44,9 @@ func (r *managedObjectStoragePolicyResource) Configure(_ context.Context, req re
 }
 
 type policyModel struct {
-	ARN              types.String `tfsdk:"arn"`
-	AttachmentCount  types.Int64  `tfsdk:"attachment_count"`
-	CreatedAt        types.String `tfsdk:"created_at"`
-	DefaultVersionID types.String `tfsdk:"default_version_id"`
-	Description      types.String `tfsdk:"description"`
-	Document         types.String `tfsdk:"document"`
-	ID               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	ServiceUUID      types.String `tfsdk:"service_uuid"`
-	System           types.Bool   `tfsdk:"system"`
-	UpdatedAt        types.String `tfsdk:"updated_at"`
+	managedObjectStoragePolicyModel
+
+	ID types.String `tfsdk:"id"`
 }
 
 func (r *managedObjectStoragePolicyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -225,14 +217,12 @@ func (r *managedObjectStoragePolicyResource) Read(ctx context.Context, req resou
 	}
 
 	var serviceUUID, name string
-	err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &name)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage policy ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &name)...)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	data.ServiceUUID = types.StringValue(serviceUUID)
 
 	policy, err := r.client.GetManagedObjectStoragePolicy(ctx, &request.GetManagedObjectStoragePolicyRequest{
@@ -284,11 +274,9 @@ func (r *managedObjectStoragePolicyResource) Delete(ctx context.Context, req res
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	var serviceUUID, name string
-	if err := utils.UnmarshalID(data.ID.ValueString(), &serviceUUID, &name); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to unmarshal managed object storage policy ID",
-			utils.ErrorDiagnosticDetail(err),
-		)
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &name)...)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -338,10 +326,21 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 		return "", errToDiags(err)
 	}
 
-	var unmarshaled interface{}
+	var unmarshaled map[string]interface{}
 	err = json.Unmarshal([]byte(unescaped), &unmarshaled)
 	if err != nil {
 		return "", errToDiags(err)
+	}
+
+	// Use list type for Action field, because API converts single string to list.
+	if statements, ok := unmarshaled["Statement"].([]interface{}); ok {
+		for _, statement := range statements {
+			if statement, ok := statement.(map[string]interface{}); ok {
+				if action, ok := statement["Action"].(string); ok {
+					statement["Action"] = []string{action}
+				}
+			}
+		}
 	}
 
 	marshaled, err := json.Marshal(unmarshaled)

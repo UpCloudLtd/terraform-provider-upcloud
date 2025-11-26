@@ -42,8 +42,8 @@ resource "upcloud_managed_object_storage_user_access_key" "this" {
 
 ### Read-Only
 
-- `access_key_id` (String) Access key id.
+- `access_key_id` (String) Access key ID.
 - `created_at` (String) Creation time.
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the user. ID is in {object storage UUID}/{username}/{access key id} format.
 - `last_used_at` (String) Last used.
 - `secret_access_key` (String, Sensitive) Secret access key.
