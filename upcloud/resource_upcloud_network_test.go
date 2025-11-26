@@ -278,8 +278,8 @@ func TestAccUpcloudNetwork_EffectiveRoutes(t *testing.T) {
 	gatewayIP := fmt.Sprintf("10.%d.0.1", randOctet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configStep1,
