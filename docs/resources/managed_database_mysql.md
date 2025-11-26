@@ -155,6 +155,7 @@ Blocks:
 Optional Attributes:
 
 - `dbname` (String) Database name for bootstrapping the initial connection.
+- `dump_tool` (String) MySQL migration dump tool. Experimental! Tool to use for database dump and restore during migration. Default: mysqldump.
 - `host` (String) Hostname or IP address of the server where to migrate data from.
 - `ignore_dbs` (String) Comma-separated list of databases, which should be ignored during migration (supported by MySQL and PostgreSQL only at the moment).
 - `ignore_roles` (String) Comma-separated list of database roles, which should be ignored during migration (supported by PostgreSQL only at the moment).
