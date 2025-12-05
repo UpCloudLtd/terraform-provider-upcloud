@@ -110,6 +110,7 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 				diags.Append(d...)
 
 				propsData[properties.SchemaKey(key)], d = types.ListValueFrom(ctx, properties.PropToAttributeType(propsInfo[key]), []attr.Value{o})
+				diags.Append(d...)
 			}
 		} else {
 			v, d := properties.NativeToValue(ctx, value, propsInfo[key])
