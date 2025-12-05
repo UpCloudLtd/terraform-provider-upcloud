@@ -112,6 +112,9 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 		res := make(map[string]any)
 		for k := range m {
 			res[k], err = valueToNative(m[k], prop.Properties[k])
+			if err != nil {
+				return nil, err
+			}
 		}
 		return res, nil
 	default:
