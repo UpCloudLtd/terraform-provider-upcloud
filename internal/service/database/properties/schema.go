@@ -292,7 +292,7 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 
 		return s, nil
 	default:
-		return nil, fmt.Errorf(`unknown property value type "%s"`, prop.Type)
+		return nil, fmt.Errorf(`unknown property value type "%s" for key "%s"`, prop.Type, key)
 	}
 }
 
@@ -376,7 +376,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*sdkv2_
 		s.MaxItems = 1
 		s.Elem = &sdkv2_schema.Resource{Schema: nested}
 	default:
-		return nil, fmt.Errorf(`unknown property value type "%s"`, prop.Type)
+		return nil, fmt.Errorf(`unknown property value type "%s" for key "%s"`, prop.Type, key)
 	}
 
 	if f := getKeyDiffSuppressFunc(key); f != nil {
