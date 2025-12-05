@@ -81,7 +81,7 @@ func setDatabaseValues(ctx context.Context, data *databaseCommonModel, db *upclo
 
 	respDiagnostics.Append(setDatabaseProperties(ctx, data, db)...)
 
-	return diags
+	return respDiagnostics
 }
 
 func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase) diag.Diagnostics {
@@ -93,12 +93,18 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 	for typedKey, value := range db.Properties {
 		key := string(typedKey)
 
-		// Create-only properties are handled by plan-modifiers
-		if propsInfo[key].CreateOnly {
+		// Skip properties that are not defined in the propsInfo
+		prop, ok := propsInfo[key]
+		if !ok {
 			continue
 		}
 
-		if properties.GetType(propsInfo[key]) == "object" {
+		// Create-only properties are handled by plan-modifiers
+		if prop.CreateOnly {
+			continue
+		}
+
+		if properties.GetType(prop) == "object" {
 			// convert API objects into list of objects
 			if m, ok := value.(map[string]interface{}); ok {
 				// Convert API keys to schema keys
@@ -109,11 +115,11 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 				o, d := properties.NativeToValue(ctx, sMap, propsInfo[key])
 				diags.Append(d...)
 
-				propsData[properties.SchemaKey(key)], d = types.ListValueFrom(ctx, properties.PropToAttributeType(propsInfo[key]), []attr.Value{o})
+				propsData[properties.SchemaKey(key)], d = types.ListValue(properties.PropToAttributeType(prop), []attr.Value{o})
 				diags.Append(d...)
 			}
 		} else {
-			v, d := properties.NativeToValue(ctx, value, propsInfo[key])
+			v, d := properties.NativeToValue(ctx, value, prop)
 			diags.Append(d...)
 			propsData[properties.SchemaKey(key)] = v
 		}

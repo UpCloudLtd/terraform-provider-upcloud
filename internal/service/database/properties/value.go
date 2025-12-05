@@ -118,7 +118,7 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 		}
 		return res, nil
 	default:
-		return nil, fmt.Errorf(`unknown property value type "%s"`, prop.Type)
+		return nil, fmt.Errorf(`unknown property value type "%s" for "%s"`, prop.Type, prop.Title)
 	}
 }
 
@@ -162,9 +162,11 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 		}
 		return types.ListValueFrom(ctx, types.StringType, l)
 	case "object":
+		attrTypes := PropsToAttributeTypes(prop.Properties)
+
 		m, ok := v.(map[string]any)
 		if !ok {
-			return types.MapNull(types.StringType), nil
+			return types.ObjectNull(attrTypes), nil
 		}
 
 		o := make(map[string]attr.Value)
@@ -173,9 +175,9 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 			diags.Append(d...)
 		}
 
-		return types.ObjectValueFrom(ctx, PropsToAttributeTypes(prop.Properties), o)
+		return types.ObjectValue(attrTypes, o)
 	default:
-		diags.AddError("Unknown type", fmt.Sprintf(`unknown property value type "%s"`, prop.Type))
+		diags.AddError("Unknown type", fmt.Sprintf(`unknown property value type "%s" for "%s"`, prop.Type, prop.Title))
 		return nil, diags
 	}
 }
