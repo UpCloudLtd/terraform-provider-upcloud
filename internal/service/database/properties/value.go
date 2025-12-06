@@ -171,7 +171,8 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 
 		o := make(map[string]attr.Value)
 		for k, v := range m {
-			o[k], d = NativeToValue(ctx, v, prop.Properties[k])
+			// Convert API keys to schema keys and recursively convert values
+			o[SchemaKey(k)], d = NativeToValue(ctx, v, prop.Properties[k])
 			diags.Append(d...)
 		}
 
@@ -182,10 +183,29 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 	}
 }
 
+func ObjectValueAsList(v attr.Value, prop upcloud.ManagedDatabaseServiceProperty) (attr.Value, diag.Diagnostics) {
+	// Pass through non object props
+	if GetType(prop) != "object" {
+		return v, nil
+	}
+
+	// Use null list for null objects
+	if v.IsNull() {
+		return types.ListNull(PropToAttributeType(prop)), nil
+	}
+
+	return types.ListValue(PropToAttributeType(prop), []attr.Value{v})
+}
+
 func PropsToAttributeTypes(props map[string]upcloud.ManagedDatabaseServiceProperty) map[string]attr.Type {
 	attrTypes := make(map[string]attr.Type)
 	for k, p := range props {
-		attrTypes[k] = PropToAttributeType(p)
+		t := PropToAttributeType(p)
+		// Wrap object types in a list because we use list-nested blocks for objects in schema.
+		if GetType(p) == "object" {
+			t = types.ListType{ElemType: t}
+		}
+		attrTypes[k] = t
 	}
 	return attrTypes
 }
