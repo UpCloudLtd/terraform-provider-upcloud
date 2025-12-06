@@ -107,15 +107,10 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 		if properties.GetType(prop) == "object" {
 			// convert API objects into list of objects
 			if m, ok := value.(map[string]interface{}); ok {
-				// Convert API keys to schema keys
-				sMap := make(map[string]interface{})
-				for k, v := range m {
-					sMap[properties.SchemaKey(k)] = v
-				}
-				o, d := properties.NativeToValue(ctx, sMap, propsInfo[key])
+				o, d := properties.NativeToValue(ctx, m, propsInfo[key])
 				diags.Append(d...)
 
-				propsData[properties.SchemaKey(key)], d = types.ListValue(properties.PropToAttributeType(prop), []attr.Value{o})
+				propsData[properties.SchemaKey(key)], d = properties.ObjectValueAsList(o, prop)
 				diags.Append(d...)
 			}
 		} else {
@@ -138,7 +133,9 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 		if _, ok := propsData[schemaKey]; !ok {
 			nullValue, d := properties.NativeToValue(ctx, nil, propsInfo[key])
 			diags.Append(d...)
-			propsData[schemaKey] = nullValue
+
+			propsData[schemaKey], d = properties.ObjectValueAsList(nullValue, propsInfo[key])
+			diags.Append(d...)
 		}
 	}
 
