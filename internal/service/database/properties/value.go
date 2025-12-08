@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-func listToValueMap(ctx context.Context, list types.List) (map[string]tftypes.Value, error) {
+func ListToValueMap(ctx context.Context, list types.List) (map[string]tftypes.Value, error) {
 	propsList := list.Elements()
 	if len(propsList) == 0 {
 		return nil, nil
@@ -33,7 +33,7 @@ func listToValueMap(ctx context.Context, list types.List) (map[string]tftypes.Va
 func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props map[string]upcloud.ManagedDatabaseServiceProperty) (map[upcloud.ManagedDatabasePropertyKey]interface{}, error) {
 	res := make(map[upcloud.ManagedDatabasePropertyKey]interface{})
 
-	propsMap, err := listToValueMap(ctx, list)
+	propsMap, err := ListToValueMap(ctx, list)
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +41,10 @@ func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props
 	for k, v := range propsMap {
 		prop, ok := props[k]
 		if !ok {
+			continue
+		}
+
+		if v.IsNull() || !v.IsKnown() {
 			continue
 		}
 
@@ -103,14 +107,30 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 		}
 		return res, nil
 	case "object":
+		// We use nested lists for objects in schema, so convert to list first
+		var l []tftypes.Value
+		err := v.As(&l)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(l) != 1 {
+			return nil, nil
+		}
+
+		// After checking we have exactly one element, convert to map
 		m := map[string]tftypes.Value{}
-		err := v.As(&m)
+		err = l[0].As(&m)
 		if err != nil {
 			return nil, err
 		}
 
 		res := make(map[string]any)
 		for k := range m {
+			if m[k].IsNull() || !m[k].IsKnown() {
+				continue
+			}
+
 			res[k], err = valueToNative(m[k], prop.Properties[k])
 			if err != nil {
 				return nil, err
@@ -174,6 +194,15 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 			// Convert API keys to schema keys and recursively convert values
 			o[SchemaKey(k)], d = NativeToValue(ctx, v, prop.Properties[k])
 			diags.Append(d...)
+		}
+
+		// Add null values to omitted fields
+		for k, v := range prop.Properties {
+			schemaKey := SchemaKey(k)
+			if _, ok := o[schemaKey]; !ok {
+				o[schemaKey], d = NativeToValue(ctx, nil, v)
+				diags.Append(d...)
+			}
 		}
 
 		return types.ObjectValue(attrTypes, o)
