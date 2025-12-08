@@ -208,6 +208,9 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 	s.Attributes["type"] = schema.StringAttribute{
 		MarkdownDescription: "Type of the managed database instance",
 		Computed:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	}
 	s.Attributes["zone"] = schema.StringAttribute{
 		MarkdownDescription: "Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.",
