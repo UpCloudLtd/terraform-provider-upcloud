@@ -1,6 +1,7 @@
 package properties
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"regexp"
@@ -152,9 +153,20 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 		}
 
 		if prop.CreateOnly {
+			replaceIfDescription := "Do not require replace on import."
 			s.PlanModifiers = append(
 				s.PlanModifiers,
-				stringplanmodifier.RequiresReplace(),
+				stringplanmodifier.RequiresReplaceIf(
+					func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+						if req.ConfigValue.IsNull() {
+							resp.RequiresReplace = false
+							return
+						}
+						resp.RequiresReplace = true
+					},
+					replaceIfDescription,
+					replaceIfDescription,
+				),
 				stringplanmodifier.UseStateForUnknown(),
 			)
 		}
