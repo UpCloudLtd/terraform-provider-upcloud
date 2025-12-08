@@ -12,6 +12,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
+const (
+	propTypeString  string = "string"
+	propTypeInteger string = "integer"
+	propTypeNumber  string = "number"
+	propTypeBoolean string = "boolean"
+	propTypeArray   string = "array"
+	propTypeObject  string = "object"
+)
+
 func ListToValueMap(ctx context.Context, list types.List) (map[string]tftypes.Value, error) {
 	propsList := list.Elements()
 	if len(propsList) == 0 {
@@ -65,11 +74,11 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 	}
 
 	switch GetType(prop) {
-	case "string":
+	case propTypeString:
 		var s string
 		err := v.As(&s)
 		return s, err
-	case "integer":
+	case propTypeInteger:
 		var n big.Float
 		err := v.As(&n)
 		if err != nil {
@@ -78,7 +87,7 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 
 		i, _ := n.Int64()
 		return i, err
-	case "number":
+	case propTypeNumber:
 		var n big.Float
 		err := v.As(&n)
 		if err != nil {
@@ -87,11 +96,11 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 
 		f, _ := n.Float64()
 		return f, err
-	case "boolean":
+	case propTypeBoolean:
 		var b bool
 		err := v.As(&b)
 		return b, err
-	case "array":
+	case propTypeArray:
 		var l []tftypes.Value
 		err := v.As(&l)
 		if err != nil {
@@ -106,7 +115,7 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 			}
 		}
 		return res, nil
-	case "object":
+	case propTypeObject:
 		// We use nested lists for objects in schema, so convert to list first
 		var l []tftypes.Value
 		err := v.As(&l)
@@ -146,42 +155,55 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 	var d, diags diag.Diagnostics
 
 	switch GetType(prop) {
-	case "string":
+	case propTypeString:
 		s, ok := v.(string)
 		if !ok {
 			return types.StringNull(), nil
 		}
 		return types.StringValue(s), nil
-	case "integer":
-		n, ok := v.(int64)
+	case propTypeInteger:
+		// Numeric values in JSON are float64 by default
+		f, ok := v.(float64)
 		if !ok {
 			return types.Int64Null(), nil
 		}
-		return types.Int64Value(n), nil
-	case "number":
+		return types.Int64Value(int64(f)), nil
+	case propTypeNumber:
 		f, ok := v.(float64)
 		if !ok {
 			return types.Float64Null(), nil
 		}
 		return types.Float64Value(f), nil
-	case "boolean":
+	case propTypeBoolean:
 		b, ok := v.(bool)
 		if !ok {
 			return types.BoolNull(), nil
 		}
 		return types.BoolValue(b), nil
-	case "array":
+	case propTypeArray:
 		var l []types.String
-		ss, ok := v.([]string)
+		is, ok := v.([]any)
 		if !ok {
 			return types.ListNull(types.StringType), nil
 		}
 
-		for _, s := range ss {
-			l = append(l, types.StringValue(s))
+		for _, i := range is {
+			s, ok := i.(string)
+			if !ok {
+				diags.AddError(
+					"Failed to convert value to types.StringValue",
+					fmt.Sprintf("Expected string, got %T", i),
+				)
+			} else {
+				l = append(l, types.StringValue(s))
+			}
 		}
-		return types.ListValueFrom(ctx, types.StringType, l)
-	case "object":
+
+		val, d := types.ListValueFrom(ctx, types.StringType, l)
+		diags.Append(d...)
+
+		return val, diags
+	case propTypeObject:
 		attrTypes := PropsToAttributeTypes(prop.Properties)
 
 		m, ok := v.(map[string]any)
@@ -214,7 +236,7 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 
 func ObjectValueAsList(v attr.Value, prop upcloud.ManagedDatabaseServiceProperty) (attr.Value, diag.Diagnostics) {
 	// Pass through non object props
-	if GetType(prop) != "object" {
+	if GetType(prop) != propTypeObject {
 		return v, nil
 	}
 
@@ -231,7 +253,7 @@ func PropsToAttributeTypes(props map[string]upcloud.ManagedDatabaseServiceProper
 	for k, p := range props {
 		t := PropToAttributeType(p)
 		// Wrap object types in a list because we use list-nested blocks for objects in schema.
-		if GetType(p) == "object" {
+		if GetType(p) == propTypeObject {
 			t = types.ListType{ElemType: t}
 		}
 		attrTypes[k] = t
@@ -241,17 +263,17 @@ func PropsToAttributeTypes(props map[string]upcloud.ManagedDatabaseServiceProper
 
 func PropToAttributeType(prop upcloud.ManagedDatabaseServiceProperty) attr.Type {
 	switch GetType(prop) {
-	case "string":
+	case propTypeString:
 		return types.StringType
-	case "integer":
+	case propTypeInteger:
 		return types.Int64Type
-	case "number":
+	case propTypeNumber:
 		return types.Float64Type
-	case "boolean":
+	case propTypeBoolean:
 		return types.BoolType
-	case "array":
+	case propTypeArray:
 		return types.ListType{ElemType: types.StringType}
-	case "object":
+	case propTypeObject:
 		attrTypes := make(map[string]attr.Type)
 		for k, p := range prop.Properties {
 			attrTypes[k] = PropToAttributeType(p)
