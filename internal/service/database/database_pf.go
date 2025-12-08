@@ -90,6 +90,15 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 	propsInfo := properties.GetProperties(db.Type)
 	propsData := make(map[string]attr.Value)
 
+	prevProps, err := properties.ListToValueMap(ctx, data.Properties)
+	if err != nil {
+		diags.AddError(
+			"Unable to parse managed database properties from plan",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return diags
+	}
+
 	for typedKey, value := range db.Properties {
 		key := string(typedKey)
 
@@ -104,20 +113,16 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 			continue
 		}
 
-		if properties.GetType(prop) == "object" {
-			// convert API objects into list of objects
-			if m, ok := value.(map[string]interface{}); ok {
-				o, d := properties.NativeToValue(ctx, m, propsInfo[key])
-				diags.Append(d...)
-
-				propsData[properties.SchemaKey(key)], d = properties.ObjectValueAsList(o, prop)
-				diags.Append(d...)
-			}
-		} else {
-			v, d := properties.NativeToValue(ctx, value, prop)
-			diags.Append(d...)
-			propsData[properties.SchemaKey(key)] = v
+		if prevProps[properties.SchemaKey(key)].IsNull() {
+			// Skip properties that are null in the plan
+			continue
 		}
+
+		v, d := properties.NativeToValue(ctx, value, prop)
+		diags.Append(d...)
+
+		propsData[properties.SchemaKey(key)], d = properties.ObjectValueAsList(v, prop)
+		diags.Append(d...)
 	}
 
 	// Clean up removed properties that are not present in the propsInfo
@@ -205,12 +210,12 @@ func buildManagedDatabaseRequestFromPlan(ctx context.Context, data *databaseComm
 		Zone:                   data.Zone.ValueString(),
 	}
 
-	if data.Network.IsNull() || data.Network.IsUnknown() {
+	if !data.Network.IsNull() && !data.Network.IsUnknown() {
 		req.Networks, d = networksFromPlan(ctx, data)
 		respDiagnostics.Append(d...)
 	}
 
-	if data.Properties.IsNull() || data.Properties.IsUnknown() {
+	if !data.Properties.IsNull() && !data.Properties.IsUnknown() {
 		req.Properties, d = buildManagedDatabasePropertiesRequestFromPlan(ctx, data)
 		respDiagnostics.Append(d...)
 	}
