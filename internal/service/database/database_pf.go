@@ -60,8 +60,8 @@ func setDatabaseValues(ctx context.Context, data *databaseCommonModel, db *upclo
 	for _, n := range db.Networks {
 		networks = append(networks, databaseNetworkModel{
 			Name:   types.StringValue(n.Name),
-			Type:   types.StringValue(string(n.Type)),
-			Family: types.StringValue(string(n.Family)),
+			Type:   types.StringValue(n.Type),
+			Family: types.StringValue(n.Family),
 			UUID:   types.StringPointerValue(n.UUID),
 		})
 	}
