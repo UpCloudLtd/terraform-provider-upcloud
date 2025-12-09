@@ -21,6 +21,9 @@ func serviceDescription(dbType string) string {
 func setDatabaseValues(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
+	// Title is required, so it should only be empty during import
+	isImport := data.Title.ValueString() == ""
+
 	data.ID = types.StringValue(db.UUID)
 	data.Name = types.StringValue(db.Name)
 	data.MaintenanceWindowDow = types.StringValue(db.Maintenance.DayOfWeek)
@@ -79,12 +82,16 @@ func setDatabaseValues(ctx context.Context, data *databaseCommonModel, db *upclo
 	data.NodeStates, diags = types.ListValueFrom(ctx, data.NodeStates.ElementType(ctx), nodeStates)
 	respDiagnostics.Append(diags...)
 
-	respDiagnostics.Append(setDatabaseProperties(ctx, data, db)...)
+	if !data.Properties.IsNull() || isImport {
+		respDiagnostics.Append(setDatabaseProperties(ctx, data, db, isImport)...)
+	} else {
+		data.Properties = types.ListNull(data.Properties.ElementType(ctx))
+	}
 
 	return respDiagnostics
 }
 
-func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase) diag.Diagnostics {
+func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase, isImport bool) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	propsInfo := properties.GetProperties(db.Type)
@@ -113,8 +120,8 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 			continue
 		}
 
-		if prevProps[properties.SchemaKey(key)].IsNull() {
-			// Skip properties that are null in the plan
+		// Skip properties that are null in the plan
+		if !isImport && prevProps[properties.SchemaKey(key)].IsNull() {
 			continue
 		}
 
@@ -317,15 +324,15 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 		hasChanges = true
 	}
 
-	if !state.Properties.Equal(plan.Properties) {
+	if !state.Properties.Equal(plan.Properties) && !plan.Properties.IsNull() {
 		props, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, plan)
 		respDiagnostics.Append(d...)
 		stateProps, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, state)
 		respDiagnostics.Append(d...)
 
 		// Check if version property has changed
-		stateVersion := stateProps["version"].(string)
-		planVersion := props["version"].(string)
+		stateVersion := anyToString(stateProps["version"])
+		planVersion := anyToString(props["version"])
 		if stateVersion != planVersion {
 			newVersion = planVersion
 		}
@@ -394,6 +401,14 @@ func updatePowered(ctx context.Context, data *databaseCommonModel, client *servi
 	}
 
 	return diags
+}
+
+func anyToString(v any) string {
+	s, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return s
 }
 
 func updateVersion(ctx context.Context, uuid, newVersion string, powered bool, client *service.Service) (diags diag.Diagnostics) {
