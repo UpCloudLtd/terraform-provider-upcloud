@@ -103,18 +103,18 @@ func ignorePropChange(v any, plan tftypes.Value, key string, prop upcloud.Manage
 		if err != nil {
 			return nil, err
 		}
-		ps, p_ok := p.([]any)
-		vs, v_ok := v.([]any)
+		ps, pOk := p.([]any)
+		vs, vOk := v.([]any)
 
 		notEqualErr := fmt.Errorf("planned and actual IP filter values do not match: planned %#v, got %#v", p, v)
-		if !p_ok || !v_ok || len(ps) != len(vs) {
+		if !pOk || !vOk || len(ps) != len(vs) {
 			return nil, notEqualErr
 		}
 
-		for i, _ := range ps {
-			pstr, p_ok := ps[i].(string)
-			vstr, v_ok := vs[i].(string)
-			if !p_ok || !v_ok {
+		for i := range ps {
+			pstr, pOk := ps[i].(string)
+			vstr, vOk := vs[i].(string)
+			if !pOk || !vOk {
 				return nil, notEqualErr
 			}
 
