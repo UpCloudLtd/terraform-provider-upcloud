@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_file_storage_share: new resource for managing file storage shares
 - upcloud_file_storage_share_acl: new resource for managing file storage share access control lists
 
+### Fixed
+
+- upcloud_managed_database_\*: migrate resource implementation to use plugin framework: when generating configuration with `-generate-config-out` flag of `plan` command, the generated configuration now uses null value for properties with no value in API response instead of empty value (zero for integers, false for booleans, and empty string for strings, ...).
+
 ### Removed
 - upcloud_file_storage: `share` block removed in favor of `upcloud_file_storage_share` and `upcloud_file_storage_share_acl` resources
 
