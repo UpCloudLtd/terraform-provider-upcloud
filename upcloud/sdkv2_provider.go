@@ -67,7 +67,6 @@ func Provider() *schema.Provider {
 			"upcloud_gateway":                           gateway.ResourceGateway(),
 			"upcloud_gateway_connection":                gateway.ResourceConnection(),
 			"upcloud_gateway_connection_tunnel":         gateway.ResourceTunnel(),
-			"upcloud_managed_database_opensearch":       database.ResourceOpenSearch(),
 			"upcloud_managed_database_user":             database.ResourceUser(),
 			"upcloud_managed_database_logical_database": database.ResourceLogicalDatabase(),
 		},

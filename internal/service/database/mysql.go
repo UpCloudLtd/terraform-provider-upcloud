@@ -114,7 +114,7 @@ func (r *mysqlResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		)
 	}
 
-	resp.Diagnostics.Append(waitForDatabaseToBeDeletedDiags(ctx, r.client, data.ID.ValueString())...)
+	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)
 }
 
 func (r *mysqlResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

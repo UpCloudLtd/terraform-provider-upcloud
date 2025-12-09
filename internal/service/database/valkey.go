@@ -114,7 +114,7 @@ func (r *valkeyResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		)
 	}
 
-	resp.Diagnostics.Append(waitForDatabaseToBeDeletedDiags(ctx, r.client, data.ID.ValueString())...)
+	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)
 }
 
 func (r *valkeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

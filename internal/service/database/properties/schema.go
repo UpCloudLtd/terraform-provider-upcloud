@@ -22,8 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	sdkv2_schema "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func ensureDot(text string) string {
@@ -95,10 +93,6 @@ func SchemaKey(key string) string {
 	return strings.ReplaceAll(key, ".", "_")
 }
 
-func diffSuppressCreateOnlyProperty(_, _, _ string, d *sdkv2_schema.ResourceData) bool {
-	return d.Id() != ""
-}
-
 func booleanDefault(val interface{}) (bool, bool) {
 	if b, ok := val.(bool); ok {
 		return b, true
@@ -123,17 +117,6 @@ func stringSlice(val interface{}) ([]string, bool) {
 		return strs, true
 	}
 	return nil, false
-}
-
-func getKeyDiffSuppressFunc(key string) sdkv2_schema.SchemaDiffSuppressFunc {
-	switch key {
-	case "ip_filter":
-		return func(_, oldValue, newValue string, _ *sdkv2_schema.ResourceData) bool {
-			return strings.TrimSuffix(oldValue, "/32") == strings.TrimSuffix(newValue, "/32")
-		}
-	default:
-		return nil
-	}
 }
 
 func isSensitive(key string) bool {
@@ -308,102 +291,6 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 	}
 }
 
-func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*sdkv2_schema.Schema, error) {
-	s := sdkv2_schema.Schema{
-		Description: getDescription(key, prop),
-		Optional:    true,
-		Computed:    true,
-		Sensitive:   isSensitive(key),
-	}
-
-	if prop.CreateOnly {
-		s.ForceNew = true
-		s.DiffSuppressFunc = diffSuppressCreateOnlyProperty
-	}
-
-	validations := []sdkv2_schema.SchemaValidateFunc{} //nolint:staticcheck // Most of the validators still use the deprecated function signature.
-
-	switch GetType(prop) {
-	case "string":
-		s.Type = sdkv2_schema.TypeString
-		var hasEnum, patternMatchesEmpty bool
-
-		if prop.MaxLength != 0 {
-			validations = append(validations, validation.StringLenBetween(prop.MinLength, prop.MaxLength))
-		}
-		if enum, hasEnum := stringSlice(prop.Enum); hasEnum {
-			validations = append(validations, validation.StringInSlice(enum, false))
-		}
-		if prop.Pattern != "" {
-			if re, err := regexp.Compile(prop.Pattern); err == nil {
-				patternMatchesEmpty = re.Match([]byte{})
-				validations = append(validations, validation.StringMatch(re, fmt.Sprintf(`Must match "%s" pattern.`, prop.Pattern)))
-			}
-		}
-
-		// If empty string is valid value, `Computed = true` will block user from clearing the property value
-		if prop.MinLength == 0 && !hasEnum && patternMatchesEmpty {
-			s.Computed = false
-		}
-
-	case "integer":
-		s.Type = sdkv2_schema.TypeInt
-
-		if prop.Minimum != nil {
-			validations = append(validations, validation.IntAtLeast(int(*prop.Minimum)))
-		}
-		if prop.Maximum != nil {
-			if *prop.Maximum < float64(math.MaxInt) {
-				validations = append(validations, validation.IntAtMost(int(*prop.Maximum)))
-			}
-		}
-	case "number":
-		s.Type = sdkv2_schema.TypeFloat
-
-		if prop.Minimum != nil {
-			validations = append(validations, validation.FloatAtLeast(*prop.Minimum))
-		}
-		if prop.Maximum != nil {
-			validations = append(validations, validation.FloatAtMost(*prop.Maximum))
-		}
-	case "boolean":
-		s.Type = sdkv2_schema.TypeBool
-
-		if boolDefault, ok := booleanDefault(prop.Default); ok {
-			s.Computed = false
-			s.Default = boolDefault
-		}
-	case "array":
-		s.Type = sdkv2_schema.TypeList
-		s.Elem = &sdkv2_schema.Schema{
-			Type: sdkv2_schema.TypeString,
-		}
-	case "object":
-		nested, err := getSchemaMap(prop.Properties)
-		if err != nil {
-			return nil, err
-		}
-
-		s.Type = sdkv2_schema.TypeList
-		s.MaxItems = 1
-		s.Elem = &sdkv2_schema.Resource{Schema: nested}
-	default:
-		return nil, fmt.Errorf(`unknown property value type "%s" for key "%s"`, prop.Type, key)
-	}
-
-	if f := getKeyDiffSuppressFunc(key); f != nil {
-		s.DiffSuppressFunc = f
-	}
-
-	if len(validations) > 0 {
-		s.ValidateDiagFunc = validation.ToDiagFunc(
-			validation.All(validations...),
-		)
-	}
-
-	return &s, nil
-}
-
 func getNestedObject(props map[string]upcloud.ManagedDatabaseServiceProperty) (schema.NestedBlockObject, error) {
 	o := schema.NestedBlockObject{}
 
@@ -428,32 +315,10 @@ func getNestedObject(props map[string]upcloud.ManagedDatabaseServiceProperty) (s
 	return o, nil
 }
 
-func getSchemaMap(props map[string]upcloud.ManagedDatabaseServiceProperty) (map[string]*sdkv2_schema.Schema, error) {
-	sMap := make(map[string]*sdkv2_schema.Schema)
-	for key, prop := range props {
-		s, err := getSchema(key, prop)
-		if err != nil {
-			return nil, err
-		}
-		sMap[SchemaKey(key)] = s
-	}
-	return sMap, nil
-}
-
 func panicMessage(dbType upcloud.ManagedDatabaseServiceType, step string, err error) string {
 	return fmt.Sprintf(`Could not generate %s properties %s. This is a bug in the provider. Please create an issue in https://github.com/UpCloudLtd/terraform-provider-upcloud/issues.
 
 Error: %s`, dbType, step, err.Error())
-}
-
-func GetSchemaMap(dbType upcloud.ManagedDatabaseServiceType) map[string]*sdkv2_schema.Schema {
-	p := GetProperties(dbType)
-
-	s, err := getSchemaMap(p)
-	if err != nil {
-		panic(panicMessage(dbType, "schema", err))
-	}
-	return s
 }
 
 func GetBlock(dbType upcloud.ManagedDatabaseServiceType) schema.Block {
