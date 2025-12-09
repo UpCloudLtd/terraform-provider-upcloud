@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -57,7 +58,7 @@ func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props
 			continue
 		}
 
-		nativeValue, err := valueToNative(v, prop)
+		nativeValue, err := ValueToNative(v, prop)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +69,7 @@ func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props
 	return res, nil
 }
 
-func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty) (any, error) {
+func ValueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty) (any, error) {
 	if v.IsNull() || !v.IsKnown() {
 		return nil, nil
 	}
@@ -109,7 +110,7 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 
 		res := make([]any, len(l))
 		for i := range l {
-			res[i], err = valueToNative(l[i], upcloud.ManagedDatabaseServiceProperty{Type: "string"})
+			res[i], err = ValueToNative(l[i], upcloud.ManagedDatabaseServiceProperty{Type: "string"})
 			if err != nil {
 				return nil, err
 			}
@@ -140,7 +141,7 @@ func valueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 				continue
 			}
 
-			res[k], err = valueToNative(m[k], prop.Properties[k])
+			res[k], err = ValueToNative(m[k], prop.Properties[k])
 			if err != nil {
 				return nil, err
 			}
@@ -232,6 +233,24 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 		diags.AddError("Unknown type", fmt.Sprintf(`unknown property value type "%s" for "%s"`, prop.Type, prop.Title))
 		return nil, diags
 	}
+}
+
+func ValueToAttrValue(ctx context.Context, value tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty) (attr.Value, diag.Diagnostics) {
+	var d, diags diag.Diagnostics
+
+	native, err := ValueToNative(value, prop)
+	if err != nil {
+		diags.AddError(
+			"Failed to convert tftypes.Value to native Go value",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, diags
+	}
+
+	attrValue, d := NativeToValue(ctx, native, prop)
+	diags.Append(d...)
+
+	return attrValue, diags
 }
 
 func ObjectValueAsList(v attr.Value, prop upcloud.ManagedDatabaseServiceProperty) (attr.Value, diag.Diagnostics) {
