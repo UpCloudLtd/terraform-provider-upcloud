@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 func serviceDescription(dbType string) string {
@@ -91,6 +92,40 @@ func setDatabaseValues(ctx context.Context, data *databaseCommonModel, db *upclo
 	return respDiagnostics
 }
 
+func ignorePropChange(v any, plan tftypes.Value, key string, prop upcloud.ManagedDatabaseServiceProperty) (any, error) {
+	switch key {
+	case "ip_filter":
+		// API adds /32 postfix to single IP addresses, ignore it when setting value
+		p, err := properties.ValueToNative(plan, prop)
+		if err != nil {
+			return nil, err
+		}
+		ps, p_ok := p.([]any)
+		vs, v_ok := v.([]any)
+
+		notEqualErr := fmt.Errorf("planned and actual IP filter values do not match: planned %#v, got %#v", p, v)
+		if !p_ok || !v_ok || len(ps) != len(vs) {
+			return nil, notEqualErr
+		}
+
+		for i, _ := range ps {
+			pstr, p_ok := ps[i].(string)
+			vstr, v_ok := vs[i].(string)
+			if !p_ok || !v_ok {
+				return nil, notEqualErr
+			}
+
+			if pstr != vstr && vstr != pstr+"/32" {
+				return nil, notEqualErr
+			}
+		}
+		return p, nil
+	default:
+		// By default, pass through the current value
+		return v, nil
+	}
+}
+
 func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase, isImport bool) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -125,7 +160,17 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 			continue
 		}
 
-		v, d := properties.NativeToValue(ctx, value, prop)
+		// Ignore known differences between API and plan values
+		processedValue, err := ignorePropChange(value, prevProps[properties.SchemaKey(key)], key, prop)
+		if err != nil {
+			diags.AddError(
+				"Unable to process managed database property value",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return diags
+		}
+
+		v, d := properties.NativeToValue(ctx, processedValue, prop)
 		diags.Append(d...)
 
 		propsData[properties.SchemaKey(key)], d = properties.ObjectValueAsList(v, prop)
@@ -140,8 +185,18 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 	}
 
 	// Add null value for properties missing from API response and configuration
-	for key := range propsInfo {
+	for key, prop := range propsInfo {
 		schemaKey := properties.SchemaKey(key)
+
+		// Use value from plan for create-only properties
+		if prop.CreateOnly {
+			v, d := properties.ValueToAttrValue(ctx, prevProps[schemaKey], prop)
+			diags.Append(d...)
+
+			propsData[schemaKey] = v
+			continue
+		}
+
 		if _, ok := propsData[schemaKey]; !ok {
 			nullValue, d := properties.NativeToValue(ctx, nil, propsInfo[key])
 			diags.Append(d...)
@@ -451,8 +506,11 @@ func updateVersion(ctx context.Context, uuid, newVersion string, powered bool, c
 
 func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
 	db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id[0]})
+	if err != nil {
+		return nil, err
+	}
 
-	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, err
+	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, nil
 }
 
 func waitForDatabaseToBeDeletedDiags(ctx context.Context, svc *service.Service, id string) (diags diag.Diagnostics) {
