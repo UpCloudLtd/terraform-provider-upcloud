@@ -273,6 +273,173 @@ func readDatabase(ctx context.Context, data *databaseCommonModel, client *servic
 	return db, diags
 }
 
+func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, client *service.Service) (*upcloud.ManagedDatabase, string, diag.Diagnostics) {
+	var respDiagnostics diag.Diagnostics
+
+	var req request.ModifyManagedDatabaseRequest
+	hasChanges := false
+	newVersion := ""
+
+	if !state.Plan.Equal(plan.Plan) {
+		req.Plan = plan.Plan.ValueString()
+		hasChanges = true
+	}
+
+	if !state.Title.Equal(plan.Title) {
+		req.Title = plan.Title.ValueString()
+		hasChanges = true
+	}
+
+	if !state.Zone.Equal(plan.Zone) {
+		req.Zone = plan.Zone.ValueString()
+		hasChanges = true
+	}
+
+	if !state.AdditionalDiskSpaceGiB.Equal(plan.AdditionalDiskSpaceGiB) {
+		additionalDiskSpaceGiB := int(plan.AdditionalDiskSpaceGiB.ValueInt64())
+		req.AdditionalDiskSpaceGiB = &additionalDiskSpaceGiB
+		hasChanges = true
+	}
+
+	if !state.Labels.Equal(plan.Labels) {
+		if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+			var labels map[string]string
+			respDiagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
+			labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+			req.Labels = &labelsSlice
+			hasChanges = true
+		}
+	}
+
+	if !state.TerminationProtection.Equal(plan.TerminationProtection) {
+		terminationProtection := plan.TerminationProtection.ValueBool()
+		req.TerminationProtection = &terminationProtection
+		hasChanges = true
+	}
+
+	if !state.Properties.Equal(plan.Properties) {
+		props, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, plan)
+		respDiagnostics.Append(d...)
+		stateProps, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, state)
+		respDiagnostics.Append(d...)
+
+		// Check if version property has changed
+		stateVersion := stateProps["version"].(string)
+		planVersion := props["version"].(string)
+		if stateVersion != planVersion {
+			newVersion = planVersion
+		}
+
+		// Always delete version if it exists; versions are updated via separate endpoint
+		delete(props, "version")
+
+		req.Properties = props
+		hasChanges = true
+	}
+
+	if !state.Network.Equal(plan.Network) {
+		networks, d := networksFromPlan(ctx, plan)
+		respDiagnostics.Append(d...)
+
+		req.Networks = &networks
+		hasChanges = true
+	}
+
+	if hasChanges {
+		req.UUID = state.ID.ValueString()
+		_, err := client.ModifyManagedDatabase(ctx, &req)
+		if err != nil {
+			respDiagnostics.AddError(
+				"Unable to modify managed database",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return nil, newVersion, respDiagnostics
+		}
+	}
+
+	// Modify powered state if no version update is requested
+	if !state.Powered.Equal(plan.Powered) && newVersion == "" {
+		respDiagnostics.Append(updatePowered(ctx, plan, client)...)
+	}
+
+	// Wait until database is in running (or stopped) state
+	expectedState := upcloud.ManagedDatabaseStateRunning
+	if !plan.Powered.ValueBool() {
+		expectedState = upcloud.ManagedDatabaseStateStopped
+	}
+	db, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: plan.ID.ValueString(), DesiredState: expectedState})
+	if err != nil {
+		respDiagnostics.AddError(
+			"Error while waiting for database to be in desired powered state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, newVersion, respDiagnostics
+	}
+
+	return db, newVersion, respDiagnostics
+}
+
+func updatePowered(ctx context.Context, data *databaseCommonModel, client *service.Service) (diags diag.Diagnostics) {
+	var err error
+	if data.Powered.ValueBool() {
+		_, err = client.StartManagedDatabase(ctx, &request.StartManagedDatabaseRequest{UUID: data.ID.ValueString()})
+	} else {
+		_, err = client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: data.ID.ValueString()})
+	}
+	if err != nil {
+		diags.AddError(
+			"Unable to modify managed database powered state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	return diags
+}
+
+func updateVersion(ctx context.Context, uuid, newVersion string, powered bool, client *service.Service) (diags diag.Diagnostics) {
+	// Cannot proceed with upgrade if powered off
+	if !powered {
+		diags.AddError(
+			"Unable to upgrade managed database version",
+			fmt.Sprintf("Cannot upgrade version for Managed Database %s when it is powered off", uuid),
+		)
+		return diags
+	}
+
+	// Wait until database is in running state before attempting to upgrade version.
+	_, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         uuid,
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
+	if err != nil {
+		diags.AddError(
+			"Error while waiting for database to be in running state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	_, err = client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
+		UUID:          uuid,
+		TargetVersion: newVersion,
+	})
+	if err != nil {
+		diags.AddError(
+			"Unable to upgrade managed database version",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return diags
+	}
+
+	return diags
+}
+
+func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
+	db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id[0]})
+
+	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, err
+}
+
 func waitForDatabaseToBeDeletedDiags(ctx context.Context, svc *service.Service, id string) (diags diag.Diagnostics) {
 	err := utils.WaitForResourceToBeDeleted(ctx, svc, getDatabaseDeleted, id)
 	if err != nil {

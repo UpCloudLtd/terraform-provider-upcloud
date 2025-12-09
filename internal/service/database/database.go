@@ -421,12 +421,6 @@ func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, detail
 	return d.Set("primary_database", details.ServiceURIParams.DatabaseName)
 }
 
-func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
-	db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id[0]})
-
-	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, err
-}
-
 func waitForDatabaseToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
 	return utils.WaitForResourceToBeDeleted(ctx, svc, getDatabaseDeleted, id)
 }
@@ -453,43 +447,4 @@ func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
 		time.Sleep(10 * time.Second)
 	}
 	return errors.New("max retries reached while waiting for service name to propagate")
-}
-
-func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *service.Service) (diags sdkv2_diag.Diagnostics) {
-	// Cannot proceed with upgrade if powered off
-	if !d.HasChange("powered") && !d.Get("powered").(bool) {
-		return append(diags, sdkv2_diag.Diagnostic{
-			Severity: sdkv2_diag.Warning,
-			Summary:  fmt.Sprintf("Version upgrade for Managed Database %s(%s) skipped", d.Id(), d.Get("name")),
-			Detail:   "Cannot upgrade version for Managed Database when it is powered off",
-		})
-	}
-
-	// Wait until database is in running state before attempting to upgrade version.
-	_, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
-		UUID:         d.Id(),
-		DesiredState: upcloud.ManagedDatabaseStateRunning,
-	})
-	if err != nil {
-		return append(diags, sdkv2_diag.Diagnostic{
-			Severity: sdkv2_diag.Warning,
-			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed; reached timeout when waiting for running state", d.Id(), d.Get("name")),
-			Detail:   err.Error(),
-		})
-	}
-
-	_, target := d.GetChange("properties.0.version")
-	_, err = client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
-		UUID:          d.Id(),
-		TargetVersion: target.(string),
-	})
-	if err != nil {
-		diags = append(diags, sdkv2_diag.Diagnostic{
-			Severity: sdkv2_diag.Error,
-			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed", d.Id(), d.Get("name")),
-			Detail:   err.Error(),
-		})
-	}
-
-	return diags
 }

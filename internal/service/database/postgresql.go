@@ -96,10 +96,59 @@ func (r *postgresResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 func (r *postgresResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError(
-		"Not implemented",
-		"Updating PostgreSQL managed databases is not yet implemented.",
-	)
+	var plan, state postgresModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	db, newVersion, d := updateDatabase(ctx, &state.databaseCommonModel, &plan.databaseCommonModel, r.client)
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	powered := db.State == upcloud.ManagedDatabaseStateRunning
+	if newVersion != "" {
+		if state.Powered.Equal(plan.Powered) {
+			resp.Diagnostics.Append(updateVersion(ctx, db.UUID, newVersion, powered, r.client)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		} else {
+			switch powered {
+			// Power off
+			case false:
+				resp.Diagnostics.Append(updateVersion(ctx, db.UUID, newVersion, powered, r.client)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+				resp.Diagnostics.Append(updatePowered(ctx, &plan.databaseCommonModel, r.client)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+			// Power on
+			case true:
+				resp.Diagnostics.Append(updatePowered(ctx, &plan.databaseCommonModel, r.client)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+				resp.Diagnostics.Append(updateVersion(ctx, db.UUID, newVersion, powered, r.client)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+			}
+		}
+	}
+
+	db, diags := readDatabase(ctx, &plan.databaseCommonModel, r.client, resp.State.RemoveResource)
+	resp.Diagnostics.Append(diags...)
+
+	plan.SSLMode = types.StringValue(db.ServiceURIParams.SSLMode)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *postgresResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
