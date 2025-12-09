@@ -3,68 +3,120 @@ package database
 import (
 	"context"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database/properties"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceValkey() *schema.Resource {
-	return &schema.Resource{
-		Description:   serviceDescription("Valkey"),
-		CreateContext: resourceValkeyCreate,
-		ReadContext:   resourceValkeyRead,
-		UpdateContext: resourceValkeyUpdate,
-		DeleteContext: resourceDatabaseDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: utils.JoinSchemas(
-			schemaDatabaseCommon(upcloud.ManagedDatabaseServiceTypeValkey),
-			schemaValkeyEngine(),
-		),
-	}
+var (
+	_ resource.Resource                = &valkeyResource{}
+	_ resource.ResourceWithConfigure   = &valkeyResource{}
+	_ resource.ResourceWithImportState = &valkeyResource{}
+)
+
+func NewValkeyResource() resource.Resource {
+	return &valkeyResource{}
 }
 
-func resourceValkeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if err := d.Set("type", string(upcloud.ManagedDatabaseServiceTypeValkey)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	diags := resourceDatabaseCreate(ctx, d, meta)
-	if diags.HasError() {
-		return diags
-	}
-
-	return resourceValkeyRead(ctx, d, meta)
+type valkeyResource struct {
+	client *service.Service
 }
 
-func resourceValkeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return resourceDatabaseRead(ctx, d, meta)
+func (r *valkeyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_managed_database_valkey"
 }
 
-func resourceValkeyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	diags := resourceDatabaseUpdate(ctx, d, meta)
-	if diags.HasError() {
-		return diags
-	}
-
-	diags = append(diags, resourceValkeyRead(ctx, d, meta)...)
-	return diags
+// Configure adds the provider configured client to the resource.
+func (r *valkeyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
-func schemaValkeyEngine() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"properties": {
-			Description: "Database Engine properties for Valkey",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Computed:    true,
-			MaxItems:    1,
-			Elem: &schema.Resource{
-				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeValkey),
-			},
-		},
+func (r *valkeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: serviceDescription("Valkey"),
+		Attributes:          map[string]schema.Attribute{},
+		Blocks:              map[string]schema.Block{},
 	}
+
+	defineCommonAttributesAndBlocks(&resp.Schema, upcloud.ManagedDatabaseServiceTypeValkey)
+}
+
+func (r *valkeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data databaseCommonModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	data.Type = types.StringValue(string(upcloud.ManagedDatabaseServiceTypeValkey))
+
+	_, diags := createDatabase(ctx, &data, r.client)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *valkeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data databaseCommonModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	_, diags := readDatabase(ctx, &data, r.client, resp.State.RemoveResource)
+	resp.Diagnostics.Append(diags...)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *valkeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state databaseCommonModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	_, _, d := updateDatabase(ctx, &state, &plan, r.client)
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	_, diags := readDatabase(ctx, &plan, r.client, resp.State.RemoveResource)
+	resp.Diagnostics.Append(diags...)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *valkeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data databaseCommonModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if err := r.client.DeleteManagedDatabase(ctx, &request.DeleteManagedDatabaseRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed database",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	resp.Diagnostics.Append(waitForDatabaseToBeDeletedDiags(ctx, r.client, data.ID.ValueString())...)
+}
+
+func (r *valkeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
