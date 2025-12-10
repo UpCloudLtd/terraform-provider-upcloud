@@ -89,6 +89,9 @@ func (r *postgresResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	db, diags := readDatabase(ctx, &data.databaseCommonModel, r.client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || db == nil {
+		return
+	}
 
 	data.SSLMode = types.StringValue(db.ServiceURIParams.SSLMode)
 

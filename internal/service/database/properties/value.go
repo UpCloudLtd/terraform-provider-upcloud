@@ -40,7 +40,7 @@ func ListToValueMap(ctx context.Context, list types.List) (map[string]tftypes.Va
 	return props, nil
 }
 
-func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props map[string]upcloud.ManagedDatabaseServiceProperty) (map[upcloud.ManagedDatabasePropertyKey]interface{}, error) {
+func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props map[string]upcloud.ManagedDatabaseServiceProperty, isCreate bool) (map[upcloud.ManagedDatabasePropertyKey]interface{}, error) {
 	res := make(map[upcloud.ManagedDatabasePropertyKey]interface{})
 
 	propsMap, err := ListToValueMap(ctx, list)
@@ -51,6 +51,10 @@ func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props
 	for k, v := range propsMap {
 		prop, ok := props[k]
 		if !ok {
+			continue
+		}
+
+		if prop.CreateOnly && !isCreate {
 			continue
 		}
 
