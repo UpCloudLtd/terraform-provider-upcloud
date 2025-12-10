@@ -168,6 +168,10 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 		Optional:            true,
 		Computed:            true,
 		Default:             booldefault.StaticBool(true),
+		PlanModifiers: []planmodifier.Bool{
+			// Databases can not be powered off before initial backup, so better to require this to be true on create.
+			mustBeTrueOnCreate{},
+		},
 	}
 	s.Attributes["service_uri"] = schema.StringAttribute{
 		MarkdownDescription: "URI to the service instance",
