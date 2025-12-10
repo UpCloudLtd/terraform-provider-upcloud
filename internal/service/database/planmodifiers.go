@@ -22,7 +22,7 @@ func (v mustBeTrueOnCreate) MarkdownDescription(ctx context.Context) string {
 }
 
 func (v mustBeTrueOnCreate) PlanModifyBool(ctx context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
-	if req.State.Raw.IsNull() && req.PlanValue.ValueBool() == false {
+	if req.State.Raw.IsNull() && !req.PlanValue.ValueBool() {
 		resp.Diagnostics.AddAttributeError(
 			req.Path,
 			"Invalid value",
