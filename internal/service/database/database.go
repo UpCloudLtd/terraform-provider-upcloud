@@ -246,25 +246,6 @@ func createDatabase(ctx context.Context, data *databaseCommonModel, client *serv
 		return nil, diags
 	}
 
-	if !data.Powered.ValueBool() {
-		_, err := client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: db.UUID})
-		if err != nil {
-			diags.AddError(
-				"Unable to shutdown managed database after creation",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return nil, diags
-		}
-		_, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: db.UUID, DesiredState: upcloud.ManagedDatabaseStateStopped})
-		if err != nil {
-			diags.AddError(
-				"Error while waiting for database to be in stopped state",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return nil, diags
-		}
-	}
-
 	diags.Append(setDatabaseValues(ctx, data, db)...)
 
 	if err = waitServiceNameToPropagate(ctx, db.ServiceURIParams.Host); err != nil {
