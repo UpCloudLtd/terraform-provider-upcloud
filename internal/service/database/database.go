@@ -438,6 +438,10 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 	}
 
 	if !state.Powered.Equal(plan.Powered) {
+		// Wait for running or stopped state before updating powered value.
+		_, diags := waitForPoweredState(ctx, client, plan.ID.ValueString(), !plan.Powered.ValueBool())
+		respDiagnostics.Append(diags...)
+
 		respDiagnostics.Append(updatePowered(ctx, plan, client)...)
 		if respDiagnostics.HasError() {
 			return nil, newVersion, respDiagnostics
@@ -445,18 +449,8 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 	}
 
 	// Wait until database is in running (or stopped) state
-	expectedState := upcloud.ManagedDatabaseStateRunning
-	if !plan.Powered.ValueBool() {
-		expectedState = upcloud.ManagedDatabaseStateStopped
-	}
-	db, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: plan.ID.ValueString(), DesiredState: expectedState})
-	if err != nil {
-		respDiagnostics.AddError(
-			"Error while waiting for database to be in desired powered state",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return nil, newVersion, respDiagnostics
-	}
+	db, diags := waitForPoweredState(ctx, client, plan.ID.ValueString(), plan.Powered.ValueBool())
+	respDiagnostics.Append(diags...)
 
 	return db, newVersion, respDiagnostics
 }
@@ -531,6 +525,24 @@ func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string)
 	}
 
 	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, nil
+}
+
+func waitForPoweredState(ctx context.Context, svc *service.Service, id string, powered bool) (*upcloud.ManagedDatabase, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	expectedState := upcloud.ManagedDatabaseStateRunning
+	if !powered {
+		expectedState = upcloud.ManagedDatabaseStateStopped
+	}
+
+	db, err := svc.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: id, DesiredState: expectedState})
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("Error while waiting for database to be in %s state", expectedState),
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+	return db, diags
 }
 
 func waitForDatabaseToBeDeleted(ctx context.Context, svc *service.Service, id string) (diags diag.Diagnostics) {
