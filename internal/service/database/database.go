@@ -440,6 +440,9 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 	// Modify powered state if no version update is requested
 	if !state.Powered.Equal(plan.Powered) && newVersion == "" {
 		respDiagnostics.Append(updatePowered(ctx, plan, client)...)
+		if respDiagnostics.HasError() {
+			return nil, newVersion, respDiagnostics
+		}
 	}
 
 	// Wait until database is in running (or stopped) state
