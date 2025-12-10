@@ -114,8 +114,11 @@ func (r *opensearchResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	_, diags := readDatabase(ctx, &data.databaseCommonModel, r.client, resp.State.RemoveResource)
+	db, diags := readDatabase(ctx, &data.databaseCommonModel, r.client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || db == nil {
+		return
+	}
 
 	acl, err := r.client.GetManagedDatabaseAccessControl(ctx, &request.GetManagedDatabaseAccessControlRequest{
 		ServiceUUID: data.ID.ValueString(),
