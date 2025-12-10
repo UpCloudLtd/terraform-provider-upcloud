@@ -375,7 +375,7 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 		}
 	}
 
-	if !state.AdditionalDiskSpaceGiB.Equal(plan.AdditionalDiskSpaceGiB) {
+	if !state.AdditionalDiskSpaceGiB.Equal(plan.AdditionalDiskSpaceGiB) && !plan.AdditionalDiskSpaceGiB.IsNull() && !plan.AdditionalDiskSpaceGiB.IsUnknown() {
 		additionalDiskSpaceGiB := int(plan.AdditionalDiskSpaceGiB.ValueInt64())
 		req.AdditionalDiskSpaceGiB = &additionalDiskSpaceGiB
 		hasChanges = true
@@ -391,7 +391,7 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 		}
 	}
 
-	if !state.TerminationProtection.Equal(plan.TerminationProtection) {
+	if !state.TerminationProtection.Equal(plan.TerminationProtection) && !plan.TerminationProtection.IsNull() && !plan.TerminationProtection.IsUnknown() {
 		terminationProtection := plan.TerminationProtection.ValueBool()
 		req.TerminationProtection = &terminationProtection
 		hasChanges = true
@@ -417,7 +417,7 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 		hasChanges = true
 	}
 
-	if !state.Network.Equal(plan.Network) {
+	if !state.Network.Equal(plan.Network) && !plan.Network.IsNull() {
 		networks, d := networksFromPlan(ctx, plan)
 		respDiagnostics.Append(d...)
 
