@@ -123,9 +123,9 @@ func isSensitive(key string) bool {
 	return strings.Contains(key, "password")
 }
 
-func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, error) {
+func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, error) {
 	switch GetType(prop) {
-	case "string":
+	case propTypeString:
 		s := schema.StringAttribute{
 			Description:   getDescription(key, prop),
 			Optional:      true,
@@ -167,7 +167,7 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 		}
 
 		return s, nil
-	case "integer":
+	case propTypeInteger:
 		s := schema.Int64Attribute{
 			Description:   getDescription(key, prop),
 			Optional:      true,
@@ -195,7 +195,7 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 		}
 
 		return s, nil
-	case "number":
+	case propTypeNumber:
 		s := schema.Float64Attribute{
 			Description:   getDescription(key, prop),
 			Optional:      true,
@@ -221,7 +221,7 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 		}
 
 		return s, nil
-	case "boolean":
+	case propTypeBoolean:
 		s := schema.BoolAttribute{
 			Description:   getDescription(key, prop),
 			Optional:      true,
@@ -243,7 +243,7 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 		}
 
 		return s, nil
-	case "array":
+	case propTypeArray:
 		s := schema.ListAttribute{
 			Description:   getDescription(key, prop),
 			ElementType:   types.StringType,
@@ -262,7 +262,7 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 		}
 
 		return s, nil
-	case "object":
+	case propTypeObject:
 		nested, err := getNestedObject(prop.Properties)
 		if err != nil {
 			return nil, err
@@ -287,7 +287,7 @@ func getPFSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, 
 
 		return s, nil
 	default:
-		return nil, fmt.Errorf(`unknown property value type "%s" for key "%s"`, prop.Type, key)
+		return nil, fmt.Errorf(`unknown property value in %#v for key "%s"`, prop, key)
 	}
 }
 
@@ -297,7 +297,7 @@ func getNestedObject(props map[string]upcloud.ManagedDatabaseServiceProperty) (s
 	attributes := make(map[string]schema.Attribute)
 	blocks := make(map[string]schema.Block)
 	for key, prop := range props {
-		s, err := getPFSchema(key, prop)
+		s, err := getSchema(key, prop)
 		if err != nil {
 			return o, err
 		}

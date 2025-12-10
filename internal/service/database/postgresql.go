@@ -140,6 +140,7 @@ func (r *postgresResource) Delete(ctx context.Context, req resource.DeleteReques
 			"Unable to delete managed database",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
 	}
 
 	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)

@@ -103,6 +103,12 @@ func ignorePropChange(v any, plan tftypes.Value, key string, prop upcloud.Manage
 		if err != nil {
 			return nil, err
 		}
+
+		// We already check for null before calling this function, so nil here means unknown value.
+		if p == nil {
+			return v, nil
+		}
+
 		ps, pOk := p.([]any)
 		vs, vOk := v.([]any)
 
@@ -438,8 +444,8 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 	}
 
 	if !state.Powered.Equal(plan.Powered) {
-		// Wait for running or stopped state before updating powered value.
-		_, diags := waitForPoweredState(ctx, client, plan.ID.ValueString(), !plan.Powered.ValueBool())
+		// Wait for non-pending state before updating powered value.
+		diags := waitForNonPendingState(ctx, client, plan.ID.ValueString())
 		respDiagnostics.Append(diags...)
 
 		respDiagnostics.Append(updatePowered(ctx, plan, client)...)
@@ -578,4 +584,32 @@ func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
 		time.Sleep(10 * time.Second)
 	}
 	return errors.New("max retries reached while waiting for service name to propagate")
+}
+
+func waitForNonPendingState(ctx context.Context, svc *service.Service, uuid string) (diags diag.Diagnostics) {
+	for {
+		select {
+		case <-ctx.Done():
+			diags.AddError(
+				"Context cancelled",
+				utils.ErrorDiagnosticDetail(ctx.Err()),
+			)
+			return diags
+		default:
+			db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{
+				UUID: uuid,
+			})
+			if err != nil {
+				diags.AddError(
+					"Unable to get database details",
+					utils.ErrorDiagnosticDetail(err),
+				)
+				return diags
+			}
+			if db.State != upcloud.ManagedDatabaseStatePending {
+				return nil
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
 }

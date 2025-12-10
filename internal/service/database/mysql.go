@@ -115,6 +115,7 @@ func (r *mysqlResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 			"Unable to delete managed database",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
 	}
 
 	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)
