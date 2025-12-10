@@ -74,8 +74,11 @@ func (r *valkeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	_, diags := readDatabase(ctx, &data, r.client, resp.State.RemoveResource)
+	db, diags := readDatabase(ctx, &data, r.client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || db == nil {
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
