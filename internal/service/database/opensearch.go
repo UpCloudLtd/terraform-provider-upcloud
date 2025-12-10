@@ -66,12 +66,33 @@ func (r *opensearchResource) Schema(_ context.Context, _ resource.SchemaRequest,
 	defineCommonAttributesAndBlocks(&resp.Schema, upcloud.ManagedDatabaseServiceTypeOpenSearch)
 }
 
-func updateAccessControlIfNeeded(ctx context.Context, client *service.Service, state, plan opensearchModel) (diags diag.Diagnostics) {
-	if !state.AccessControl.Equal(plan.AccessControl) || !state.ExtendedAccessControl.Equal(plan.ExtendedAccessControl) {
+func readAccessControl(ctx context.Context, client *service.Service, data *opensearchModel) (diags diag.Diagnostics) {
+	acl, err := client.GetManagedDatabaseAccessControl(ctx, &request.GetManagedDatabaseAccessControlRequest{
+		ServiceUUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		diags.AddError(
+			"Unable to read OpenSearch access control settings",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	data.AccessControl = types.BoolPointerValue(acl.ACLsEnabled)
+	data.ExtendedAccessControl = types.BoolPointerValue(acl.ExtendedACLsEnabled)
+	return
+}
+
+func updateAccessControlIfNeeded(ctx context.Context, client *service.Service, state, plan *opensearchModel) (diags diag.Diagnostics) {
+	if (!state.AccessControl.Equal(plan.AccessControl) || !state.ExtendedAccessControl.Equal(plan.ExtendedAccessControl)) && (!plan.AccessControl.IsUnknown() || !plan.ExtendedAccessControl.IsUnknown()) {
 		aclReq := request.ModifyManagedDatabaseAccessControlRequest{
-			ServiceUUID:         plan.ID.ValueString(),
-			ACLsEnabled:         upcloud.BoolPtr(plan.AccessControl.ValueBool()),
-			ExtendedACLsEnabled: upcloud.BoolPtr(plan.ExtendedAccessControl.ValueBool()),
+			ServiceUUID: plan.ID.ValueString(),
+		}
+		if !plan.AccessControl.IsUnknown() {
+			aclReq.ACLsEnabled = plan.AccessControl.ValueBoolPointer()
+		}
+		if !plan.ExtendedAccessControl.IsUnknown() {
+			aclReq.ExtendedACLsEnabled = plan.ExtendedAccessControl.ValueBoolPointer()
 		}
 		_, err := client.ModifyManagedDatabaseAccessControl(ctx, &aclReq)
 		if err != nil {
@@ -82,6 +103,7 @@ func updateAccessControlIfNeeded(ctx context.Context, client *service.Service, s
 			return diags
 		}
 	}
+	diags.Append(readAccessControl(ctx, client, plan)...)
 
 	return diags
 }
@@ -102,7 +124,7 @@ func (r *opensearchResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	resp.Diagnostics.Append(updateAccessControlIfNeeded(ctx, r.client, opensearchModel{}, data)...)
+	resp.Diagnostics.Append(updateAccessControlIfNeeded(ctx, r.client, &opensearchModel{}, &data)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -120,20 +142,7 @@ func (r *opensearchResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	acl, err := r.client.GetManagedDatabaseAccessControl(ctx, &request.GetManagedDatabaseAccessControlRequest{
-		ServiceUUID: data.ID.ValueString(),
-	})
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read OpenSearch access control settings",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	data.AccessControl = types.BoolPointerValue(acl.ACLsEnabled)
-	data.ExtendedAccessControl = types.BoolPointerValue(acl.ExtendedACLsEnabled)
-
+	resp.Diagnostics.Append(readAccessControl(ctx, r.client, &data)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -146,7 +155,7 @@ func (r *opensearchResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	resp.Diagnostics.Append(updateAccessControlIfNeeded(ctx, r.client, state, plan)...)
+	resp.Diagnostics.Append(updateAccessControlIfNeeded(ctx, r.client, &state, &plan)...)
 
 	_, _, d := updateDatabase(ctx, &state.databaseCommonModel, &plan.databaseCommonModel, r.client)
 	resp.Diagnostics.Append(d...)
@@ -171,6 +180,7 @@ func (r *opensearchResource) Delete(ctx context.Context, req resource.DeleteRequ
 			"Unable to delete managed database",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
 	}
 
 	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)
