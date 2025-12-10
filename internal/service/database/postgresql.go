@@ -115,34 +115,9 @@ func (r *postgresResource) Update(ctx context.Context, req resource.UpdateReques
 
 	powered := db.State == upcloud.ManagedDatabaseStateRunning
 	if newVersion != "" {
-		if state.Powered.Equal(plan.Powered) {
-			resp.Diagnostics.Append(updateVersion(ctx, db.UUID, newVersion, powered, r.client)...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-		} else {
-			switch powered {
-			// Power off
-			case false:
-				resp.Diagnostics.Append(updateVersion(ctx, db.UUID, newVersion, powered, r.client)...)
-				if resp.Diagnostics.HasError() {
-					return
-				}
-				resp.Diagnostics.Append(updatePowered(ctx, &plan.databaseCommonModel, r.client)...)
-				if resp.Diagnostics.HasError() {
-					return
-				}
-			// Power on
-			case true:
-				resp.Diagnostics.Append(updatePowered(ctx, &plan.databaseCommonModel, r.client)...)
-				if resp.Diagnostics.HasError() {
-					return
-				}
-				resp.Diagnostics.Append(updateVersion(ctx, db.UUID, newVersion, powered, r.client)...)
-				if resp.Diagnostics.HasError() {
-					return
-				}
-			}
+		resp.Diagnostics.Append(updateVersion(ctx, db.UUID, newVersion, powered, r.client)...)
+		if resp.Diagnostics.HasError() {
+			return
 		}
 	}
 
