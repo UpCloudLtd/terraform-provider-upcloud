@@ -300,7 +300,7 @@ func buildManagedDatabaseRequestFromPlan(ctx context.Context, data *databaseComm
 	}
 
 	if !data.Properties.IsNull() && !data.Properties.IsUnknown() {
-		req.Properties, d = buildManagedDatabasePropertiesRequestFromPlan(ctx, data)
+		req.Properties, d = buildManagedDatabasePropertiesRequestFromPlan(ctx, data, true)
 		respDiagnostics.Append(d...)
 	}
 
@@ -314,13 +314,13 @@ func buildManagedDatabaseRequestFromPlan(ctx context.Context, data *databaseComm
 	return req, respDiagnostics
 }
 
-func buildManagedDatabasePropertiesRequestFromPlan(ctx context.Context, data *databaseCommonModel) (map[upcloud.ManagedDatabasePropertyKey]interface{}, diag.Diagnostics) {
+func buildManagedDatabasePropertiesRequestFromPlan(ctx context.Context, data *databaseCommonModel, isCreate bool) (map[upcloud.ManagedDatabasePropertyKey]interface{}, diag.Diagnostics) {
 	var respDiagnostics diag.Diagnostics
 
 	dbType := upcloud.ManagedDatabaseServiceType(data.Type.ValueString())
 	propsInfo := properties.GetProperties(dbType)
 
-	props, err := properties.PlanToManagedDatabaseProperties(ctx, data.Properties, propsInfo)
+	props, err := properties.PlanToManagedDatabaseProperties(ctx, data.Properties, propsInfo, isCreate)
 	if err != nil {
 		respDiagnostics.AddError(
 			"Unable to build managed database properties from plan",
@@ -409,9 +409,9 @@ func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, clien
 	}
 
 	if !state.Properties.Equal(plan.Properties) && !plan.Properties.IsNull() {
-		props, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, plan)
+		props, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, plan, false)
 		respDiagnostics.Append(d...)
-		stateProps, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, state)
+		stateProps, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, state, false)
 		respDiagnostics.Append(d...)
 
 		// Check if version property has changed
