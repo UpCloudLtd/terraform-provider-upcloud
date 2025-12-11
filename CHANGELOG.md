@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_manual_certificate_bundle: `intermediates` is no longer a computed field
+
 ## [5.33.1] - 2026-01-12
 
 ### Fixed
