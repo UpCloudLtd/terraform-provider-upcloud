@@ -49,7 +49,8 @@ func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props
 	}
 
 	for k, v := range propsMap {
-		prop, ok := props[k]
+		propsKey := GetKey(props, k)
+		prop, ok := props[propsKey]
 		if !ok {
 			continue
 		}
@@ -67,7 +68,7 @@ func PlanToManagedDatabaseProperties(ctx context.Context, list types.List, props
 			return nil, err
 		}
 
-		res[upcloud.ManagedDatabasePropertyKey(k)] = nativeValue
+		res[upcloud.ManagedDatabasePropertyKey(propsKey)] = nativeValue
 	}
 
 	return res, nil
@@ -145,14 +146,15 @@ func ValueToNative(v tftypes.Value, prop upcloud.ManagedDatabaseServiceProperty)
 				continue
 			}
 
-			res[k], err = ValueToNative(m[k], prop.Properties[k])
+			childKey := GetKey(prop.Properties, k)
+			res[childKey], err = ValueToNative(m[k], prop.Properties[childKey])
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf(`invalid child property in "%#v": %w`, prop, err)
 			}
 		}
 		return res, nil
 	default:
-		return nil, fmt.Errorf(`unknown property value type "%s" for "%s"`, prop.Type, prop.Title)
+		return nil, fmt.Errorf(`unknown property value type in %#v`, prop)
 	}
 }
 
@@ -213,7 +215,7 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 
 		m, ok := v.(map[string]any)
 		if !ok {
-			return types.ObjectNull(attrTypes), nil
+			return objectValueAsList(types.ObjectNull(attrTypes), prop)
 		}
 
 		o := make(map[string]attr.Value)
@@ -232,9 +234,15 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 			}
 		}
 
-		return types.ObjectValue(attrTypes, o)
+		oVal, d := types.ObjectValue(attrTypes, o)
+		diags.Append(d...)
+
+		lVal, d := objectValueAsList(oVal, prop)
+		diags.Append(d...)
+
+		return lVal, diags
 	default:
-		diags.AddError("Unknown type", fmt.Sprintf(`unknown property value type "%s" for "%s"`, prop.Type, prop.Title))
+		diags.AddError("Unknown type", fmt.Sprintf(`unknown property value type in %#v`, prop))
 		return nil, diags
 	}
 }
@@ -257,12 +265,7 @@ func ValueToAttrValue(ctx context.Context, value tftypes.Value, prop upcloud.Man
 	return attrValue, diags
 }
 
-func ObjectValueAsList(v attr.Value, prop upcloud.ManagedDatabaseServiceProperty) (attr.Value, diag.Diagnostics) {
-	// Pass through non object props
-	if GetType(prop) != propTypeObject {
-		return v, nil
-	}
-
+func objectValueAsList(v attr.Value, prop upcloud.ManagedDatabaseServiceProperty) (attr.Value, diag.Diagnostics) {
 	// Use null list for null objects
 	if v.IsNull() {
 		return types.ListNull(PropToAttributeType(prop)), nil
@@ -279,7 +282,7 @@ func PropsToAttributeTypes(props map[string]upcloud.ManagedDatabaseServiceProper
 		if GetType(p) == propTypeObject {
 			t = types.ListType{ElemType: t}
 		}
-		attrTypes[k] = t
+		attrTypes[SchemaKey(k)] = t
 	}
 	return attrTypes
 }
@@ -297,10 +300,7 @@ func PropToAttributeType(prop upcloud.ManagedDatabaseServiceProperty) attr.Type 
 	case propTypeArray:
 		return types.ListType{ElemType: types.StringType}
 	case propTypeObject:
-		attrTypes := make(map[string]attr.Type)
-		for k, p := range prop.Properties {
-			attrTypes[k] = PropToAttributeType(p)
-		}
+		attrTypes := PropsToAttributeTypes(prop.Properties)
 		return types.ObjectType{AttrTypes: attrTypes}
 	default:
 		return nil

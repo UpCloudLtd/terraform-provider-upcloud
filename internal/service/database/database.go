@@ -136,7 +136,7 @@ func ignorePropChange(v any, plan tftypes.Value, key string, prop upcloud.Manage
 }
 
 func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase, isImport bool) diag.Diagnostics {
-	var diags diag.Diagnostics
+	var diags, d diag.Diagnostics
 
 	propsInfo := properties.GetProperties(db.Type)
 	propsData := make(map[string]attr.Value)
@@ -179,10 +179,7 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 			return diags
 		}
 
-		v, d := properties.NativeToValue(ctx, processedValue, prop)
-		diags.Append(d...)
-
-		propsData[properties.SchemaKey(key)], d = properties.ObjectValueAsList(v, prop)
+		propsData[properties.SchemaKey(key)], d = properties.NativeToValue(ctx, processedValue, prop)
 		diags.Append(d...)
 	}
 
@@ -207,10 +204,7 @@ func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *u
 		}
 
 		if _, ok := propsData[schemaKey]; !ok {
-			nullValue, d := properties.NativeToValue(ctx, nil, propsInfo[key])
-			diags.Append(d...)
-
-			propsData[schemaKey], d = properties.ObjectValueAsList(nullValue, propsInfo[key])
+			propsData[schemaKey], d = properties.NativeToValue(ctx, nil, propsInfo[key])
 			diags.Append(d...)
 		}
 	}
