@@ -2,7 +2,6 @@ package upcloud
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -194,13 +193,13 @@ func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
 			{
 				Config:          testdata,
 				ConfigVariables: variables(1, false, true),
-				ExpectError:     regexp.MustCompile("Service state cannot be updated, termination protection is enabled."),
+				ExpectError:     ignoreWhitespaceDiff("Service state cannot be updated, termination protection is enabled."),
 			},
 			// Deleting the service should fail as termination protection is enabled
 			{
 				Config:          testdata,
 				ConfigVariables: variables(0, true, true),
-				ExpectError:     regexp.MustCompile("Service cannot be deleted, termination protection is enabled."),
+				ExpectError:     ignoreWhitespaceDiff("Service cannot be deleted, termination protection is enabled."),
 			},
 			// Disable termination protection and power off the service
 			{
