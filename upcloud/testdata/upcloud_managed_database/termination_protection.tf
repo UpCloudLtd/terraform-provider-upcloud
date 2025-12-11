@@ -33,10 +33,10 @@ variable "powered" {
 resource "upcloud_managed_database_mysql" "this" {
   count = var.db_count
 
-  name                   = "${var.url_prefix}pg-${count.index}"
+  name                   = "${var.url_prefix}db-${count.index}"
   plan                   = "1x1xCPU-2GB-25GB"
   powered                = var.powered
   termination_protection = var.termination_protection
-  title                  = "${var.prefix}pg-${count.index}"
+  title                  = "${var.prefix}db-${count.index}"
   zone                   = var.zone
 }
