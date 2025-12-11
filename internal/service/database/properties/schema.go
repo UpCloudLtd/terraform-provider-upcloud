@@ -76,6 +76,7 @@ func GetType(prop upcloud.ManagedDatabaseServiceProperty) string {
 	return ""
 }
 
+// GetKey converts key used in schema to key used in the API and properties info. E.g., "pressure_enabled" -> "pressure.enabled"
 func GetKey(props map[string]upcloud.ManagedDatabaseServiceProperty, field string) string {
 	if _, ok := props[field]; ok {
 		return field
@@ -89,6 +90,7 @@ func GetKey(props map[string]upcloud.ManagedDatabaseServiceProperty, field strin
 	return ""
 }
 
+// SchemaKey converts key used in API to format supported in TF state. E.g., "pressure.enabled" -> "pressure_enabled"
 func SchemaKey(key string) string {
 	return strings.ReplaceAll(key, ".", "_")
 }

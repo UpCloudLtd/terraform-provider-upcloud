@@ -67,11 +67,22 @@ func TestNativeToValue(t *testing.T) {
 			name:      "object",
 			jsonInput: []byte(`{"string": "abc", "integer": 123, "boolean": false}`),
 			prop:      objProp,
-			expected: types.ObjectValueMust(PropsToAttributeTypes(objProp.Properties), map[string]attr.Value{
-				"string":  types.StringValue("abc"),
-				"integer": types.Int64Value(123),
-				"boolean": types.BoolValue(false),
-			}),
+			expected: types.ListValueMust(
+				PropToAttributeType(objProp),
+				[]attr.Value{types.ObjectValueMust(PropsToAttributeTypes(objProp.Properties), map[string]attr.Value{
+					"string":  types.StringValue("abc"),
+					"integer": types.Int64Value(123),
+					"boolean": types.BoolValue(false),
+				})},
+			),
+		},
+		{
+			name:      "object (null value)",
+			jsonInput: []byte(`null`),
+			prop:      objProp,
+			expected: types.ListNull(
+				PropToAttributeType(objProp),
+			),
 		},
 	}
 
@@ -114,6 +125,19 @@ func TestPropsToAttributeTypes(t *testing.T) {
 				},
 			},
 		},
+		"prop_nested_object": {
+			Type: "object",
+			Properties: map[string]upcloud.ManagedDatabaseServiceProperty{
+				"nested.object": {
+					Type: "object",
+					Properties: map[string]upcloud.ManagedDatabaseServiceProperty{
+						"nested.string": {
+							Type: "string",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	expected := map[string]attr.Type{
@@ -125,6 +149,15 @@ func TestPropsToAttributeTypes(t *testing.T) {
 		"prop_object": types.ListType{ElemType: types.ObjectType{
 			AttrTypes: map[string]attr.Type{
 				"nested_string": types.StringType,
+			},
+		}},
+		"prop_nested_object": types.ListType{ElemType: types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"nested_object": types.ListType{ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"nested_string": types.StringType,
+					},
+				}},
 			},
 		}},
 	}
