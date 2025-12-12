@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -55,7 +54,23 @@ type manualCertificateBundleModel struct {
 }
 
 func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+	resp.Schema = manualCertificateBundleSchemaV1()
+}
+
+func manualCertificateBundleSchemaV1() schema.Schema {
+	s := manualCertificateBundleSchemaV0()
+	s.Version = 1
+	intermediates, ok := s.Attributes["intermediates"].(schema.StringAttribute)
+	if ok {
+		intermediates.Computed = false
+		s.Attributes["intermediates"] = intermediates
+	}
+
+	return s
+}
+
+func manualCertificateBundleSchemaV0() schema.Schema {
+	return schema.Schema{
 		MarkdownDescription: "This resource represents manual certificate bundle",
 		Attributes: map[string]schema.Attribute{
 			"certificate": schema.StringAttribute{
@@ -99,6 +114,30 @@ func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.S
 				Sensitive:           true,
 			},
 		},
+		Version: 0,
+	}
+}
+
+func (r *manualCertificateBundleResource) UpgradeState(_ context.Context) map[int64]resource.StateUpgrader {
+	schemaV0 := manualCertificateBundleSchemaV0()
+	return map[int64]resource.StateUpgrader{
+		// State upgrade implementation from 0 to 1
+		0: {
+			PriorSchema: &schemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var priorStateData manualCertificateBundleModel
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				if priorStateData.Intermediates.String() == "" {
+					priorStateData.Intermediates = types.StringNull()
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, priorStateData)...)
+			},
+		},
 	}
 }
 
@@ -106,7 +145,11 @@ func setManualCertificateBundleValues(_ context.Context, data *manualCertificate
 	var respDiagnostics diag.Diagnostics
 
 	data.Certificate = types.StringValue(bundle.Certificate)
-	data.Intermediates = types.StringValue(bundle.Intermediates)
+	if bundle.Intermediates == "" {
+		data.Intermediates = types.StringNull()
+	} else {
+		data.Intermediates = types.StringValue(bundle.Intermediates)
+	}
 	data.Name = types.StringValue(bundle.Name)
 	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
 	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
