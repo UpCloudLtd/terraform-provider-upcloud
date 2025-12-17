@@ -5,6 +5,13 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- upcloud_file_storage_share: new resource for managing file storage shares
+- upcloud_file_storage_share_acl: new resource for managing file storage share access control lists
+
+### Removed
+- upcloud_file_storage: `share` block removed in favor of `upcloud_file_storage_share` and `upcloud_file_storage_share_acl` resources
+
 ## [5.32.0] - 2025-11-25
 
 ### Added
