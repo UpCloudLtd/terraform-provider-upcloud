@@ -184,6 +184,8 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		storage.NewStorageTemplateResource,
 		storage.NewStorageBackupResource,
 		filestorage.NewFileStorageResource,
+		filestorage.NewFileStorageShareResource,
+		filestorage.NewFileStorageShareACLResource,
 	}
 }
 

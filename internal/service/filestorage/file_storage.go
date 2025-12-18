@@ -60,7 +60,6 @@ type fileStorageModel struct {
 	ConfiguredStatus types.String `tfsdk:"configured_status"`
 	Networks         types.Set    `tfsdk:"network"`
 	Labels           types.Map    `tfsdk:"labels"`
-	Shares           types.Set    `tfsdk:"share"`
 }
 
 type networkAttachmentModel struct {
@@ -75,28 +74,6 @@ var networkAttrTypes = map[string]attr.Type{
 	"name":       types.StringType,
 	"family":     types.StringType,
 	"ip_address": types.StringType,
-}
-
-type shareACLModel struct {
-	Target     types.String `tfsdk:"target"`
-	Permission types.String `tfsdk:"permission"`
-}
-
-type shareModel struct {
-	Name types.String `tfsdk:"name"`
-	Path types.String `tfsdk:"path"`
-	ACL  types.Set    `tfsdk:"acl"`
-}
-
-var shareACLAttrTypes = map[string]attr.Type{
-	"target":     types.StringType,
-	"permission": types.StringType,
-}
-
-var shareAttrTypes = map[string]attr.Type{
-	"name": types.StringType,
-	"path": types.StringType,
-	"acl":  types.SetType{ElemType: types.ObjectType{AttrTypes: shareACLAttrTypes}},
 }
 
 func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -180,49 +157,6 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 					setvalidator.SizeAtMost(1),
 				},
 			},
-			"share": schema.SetNestedBlock{
-				Description: "List of shares exported by this file storage.",
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						"name": schema.StringAttribute{
-							Description: "Unique name of the share (1–64 chars).",
-							Required:    true,
-							Validators: []validator.String{
-								stringvalidator.LengthBetween(1, 64),
-								stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name string that consists only of letters (a–z, A–Z), digits (0–9), underscores (_), or hyphens (-) — with at least one character, and nothing else allowed (no spaces, symbols, or accents): %s", resourceNameRegexp)),
-							},
-						},
-						"path": schema.StringAttribute{
-							Description: "Absolute path exported by the share (e.g. `/public`).",
-							Required:    true,
-						},
-					},
-					Blocks: map[string]schema.Block{
-						"acl": schema.SetNestedBlock{
-							Description: "Access control entries (1–50).",
-							NestedObject: schema.NestedBlockObject{
-								Attributes: map[string]schema.Attribute{
-									"target": schema.StringAttribute{
-										Description: "Target IP/CIDR or '*'.",
-										Required:    true,
-									},
-									"permission": schema.StringAttribute{
-										Description: "Access level: 'ro' or 'rw'.",
-										Required:    true,
-										Validators: []validator.String{
-											stringvalidator.OneOf("ro", "rw"),
-										},
-									},
-								},
-							},
-							Validators: []validator.Set{
-								setvalidator.SizeAtLeast(1),
-								setvalidator.SizeAtMost(50),
-							},
-						},
-					},
-				},
-			},
 		},
 	}
 }
@@ -253,36 +187,6 @@ func setFileStorageModel(ctx context.Context, data *fileStorageModel, fileStorag
 			}
 		}
 		data.Networks, diags = types.SetValue(types.ObjectType{AttrTypes: networkAttrTypes}, networkObjects)
-		if diags.HasError() {
-			return diags
-		}
-	}
-
-	if len(fileStorage.Shares) > 0 {
-		shareObjects := make([]attr.Value, len(fileStorage.Shares))
-		for i, sh := range fileStorage.Shares {
-			aclObjects := make([]attr.Value, len(sh.ACL))
-			for j, a := range sh.ACL {
-				aclObjects[j], diags = types.ObjectValue(shareACLAttrTypes, map[string]attr.Value{
-					"target":     types.StringValue(a.Target),
-					"permission": types.StringValue(string(a.Permission)),
-				})
-				if diags.HasError() {
-					return diags
-				}
-			}
-			aclSet, _ := types.SetValue(types.ObjectType{AttrTypes: shareACLAttrTypes}, aclObjects)
-
-			shareObjects[i], diags = types.ObjectValue(shareAttrTypes, map[string]attr.Value{
-				"name": types.StringValue(sh.Name),
-				"path": types.StringValue(sh.Path),
-				"acl":  aclSet,
-			})
-			if diags.HasError() {
-				return diags
-			}
-		}
-		data.Shares, diags = types.SetValue(types.ObjectType{AttrTypes: shareAttrTypes}, shareObjects)
 		if diags.HasError() {
 			return diags
 		}
@@ -342,39 +246,24 @@ func (r *fileStorageResource) Create(ctx context.Context, req resource.CreateReq
 		}
 	}
 
-	if !data.Shares.IsNull() && !data.Shares.IsUnknown() {
-		var shareList []shareModel
-		resp.Diagnostics.Append(data.Shares.ElementsAs(ctx, &shareList, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		shares := make([]upcloud.FileStorageShare, len(shareList))
-		for i, s := range shareList {
-			var aclEntries []shareACLModel
-			resp.Diagnostics.Append(s.ACL.ElementsAs(ctx, &aclEntries, false)...)
-
-			acls := make([]upcloud.FileStorageACL, len(aclEntries))
-			for j, a := range aclEntries {
-				acls[j] = upcloud.FileStorageACL{
-					Target:     a.Target.ValueString(),
-					Permission: upcloud.FileStorageACLPermission(a.Permission.ValueString()),
-				}
-			}
-
-			shares[i] = upcloud.FileStorageShare{
-				Name: s.Name.ValueString(),
-				Path: s.Path.ValueString(),
-				ACL:  acls,
-			}
-		}
-		fileStorageRequest.Shares = shares
-	}
-
 	fileStorage, err := r.client.CreateFileStorage(ctx, &fileStorageRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create file storage", err.Error())
 		return
+	}
+
+	waitReq := &request.WaitForFileStorageOperationalStateRequest{
+		DesiredState: upcloud.FileStorageOperationalStateRunning,
+		UUID:         fileStorage.UUID,
+	}
+
+	if data.ConfiguredStatus.ValueString() == string(upcloud.FileStorageConfiguredStatusStopped) {
+		waitReq.DesiredState = "stopped"
+	}
+
+	fileStorage, err = r.client.WaitForFileStorageOperationalState(ctx, waitReq)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error while waiting for File Storage to be in %s state", waitReq.DesiredState), err.Error())
 	}
 
 	resp.Diagnostics.Append(setFileStorageModel(ctx, &data, fileStorage)...)
@@ -482,41 +371,24 @@ func (r *fileStorageResource) Update(ctx context.Context, req resource.UpdateReq
 		}
 	}
 
-	if !plan.Shares.IsNull() && !plan.Shares.IsUnknown() {
-		var shareList []shareModel
-		resp.Diagnostics.Append(plan.Shares.ElementsAs(ctx, &shareList, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		shares := make([]upcloud.FileStorageShare, len(shareList))
-		for i, s := range shareList {
-			var aclEntries []shareACLModel
-			resp.Diagnostics.Append(s.ACL.ElementsAs(ctx, &aclEntries, false)...)
-
-			acls := make([]upcloud.FileStorageACL, len(aclEntries))
-			for j, a := range aclEntries {
-				acls[j] = upcloud.FileStorageACL{
-					Target:     a.Target.ValueString(),
-					Permission: upcloud.FileStorageACLPermission(a.Permission.ValueString()),
-				}
-			}
-
-			shares[i] = upcloud.FileStorageShare{
-				Name: s.Name.ValueString(),
-				Path: s.Path.ValueString(),
-				ACL:  acls,
-			}
-		}
-		patch.Shares = &shares
-	} else if plan.Shares.IsNull() && !state.Shares.IsNull() {
-		patch.Shares = &[]upcloud.FileStorageShare{} // clear all shares
-	}
-
 	fileStorage, err := r.client.ModifyFileStorage(ctx, patch)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update file storage", err.Error())
 		return
+	}
+
+	waitReq := &request.WaitForFileStorageOperationalStateRequest{
+		DesiredState: upcloud.FileStorageOperationalStateRunning,
+		UUID:         fileStorage.UUID,
+	}
+
+	if plan.ConfiguredStatus.ValueString() == string(upcloud.FileStorageConfiguredStatusStopped) {
+		waitReq.DesiredState = "stopped"
+	}
+
+	fileStorage, err = r.client.WaitForFileStorageOperationalState(ctx, waitReq)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error while waiting for File Storage to be in %s state", waitReq.DesiredState), err.Error())
 	}
 
 	resp.Diagnostics.Append(setFileStorageModel(ctx, &plan, fileStorage)...)

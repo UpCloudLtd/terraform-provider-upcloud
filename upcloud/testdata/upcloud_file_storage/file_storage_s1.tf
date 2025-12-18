@@ -1,0 +1,66 @@
+variable "prefix" {
+  default = "tf-acc-test-file-storage-"
+  type    = string
+}
+
+variable "suffix" {
+  default = "suffix"
+  type    = string
+}
+
+variable "cidr" {
+  default = "172.16.34.0/24"
+  type    = string
+}
+
+variable "acl-1-ip" {
+  default = "172.16.34.45"
+  type    = string
+}
+
+variable "network-ip-addrs" {
+  default = "172.16.34.50"
+  type    = string
+}
+
+variable "zone" {
+  default = "fi-hel2"
+  type    = string
+}
+
+resource "upcloud_network" "this" {
+  name = "${var.prefix}${var.suffix}"
+  zone = var.zone
+
+  ip_network {
+    address = var.cidr
+    dhcp    = true
+    family  = "IPv4"
+  }
+}
+
+resource "upcloud_file_storage" "this" {
+  name              = "${var.prefix}${var.suffix}-s1"
+  size              = 250
+  zone              = var.zone
+  configured_status = "stopped"
+
+  labels = {
+    environment = "staging"
+    customer    = "example-customer"
+  }
+}
+
+resource "upcloud_file_storage_share" "this" {
+  file_storage = upcloud_file_storage.this.id
+  name         = "${var.prefix}${var.suffix}-s1"
+  path         = "/project"
+}
+
+resource "upcloud_file_storage_share_acl" "this" {
+  file_storage = upcloud_file_storage.this.id
+  share_name   = upcloud_file_storage_share.this.name
+  name         = "${var.prefix}${var.suffix}"
+  target       = var.acl-1-ip
+  permission   = "rw"
+}

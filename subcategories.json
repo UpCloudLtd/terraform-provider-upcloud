@@ -57,6 +57,8 @@
     "kubernetes_cluster.md": "Kubernetes",
     "kubernetes_node_group.md": "Kubernetes",
     "tag.md": "Cloud",
-    "file_storage.md": "File Storage"
+    "file_storage.md": "File Storage",
+    "file_storage_share.md": "File Storage",
+    "file_storage_share_acl.md": "File Storage"
   }
 }
