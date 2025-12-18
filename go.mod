@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.1
-	github.com/UpCloudLtd/upcloud-go-api/v8 v8.31.2-0.20251212082815-eabb5a01199f
+	github.com/UpCloudLtd/upcloud-go-api/v8 v8.32.0
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-uuid v1.0.3
