@@ -218,3 +218,52 @@ func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
 		},
 	})
 }
+
+func TestAccUpcloudManagedDatabase_import_minimalProperties(t *testing.T) {
+	configS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s1.tf")
+	configS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s2.tf")
+	configS3 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s3.tf")
+	configS4 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s4.tf")
+
+	resourceName := "upcloud_managed_database_postgresql.props"
+	prop := func(name string) string {
+		return fmt.Sprintf("properties.0.%s", name)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: configS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "properties.0.version", "17"),
+					resource.TestCheckResourceAttr(resourceName, "properties.0.service_log", "false"),
+				),
+			},
+			{
+				Config:                  configS2,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"},
+			},
+			{
+				Config: configS3,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "properties.0.version", "17"),
+					resource.TestCheckResourceAttr(resourceName, "properties.0.service_log", "false"),
+					resource.TestCheckResourceAttr(resourceName, "properties.0.service_log", "false"),
+					resource.TestCheckResourceAttr(resourceName, prop("pglookout.0.max_failover_replication_time_lag"), "60"),
+				),
+			},
+			{
+				Config:                  configS4,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"},
+			},
+		},
+	})
+}
