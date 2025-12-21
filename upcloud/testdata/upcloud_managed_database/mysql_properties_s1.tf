@@ -33,7 +33,7 @@ resource "upcloud_managed_database_mysql" "mysql_properties" {
     innodb_rollback_on_timeout          = true
     interactive_timeout                 = 30
     internal_tmp_mem_storage_engine     = "MEMORY"
-    ip_filter                           = ["127.0.0.1", "127.0.0.2"]
+    ip_filter                           = ["127.0.0.1/32", "127.0.0.2/32"]
     long_query_time                     = 1
     max_allowed_packet                  = 102400
     max_heap_table_size                 = 1048576

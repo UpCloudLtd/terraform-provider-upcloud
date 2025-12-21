@@ -1,14 +1,27 @@
 package properties
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"regexp"
 	"strings"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func ensureDot(text string) string {
@@ -63,6 +76,7 @@ func GetType(prop upcloud.ManagedDatabaseServiceProperty) string {
 	return ""
 }
 
+// GetKey converts key used in schema to key used in the API and properties info. E.g., "pressure_enabled" -> "pressure.enabled"
 func GetKey(props map[string]upcloud.ManagedDatabaseServiceProperty, field string) string {
 	if _, ok := props[field]; ok {
 		return field
@@ -76,12 +90,9 @@ func GetKey(props map[string]upcloud.ManagedDatabaseServiceProperty, field strin
 	return ""
 }
 
+// SchemaKey converts key used in API to format supported in TF state. E.g., "pressure.enabled" -> "pressure_enabled"
 func SchemaKey(key string) string {
 	return strings.ReplaceAll(key, ".", "_")
-}
-
-func diffSuppressCreateOnlyProperty(_, _, _ string, d *schema.ResourceData) bool {
-	return d.Id() != ""
 }
 
 func booleanDefault(val interface{}) (bool, bool) {
@@ -110,127 +121,200 @@ func stringSlice(val interface{}) ([]string, bool) {
 	return nil, false
 }
 
-func getKeyDiffSuppressFunc(key string) schema.SchemaDiffSuppressFunc {
-	switch key {
-	case "ip_filter":
-		return func(_, oldValue, newValue string, _ *schema.ResourceData) bool {
-			return strings.TrimSuffix(oldValue, "/32") == strings.TrimSuffix(newValue, "/32")
-		}
-	default:
-		return nil
-	}
-}
-
 func isSensitive(key string) bool {
 	return strings.Contains(key, "password")
 }
 
-func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (*schema.Schema, error) {
-	s := schema.Schema{
-		Description: getDescription(key, prop),
-		Optional:    true,
-		Computed:    true,
-		Sensitive:   isSensitive(key),
-	}
-
-	if prop.CreateOnly {
-		s.ForceNew = true
-		s.DiffSuppressFunc = diffSuppressCreateOnlyProperty
-	}
-
-	validations := []schema.SchemaValidateFunc{} //nolint:staticcheck // Most of the validators still use the deprecated function signature.
-
+func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, error) {
 	switch GetType(prop) {
-	case "string":
-		s.Type = schema.TypeString
-		var hasEnum, patternMatchesEmpty bool
+	case propTypeString:
+		s := schema.StringAttribute{
+			Description:   getDescription(key, prop),
+			Optional:      true,
+			Computed:      true,
+			Sensitive:     isSensitive(key),
+			PlanModifiers: []planmodifier.String{},
+			Validators:    []validator.String{},
+		}
+
+		if prop.CreateOnly {
+			replaceIfDescription := "Do not require replace on import."
+			s.PlanModifiers = append(
+				s.PlanModifiers,
+				stringplanmodifier.RequiresReplaceIf(
+					func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+						if req.ConfigValue.IsNull() {
+							resp.RequiresReplace = false
+							return
+						}
+						resp.RequiresReplace = true
+					},
+					replaceIfDescription,
+					replaceIfDescription,
+				),
+				stringplanmodifier.UseStateForUnknown(),
+			)
+		}
 
 		if prop.MaxLength != 0 {
-			validations = append(validations, validation.StringLenBetween(prop.MinLength, prop.MaxLength))
+			s.Validators = append(s.Validators, stringvalidator.LengthBetween(prop.MinLength, prop.MaxLength))
 		}
 		if enum, hasEnum := stringSlice(prop.Enum); hasEnum {
-			validations = append(validations, validation.StringInSlice(enum, false))
+			s.Validators = append(s.Validators, stringvalidator.OneOf(enum...))
 		}
 		if prop.Pattern != "" {
 			if re, err := regexp.Compile(prop.Pattern); err == nil {
-				patternMatchesEmpty = re.Match([]byte{})
-				validations = append(validations, validation.StringMatch(re, fmt.Sprintf(`Must match "%s" pattern.`, prop.Pattern)))
+				s.Validators = append(s.Validators, stringvalidator.RegexMatches(re, fmt.Sprintf(`Must match "%s" pattern.`, prop.Pattern)))
 			}
 		}
 
-		// If empty string is valid value, `Computed = true` will block user from clearing the property value
-		if prop.MinLength == 0 && !hasEnum && patternMatchesEmpty {
-			s.Computed = false
+		return s, nil
+	case propTypeInteger:
+		s := schema.Int64Attribute{
+			Description:   getDescription(key, prop),
+			Optional:      true,
+			Computed:      true,
+			Sensitive:     isSensitive(key),
+			PlanModifiers: []planmodifier.Int64{},
+			Validators:    []validator.Int64{},
 		}
 
-	case "integer":
-		s.Type = schema.TypeInt
+		if prop.CreateOnly {
+			s.PlanModifiers = append(
+				s.PlanModifiers,
+				int64planmodifier.RequiresReplace(),
+				int64planmodifier.UseStateForUnknown(),
+			)
+		}
 
 		if prop.Minimum != nil {
-			validations = append(validations, validation.IntAtLeast(int(*prop.Minimum)))
+			s.Validators = append(s.Validators, int64validator.AtLeast(int64(*prop.Minimum)))
 		}
 		if prop.Maximum != nil {
 			if *prop.Maximum < float64(math.MaxInt) {
-				validations = append(validations, validation.IntAtMost(int(*prop.Maximum)))
+				s.Validators = append(s.Validators, int64validator.AtMost(int64(*prop.Maximum)))
 			}
 		}
-	case "number":
-		s.Type = schema.TypeFloat
+
+		return s, nil
+	case propTypeNumber:
+		s := schema.Float64Attribute{
+			Description:   getDescription(key, prop),
+			Optional:      true,
+			Computed:      true,
+			Sensitive:     isSensitive(key),
+			PlanModifiers: []planmodifier.Float64{},
+			Validators:    []validator.Float64{},
+		}
+
+		if prop.CreateOnly {
+			s.PlanModifiers = append(
+				s.PlanModifiers,
+				float64planmodifier.RequiresReplace(),
+				float64planmodifier.UseStateForUnknown(),
+			)
+		}
 
 		if prop.Minimum != nil {
-			validations = append(validations, validation.FloatAtLeast(*prop.Minimum))
+			s.Validators = append(s.Validators, float64validator.AtLeast(*prop.Minimum))
 		}
 		if prop.Maximum != nil {
-			validations = append(validations, validation.FloatAtMost(*prop.Maximum))
+			s.Validators = append(s.Validators, float64validator.AtMost(*prop.Maximum))
 		}
-	case "boolean":
-		s.Type = schema.TypeBool
+
+		return s, nil
+	case propTypeBoolean:
+		s := schema.BoolAttribute{
+			Description:   getDescription(key, prop),
+			Optional:      true,
+			Computed:      true,
+			Sensitive:     isSensitive(key),
+			PlanModifiers: []planmodifier.Bool{},
+		}
+
+		if prop.CreateOnly {
+			s.PlanModifiers = append(
+				s.PlanModifiers,
+				boolplanmodifier.RequiresReplace(),
+				boolplanmodifier.UseStateForUnknown(),
+			)
+		}
 
 		if boolDefault, ok := booleanDefault(prop.Default); ok {
-			s.Computed = false
-			s.Default = boolDefault
+			s.Default = booldefault.StaticBool(boolDefault)
 		}
-	case "array":
-		s.Type = schema.TypeList
-		s.Elem = &schema.Schema{
-			Type: schema.TypeString,
+
+		return s, nil
+	case propTypeArray:
+		s := schema.ListAttribute{
+			Description:   getDescription(key, prop),
+			ElementType:   types.StringType,
+			Optional:      true,
+			Computed:      true,
+			Sensitive:     isSensitive(key),
+			PlanModifiers: []planmodifier.List{},
 		}
-	case "object":
-		nested, err := getSchemaMap(prop.Properties)
+
+		if prop.CreateOnly {
+			s.PlanModifiers = append(
+				s.PlanModifiers,
+				listplanmodifier.RequiresReplace(),
+				listplanmodifier.UseStateForUnknown(),
+			)
+		}
+
+		return s, nil
+	case propTypeObject:
+		nested, err := getNestedObject(prop.Properties)
 		if err != nil {
 			return nil, err
 		}
 
-		s.Type = schema.TypeList
-		s.MaxItems = 1
-		s.Elem = &schema.Resource{Schema: nested}
+		s := schema.ListNestedBlock{
+			Description:   getDescription(key, prop),
+			NestedObject:  nested,
+			PlanModifiers: []planmodifier.List{},
+			Validators: []validator.List{
+				listvalidator.SizeAtMost(1),
+			},
+		}
+
+		if prop.CreateOnly {
+			s.PlanModifiers = append(
+				s.PlanModifiers,
+				listplanmodifier.RequiresReplace(),
+				listplanmodifier.UseStateForUnknown(),
+			)
+		}
+
+		return s, nil
 	default:
-		return nil, fmt.Errorf(`unknown property value type "%s"`, prop.Type)
+		return nil, fmt.Errorf(`unknown property value in %#v for key "%s"`, prop, key)
 	}
-
-	if f := getKeyDiffSuppressFunc(key); f != nil {
-		s.DiffSuppressFunc = f
-	}
-
-	if len(validations) > 0 {
-		s.ValidateDiagFunc = validation.ToDiagFunc(
-			validation.All(validations...),
-		)
-	}
-
-	return &s, nil
 }
 
-func getSchemaMap(props map[string]upcloud.ManagedDatabaseServiceProperty) (map[string]*schema.Schema, error) {
-	sMap := make(map[string]*schema.Schema)
+func getNestedObject(props map[string]upcloud.ManagedDatabaseServiceProperty) (schema.NestedBlockObject, error) {
+	o := schema.NestedBlockObject{}
+
+	attributes := make(map[string]schema.Attribute)
+	blocks := make(map[string]schema.Block)
 	for key, prop := range props {
 		s, err := getSchema(key, prop)
 		if err != nil {
-			return nil, err
+			return o, err
 		}
-		sMap[SchemaKey(key)] = s
+
+		if block, ok := s.(schema.Block); ok {
+			blocks[SchemaKey(key)] = block
+		}
+		if attribute, ok := s.(schema.Attribute); ok {
+			attributes[SchemaKey(key)] = attribute
+		}
 	}
-	return sMap, nil
+
+	o.Attributes = attributes
+	o.Blocks = blocks
+	return o, nil
 }
 
 func panicMessage(dbType upcloud.ManagedDatabaseServiceType, step string, err error) string {
@@ -239,12 +323,19 @@ func panicMessage(dbType upcloud.ManagedDatabaseServiceType, step string, err er
 Error: %s`, dbType, step, err.Error())
 }
 
-func GetSchemaMap(dbType upcloud.ManagedDatabaseServiceType) map[string]*schema.Schema {
-	p := GetProperties(dbType)
+func GetBlock(dbType upcloud.ManagedDatabaseServiceType) schema.Block {
+	props := GetProperties(dbType)
 
-	s, err := getSchemaMap(p)
+	nested, err := getNestedObject(props)
 	if err != nil {
-		panic(panicMessage(dbType, "schema", err))
+		panic(panicMessage(dbType, "block", err))
 	}
-	return s
+	block := schema.ListNestedBlock{
+		MarkdownDescription: "Database engine properties.",
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+		NestedObject: nested,
+	}
+	return block
 }

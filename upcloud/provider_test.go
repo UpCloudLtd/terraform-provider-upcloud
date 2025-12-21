@@ -3,6 +3,7 @@ package upcloud
 import (
 	"context"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
@@ -45,4 +46,10 @@ func testAccPreCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func ignoreWhitespaceDiff(str string) *regexp.Regexp {
+	ws := regexp.MustCompile(`\s+`)
+	re := ws.ReplaceAllString(str, `\s+`)
+	return regexp.MustCompile(re)
 }
