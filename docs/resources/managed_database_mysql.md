@@ -162,6 +162,7 @@ Optional Attributes:
 - `method` (String) The migration method to be used (currently supported only by Redis, Dragonfly, MySQL and PostgreSQL service types).
 - `password` (String, Sensitive) Password for authentication with the server where to migrate data from.
 - `port` (Number) Port number of the server where to migrate data from.
+- `reestablish_replication` (Boolean) Skip dump-restore part and start replication.
 - `ssl` (Boolean) The server where to migrate data from is secured with SSL.
 - `username` (String) User name for authentication with the server where to migrate data from.
 
