@@ -9,7 +9,7 @@ variable "zone" {
 }
 
 resource "upcloud_managed_database_postgresql" "props" {
-  name  = "postgresql-props-test"
+  name  = "pg-min-props-test"
   title = "${var.prefix}db"
   plan  = "1x1xCPU-2GB-25GB"
   zone  = var.zone
