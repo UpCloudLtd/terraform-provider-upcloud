@@ -9,7 +9,7 @@ variable "zone" {
 }
 
 resource "upcloud_managed_database_postgresql" "postgresql_properties" {
-  name  = "postgresql-props-test"
+  name  = "pg-props-test"
   title = "${var.prefix}db"
   plan  = "1x1xCPU-2GB-25GB"
   zone  = var.zone
@@ -39,7 +39,7 @@ resource "upcloud_managed_database_postgresql" "postgresql_properties" {
     deadlock_timeout                    = 501
     default_toast_compression           = "lz4"
     idle_in_transaction_session_timeout = 1000
-    ip_filter                           = ["127.0.0.1", "127.0.0.2"]
+    ip_filter                           = ["127.0.0.1/32", "127.0.0.2/32"]
     jit                                 = true
     log_autovacuum_min_duration         = 1
     log_error_verbosity                 = "DEFAULT"

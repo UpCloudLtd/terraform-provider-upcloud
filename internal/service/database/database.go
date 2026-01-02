@@ -12,427 +12,548 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 func serviceDescription(dbType string) string {
 	return fmt.Sprintf("This resource represents %s managed database. See UpCloud [Managed Databases](https://upcloud.com/products/managed-databases) product page for more details about the service.", dbType)
 }
 
-func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	client := meta.(*service.Service)
-	req := buildManagedDatabaseRequestFromResourceData(d)
+func setDatabaseValues(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase) diag.Diagnostics {
+	var diags, respDiagnostics diag.Diagnostics
 
-	details, err := client.CreateManagedDatabase(ctx, &req)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	// Title is required, so it should only be empty during import
+	isImport := data.Title.ValueString() == ""
 
-	d.SetId(details.UUID)
+	data.ID = types.StringValue(db.UUID)
+	data.Name = types.StringValue(db.Name)
+	data.MaintenanceWindowDow = types.StringValue(db.Maintenance.DayOfWeek)
+	data.MaintenanceWindowTime = types.StringValue(db.Maintenance.Time)
+	data.AdditionalDiskSpaceGiB = types.Int64Value(int64(db.AdditionalDiskSpaceGiB))
+	data.Plan = types.StringValue(db.Plan)
+	data.Powered = types.BoolValue(db.State == upcloud.ManagedDatabaseStateRunning)
+	data.ServiceURI = types.StringValue(db.ServiceURI)
+	data.ServiceHost = types.StringValue(db.ServiceURIParams.Host)
+	data.ServicePort = types.StringValue(db.ServiceURIParams.Port)
+	data.ServiceUsername = types.StringValue(db.ServiceURIParams.User)
+	data.ServicePassword = types.StringValue(db.ServiceURIParams.Password)
+	data.State = types.StringValue(string(db.State))
+	data.TerminationProtection = types.BoolValue(db.TerminationProtection)
+	data.Title = types.StringValue(db.Title)
+	data.Type = types.StringValue(string(db.Type))
+	data.Zone = types.StringValue(db.Zone)
+	data.PrimaryDatabase = types.StringValue(db.ServiceURIParams.DatabaseName)
 
-	tflog.Info(ctx, "managed database created", map[string]interface{}{"uuid": details.UUID, "name": d.Get("name")})
+	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(db.Labels))
+	respDiagnostics.Append(diags...)
 
-	if _, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: details.UUID, DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
-		return append(
-			resourceDatabaseRead(ctx, d, meta),
-			diag.FromErr(err)[0],
-		)
-	}
-
-	if !d.Get("powered").(bool) {
-		_, err := client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		tflog.Info(ctx, "managed database is powered off", map[string]interface{}{"uuid": details.UUID, "name": d.Get("name")})
-	}
-
-	if err = waitServiceNameToPropagate(ctx, details.ServiceURIParams.Host); err != nil {
-		// return warning if DNS name is not yet available
-		d := resourceDatabaseRead(ctx, d, meta)
-		d = append(d, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  err.Error(),
+	var components []databaseComponentModel
+	for _, c := range db.Components {
+		components = append(components, databaseComponentModel{
+			Component: types.StringValue(c.Component),
+			Host:      types.StringValue(c.Host),
+			Port:      types.Int64Value(int64(c.Port)),
+			Route:     types.StringValue(string(c.Route)),
+			Usage:     types.StringValue(string(c.Usage)),
 		})
-		return d
 	}
+	data.Components, diags = types.ListValueFrom(ctx, data.Components.ElementType(ctx), components)
+	respDiagnostics.Append(diags...)
 
-	return diags
-}
-
-func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	var err error
-	client := meta.(*service.Service)
-	req := request.GetManagedDatabaseRequest{UUID: d.Id()}
-	details, err := client.GetManagedDatabase(ctx, &req)
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+	var networks []databaseNetworkModel
+	for _, n := range db.Networks {
+		networks = append(networks, databaseNetworkModel{
+			Name:   types.StringValue(n.Name),
+			Type:   types.StringValue(n.Type),
+			Family: types.StringValue(n.Family),
+			UUID:   types.StringPointerValue(n.UUID),
+		})
 	}
+	data.Network, diags = types.SetValueFrom(ctx, data.Network.ElementType(ctx), networks)
+	respDiagnostics.Append(diags...)
 
-	tflog.Debug(ctx, "managed database read", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
-	if details.Type == upcloud.ManagedDatabaseServiceTypePostgreSQL {
-		if err := d.Set("sslmode", details.ServiceURIParams.SSLMode); err != nil {
-			return diag.FromErr(err)
-		}
+	var nodeStates []databaseNodeStateModel
+	for _, ns := range db.NodeStates {
+		nodeStates = append(nodeStates, databaseNodeStateModel{
+			Name:  types.StringValue(ns.Name),
+			Role:  types.StringValue(string(ns.Role)),
+			State: types.StringValue(ns.State),
+		})
 	}
+	data.NodeStates, diags = types.ListValueFrom(ctx, data.NodeStates.ElementType(ctx), nodeStates)
+	respDiagnostics.Append(diags...)
 
-	if err := resourceUpCloudManagedDatabaseSetCommonState(d, details); err != nil {
-		return diag.FromErr(err)
-	}
-	if len(details.Properties) > 0 {
-		if err := d.Set("properties", []map[string]interface{}{buildManagedDatabaseResourceDataProperties(d, details)}); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	return diags
-}
-
-func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
-	diags := diag.Diagnostics{}
-
-	if d.HasChanges("plan", "title", "termination_protection", "zone",
-		"maintenance_window_dow", "maintenance_window_time", "properties.0", "network", "labels", "additional_disk_space_gib") {
-		req := request.ModifyManagedDatabaseRequest{UUID: d.Id()}
-		req.Plan = d.Get("plan").(string)
-		req.Title = d.Get("title").(string)
-		req.Zone = d.Get("zone").(string)
-		if d.HasChanges("maintenance_window_dow", "maintenance_window_time") {
-			req.Maintenance.DayOfWeek = d.Get("maintenance_window_dow").(string)
-			req.Maintenance.Time = d.Get("maintenance_window_time").(string)
-		}
-
-		if d.HasChanges("additional_disk_space_gib") {
-			additionalDiskSpaceGiB := d.Get("additional_disk_space_gib").(int)
-			req.AdditionalDiskSpaceGiB = &additionalDiskSpaceGiB
-		}
-
-		if d.HasChange("labels") {
-			labels := utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
-			req.Labels = &labels
-		}
-
-		if d.HasChange("termination_protection") {
-			terminationProtection := d.Get("termination_protection").(bool)
-			req.TerminationProtection = &terminationProtection
-		}
-
-		if d.HasChange("properties.0") {
-			props := buildManagedDatabasePropertiesRequestFromResourceData(d)
-
-			// Always delete version if it exists; versions are updated via separate endpoint
-			delete(props, "version")
-			req.Properties = props
-		}
-
-		if d.HasChange("network") {
-			networks := networksFromResourceData(d)
-			req.Networks = &networks
-		}
-
-		_, err := client.ModifyManagedDatabase(ctx, &req)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		tflog.Info(ctx, "managed database updated", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
-	}
-
-	// Modify powered state if no PostgreSQL version update is requested
-	if d.HasChange("powered") && !d.HasChange("properties.0.version") {
-		return append(diags, resourceDatabasePoweredUpdate(ctx, d, client)...)
-	}
-
-	expectedState := upcloud.ManagedDatabaseStateRunning
-	if !d.Get("powered").(bool) {
-		expectedState = upcloud.ManagedDatabaseStateStopped
-	}
-	// Wait until database is in running (or stopped) state
-	if _, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: d.Id(), DesiredState: expectedState}); err != nil {
-		diags = append(diags, diag.FromErr(err)[0])
-	}
-
-	return append(diags, resourceDatabaseRead(ctx, d, meta)...)
-}
-
-func resourceDatabasePoweredUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	client := meta.(*service.Service)
-
-	var err error
-	var msg string
-
-	if d.Get("powered").(bool) {
-		_, err = client.StartManagedDatabase(ctx, &request.StartManagedDatabaseRequest{UUID: d.Id()})
-		msg = "managed database is powered on"
+	if !data.Properties.IsNull() || isImport {
+		respDiagnostics.Append(setDatabaseProperties(ctx, data, db, isImport)...)
 	} else {
-		_, err = client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: d.Id()})
-		msg = "managed database is powered off"
+		data.Properties = types.ListNull(data.Properties.ElementType(ctx))
 	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	tflog.Info(ctx, msg, map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
 
-	return diags
+	return respDiagnostics
 }
 
-func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
-
-	req := request.DeleteManagedDatabaseRequest{UUID: d.Id()}
-	if err := client.DeleteManagedDatabase(ctx, &req); err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Wait until database is deleted to be able to delete attached networks (if needed)
-	if err := waitForDatabaseToBeDeleted(ctx, client, d.Id()); err != nil {
-		return diag.FromErr(err)
-	}
-
-	tflog.Info(ctx, "managed database deleted", map[string]interface{}{"uuid": d.Id(), "name": d.Get("name")})
-
-	return nil
-}
-
-func buildManagedDatabaseRequestFromResourceData(d *schema.ResourceData) request.CreateManagedDatabaseRequest {
-	terminationProtection := d.Get("termination_protection").(bool)
-	req := request.CreateManagedDatabaseRequest{
-		AdditionalDiskSpaceGiB: d.Get("additional_disk_space_gib").(int),
-		HostNamePrefix:         d.Get("name").(string),
-		Plan:                   d.Get("plan").(string),
-		Title:                  d.Get("title").(string),
-		TerminationProtection:  &terminationProtection,
-		Labels:                 utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
-		Type:                   upcloud.ManagedDatabaseServiceType(d.Get("type").(string)),
-		Zone:                   d.Get("zone").(string),
-	}
-
-	if d.HasChange("network") {
-		req.Networks = networksFromResourceData(d)
-	}
-
-	if d.HasChange("properties.0") {
-		req.Properties = buildManagedDatabasePropertiesRequestFromResourceData(d)
-	}
-
-	if d.HasChange("maintenance_window_dow") || d.HasChange("maintenance_window_time") {
-		req.Maintenance = request.ManagedDatabaseMaintenanceTimeRequest{
-			DayOfWeek: d.Get("maintenance_window_dow").(string),
-			Time:      d.Get("maintenance_window_time").(string),
-		}
-	}
-
-	return req
-}
-
-func getPropertiesValue(d *schema.ResourceData, key string) (interface{}, bool, bool) {
-	value, isNotZero := d.GetOk(key)
-	// It seems to be hard to detect changes in boolean fields in some scenarios.
-	// E.g. if boolean field is optional and has default value true, but is initially set as false in config
-	// then it's interpreted as boolean zero value and no change is detected.
-	//
-	// This might need more thinking, but for now, exclude field from the request if
-	// it's not boolean, has type's "zero" value and value hasn't changed.
-	_, isBool := value.(bool)
-	hasChange := d.HasChange(key)
-	shouldOmit := !isBool && !isNotZero && !hasChange
-
-	return value, hasChange, shouldOmit
-}
-
-func buildManagedDatabasePropertiesRequestFromResourceData(d *schema.ResourceData) request.ManagedDatabasePropertiesRequest {
-	resourceProps := d.Get("properties.0").(map[string]interface{})
-	r := make(map[upcloud.ManagedDatabasePropertyKey]interface{})
-
-	dbType := upcloud.ManagedDatabaseServiceType(d.Get("type").(string))
-	propsInfo := properties.GetProperties(dbType)
-
-	for field := range resourceProps {
-		// skip properties that are not present in the propsInfo
-		prop, ok := propsInfo[field]
-		if !ok {
-			continue
+func ignorePropChange(v any, plan tftypes.Value, key string, prop upcloud.ManagedDatabaseServiceProperty) (any, error) {
+	switch key {
+	case "ip_filter":
+		// API adds /32 postfix to single IP addresses, ignore it when setting value
+		p, err := properties.ValueToNative(plan, prop)
+		if err != nil {
+			return nil, err
 		}
 
-		key := fmt.Sprintf("properties.0.%s", field)
-
-		value, hasChange, shouldOmit := getPropertiesValue(d, key)
-
-		if shouldOmit {
-			continue
+		// We already check for null before calling this function, so nil here means unknown value.
+		if p == nil {
+			return v, nil
 		}
-		if prop.CreateOnly {
-			if !hasChange {
-				continue
+
+		ps, pOk := p.([]any)
+		vs, vOk := v.([]any)
+
+		notEqualErr := fmt.Errorf("planned and actual IP filter values do not match: planned %#v, got %#v", p, v)
+		if !pOk || !vOk || len(ps) != len(vs) {
+			return nil, notEqualErr
+		}
+
+		for i := range ps {
+			pstr, pOk := ps[i].(string)
+			vstr, vOk := vs[i].(string)
+			if !pOk || !vOk {
+				return nil, notEqualErr
+			}
+
+			if pstr != vstr && vstr != pstr+"/32" {
+				return nil, notEqualErr
 			}
 		}
-		if properties.GetType(prop) == "object" {
-			// convert resource data list of objects into API objects
-			if listValue, ok := value.([]interface{}); ok && len(listValue) == 1 {
-				// Do similar filtering for nested properties as is done for main level properties.
-				stateObj := listValue[0].(map[string]interface{})
-				reqObj := make(map[string]interface{})
-				for k := range stateObj {
-					value, _, shouldOmit := getPropertiesValue(d, fmt.Sprintf("%s.0.%s", key, k))
-					reqKey := properties.GetKey(prop.Properties, k)
-					if !shouldOmit && reqKey != "" {
-						reqObj[reqKey] = value
-					}
-				}
-				r[upcloud.ManagedDatabasePropertyKey(field)] = reqObj
-			}
-		} else {
-			r[upcloud.ManagedDatabasePropertyKey(field)] = value
-		}
+		return p, nil
+	default:
+		// By default, pass through the current value
+		return v, nil
 	}
-	return r
 }
 
-func buildManagedDatabaseResourceDataProperties(d *schema.ResourceData, db *upcloud.ManagedDatabase) map[string]interface{} {
-	resourceProps := d.Get("properties.0").(map[string]interface{})
+func setDatabaseProperties(ctx context.Context, data *databaseCommonModel, db *upcloud.ManagedDatabase, isImport bool) diag.Diagnostics {
+	var diags, d diag.Diagnostics
+
 	propsInfo := properties.GetProperties(db.Type)
+	propsData := make(map[string]attr.Value)
+
+	prevProps, err := properties.ListToValueMap(ctx, data.Properties)
+	if err != nil {
+		diags.AddError(
+			"Unable to parse managed database properties from plan",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return diags
+	}
 
 	for typedKey, value := range db.Properties {
 		key := string(typedKey)
 
-		// only use value from current state if it's a create-only property
-		if propsInfo[key].CreateOnly {
+		// Skip properties that are not defined in the propsInfo
+		prop, ok := propsInfo[key]
+		if !ok {
 			continue
 		}
 
-		if properties.GetType(propsInfo[key]) == "object" {
-			// convert API objects into list of objects
-			if m, ok := value.(map[string]interface{}); ok {
-				// Convert API keys to schema keys
-				sMap := make(map[string]interface{})
-				for k, v := range m {
-					sMap[properties.SchemaKey(k)] = v
-				}
-				resourceProps[properties.SchemaKey(key)] = []map[string]interface{}{sMap}
-			}
-		} else {
-			resourceProps[properties.SchemaKey(key)] = value
+		// Create-only properties are handled by plan-modifiers
+		if prop.CreateOnly {
+			continue
 		}
+
+		// Skip properties that are null in the plan
+		if !isImport && prevProps[properties.SchemaKey(key)].IsNull() {
+			continue
+		}
+
+		// Ignore known differences between API and plan values
+		processedValue, err := ignorePropChange(value, prevProps[properties.SchemaKey(key)], key, prop)
+		if err != nil {
+			diags.AddError(
+				"Unable to process managed database property value",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return diags
+		}
+
+		propsData[properties.SchemaKey(key)], d = properties.NativeToValue(ctx, processedValue, prop)
+		diags.Append(d...)
 	}
 
-	// clean up removed properties that are not present in the propsInfo
-	for key := range resourceProps {
+	// Clean up removed properties that are not present in the propsInfo
+	for key := range propsData {
 		if _, ok := propsInfo[key]; !ok {
-			delete(resourceProps, properties.SchemaKey(key))
+			delete(propsData, properties.SchemaKey(key))
 		}
 	}
 
-	return resourceProps
+	// Add null value for properties missing from API response and configuration
+	for key, prop := range propsInfo {
+		schemaKey := properties.SchemaKey(key)
+
+		// Use value from plan for create-only properties
+		if prop.CreateOnly {
+			v, d := properties.ValueToAttrValue(ctx, prevProps[schemaKey], prop)
+			diags.Append(d...)
+
+			propsData[schemaKey] = v
+			continue
+		}
+
+		if _, ok := propsData[schemaKey]; !ok {
+			propsData[schemaKey], d = properties.NativeToValue(ctx, nil, propsInfo[key])
+			diags.Append(d...)
+		}
+	}
+
+	props, d := types.ObjectValue(properties.PropsToAttributeTypes(propsInfo), propsData)
+	diags.Append(d...)
+
+	data.Properties, d = types.ListValue(data.Properties.ElementType(ctx), []attr.Value{props})
+	diags.Append(d...)
+
+	return diags
 }
 
-func resourceUpCloudManagedDatabaseSetCommonState(d *schema.ResourceData, details *upcloud.ManagedDatabase) error {
-	var components, networks, nodeStates []map[string]interface{}
+func createDatabase(ctx context.Context, data *databaseCommonModel, client *service.Service) (*upcloud.ManagedDatabase, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	req, d := buildManagedDatabaseRequestFromPlan(ctx, data)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	db, err := client.CreateManagedDatabase(ctx, &req)
+	if err != nil {
+		diags.AddError(
+			"Unable to create database",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, diags
+	}
+
+	data.ID = types.StringValue(db.UUID)
+
+	if db, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: db.UUID, DesiredState: upcloud.ManagedDatabaseStateRunning}); err != nil {
+		diags.AddError(
+			"Error while waiting for database to be in running state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, diags
+	}
+
+	diags.Append(setDatabaseValues(ctx, data, db)...)
+
+	if err = waitServiceNameToPropagate(ctx, db.ServiceURIParams.Host); err != nil {
+		diags.AddWarning(
+			"Database DNS name not yet available",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	return db, diags
+}
+
+func buildManagedDatabaseRequestFromPlan(ctx context.Context, data *databaseCommonModel) (request.CreateManagedDatabaseRequest, diag.Diagnostics) {
+	var d, respDiagnostics diag.Diagnostics
+
+	var terminationProtection *bool
+	if !data.TerminationProtection.IsNull() {
+		tp := data.TerminationProtection.ValueBool()
+		terminationProtection = &tp
+	}
+
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		respDiagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+
+	req := request.CreateManagedDatabaseRequest{
+		AdditionalDiskSpaceGiB: int(data.AdditionalDiskSpaceGiB.ValueInt64()),
+		HostNamePrefix:         data.Name.ValueString(),
+		Plan:                   data.Plan.ValueString(),
+		Title:                  data.Title.ValueString(),
+		TerminationProtection:  terminationProtection,
+		Labels:                 utils.LabelsMapToSlice(labels),
+		Type:                   upcloud.ManagedDatabaseServiceType(data.Type.ValueString()),
+		Zone:                   data.Zone.ValueString(),
+	}
+
+	if !data.Network.IsNull() && !data.Network.IsUnknown() {
+		req.Networks, d = networksFromPlan(ctx, data)
+		respDiagnostics.Append(d...)
+	}
+
+	if !data.Properties.IsNull() && !data.Properties.IsUnknown() {
+		req.Properties, d = buildManagedDatabasePropertiesRequestFromPlan(ctx, data, true)
+		respDiagnostics.Append(d...)
+	}
+
+	if data.MaintenanceWindowDow.ValueString() != "" && data.MaintenanceWindowTime.ValueString() != "" {
+		req.Maintenance = request.ManagedDatabaseMaintenanceTimeRequest{
+			DayOfWeek: data.MaintenanceWindowDow.ValueString(),
+			Time:      data.MaintenanceWindowTime.ValueString(),
+		}
+	}
+
+	return req, respDiagnostics
+}
+
+func buildManagedDatabasePropertiesRequestFromPlan(ctx context.Context, data *databaseCommonModel, isCreate bool) (map[upcloud.ManagedDatabasePropertyKey]interface{}, diag.Diagnostics) {
+	var respDiagnostics diag.Diagnostics
+
+	dbType := upcloud.ManagedDatabaseServiceType(data.Type.ValueString())
+	propsInfo := properties.GetProperties(dbType)
+
+	props, err := properties.PlanToManagedDatabaseProperties(ctx, data.Properties, propsInfo, isCreate)
+	if err != nil {
+		respDiagnostics.AddError(
+			"Unable to build managed database properties from plan",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+	return props, respDiagnostics
+}
+
+func readDatabase(ctx context.Context, data *databaseCommonModel, client *service.Service, removeFromState func(context.Context)) (*upcloud.ManagedDatabase, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if data.ID.ValueString() == "" {
+		removeFromState(ctx)
+		return nil, diags
+	}
+
+	db, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{
+		UUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			removeFromState(ctx)
+		} else {
+			diags.AddError(
+				"Unable to read managed database details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return nil, diags
+	}
+
+	diags.Append(setDatabaseValues(ctx, data, db)...)
+	return db, diags
+}
+
+func updateDatabase(ctx context.Context, state, plan *databaseCommonModel, client *service.Service) (*upcloud.ManagedDatabase, string, diag.Diagnostics) {
+	var respDiagnostics diag.Diagnostics
+
+	var req request.ModifyManagedDatabaseRequest
+	hasChanges := false
+	newVersion := ""
+
+	if !state.Plan.Equal(plan.Plan) {
+		req.Plan = plan.Plan.ValueString()
+		hasChanges = true
+	}
+
+	if !state.Title.Equal(plan.Title) {
+		req.Title = plan.Title.ValueString()
+		hasChanges = true
+	}
+
+	if !state.Zone.Equal(plan.Zone) {
+		req.Zone = plan.Zone.ValueString()
+		hasChanges = true
+	}
+
+	if !state.MaintenanceWindowDow.Equal(plan.MaintenanceWindowDow) || !state.MaintenanceWindowTime.Equal(plan.MaintenanceWindowTime) {
+		req.Maintenance = request.ManagedDatabaseMaintenanceTimeRequest{
+			DayOfWeek: plan.MaintenanceWindowDow.ValueString(),
+			Time:      plan.MaintenanceWindowTime.ValueString(),
+		}
+	}
+
+	if !state.AdditionalDiskSpaceGiB.Equal(plan.AdditionalDiskSpaceGiB) && !plan.AdditionalDiskSpaceGiB.IsNull() && !plan.AdditionalDiskSpaceGiB.IsUnknown() {
+		additionalDiskSpaceGiB := int(plan.AdditionalDiskSpaceGiB.ValueInt64())
+		req.AdditionalDiskSpaceGiB = &additionalDiskSpaceGiB
+		hasChanges = true
+	}
+
+	if !state.Labels.Equal(plan.Labels) {
+		if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+			var labels map[string]string
+			respDiagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
+			labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+			req.Labels = &labelsSlice
+			hasChanges = true
+		}
+	}
+
+	if !state.TerminationProtection.Equal(plan.TerminationProtection) && !plan.TerminationProtection.IsNull() && !plan.TerminationProtection.IsUnknown() {
+		terminationProtection := plan.TerminationProtection.ValueBool()
+		req.TerminationProtection = &terminationProtection
+		hasChanges = true
+	}
+
+	if !state.Properties.Equal(plan.Properties) && !plan.Properties.IsNull() {
+		props, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, plan, false)
+		respDiagnostics.Append(d...)
+		stateProps, d := buildManagedDatabasePropertiesRequestFromPlan(ctx, state, false)
+		respDiagnostics.Append(d...)
+
+		// Check if version property has changed
+		stateVersion := anyToString(stateProps["version"])
+		planVersion := anyToString(props["version"])
+		if stateVersion != planVersion {
+			newVersion = planVersion
+		}
+
+		// Always delete version if it exists; versions are updated via separate endpoint
+		delete(props, "version")
+
+		req.Properties = props
+		hasChanges = true
+	}
+
+	if !state.Network.Equal(plan.Network) && !plan.Network.IsNull() {
+		networks, d := networksFromPlan(ctx, plan)
+		respDiagnostics.Append(d...)
+
+		req.Networks = &networks
+		hasChanges = true
+	}
+
+	if hasChanges {
+		req.UUID = state.ID.ValueString()
+		_, err := client.ModifyManagedDatabase(ctx, &req)
+		if err != nil {
+			respDiagnostics.AddError(
+				"Unable to modify managed database",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return nil, newVersion, respDiagnostics
+		}
+	}
+
+	if !state.Powered.Equal(plan.Powered) {
+		// Wait for non-pending state before updating powered value.
+		diags := waitForNonPendingState(ctx, client, plan.ID.ValueString())
+		respDiagnostics.Append(diags...)
+
+		respDiagnostics.Append(updatePowered(ctx, plan, client)...)
+		if respDiagnostics.HasError() {
+			return nil, newVersion, respDiagnostics
+		}
+	}
+
+	// Wait until database is in running (or stopped) state
+	db, diags := waitForPoweredState(ctx, client, plan.ID.ValueString(), plan.Powered.ValueBool())
+	respDiagnostics.Append(diags...)
+
+	return db, newVersion, respDiagnostics
+}
+
+func updatePowered(ctx context.Context, data *databaseCommonModel, client *service.Service) (diags diag.Diagnostics) {
 	var err error
-
-	for _, comp := range details.Components {
-		components = append(components, map[string]interface{}{
-			"component": comp.Component,
-			"host":      comp.Host,
-			"port":      comp.Port,
-			"route":     comp.Route,
-			"usage":     comp.Usage,
-		})
+	if data.Powered.ValueBool() {
+		_, err = client.StartManagedDatabase(ctx, &request.StartManagedDatabaseRequest{UUID: data.ID.ValueString()})
+	} else {
+		_, err = client.ShutdownManagedDatabase(ctx, &request.ShutdownManagedDatabaseRequest{UUID: data.ID.ValueString()})
+	}
+	if err != nil {
+		diags.AddError(
+			"Unable to modify managed database powered state",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
 
-	for _, network := range details.Networks {
-		networks = append(networks, map[string]interface{}{
-			"family": network.Family,
-			"name":   network.Name,
-			"type":   network.Type,
-			"uuid":   network.UUID,
-		})
+	return diags
+}
+
+func anyToString(v any) string {
+	s, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return s
+}
+
+func updateVersion(ctx context.Context, uuid, newVersion string, powered bool, client *service.Service) (diags diag.Diagnostics) {
+	// Cannot proceed with upgrade if powered off
+	if !powered {
+		diags.AddError(
+			"Unable to upgrade managed database version",
+			fmt.Sprintf("Cannot upgrade version for Managed Database %s when it is powered off", uuid),
+		)
+		return diags
 	}
 
-	for _, node := range details.NodeStates {
-		nodeState := map[string]interface{}{
-			"name":  node.Name,
-			"state": node.State,
-		}
-		if node.Role != "" {
-			nodeState["role"] = node.Role
-		}
-		nodeStates = append(nodeStates, nodeState)
+	// Wait until database is in running state before attempting to upgrade version.
+	_, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         uuid,
+		DesiredState: upcloud.ManagedDatabaseStateRunning,
+	})
+	if err != nil {
+		diags.AddError(
+			"Error while waiting for database to be in running state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	if err = d.Set("additional_disk_space_gib", details.AdditionalDiskSpaceGiB); err != nil {
-		return err
-	}
-	if err = d.Set("name", details.Name); err != nil {
-		return err
-	}
-	if err := d.Set("labels", utils.LabelsSliceToMap(details.Labels)); err != nil {
-		return err
-	}
-	if err = d.Set("components", components); err != nil {
-		return err
-	}
-	if err = d.Set("maintenance_window_dow", details.Maintenance.DayOfWeek); err != nil {
-		return err
-	}
-	if err = d.Set("maintenance_window_time", details.Maintenance.Time); err != nil {
-		return err
-	}
-	if err = d.Set("network", networks); err != nil {
-		return err
-	}
-	if err = d.Set("node_states", nodeStates); err != nil {
-		return err
-	}
-	if err = d.Set("plan", details.Plan); err != nil {
-		return err
-	}
-	if err = d.Set("service_uri", details.ServiceURI); err != nil {
-		return err
-	}
-	if err = d.Set("service_host", details.ServiceURIParams.Host); err != nil {
-		return err
-	}
-	if err = d.Set("service_port", details.ServiceURIParams.Port); err != nil {
-		return err
-	}
-	if err = d.Set("service_username", details.ServiceURIParams.User); err != nil {
-		return err
-	}
-	if err = d.Set("service_password", details.ServiceURIParams.Password); err != nil {
-		return err
-	}
-	if err = d.Set("state", string(details.State)); err != nil {
-		return err
-	}
-	if err = d.Set("termination_protection", details.TerminationProtection); err != nil {
-		return err
-	}
-	if err = d.Set("title", details.Title); err != nil {
-		return err
-	}
-	if err = d.Set("type", string(details.Type)); err != nil {
-		return err
-	}
-	if err = d.Set("zone", details.Zone); err != nil {
-		return err
-	}
-	if err = d.Set("powered", details.Powered); err != nil {
-		return err
+	_, err = client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
+		UUID:          uuid,
+		TargetVersion: newVersion,
+	})
+	if err != nil {
+		diags.AddError(
+			"Unable to upgrade managed database version",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return diags
 	}
 
-	return d.Set("primary_database", details.ServiceURIParams.DatabaseName)
+	return diags
 }
 
 func getDatabaseDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
 	db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: id[0]})
+	if err != nil {
+		return nil, err
+	}
 
-	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, err
+	return map[string]interface{}{"resource": "database", "name": db.Name, "state": db.State}, nil
 }
 
-func waitForDatabaseToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
-	return utils.WaitForResourceToBeDeleted(ctx, svc, getDatabaseDeleted, id)
+func waitForPoweredState(ctx context.Context, svc *service.Service, id string, powered bool) (*upcloud.ManagedDatabase, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	expectedState := upcloud.ManagedDatabaseStateRunning
+	if !powered {
+		expectedState = upcloud.ManagedDatabaseStateStopped
+	}
+
+	db, err := svc.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{UUID: id, DesiredState: expectedState})
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("Error while waiting for database to be in %s state", expectedState),
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+	return db, diags
+}
+
+func waitForDatabaseToBeDeleted(ctx context.Context, svc *service.Service, id string) (diags diag.Diagnostics) {
+	err := utils.WaitForResourceToBeDeleted(ctx, svc, getDatabaseDeleted, id)
+	if err != nil {
+		diags.AddError(
+			"Error while waiting for database to be deleted",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+	return
 }
 
 func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
@@ -459,41 +580,30 @@ func waitServiceNameToPropagate(ctx context.Context, name string) (err error) {
 	return errors.New("max retries reached while waiting for service name to propagate")
 }
 
-func updateDatabaseVersion(ctx context.Context, d *schema.ResourceData, client *service.Service) (diags diag.Diagnostics) {
-	// Cannot proceed with upgrade if powered off
-	if !d.HasChange("powered") && !d.Get("powered").(bool) {
-		return append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  fmt.Sprintf("Version upgrade for Managed Database %s(%s) skipped", d.Id(), d.Get("name")),
-			Detail:   "Cannot upgrade version for Managed Database when it is powered off",
-		})
+func waitForNonPendingState(ctx context.Context, svc *service.Service, uuid string) (diags diag.Diagnostics) {
+	for {
+		select {
+		case <-ctx.Done():
+			diags.AddError(
+				"Context cancelled",
+				utils.ErrorDiagnosticDetail(ctx.Err()),
+			)
+			return diags
+		default:
+			db, err := svc.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{
+				UUID: uuid,
+			})
+			if err != nil {
+				diags.AddError(
+					"Unable to get database details",
+					utils.ErrorDiagnosticDetail(err),
+				)
+				return diags
+			}
+			if db.State != upcloud.ManagedDatabaseStatePending {
+				return nil
+			}
+		}
+		time.Sleep(5 * time.Second)
 	}
-
-	// Wait until database is in running state before attempting to upgrade version.
-	_, err := client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
-		UUID:         d.Id(),
-		DesiredState: upcloud.ManagedDatabaseStateRunning,
-	})
-	if err != nil {
-		return append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed; reached timeout when waiting for running state", d.Id(), d.Get("name")),
-			Detail:   err.Error(),
-		})
-	}
-
-	_, target := d.GetChange("properties.0.version")
-	_, err = client.UpgradeManagedDatabaseVersion(ctx, &request.UpgradeManagedDatabaseVersionRequest{
-		UUID:          d.Id(),
-		TargetVersion: target.(string),
-	})
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Upgrading Managed Database %s(%s) version failed", d.Id(), d.Get("name")),
-			Detail:   err.Error(),
-		})
-	}
-
-	return diags
 }
