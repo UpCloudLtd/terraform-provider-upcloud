@@ -16,5 +16,8 @@ resource "upcloud_managed_database_postgresql" "props" {
   properties {
     version = 17
     service_log = false
+    pglookout {
+      max_failover_replication_time_lag = 60
+    }
   }
 }
