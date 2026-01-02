@@ -28,20 +28,18 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	userName5 := "upcloud_managed_database_user.db_user_5"
 	valkeyName := "upcloud_managed_database_valkey.v1"
 
-	verifyImportStep := func(name string) resource.TestStep {
+	verifyImportStep := func(name string, extraIgnore ...string) resource.TestStep {
 		return resource.TestStep{
 			Config:            testDataS1,
 			ResourceName:      name,
 			ImportState:       true,
 			ImportStateVerify: true,
-			ImportStateVerifyIgnore: []string{
+			ImportStateVerifyIgnore: append([]string{
 				// credentials only provided on creation, not available on subsequent requests like import
 				"properties.0.admin_password",
 				"properties.0.admin_username",
-				// pglookout is included in response even when it has not been configured by user
-				"properties.0.pglookout",
 				"state",
-			},
+			}, extraIgnore...),
 		}
 	}
 
@@ -113,10 +111,10 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(valkeyName, "network.#", "1"),
 				),
 			},
-			verifyImportStep(pg1Name),
+			verifyImportStep(pg1Name, "properties.0.pglookout"), // pglookout is included in response even when it has not been configured by user
 			verifyImportStep(pg2Name),
-			verifyImportStep(msql1Name),
-			verifyImportStep(valkeyName),
+			verifyImportStep(msql1Name, "properties"),  // properties are included in response even when none are configured by user
+			verifyImportStep(valkeyName, "properties"), // properties are included in response even when none are configured by user
 			verifyImportStep(lgDBName),
 			verifyImportStep(userName1),
 			verifyImportStep(userName2),
