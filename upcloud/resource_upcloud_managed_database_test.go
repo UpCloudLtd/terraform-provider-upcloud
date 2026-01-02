@@ -112,9 +112,9 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 				),
 			},
 			verifyImportStep(pg1Name, "properties.0.pglookout"), // pglookout is included in response even when it has not been configured by user
-			verifyImportStep(pg2Name),
-			verifyImportStep(msql1Name, "properties"),  // properties are included in response even when none are configured by user
-			verifyImportStep(valkeyName, "properties"), // properties are included in response even when none are configured by user
+			verifyImportStep(pg2Name, "properties.0.pglookout"), // pglookout is included in response even when it has not been configured by user
+			verifyImportStep(msql1Name, "properties"),           // properties are included in response even when none are configured by user
+			verifyImportStep(valkeyName, "properties"),          // properties are included in response even when none are configured by user
 			verifyImportStep(lgDBName),
 			verifyImportStep(userName1),
 			verifyImportStep(userName2),
