@@ -30,11 +30,18 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 
 	verifyImportStep := func(name string) resource.TestStep {
 		return resource.TestStep{
-			Config:                  testDataS1,
-			ResourceName:            name,
-			ImportState:             true,
-			ImportStateVerify:       true,
-			ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"}, // credentials only provided on creation, not available on subsequent requests like import
+			Config:            testDataS1,
+			ResourceName:      name,
+			ImportState:       true,
+			ImportStateVerify: true,
+			ImportStateVerifyIgnore: []string{
+				// credentials only provided on creation, not available on subsequent requests like import
+				"properties.0.admin_password",
+				"properties.0.admin_username",
+				// pglookout is included in response even when it has not been configured by user
+				"properties.0.pglookout",
+				"state",
+			},
 		}
 	}
 
@@ -240,11 +247,18 @@ func TestAccUpcloudManagedDatabase_import_minimalProperties(t *testing.T) {
 				),
 			},
 			{
-				Config:                  configS1,
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"},
+				Config:            configS1,
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// credentials only provided on creation, not available on subsequent requests like import
+					"properties.0.admin_password",
+					"properties.0.admin_username",
+					// pglookout is included in response even when it has not been configured by user
+					"properties.0.pglookout",
+					"state",
+				},
 			},
 			{
 				Config: configS2,
