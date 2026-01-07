@@ -21,19 +21,24 @@ resource "upcloud_file_storage" "example" {
     customer    = "example-customer"
   }
 
-  share {
-    name = "write-to-project"
-    path = "/project"
-    acl {
-      target     = "172.16.8.12"
-      permission = "rw"
-    }
-  }
-
   network {
     family     = "IPv4"
     name       = "example-private-net"
     uuid       = upcloud_network.this.id
     ip_address = "172.16.8.11"
   }
+}
+
+resource "upcloud_file_storage_share" "example" {
+  file_storage = upcloud_file_storage.example.id
+  name         = "write-to-project"
+  path         = "/project"
+}
+
+resource "upcloud_file_storage_share_acl" "example" {
+  file_storage = upcloud_file_storage.example.id
+  share_name   = upcloud_file_storage_share.example.name
+  name         = "acl-for-project"
+  target       = "172.16.8.12"
+  permission   = "rw"
 }
