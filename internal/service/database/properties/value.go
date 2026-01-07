@@ -188,7 +188,7 @@ func NativeToValue(ctx context.Context, v any, prop upcloud.ManagedDatabaseServi
 		}
 		return types.BoolValue(b), nil
 	case propTypeArray:
-		var l []types.String
+		l := []types.String{}
 		is, ok := v.([]any)
 		if !ok {
 			return types.ListNull(types.StringType), nil
