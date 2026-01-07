@@ -3,13 +3,8 @@ variable "prefix" {
   type    = string
 }
 
-variable "net-name" {
-  default = "net-name"
-  type    = string
-}
-
-variable "file-storage-name" {
-  default = "file-storage-name"
+variable "suffix" {
+  default = "suffix"
   type    = string
 }
 
@@ -18,9 +13,14 @@ variable "cidr" {
   type    = string
 }
 
+variable "zone" {
+  default = "fi-hel2"
+  type    = string
+}
+
 resource "upcloud_network" "this" {
-    name = "${var.prefix}${var.net-name}"
-    zone = "fi-hel2"
+    name = "${var.prefix}${var.suffix}"
+    zone = var.zone
 
     ip_network {
         address = "${var.cidr}"
@@ -28,10 +28,10 @@ resource "upcloud_network" "this" {
         family  = "IPv4"
     }
 }
-resource "upcloud_file_storage" "example" {
-    name              = "${var.prefix}${var.file-storage-name}-3"
+resource "upcloud_file_storage" "this" {
+    name              = "${var.prefix}${var.suffix}-s3"
     size              = 250
-    zone              = "fi-hel2"
+    zone              = var.zone
     configured_status = "started"
 
     labels = {
