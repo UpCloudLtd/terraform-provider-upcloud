@@ -42,7 +42,7 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
 - `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans opensearch`.
-- `title` (String) Title of a managed database instance
+- `title` (String) Title of the managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
@@ -50,7 +50,7 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 - `access_control` (Boolean) Enables users access control for OpenSearch service. User access control rules will only be enforced if this attribute is enabled.
 - `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
 - `extended_access_control` (Boolean) Grant access to top-level `_mget`, `_msearch` and `_bulk` APIs. Users are limited to perform operations on indices based on the user-specific access control rules.
-- `labels` (Map of String) User defined key-value pairs to classify the managed database.
+- `labels` (Map of String) User defined key-value pairs to classify the database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service
@@ -58,22 +58,22 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 
 ### Blocks
 
-- `network` (Block Set, Max: 8) Private networks attached to the managed database (see [below for nested schema](#nestedblock--network))
-- `properties` (Block List, Max: 1) Database Engine properties for OpenSearch (see [below for nested schema](#nestedblock--properties))
+- `network` (Block Set) Private networks attached to the managed database (see [below for nested schema](#nestedblock--network))
+- `properties` (Block List) Database engine properties. (see [below for nested schema](#nestedblock--properties))
 
 ### Read-Only
 
-- `components` (List of Object) Service component information (see [below for nested schema](#nestedatt--components))
-- `id` (String) The ID of this resource.
-- `node_states` (List of Object) Information about nodes providing the managed service (see [below for nested schema](#nestedatt--node_states))
+- `components` (Attributes List) Service component information (see [below for nested schema](#nestedatt--components))
+- `id` (String) UUID of the database.
+- `node_states` (Attributes List) Information about nodes providing the managed service (see [below for nested schema](#nestedatt--node_states))
 - `primary_database` (String) Primary database name
 - `service_host` (String) Hostname to the service instance
-- `service_password` (String, Sensitive) Primary username's password to the service instance
+- `service_password` (String, Sensitive) Primary password to the service instance
 - `service_port` (String) Port to the service instance
 - `service_uri` (String, Sensitive) URI to the service instance
 - `service_username` (String) Primary username to the service instance
-- `state` (String) State of the service
-- `type` (String) Type of the service
+- `state` (String) The current state of the service
+- `type` (String) Type of the managed database instance
 
 <a id="nestedblock--network"></a>
 ### Nested Schema for `network`
@@ -157,28 +157,28 @@ Optional Attributes:
 
 Blocks:
 
-- `auth_failure_listeners` (Block List, Max: 1) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
-- `cluster_remote_store` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_remote_store))
-- `cluster_search_request_slowlog` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog))
-- `disk_watermarks` (Block List, Max: 1) Watermark settings. (see [below for nested schema](#nestedblock--properties--disk_watermarks))
-- `index_rollup` (Block List, Max: 1) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
-- `index_template` (Block List, Max: 1) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
-- `jwt` (Block List, Max: 1) OpenSearch JWT Configuration. (see [below for nested schema](#nestedblock--properties--jwt))
-- `openid` (Block List, Max: 1) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
-- `opensearch_dashboards` (Block List, Max: 1) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
-- `remote_store` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--remote_store))
-- `saml` (Block List, Max: 1) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
-- `search_backpressure` (Block List, Max: 1) Search Backpressure Settings. (see [below for nested schema](#nestedblock--properties--search_backpressure))
-- `search_insights_top_queries` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--search_insights_top_queries))
-- `segrep` (Block List, Max: 1) Segment Replication Backpressure Settings. (see [below for nested schema](#nestedblock--properties--segrep))
-- `shard_indexing_pressure` (Block List, Max: 1) Shard indexing back pressure settings. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure))
+- `auth_failure_listeners` (Block List) Opensearch Security Plugin Settings. (see [below for nested schema](#nestedblock--properties--auth_failure_listeners))
+- `cluster_remote_store` (Block List) (see [below for nested schema](#nestedblock--properties--cluster_remote_store))
+- `cluster_search_request_slowlog` (Block List) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog))
+- `disk_watermarks` (Block List) Watermark settings. (see [below for nested schema](#nestedblock--properties--disk_watermarks))
+- `index_rollup` (Block List) Index rollup settings. (see [below for nested schema](#nestedblock--properties--index_rollup))
+- `index_template` (Block List) Template settings for all new indexes. (see [below for nested schema](#nestedblock--properties--index_template))
+- `jwt` (Block List) OpenSearch JWT Configuration. (see [below for nested schema](#nestedblock--properties--jwt))
+- `openid` (Block List) OpenSearch OpenID Connect Configuration. (see [below for nested schema](#nestedblock--properties--openid))
+- `opensearch_dashboards` (Block List) OpenSearch Dashboards settings. (see [below for nested schema](#nestedblock--properties--opensearch_dashboards))
+- `remote_store` (Block List) (see [below for nested schema](#nestedblock--properties--remote_store))
+- `saml` (Block List) OpenSearch SAML configuration. (see [below for nested schema](#nestedblock--properties--saml))
+- `search_backpressure` (Block List) Search Backpressure Settings. (see [below for nested schema](#nestedblock--properties--search_backpressure))
+- `search_insights_top_queries` (Block List) (see [below for nested schema](#nestedblock--properties--search_insights_top_queries))
+- `segrep` (Block List) Segment Replication Backpressure Settings. (see [below for nested schema](#nestedblock--properties--segrep))
+- `shard_indexing_pressure` (Block List) Shard indexing back pressure settings. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure))
 
 <a id="nestedblock--properties--auth_failure_listeners"></a>
 ### Nested Schema for `properties.auth_failure_listeners`
 
 Blocks:
 
-- `internal_authentication_backend_limiting` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--auth_failure_listeners--internal_authentication_backend_limiting))
+- `internal_authentication_backend_limiting` (Block List) (see [below for nested schema](#nestedblock--properties--auth_failure_listeners--internal_authentication_backend_limiting))
 
 <a id="nestedblock--properties--auth_failure_listeners--internal_authentication_backend_limiting"></a>
 ### Nested Schema for `properties.auth_failure_listeners.internal_authentication_backend_limiting`
@@ -215,7 +215,7 @@ Optional Attributes:
 
 Blocks:
 
-- `threshold` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog--threshold))
+- `threshold` (Block List) (see [below for nested schema](#nestedblock--properties--cluster_search_request_slowlog--threshold))
 
 <a id="nestedblock--properties--cluster_search_request_slowlog--threshold"></a>
 ### Nested Schema for `properties.cluster_search_request_slowlog.threshold`
@@ -341,9 +341,9 @@ Optional Attributes:
 
 Blocks:
 
-- `node_duress` (Block List, Max: 1) Node duress settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--node_duress))
-- `search_shard_task` (Block List, Max: 1) Search shard settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--search_shard_task))
-- `search_task` (Block List, Max: 1) Search task settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--search_task))
+- `node_duress` (Block List) Node duress settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--node_duress))
+- `search_shard_task` (Block List) Search shard settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--search_shard_task))
+- `search_task` (Block List) Search task settings. (see [below for nested schema](#nestedblock--properties--search_backpressure--search_task))
 
 <a id="nestedblock--properties--search_backpressure--node_duress"></a>
 ### Nested Schema for `properties.search_backpressure.node_duress`
@@ -393,9 +393,9 @@ Optional Attributes:
 
 Blocks:
 
-- `cpu` (Block List, Max: 1) Top N queries monitoring by CPU. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--cpu))
-- `latency` (Block List, Max: 1) Top N queries monitoring by latency. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--latency))
-- `memory` (Block List, Max: 1) Top N queries monitoring by memory. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--memory))
+- `cpu` (Block List) Top N queries monitoring by CPU. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--cpu))
+- `latency` (Block List) Top N queries monitoring by latency. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--latency))
+- `memory` (Block List) Top N queries monitoring by memory. (see [below for nested schema](#nestedblock--properties--search_insights_top_queries--memory))
 
 <a id="nestedblock--properties--search_insights_top_queries--cpu"></a>
 ### Nested Schema for `properties.search_insights_top_queries.cpu`
@@ -454,8 +454,8 @@ Optional Attributes:
 
 Blocks:
 
-- `operating_factor` (Block List, Max: 1) Operating factor. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--operating_factor))
-- `primary_parameter` (Block List, Max: 1) Primary parameter. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter))
+- `operating_factor` (Block List) Operating factor. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--operating_factor))
+- `primary_parameter` (Block List) Primary parameter. (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter))
 
 <a id="nestedblock--properties--shard_indexing_pressure--operating_factor"></a>
 ### Nested Schema for `properties.shard_indexing_pressure.operating_factor`
@@ -481,8 +481,8 @@ Optional Attributes:
 
 Blocks:
 
-- `node` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter--node))
-- `shard` (Block List, Max: 1) (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter--shard))
+- `node` (Block List) (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter--node))
+- `shard` (Block List) (see [below for nested schema](#nestedblock--properties--shard_indexing_pressure--primary_parameter--shard))
 
 <a id="nestedblock--properties--shard_indexing_pressure--primary_parameter--node"></a>
 ### Nested Schema for `properties.shard_indexing_pressure.primary_parameter.node`
@@ -512,11 +512,11 @@ Optional Attributes:
 
 Read-Only:
 
-- `component` (String)
-- `host` (String)
-- `port` (Number)
-- `route` (String)
-- `usage` (String)
+- `component` (String) Component name.
+- `host` (String) Hostname of the component
+- `port` (Number) Port number of the component
+- `route` (String) Component network route type
+- `usage` (String) Usage of the component
 
 
 <a id="nestedatt--node_states"></a>
@@ -524,6 +524,6 @@ Read-Only:
 
 Read-Only:
 
-- `name` (String)
-- `role` (String)
-- `state` (String)
+- `name` (String) Name plus a node iteration
+- `role` (String) Role of the node
+- `state` (String) Current state of the node
