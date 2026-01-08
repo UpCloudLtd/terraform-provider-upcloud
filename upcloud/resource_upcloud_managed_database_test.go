@@ -2,7 +2,6 @@ package upcloud
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -29,13 +28,18 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	userName5 := "upcloud_managed_database_user.db_user_5"
 	valkeyName := "upcloud_managed_database_valkey.v1"
 
-	verifyImportStep := func(name string) resource.TestStep {
+	verifyImportStep := func(name string, extraIgnore ...string) resource.TestStep {
 		return resource.TestStep{
-			Config:                  testDataS1,
-			ResourceName:            name,
-			ImportState:             true,
-			ImportStateVerify:       true,
-			ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"}, // credentials only provided on creation, not available on subsequent requests like import
+			Config:            testDataS1,
+			ResourceName:      name,
+			ImportState:       true,
+			ImportStateVerify: true,
+			ImportStateVerifyIgnore: append([]string{
+				// credentials only provided on creation, not available on subsequent requests like import
+				"properties.0.admin_password",
+				"properties.0.admin_username",
+				"state",
+			}, extraIgnore...),
 		}
 	}
 
@@ -107,10 +111,10 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(valkeyName, "network.#", "1"),
 				),
 			},
-			verifyImportStep(pg1Name),
-			verifyImportStep(pg2Name),
-			verifyImportStep(msql1Name),
-			verifyImportStep(valkeyName),
+			verifyImportStep(pg1Name, "properties.0.pglookout"), // pglookout is included in response even when it has not been configured by user
+			verifyImportStep(pg2Name, "properties.0.pglookout"), // pglookout is included in response even when it has not been configured by user
+			verifyImportStep(msql1Name, "properties"),           // properties are included in response even when none are configured by user
+			verifyImportStep(valkeyName, "properties"),          // properties are included in response even when none are configured by user
 			verifyImportStep(lgDBName),
 			verifyImportStep(userName1),
 			verifyImportStep(userName2),
@@ -194,13 +198,13 @@ func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
 			{
 				Config:          testdata,
 				ConfigVariables: variables(1, false, true),
-				ExpectError:     regexp.MustCompile("Service state cannot be updated, termination protection is enabled."),
+				ExpectError:     ignoreWhitespaceDiff("Service state cannot be updated, termination protection is enabled."),
 			},
 			// Deleting the service should fail as termination protection is enabled
 			{
 				Config:          testdata,
 				ConfigVariables: variables(0, true, true),
-				ExpectError:     regexp.MustCompile("Service cannot be deleted, termination protection is enabled."),
+				ExpectError:     ignoreWhitespaceDiff("Service cannot be deleted, termination protection is enabled."),
 			},
 			// Disable termination protection and power off the service
 			{
@@ -215,6 +219,60 @@ func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
 			{
 				Config:          testdata,
 				ConfigVariables: variables(0, false, false),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedDatabase_import_minimalProperties(t *testing.T) {
+	configS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s1.tf")
+	configS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s2.tf")
+
+	resourceName := "upcloud_managed_database_postgresql.props"
+	prop := func(name string) string {
+		return fmt.Sprintf("properties.0.%s", name)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: configS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "properties.0.version", "17"),
+					resource.TestCheckResourceAttr(resourceName, "properties.0.service_log", "false"),
+				),
+			},
+			{
+				Config:            configS1,
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// credentials only provided on creation, not available on subsequent requests like import
+					"properties.0.admin_password",
+					"properties.0.admin_username",
+					// pglookout is included in response even when it has not been configured by user
+					"properties.0.pglookout",
+					"state",
+				},
+			},
+			{
+				Config: configS2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "properties.0.version", "17"),
+					resource.TestCheckResourceAttr(resourceName, "properties.0.service_log", "false"),
+					resource.TestCheckResourceAttr(resourceName, "properties.0.service_log", "false"),
+					resource.TestCheckResourceAttr(resourceName, prop("pglookout.0.max_failover_replication_time_lag"), "60"),
+				),
+			},
+			{
+				Config:                  configS2,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"},
 			},
 		},
 	})

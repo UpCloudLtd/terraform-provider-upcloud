@@ -3,132 +3,189 @@ package database
 import (
 	"context"
 
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database/properties"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceOpenSearch() *schema.Resource {
-	return &schema.Resource{
-		Description:   serviceDescription("OpenSearch"),
-		CreateContext: resourceOpenSearchCreate,
-		ReadContext:   resourceOpenSearchRead,
-		UpdateContext: resourceOpenSearchUpdate,
-		DeleteContext: resourceDatabaseDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: utils.JoinSchemas(
-			schemaDatabaseCommon(upcloud.ManagedDatabaseServiceTypeOpenSearch),
-			schemaOpenSearchEngine(),
-			schemaOpenSearchAccessControl(),
-		),
-	}
+var (
+	_ resource.Resource                = &opensearchResource{}
+	_ resource.ResourceWithConfigure   = &opensearchResource{}
+	_ resource.ResourceWithImportState = &opensearchResource{}
+)
+
+func NewOpenSearchResource() resource.Resource {
+	return &opensearchResource{}
 }
 
-func resourceOpenSearchCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if err := d.Set("type", string(upcloud.ManagedDatabaseServiceTypeOpenSearch)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	diags := resourceDatabaseCreate(ctx, d, meta)
-	if diags.HasError() {
-		return diags
-	}
-
-	if d.HasChanges("access_control", "extended_access_control") {
-		client := meta.(*service.Service)
-		aclReq := request.ModifyManagedDatabaseAccessControlRequest{
-			ServiceUUID:         d.Id(),
-			ACLsEnabled:         upcloud.BoolPtr(d.Get("access_control").(bool)),
-			ExtendedACLsEnabled: upcloud.BoolPtr(d.Get("extended_access_control").(bool)),
-		}
-		_, err := client.ModifyManagedDatabaseAccessControl(ctx, &aclReq)
-		if err != nil {
-			return utils.HandleResourceError(d.Get("name").(string), d, err)
-		}
-	}
-
-	return resourceOpenSearchRead(ctx, d, meta)
+type opensearchResource struct {
+	client *service.Service
 }
 
-func resourceOpenSearchRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	diags := resourceDatabaseRead(ctx, d, meta)
-	if diags.HasError() {
-		return diags
-	}
-
-	client := meta.(*service.Service)
-	aclReq := request.GetManagedDatabaseAccessControlRequest{ServiceUUID: d.Id()}
-	acl, err := client.GetManagedDatabaseAccessControl(ctx, &aclReq)
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
-	}
-	if err = d.Set("access_control", acl.ACLsEnabled); err != nil {
-		return diag.FromErr(err)
-	}
-	if err = d.Set("extended_access_control", acl.ExtendedACLsEnabled); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+func (r *opensearchResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_managed_database_opensearch"
 }
 
-func resourceOpenSearchUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if d.HasChanges("access_control", "extended_access_control") {
-		client := meta.(*service.Service)
-		aclReq := request.ModifyManagedDatabaseAccessControlRequest{
-			ServiceUUID:         d.Id(),
-			ACLsEnabled:         upcloud.BoolPtr(d.Get("access_control").(bool)),
-			ExtendedACLsEnabled: upcloud.BoolPtr(d.Get("extended_access_control").(bool)),
-		}
-		_, err := client.ModifyManagedDatabaseAccessControl(ctx, &aclReq)
-		if err != nil {
-			return utils.HandleResourceError(d.Get("name").(string), d, err)
-		}
-	}
-
-	diags := resourceDatabaseUpdate(ctx, d, meta)
-	if diags.HasError() {
-		return diags
-	}
-
-	diags = append(diags, resourceOpenSearchRead(ctx, d, meta)...)
-	return diags
+// Configure adds the provider configured client to the resource.
+func (r *opensearchResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
-func schemaOpenSearchEngine() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"properties": {
-			Description: "Database Engine properties for OpenSearch",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Computed:    true,
-			MaxItems:    1,
-			Elem: &schema.Resource{
-				Schema: properties.GetSchemaMap(upcloud.ManagedDatabaseServiceTypeOpenSearch),
+type opensearchModel struct {
+	databaseCommonModel
+
+	AccessControl         types.Bool `tfsdk:"access_control"`
+	ExtendedAccessControl types.Bool `tfsdk:"extended_access_control"`
+}
+
+func (r *opensearchResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: serviceDescription("OpenSearch"),
+		Attributes: map[string]schema.Attribute{
+			"access_control": schema.BoolAttribute{
+				MarkdownDescription: "Enables users access control for OpenSearch service. User access control rules will only be enforced if this attribute is enabled.",
+				Computed:            true,
+				Optional:            true,
+			},
+			"extended_access_control": schema.BoolAttribute{
+				MarkdownDescription: "Grant access to top-level `_mget`, `_msearch` and `_bulk` APIs. Users are limited to perform operations on indices based on the user-specific access control rules.",
+				Computed:            true,
+				Optional:            true,
 			},
 		},
+		Blocks: map[string]schema.Block{},
 	}
+
+	defineCommonAttributesAndBlocks(&resp.Schema, upcloud.ManagedDatabaseServiceTypeOpenSearch)
 }
 
-func schemaOpenSearchAccessControl() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"access_control": {
-			Type:        schema.TypeBool,
-			Description: "Enables users access control for OpenSearch service. User access control rules will only be enforced if this attribute is enabled.",
-			Optional:    true,
-			Computed:    true,
-		},
-		"extended_access_control": {
-			Type:        schema.TypeBool,
-			Description: "Grant access to top-level `_mget`, `_msearch` and `_bulk` APIs. Users are limited to perform operations on indices based on the user-specific access control rules.",
-			Optional:    true,
-			Computed:    true,
-		},
+func readAccessControl(ctx context.Context, client *service.Service, data *opensearchModel) (diags diag.Diagnostics) {
+	acl, err := client.GetManagedDatabaseAccessControl(ctx, &request.GetManagedDatabaseAccessControlRequest{
+		ServiceUUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		diags.AddError(
+			"Unable to read OpenSearch access control settings",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
+
+	data.AccessControl = types.BoolPointerValue(acl.ACLsEnabled)
+	data.ExtendedAccessControl = types.BoolPointerValue(acl.ExtendedACLsEnabled)
+	return
+}
+
+func updateAccessControlIfNeeded(ctx context.Context, client *service.Service, state, plan *opensearchModel) (diags diag.Diagnostics) {
+	if (!state.AccessControl.Equal(plan.AccessControl) || !state.ExtendedAccessControl.Equal(plan.ExtendedAccessControl)) && (!plan.AccessControl.IsUnknown() || !plan.ExtendedAccessControl.IsUnknown()) {
+		aclReq := request.ModifyManagedDatabaseAccessControlRequest{
+			ServiceUUID: plan.ID.ValueString(),
+		}
+		if !plan.AccessControl.IsUnknown() {
+			aclReq.ACLsEnabled = plan.AccessControl.ValueBoolPointer()
+		}
+		if !plan.ExtendedAccessControl.IsUnknown() {
+			aclReq.ExtendedACLsEnabled = plan.ExtendedAccessControl.ValueBoolPointer()
+		}
+		_, err := client.ModifyManagedDatabaseAccessControl(ctx, &aclReq)
+		if err != nil {
+			diags.AddError(
+				"Unable to set OpenSearch access control settings",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return diags
+		}
+	}
+	diags.Append(readAccessControl(ctx, client, plan)...)
+
+	return diags
+}
+
+func (r *opensearchResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data opensearchModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	data.Type = types.StringValue(string(upcloud.ManagedDatabaseServiceTypeOpenSearch))
+
+	_, diags := createDatabase(ctx, &data.databaseCommonModel, r.client)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(updateAccessControlIfNeeded(ctx, r.client, &opensearchModel{}, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *opensearchResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data opensearchModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	db, diags := readDatabase(ctx, &data.databaseCommonModel, r.client, resp.State.RemoveResource)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || db == nil {
+		return
+	}
+
+	resp.Diagnostics.Append(readAccessControl(ctx, r.client, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *opensearchResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state opensearchModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(updateAccessControlIfNeeded(ctx, r.client, &state, &plan)...)
+
+	_, _, d := updateDatabase(ctx, &state.databaseCommonModel, &plan.databaseCommonModel, r.client)
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	_, diags := readDatabase(ctx, &plan.databaseCommonModel, r.client, resp.State.RemoveResource)
+	resp.Diagnostics.Append(diags...)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *opensearchResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data opensearchModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if err := r.client.DeleteManagedDatabase(ctx, &request.DeleteManagedDatabaseRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed database",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)
+}
+
+func (r *opensearchResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

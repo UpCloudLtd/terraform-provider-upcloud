@@ -67,12 +67,6 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	})
 }
 
-func ignoreWhitespaceDiff(str string) *regexp.Regexp {
-	ws := regexp.MustCompile(`\s+`)
-	re := ws.ReplaceAllString(str, `\s+`)
-	return regexp.MustCompile(re)
-}
-
 func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_e.tf")
 

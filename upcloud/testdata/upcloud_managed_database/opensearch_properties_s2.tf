@@ -21,6 +21,7 @@ resource "upcloud_managed_database_opensearch" "opensearch_properties" {
     public_access                       = true
 
     segrep {
+      pressure_enabled          = true
       pressure_checkpoint_limit = 6
     }
   }
