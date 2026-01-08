@@ -133,6 +133,14 @@ func setPolicyValues(_ context.Context, data *policyModel, policy *upcloud.Manag
 	data.System = types.BoolValue(policy.System)
 	data.UpdatedAt = types.StringValue(policy.UpdatedAt.String())
 
+	if data.Description.IsNull() || data.Description.IsUnknown() {
+		if policy.Description == "" {
+			data.Description = types.StringNull()
+		} else {
+			data.Description = types.StringValue(policy.Description)
+		}
+	}
+
 	apiDocument, diags := normalizePolicyDocument(policy.Document)
 	respDiagnostics.Append(diags...)
 	// Document is required, so it should only be empty during import.
