@@ -38,7 +38,7 @@ resource "upcloud_managed_object_storage_policy" "this" {
 
 ### Optional Attributes
 
-- `description` (String) Description of the policy.
+- `description` (String) Description of the policy. This property is immutable after creation.
 
 ### Read-Only
 
