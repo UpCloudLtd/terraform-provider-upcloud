@@ -36,21 +36,26 @@ resource "upcloud_file_storage" "example" {
     customer    = "example-customer"
   }
 
-  share {
-    name = "write-to-project"
-    path = "/project"
-    acl {
-      target     = "172.16.8.12"
-      permission = "rw"
-    }
-  }
-
   network {
     family     = "IPv4"
     name       = "example-private-net"
     uuid       = upcloud_network.this.id
     ip_address = "172.16.8.11"
   }
+}
+
+resource "upcloud_file_storage_share" "example" {
+  file_storage = upcloud_file_storage.example.id
+  name         = "write-to-project"
+  path         = "/project"
+}
+
+resource "upcloud_file_storage_share_acl" "example" {
+  file_storage = upcloud_file_storage.example.id
+  share_name   = upcloud_file_storage_share.example.name
+  name         = "acl-for-project"
+  target       = "172.16.8.12"
+  permission   = "rw"
 }
 ```
 
@@ -71,7 +76,6 @@ resource "upcloud_file_storage" "example" {
 ### Blocks
 
 - `network` (Block Set) Network attached to this file storage (currently supports at most one of these blocks). (see [below for nested schema](#nestedblock--network))
-- `share` (Block Set) List of shares exported by this file storage. (see [below for nested schema](#nestedblock--share))
 
 ### Read-Only
 
@@ -89,24 +93,3 @@ Required Attributes:
 Optional Attributes:
 
 - `ip_address` (String) IP address to assign (optional, auto-assign otherwise).
-
-
-<a id="nestedblock--share"></a>
-### Nested Schema for `share`
-
-Required Attributes:
-
-- `name` (String) Unique name of the share (1–64 chars).
-- `path` (String) Absolute path exported by the share (e.g. `/public`).
-
-Blocks:
-
-- `acl` (Block Set) Access control entries (1–50). (see [below for nested schema](#nestedblock--share--acl))
-
-<a id="nestedblock--share--acl"></a>
-### Nested Schema for `share.acl`
-
-Required Attributes:
-
-- `permission` (String) Access level: 'ro' or 'rw'.
-- `target` (String) Target IP/CIDR or '*'.

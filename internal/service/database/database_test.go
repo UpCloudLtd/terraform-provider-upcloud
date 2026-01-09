@@ -2,15 +2,15 @@ package database
 
 import (
 	"context"
-	"os"
+	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database/properties"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWaitServiceNameToPropagate(t *testing.T) {
@@ -32,44 +32,42 @@ func TestWaitServiceNameToPropagateContextTimeout(t *testing.T) {
 	}
 }
 
-func TestDatabaseProperties(t *testing.T) {
-	if os.Getenv("TF_ACC_DB_PROPS") == "" {
-		t.Skip("Skipping database properties validation, because we have CI workflow for updating these automatically. Set TF_ACC_DB_PROPS environment variable to run these tests.")
+func TestSetPropertyValue(t *testing.T) {
+	ctx := context.Background()
+	emptyListValue, _ := types.ListValueFrom(ctx, types.StringType, []types.String{})
+
+	var emptyList any
+	_ = json.Unmarshal([]byte("[]"), &emptyList)
+
+	tests := []struct {
+		name     string
+		key      string
+		value    any
+		plan     attr.Value
+		prop     upcloud.ManagedDatabaseServiceProperty
+		expected any
+	}{
+		{
+			name:  "empty ip_filter",
+			key:   "ip_filter",
+			value: emptyList,
+			plan:  emptyListValue,
+			prop: upcloud.ManagedDatabaseServiceProperty{
+				Type: "array",
+			},
+			expected: emptyList,
+		},
 	}
 
-	dbTypes := []upcloud.ManagedDatabaseServiceType{
-		upcloud.ManagedDatabaseServiceTypeMySQL,
-		upcloud.ManagedDatabaseServiceTypeOpenSearch,
-		upcloud.ManagedDatabaseServiceTypePostgreSQL,
-		upcloud.ManagedDatabaseServiceTypeValkey,
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			v, _ := test.plan.ToTerraformValue(ctx)
+			processed, err := ignorePropChange(test.value, v, test.key, test.prop)
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected, processed)
 
-	for _, dbType := range dbTypes {
-		t.Run(string(dbType), func(t *testing.T) {
-			s := properties.GetSchemaMap(dbType)
-			testProperties(t, string(dbType), s)
+			value, _ := properties.NativeToValue(ctx, processed, test.prop)
+			assert.True(t, test.plan.Equal(value), "%s != %s", test.plan.String(), value.String())
 		})
-	}
-}
-
-func testProperties(t *testing.T, dbType string, s map[string]*schema.Schema) {
-	svc := utils.NewServiceWithCredentialsFromEnv(t)
-	dbt, err := svc.GetManagedDatabaseServiceType(context.Background(), &request.GetManagedDatabaseServiceTypeRequest{
-		Type: dbType,
-	})
-	if err != nil {
-		t.Error(err)
-	}
-	// check fields that are not in schema
-	for key := range dbt.Properties {
-		if _, ok := s[key]; !ok {
-			t.Errorf("%s property '%s' is not defined in schema. Run `make generate` to update properties.", dbType, key)
-		}
-	}
-	// check removed fields from schema
-	for key := range s {
-		if _, ok := dbt.Properties[key]; !ok {
-			t.Errorf("%s schema field '%s' is no longer supported. Run `make generate` to update properties.", dbType, key)
-		}
 	}
 }

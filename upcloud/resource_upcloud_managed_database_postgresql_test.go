@@ -70,13 +70,11 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("max_worker_processes"), "8"),
 					resource.TestCheckResourceAttr(name, prop("public_access"), "false"),
 					resource.TestCheckResourceAttr(name, prop("shared_buffers_percentage"), "20"),
-					resource.TestCheckResourceAttr(name, prop("synchronous_replication"), ""),
 					resource.TestCheckResourceAttr(name, prop("temp_file_limit"), "1"),
 					resource.TestCheckResourceAttr(name, prop("track_activity_query_size"), "1024"),
 					resource.TestCheckResourceAttr(name, prop("track_commit_timestamp"), "on"),
 					resource.TestCheckResourceAttr(name, prop("track_functions"), "all"),
 					resource.TestCheckResourceAttr(name, prop("track_io_timing"), "on"),
-					resource.TestCheckResourceAttr(name, prop("variant"), ""),
 					resource.TestCheckResourceAttr(name, prop("version"), "16"),
 					resource.TestCheckResourceAttr(name, prop("pg_partman_bgw_interval"), "3600"),
 					resource.TestCheckResourceAttr(name, prop("pg_partman_bgw_role"), "upadmin"),
@@ -100,11 +98,18 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 				),
 			},
 			{
-				Config:                  testDataS1,
-				ResourceName:            name,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"properties.0.admin_password", "properties.0.admin_username", "state"}, // credentials only provided on creation, not available on subsequent requests like import
+				Config:            testDataS1,
+				ResourceName:      name,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// credentials only provided on creation, not available on subsequent requests like import
+					"properties.0.admin_password",
+					"properties.0.admin_username",
+					// pglookout is included in response even when it has not been configured by user
+					"properties.0.pglookout",
+					"state",
+				},
 			},
 			{
 				Config: testDataS2,

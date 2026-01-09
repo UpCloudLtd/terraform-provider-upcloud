@@ -7,6 +7,7 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/config"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/cloud"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/filestorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
@@ -153,6 +154,10 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		database.NewMySQLResource,
+		database.NewOpenSearchResource,
+		database.NewPostgresResource,
+		database.NewValkeyResource,
 		firewall.NewFirewallRulesResource,
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,

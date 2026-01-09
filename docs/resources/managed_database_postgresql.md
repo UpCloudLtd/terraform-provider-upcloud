@@ -42,13 +42,13 @@ resource "upcloud_managed_database_postgresql" "example_2" {
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
 - `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans pg`.
-- `title` (String) Title of a managed database instance
+- `title` (String) Title of the managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
 
 - `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
-- `labels` (Map of String) User defined key-value pairs to classify the managed database.
+- `labels` (Map of String) User defined key-value pairs to classify the database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
 - `powered` (Boolean) The administrative power state of the service
@@ -56,23 +56,23 @@ resource "upcloud_managed_database_postgresql" "example_2" {
 
 ### Blocks
 
-- `network` (Block Set, Max: 8) Private networks attached to the managed database (see [below for nested schema](#nestedblock--network))
-- `properties` (Block List, Max: 1) Database Engine properties for PostgreSQL (see [below for nested schema](#nestedblock--properties))
+- `network` (Block Set) Private networks attached to the managed database (see [below for nested schema](#nestedblock--network))
+- `properties` (Block List) Database engine properties. (see [below for nested schema](#nestedblock--properties))
 
 ### Read-Only
 
-- `components` (List of Object) Service component information (see [below for nested schema](#nestedatt--components))
-- `id` (String) The ID of this resource.
-- `node_states` (List of Object) Information about nodes providing the managed service (see [below for nested schema](#nestedatt--node_states))
+- `components` (Attributes List) Service component information (see [below for nested schema](#nestedatt--components))
+- `id` (String) UUID of the database.
+- `node_states` (Attributes List) Information about nodes providing the managed service (see [below for nested schema](#nestedatt--node_states))
 - `primary_database` (String) Primary database name
 - `service_host` (String) Hostname to the service instance
-- `service_password` (String, Sensitive) Primary username's password to the service instance
+- `service_password` (String, Sensitive) Primary password to the service instance
 - `service_port` (String) Port to the service instance
 - `service_uri` (String, Sensitive) URI to the service instance
 - `service_username` (String) Primary username to the service instance
 - `sslmode` (String) SSL Connection Mode for PostgreSQL
-- `state` (String) State of the service
-- `type` (String) Type of the service
+- `state` (String) The current state of the service
+- `type` (String) Type of the managed database instance
 
 <a id="nestedblock--network"></a>
 ### Nested Schema for `network`
@@ -166,11 +166,11 @@ Optional Attributes:
 
 Blocks:
 
-- `migration` (Block List, Max: 1) Migrate data from existing server. (see [below for nested schema](#nestedblock--properties--migration))
-- `pgaudit` (Block List, Max: 1) PGAudit settings. System-wide settings for the pgaudit extension. (see [below for nested schema](#nestedblock--properties--pgaudit))
-- `pgbouncer` (Block List, Max: 1) PGBouncer connection pooling settings. System-wide settings for pgbouncer. (see [below for nested schema](#nestedblock--properties--pgbouncer))
-- `pglookout` (Block List, Max: 1) PGLookout settings. System-wide settings for pglookout. (see [below for nested schema](#nestedblock--properties--pglookout))
-- `timescaledb` (Block List, Max: 1) TimescaleDB extension configuration values. System-wide settings for the timescaledb extension. (see [below for nested schema](#nestedblock--properties--timescaledb))
+- `migration` (Block List) Migrate data from existing server. (see [below for nested schema](#nestedblock--properties--migration))
+- `pgaudit` (Block List) PGAudit settings. System-wide settings for the pgaudit extension. (see [below for nested schema](#nestedblock--properties--pgaudit))
+- `pgbouncer` (Block List) PGBouncer connection pooling settings. System-wide settings for pgbouncer. (see [below for nested schema](#nestedblock--properties--pgbouncer))
+- `pglookout` (Block List) PGLookout settings. System-wide settings for pglookout. (see [below for nested schema](#nestedblock--properties--pglookout))
+- `timescaledb` (Block List) TimescaleDB extension configuration values. System-wide settings for the timescaledb extension. (see [below for nested schema](#nestedblock--properties--timescaledb))
 
 <a id="nestedblock--properties--migration"></a>
 ### Nested Schema for `properties.migration`
@@ -254,11 +254,11 @@ Optional Attributes:
 
 Read-Only:
 
-- `component` (String)
-- `host` (String)
-- `port` (Number)
-- `route` (String)
-- `usage` (String)
+- `component` (String) Component name.
+- `host` (String) Hostname of the component
+- `port` (Number) Port number of the component
+- `route` (String) Component network route type
+- `usage` (String) Usage of the component
 
 
 <a id="nestedatt--node_states"></a>
@@ -266,6 +266,6 @@ Read-Only:
 
 Read-Only:
 
-- `name` (String)
-- `role` (String)
-- `state` (String)
+- `name` (String) Name plus a node iteration
+- `role` (String) Role of the node
+- `state` (String) Current state of the node
