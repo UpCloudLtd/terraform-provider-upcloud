@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -63,6 +64,9 @@ func (r *managedObjectStoragePolicyResource) Schema(_ context.Context, _ resourc
 			"attachment_count": schema.Int64Attribute{
 				Description: "Attachment count.",
 				Computed:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_at": schema.StringAttribute{
 				Description: "Creation time.",
@@ -76,22 +80,15 @@ func (r *managedObjectStoragePolicyResource) Schema(_ context.Context, _ resourc
 				Computed:    true,
 			},
 			"description": schema.StringAttribute{
-				Description: "Description of the policy.",
+				Description: "Description of the policy. This property is immutable after creation.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					UseStateAfterCreate(),
 				},
 			},
 			"document": schema.StringAttribute{
 				Description: "Policy document, URL-encoded compliant with RFC 3986. Extra whitespace and escapes are ignored when determining if the document has changed.",
 				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplaceIf(
-						policyDocumentRequiresReplace,
-						policyDocumentRequiresReplaceDescription,
-						policyDocumentRequiresReplaceDescription,
-					),
-				},
 			},
 			"id": schema.StringAttribute{
 				Description: "ID of the policy. ID is in {object storage UUID}/{policy name} format.",
@@ -140,14 +137,12 @@ func setPolicyValues(_ context.Context, data *policyModel, policy *upcloud.Manag
 	data.System = types.BoolValue(policy.System)
 	data.UpdatedAt = types.StringValue(policy.UpdatedAt.String())
 
-	if policy.Description == "" {
-		if !data.Description.IsNull() && data.Description.ValueString() == "" {
-			data.Description = types.StringValue("")
-		} else {
+	if data.Description.IsNull() || data.Description.IsUnknown() {
+		if policy.Description == "" {
 			data.Description = types.StringNull()
+		} else {
+			data.Description = types.StringValue(policy.Description)
 		}
-	} else {
-		data.Description = types.StringValue(policy.Description)
 	}
 
 	apiDocument, diags := normalizePolicyDocument(policy.Document)
@@ -246,16 +241,41 @@ func (r *managedObjectStoragePolicyResource) Read(ctx context.Context, req resou
 }
 
 func (r *managedObjectStoragePolicyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data policyModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	var plan, state policyModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	planDoc, diags := normalizePolicyDocument(plan.Document.ValueString())
+	resp.Diagnostics.Append(diags...)
+	stateDoc, diags := normalizePolicyDocument(state.Document.ValueString())
+	resp.Diagnostics.Append(diags...)
+
+	if planDoc != stateDoc {
+		_, err := r.client.CreateManagedObjectStoragePolicyVersion(
+			ctx,
+			&request.CreateManagedObjectStoragePolicyVersionRequest{
+				ServiceUUID: plan.ServiceUUID.ValueString(),
+				Name:        plan.Name.ValueString(),
+				Document:    plan.Document.ValueString(),
+				IsDefault:   true,
+			},
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to create managed object storage policy version",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+	}
+
 	policy, err := r.client.GetManagedObjectStoragePolicy(ctx, &request.GetManagedObjectStoragePolicyRequest{
-		Name:        data.Name.ValueString(),
-		ServiceUUID: data.ServiceUUID.ValueString(),
+		Name:        plan.Name.ValueString(),
+		ServiceUUID: plan.ServiceUUID.ValueString(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -265,8 +285,8 @@ func (r *managedObjectStoragePolicyResource) Update(ctx context.Context, req res
 		return
 	}
 
-	resp.Diagnostics.Append(setPolicyValues(ctx, &data, policy)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(setPolicyValues(ctx, &plan, policy)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *managedObjectStoragePolicyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -293,23 +313,6 @@ func (r *managedObjectStoragePolicyResource) Delete(ctx context.Context, req res
 
 func (r *managedObjectStoragePolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-var _ stringplanmodifier.RequiresReplaceIfFunc = policyDocumentRequiresReplace
-
-const policyDocumentRequiresReplaceDescription = "Policy document requires replace if the document in state does not match planned document after removing whitespace and unnecessary escapes."
-
-func policyDocumentRequiresReplace(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
-	var plan, state policyModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	planDocument, diags := normalizePolicyDocument(plan.Document.ValueString())
-	resp.Diagnostics.Append(diags...)
-	stateDocument, diags := normalizePolicyDocument(state.Document.ValueString())
-	resp.Diagnostics.Append(diags...)
-
-	resp.RequiresReplace = planDocument != stateDocument
 }
 
 func normalizePolicyDocument(document string) (string, diag.Diagnostics) {

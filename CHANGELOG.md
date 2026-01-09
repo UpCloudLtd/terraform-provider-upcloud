@@ -6,15 +6,18 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased]
 
 ### Added
+
 - upcloud_file_storage_share: new resource for managing file storage shares
 - upcloud_file_storage_share_acl: new resource for managing file storage share access control lists
 
 ### Fixed
 
+- object storage policy version: new policy versions are created when there is a modification to an existing policy
 - upcloud_managed_database_\*: do not allow creating database with `powered` set to false. The value was previously allowed, but caused the created database to reach an error state due to being powered off before initial backup.
 - upcloud_managed_database_\*: migrate resource implementation to use plugin framework: when generating configuration with `-generate-config-out` flag of `plan` command, the generated configuration now uses null value for properties with no value in API response instead of empty value (zero for integers, false for booleans, and empty string for strings, ...).
 
 ### Removed
+
 - upcloud_file_storage: `share` block removed in favor of `upcloud_file_storage_share` and `upcloud_file_storage_share_acl` resources
 
 ## [5.32.0] - 2025-11-25
