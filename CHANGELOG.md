@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.33.0] - 2026-01-09
+
 ### Added
 
 - upcloud_file_storage_share: new resource for managing file storage shares
@@ -1122,7 +1124,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.32.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.0...HEAD
+[5.33.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.32.0...v5.33.0
 [5.32.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.31.1...v5.32.0
 [5.31.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.31.0...v5.31.1
 [5.31.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.30.0...v5.31.0
