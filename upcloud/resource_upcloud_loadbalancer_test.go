@@ -42,8 +42,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	var uuid string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -270,8 +270,8 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 	testDataE4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testDataE1,
@@ -301,8 +301,8 @@ func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
 	testdata := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"http": {
 				VersionConstraint: "~> 3.4",
@@ -323,8 +323,8 @@ func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 	name := "upcloud_loadbalancer.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testData,

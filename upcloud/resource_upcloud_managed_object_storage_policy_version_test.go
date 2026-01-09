@@ -19,8 +19,8 @@ func TestAccUpcloudManagedObjectStoragePolicy_Versioning(t *testing.T) {
 	policy := "upcloud_managed_object_storage_policy.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create policy

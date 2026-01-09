@@ -29,8 +29,8 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 	aclTarget2 := fmt.Sprintf("172.16.%d.15", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configStep1,
@@ -112,8 +112,8 @@ func TestAccUpCloudFileStorage_import(t *testing.T) {
 	aclTarget := fmt.Sprintf("172.16.%d.12", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configStep1,

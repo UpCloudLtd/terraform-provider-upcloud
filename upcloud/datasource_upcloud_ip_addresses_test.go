@@ -12,8 +12,8 @@ func TestAccDataSourceUpCloudIPAddresses_basic(t *testing.T) {
 	resourceName := "data.upcloud_ip_addresses.empty"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudIPAddressesConfigEmpty(),
