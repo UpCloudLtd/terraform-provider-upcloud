@@ -1,6 +1,15 @@
 name: Acceptance Tests
 
 on:
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: "Tool to use (terraform|tofu)"
+        required: true
+        type: choice
+        options:
+          - terraform
+          - tofu
   workflow_call:
     inputs:
       tool:
