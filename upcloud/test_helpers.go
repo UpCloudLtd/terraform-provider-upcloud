@@ -41,7 +41,7 @@ func TestAccPreCheck(t *testing.T) {
 	}
 }
 
-func IgnoreWhitespaceDiff(str string) *regexp.Regexp {
+func ignoreWhitespaceDiff(str string) *regexp.Regexp {
 	ws := regexp.MustCompile(`\s+`)
 	re := ws.ReplaceAllString(str, `\s+`)
 	return regexp.MustCompile(re)
