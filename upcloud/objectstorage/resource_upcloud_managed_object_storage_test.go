@@ -12,8 +12,8 @@ import (
 )
 
 func TestAccUpcloudManagedObjectStorage(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_s2.tf")
 
 	this := "upcloud_managed_object_storage.this"
 	minimal := "upcloud_managed_object_storage.minimal"
@@ -69,7 +69,7 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 }
 
 func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
-	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_e.tf")
+	testDataE := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_e.tf")
 
 	labelsPlaceholder := `TEST_KEY = "TEST_VALUE"`
 	stepsData := []struct {
@@ -115,9 +115,9 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 
 func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 	// The test does not configure the required DNS settings for the custom domain to work. This will cause the object storage instance to be stuck in a pending state and thus it cannot be modified as any modification will cause the provider to wait until the instance reaches running state.
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_custom_domain_s3.tf")
 
 	objsto := "upcloud_managed_object_storage.this"
 	customDomain := "upcloud_managed_object_storage_custom_domain.this"
