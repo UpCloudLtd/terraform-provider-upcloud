@@ -18,7 +18,7 @@ resource "upcloud_network" "main" {
   router = upcloud_router.main.id
 
   ip_network {
-    address = "172.23.9.0/24"
+    address = "172.23.50.0/24"
     dhcp    = true
     family  = "IPv4"
   }
