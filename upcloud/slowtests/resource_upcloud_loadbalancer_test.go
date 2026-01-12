@@ -299,7 +299,7 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
-	testdata := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
+	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -319,7 +319,7 @@ func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
-	testData := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_minimal.tf")
+	testData := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_minimal.tf")
 
 	name := "upcloud_loadbalancer.this"
 
