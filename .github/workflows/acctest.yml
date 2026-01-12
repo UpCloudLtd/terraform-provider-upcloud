@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [unittests, core, kubernetes, objectstorage]
+        group: [unittests, core, kubernetes, objectstorage, slowtests]
 
     steps:
       - name: Checkout source code
