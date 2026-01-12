@@ -94,6 +94,9 @@ func (r *firewallRulesResource) Schema(_ context.Context, _ resource.SchemaReque
 			"server_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The UUID of the server to be protected with the firewall rules.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
