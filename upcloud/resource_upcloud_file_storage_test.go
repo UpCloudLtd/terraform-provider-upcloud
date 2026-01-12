@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-// -----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 // Basic Lifecycle Test
 // -----------------------------------------------------------------------------
 func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
