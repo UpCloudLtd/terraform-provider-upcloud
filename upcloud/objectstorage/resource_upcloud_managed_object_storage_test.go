@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -19,8 +20,8 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	bucket := "upcloud_managed_object_storage_bucket.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -77,23 +78,23 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	}{
 		{
 			labels:  `t = "too-short-key"`,
-			errorRe: ignoreWhitespaceDiff(`string length must be between 2 and 32`),
+			errorRe: upcloud.IgnoreWhitespaceDiff(`string length must be between 2 and 32`),
 		},
 		{
 			labels:  `test-validation-fails-if-label-name-too-long = ""`,
-			errorRe: ignoreWhitespaceDiff(`string length must be between 2 and 32`),
+			errorRe: upcloud.IgnoreWhitespaceDiff(`string length must be between 2 and 32`),
 		},
 		{
 			labels:  `test-validation-fails-åäö = "invalid-characters-in-key"`,
-			errorRe: ignoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
+			errorRe: upcloud.IgnoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
 		},
 		{
 			labels:  `_key = "key-starts-with-underscore"`,
-			errorRe: ignoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
+			errorRe: upcloud.IgnoreWhitespaceDiff(`must only contain printable ASCII characters and must not start with`),
 		},
 		{
 			labels:  `test-validation-fails = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam egestas dolor vitae erat egestas, vel malesuada nisi ullamcorper. Aenean suscipit turpis quam, ut interdum lorem varius dignissim. Morbi eu erat bibendum, tincidunt turpis id, porta enim. Pellentesque..."`,
-			errorRe: ignoreWhitespaceDiff(`string length must be between 0 and 255`),
+			errorRe: upcloud.IgnoreWhitespaceDiff(`string length must be between 0 and 255`),
 		},
 	}
 	var steps []resource.TestStep
@@ -106,8 +107,8 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps:                    steps,
 	})
 }
@@ -122,8 +123,8 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 	customDomain := "upcloud_managed_object_storage_custom_domain.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
