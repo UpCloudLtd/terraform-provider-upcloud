@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_firewall_rules: require replacement when `server_id` value changes
+
 ## [5.33.0] - 2026-01-09
 
 ### Added
