@@ -20,8 +20,8 @@ func TestAccDataSourceUpCloudZones_default(t *testing.T) {
 	resourceName := "data.upcloud_zones.empty"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigEmpty(),
@@ -38,8 +38,8 @@ func TestAccDataSourceUpCloudZones_public(t *testing.T) {
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
@@ -58,8 +58,8 @@ func TestAccDataSourceUpCloudZones_private(t *testing.T) {
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),
@@ -77,8 +77,8 @@ func TestAccDataSourceUpCloudZones_all(t *testing.T) {
 	resourceName := fmt.Sprintf("data.upcloud_zones.%s", filterType)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudZonesConfigFilter(filterType),

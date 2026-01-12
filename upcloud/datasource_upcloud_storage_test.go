@@ -10,8 +10,8 @@ func TestAccDataSourceUpCloudStorage(t *testing.T) {
 	templateResourceName := "data.upcloud_storage.ubuntu_template"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: dataSourceUpCloudStorageTestTemplateConfig(),

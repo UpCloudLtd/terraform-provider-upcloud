@@ -17,7 +17,7 @@ resource "upcloud_network" "main" {
   name = "${var.basename}net"
   zone = var.zone
   ip_network {
-    address = "172.23.7.0/24"
+    address = "172.23.34.0/24"
     dhcp    = true
     family  = "IPv4"
   }

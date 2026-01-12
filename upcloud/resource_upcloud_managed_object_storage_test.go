@@ -19,8 +19,8 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	bucket := "upcloud_managed_object_storage_bucket.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -106,8 +106,8 @@ func TestAccUpcloudManagedObjectStorage_LabelsValidation(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps:                    steps,
 	})
 }
@@ -122,8 +122,8 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 	customDomain := "upcloud_managed_object_storage_custom_domain.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

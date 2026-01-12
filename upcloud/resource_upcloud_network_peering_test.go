@@ -23,8 +23,8 @@ func TestAccUpCloudNetworkPeering(t *testing.T) {
 	testDataStep3 := utils.ReadTestDataFile(t, "testdata/upcloud_network_peering/network_peering_s3.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,

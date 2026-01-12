@@ -12,8 +12,8 @@ func TestAccDataSourceUpcloudManagedObjectStoragePolicies(t *testing.T) {
 
 	name := "data.upcloud_managed_object_storage_policies.this"
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
