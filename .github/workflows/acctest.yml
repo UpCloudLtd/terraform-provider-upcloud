@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [unittests, core, kubernetes, managedobjectstorage, manageddatabase]
+        group: [unittests, core, kubernetes, managedobjectstorage, database]
 
     steps:
       - name: Checkout source code
