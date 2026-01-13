@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	upc "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -15,8 +16,8 @@ func withPrefixDB(text string) string {
 }
 
 func TestAccUpcloudManagedDatabase(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/managed_database_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s2.tf")
 
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
@@ -44,8 +45,8 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -171,7 +172,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 }
 
 func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
-	testdata := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/termination_protection.tf")
+	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/termination_protection.tf")
 	db := "upcloud_managed_database_mysql.this.0"
 
 	variables := func(dbCount int32, powered bool, termination_protection bool) map[string]config.Variable {
@@ -183,8 +184,8 @@ func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:          testdata,
@@ -225,8 +226,8 @@ func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
 }
 
 func TestAccUpcloudManagedDatabase_import_minimalProperties(t *testing.T) {
-	configS1 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s1.tf")
-	configS2 := utils.ReadTestDataFile(t, "testdata/upcloud_managed_database/postgresql_import_minimal_properties_s2.tf")
+	configS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/postgresql_import_minimal_properties_s1.tf")
+	configS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/postgresql_import_minimal_properties_s2.tf")
 
 	resourceName := "upcloud_managed_database_postgresql.props"
 	prop := func(name string) string {
@@ -234,8 +235,8 @@ func TestAccUpcloudManagedDatabase_import_minimalProperties(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configS1,

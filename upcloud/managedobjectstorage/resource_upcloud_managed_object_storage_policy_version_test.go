@@ -4,23 +4,24 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccUpcloudManagedObjectStoragePolicy_Versioning(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t,
-		"testdata/upcloud_managed_object_storage/managed_object_storage_policy_version_s1.tf",
+		"../testdata/upcloud_managed_object_storage/managed_object_storage_policy_version_s1.tf",
 	)
 	testDataS2 := utils.ReadTestDataFile(t,
-		"testdata/upcloud_managed_object_storage/managed_object_storage_policy_version_s2.tf",
+		"../testdata/upcloud_managed_object_storage/managed_object_storage_policy_version_s2.tf",
 	)
 
 	policy := "upcloud_managed_object_storage_policy.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create policy
