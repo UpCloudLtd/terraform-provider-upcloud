@@ -5,15 +5,14 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccUpcloudServerNetwork(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_s2.tf")
 
 	server1Name := "upcloud_server.server1"
 
@@ -27,8 +26,8 @@ func TestAccUpcloudServerNetwork(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -68,9 +67,9 @@ func checkStringDoesNotChange(name, key string, expected *string) resource.TestC
 }
 
 func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_ifaces_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_ifaces_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_ifaces_s3.tf")
 
 	this := "upcloud_server.this"
 	family := "upcloud_server.family"
@@ -78,8 +77,8 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 	var thisIP1, thisIP4, thisIP5 string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,

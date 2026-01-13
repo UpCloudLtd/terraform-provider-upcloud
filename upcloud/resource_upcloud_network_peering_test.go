@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -19,13 +18,13 @@ func peeringIDFunc(name string) func(state *terraform.State) (string, error) {
 func TestAccUpCloudNetworkPeering(t *testing.T) {
 	peering0 := "upcloud_network_peering.this.0"
 
-	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_network_peering/network_peering_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_network_peering/network_peering_s2.tf")
-	testDataStep3 := utils.ReadTestDataFile(t, "../testdata/upcloud_network_peering/network_peering_s3.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_network_peering/network_peering_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_network_peering/network_peering_s2.tf")
+	testDataStep3 := utils.ReadTestDataFile(t, "testdata/upcloud_network_peering/network_peering_s3.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,
