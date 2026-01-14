@@ -46,7 +46,7 @@ testacc-database:
 testacc-managedobjectstorage:
 	@echo "Running acceptance tests in ./upcloud/managedobjectstorage only..."
 	TF_ACC=1 go test ./upcloud/managedobjectstorage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
-
+	
 testacc-server:
 	@echo "Running acceptance tests in ./upcloud/server only..."
 	TF_ACC=1 go test ./upcloud/server $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
