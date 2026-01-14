@@ -48,7 +48,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					checkStringDoesNotChange(lbName, "id", &uuid),
+					CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "1"),
@@ -189,7 +189,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
-					checkStringDoesNotChange(lbName, "id", &uuid),
+					CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "monday"),
@@ -220,7 +220,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS3,
 				Check: resource.ComposeTestCheckFunc(
-					checkStringDoesNotChange(lbName, "id", &uuid),
+					CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "network", ""),
 					resource.TestCheckResourceAttr(lbName, "networks.#", "2"),
@@ -252,7 +252,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS4,
 				Check: resource.ComposeTestCheckFunc(
-					checkStringDoesNotChange(lbName, "id", &uuid),
+					CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "0"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),

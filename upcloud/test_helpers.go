@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"regexp"
 	"testing"
@@ -9,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	tftest "github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 var (
@@ -16,7 +19,7 @@ var (
 	testAccProvider          *schema.Provider
 )
 
-const debianTemplateUUID = "01000000-0000-4000-8000-000020070100"
+const DebianTemplateUUID = "01000000-0000-4000-8000-000020070100"
 
 func init() {
 	testAccProvider = Provider()
@@ -45,4 +48,22 @@ func IgnoreWhitespaceDiff(str string) *regexp.Regexp {
 	ws := regexp.MustCompile(`\s+`)
 	re := ws.ReplaceAllString(str, `\s+`)
 	return regexp.MustCompile(re)
+}
+
+func CheckStringDoesNotChange(name, key string, expected *string) resource.TestCheckFunc {
+	return func(s *tftest.State) error {
+		rs, ok := s.RootModule().Resources[name]
+
+		if !ok {
+			return fmt.Errorf("root module has no resource called %s", name)
+		}
+
+		actual := rs.Primary.Attributes[key]
+		if *expected == "" {
+			*expected = actual
+		} else if actual != *expected {
+			return fmt.Errorf(`expected %s to match previous value "%s", got "%s"`, key, *expected, actual)
+		}
+		return nil
+	}
 }

@@ -1,4 +1,4 @@
-package upcloud
+package servertests
 
 import (
 	"crypto/rand"
@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"golang.org/x/crypto/ssh"
@@ -36,13 +37,13 @@ func configCustomPlan(cpu, mem int) string {
 			network_interface {
 				type = "utility"
 			}
-		}`, cpu, mem, debianTemplateUUID)
+		}`, cpu, mem, upcloud.DebianTemplateUUID)
 }
 
 func TestUpcloudServer_customPlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configCustomPlan(1, 1024),
@@ -80,11 +81,11 @@ func TestUpcloudServer_minimal(t *testing.T) {
 			network_interface {
 				type = "utility"
 			}
-		}`, debianTemplateUUID)
+		}`, upcloud.DebianTemplateUUID)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -132,11 +133,11 @@ func TestUpcloudServer_basic(t *testing.T) {
 			network_interface {
 				type = "utility"
 			}
-		}`, debianTemplateUUID)
+		}`, upcloud.DebianTemplateUUID)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -185,13 +186,13 @@ func configSimple(hostname, plan, zone string) string {
 		network_interface {
 			type = "utility"
 		}
-	}`, hostname, plan, zone, debianTemplateUUID)
+	}`, hostname, plan, zone, upcloud.DebianTemplateUUID)
 }
 
 func TestUpcloudServer_changePlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configSimple("tf-acc-test-server-change-plan", "1xCPU-2GB", "fi-hel1"),
@@ -213,8 +214,8 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 
 func TestUpcloudServer_developerPlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configSimple("tf-acc-test-server-dev-plan", "DEV-1xCPU-1GB", "fi-hel1"),
@@ -255,7 +256,7 @@ func configSimpleBackup(time, plan string) string {
 				time = "%s"
 				plan = "%s"
 			}
-		}`, debianTemplateUUID, time, plan)
+		}`, upcloud.DebianTemplateUUID, time, plan)
 }
 
 func configBackupRule(time, interval string, retention int) string {
@@ -278,13 +279,13 @@ func configBackupRule(time, interval string, retention int) string {
 			network_interface {
 				type = "utility"
 			}
-		}`, debianTemplateUUID, time, interval, retention)
+		}`, upcloud.DebianTemplateUUID, time, interval, retention)
 }
 
 func TestUpcloudServer_simpleBackup(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// basic setup
@@ -340,8 +341,8 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 
 func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// basic setup
@@ -600,13 +601,13 @@ func configTags(tags ...string) string {
 			network_interface {
 				type = "utility"
 			}
-		}`, tagsStr, debianTemplateUUID)
+		}`, tagsStr, upcloud.DebianTemplateUUID)
 }
 
 func TestUpcloudServer_updateTags(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Setup server with tags
@@ -672,8 +673,8 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 	var serverID string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccServerNetworkInterfaceConfig(
@@ -883,7 +884,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 					storage = "%s"
 					size = 10
 			}
-	`, debianTemplateUUID))
+	`, upcloud.DebianTemplateUUID))
 
 	for i, ni := range nis {
 		builder.WriteString(fmt.Sprintf(`
@@ -950,8 +951,8 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 
 func TestUpcloudServer_updatePreChecks(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configSimple("tf-acc-test-server-update-pre-checks", "1xCPU-1GB", "fi-hel2"),
@@ -972,8 +973,8 @@ func TestUpcloudServer_updatePreChecks(t *testing.T) {
 
 func TestUpcloudServer_createPreChecks(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Test creating with invalid plan
@@ -1071,7 +1072,7 @@ func configHotResize(planName string, hotResize bool, captureUptime bool, checkU
 		output "server_ip" {
 			value = upcloud_server.hot_resize.network_interface[0].ip_address
 		}
-	`, planName, hotResize, keyDir, debianTemplateUUID, provisioner)
+	`, planName, hotResize, keyDir, upcloud.DebianTemplateUUID, provisioner)
 }
 
 // generateSSHKey generates an SSH key pair in the given directory
@@ -1124,8 +1125,8 @@ func TestUpcloudServer_hotResize(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create a server with 1xCPU-1GB plan and capture uptime
@@ -1180,8 +1181,8 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create a server with 1xCPU-1GB plan and hot_resize=true, and capture uptime
@@ -1227,7 +1228,7 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 					output "server_ip" {
 						value = upcloud_server.mixed_changes.network_interface[0].ip_address
 					}
-				`, keyDir, debianTemplateUUID, keyDir),
+				`, keyDir, upcloud.DebianTemplateUUID, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "plan", "1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "hot_resize", "true"),
@@ -1295,7 +1296,7 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 					output "server_ip" {
 						value = upcloud_server.mixed_changes.network_interface[0].ip_address
 					}
-				`, keyDir, debianTemplateUUID, keyDir),
+				`, keyDir, upcloud.DebianTemplateUUID, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "plan", "1xCPU-2GB"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "hot_resize", "true"),
@@ -1312,14 +1313,14 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 }
 
 func TestUpcloudServer_metadataChange(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_metadata_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_metadata_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_metadata_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_metadata_s2.tf")
 
 	serverName := "upcloud_server.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
