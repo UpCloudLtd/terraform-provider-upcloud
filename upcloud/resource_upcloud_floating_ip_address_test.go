@@ -196,7 +196,7 @@ func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, as
 					type = "public"
 				}
 			}
-		`, serverName, debianTemplateUUID))
+		`, serverName, DebianTemplateUUID))
 	}
 
 	config.WriteString(fmt.Sprintf(`

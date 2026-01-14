@@ -272,7 +272,7 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 				source_address_end = "192.168.1.255"
 				source_address_start = "192.168.1.1"
 			}
-		}`, debianTemplateUUID)
+		}`, DebianTemplateUUID)
 }
 
 func testUpcloudFirewallRulesInstanceConfigUpdate() string {
@@ -327,5 +327,5 @@ func testUpcloudFirewallRulesInstanceConfigUpdate() string {
 				source_address_start = "192.168.3.1"
 			}
 
-		}`, debianTemplateUUID)
+		}`, DebianTemplateUUID)
 }

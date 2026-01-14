@@ -1,18 +1,17 @@
-package upcloud
+package servertests
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccUpcloudServerNetwork(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_s2.tf")
 
 	server1Name := "upcloud_server.server1"
 
@@ -26,8 +25,8 @@ func TestAccUpcloudServerNetwork(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -48,28 +47,10 @@ func TestAccUpcloudServerNetwork(t *testing.T) {
 	})
 }
 
-func checkStringDoesNotChange(name, key string, expected *string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[name]
-
-		if !ok {
-			return fmt.Errorf("root module has no resource called %s", name)
-		}
-
-		actual := rs.Primary.Attributes[key]
-		if *expected == "" {
-			*expected = actual
-		} else if actual != *expected {
-			return fmt.Errorf(`expected %s to match previous value "%s", got "%s"`, key, *expected, actual)
-		}
-		return nil
-	}
-}
-
 func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_ifaces_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_ifaces_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_server/server_ifaces_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s3.tf")
 
 	this := "upcloud_server.this"
 	family := "upcloud_server.family"
@@ -77,22 +58,22 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 	var thisIP1, thisIP4, thisIP5 string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(this, "network_interface.#", "5"),
 					resource.TestCheckResourceAttr(this, "network_interface.0.index", "1"),
-					checkStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP1),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP1),
 					resource.TestCheckResourceAttr(this, "network_interface.2.index", "3"),
 					// Private IP will be re-assigned because it is not specified in the configuration
 					resource.TestCheckResourceAttr(this, "network_interface.3.index", "4"),
-					checkStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP4),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP4),
 					resource.TestCheckResourceAttr(this, "network_interface.3.additional_ip_address.#", "0"),
 					resource.TestCheckResourceAttr(this, "network_interface.4.index", "5"),
-					checkStringDoesNotChange(this, "network_interface.4.ip_address", &thisIP5),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.4.ip_address", &thisIP5),
 					// IP family change
 					resource.TestCheckResourceAttr(family, "network_interface.0.ip_address_family", "IPv4"),
 				),
@@ -102,14 +83,14 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(this, "network_interface.#", "4"),
 					resource.TestCheckResourceAttr(this, "network_interface.0.index", "10"),
-					checkStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP1),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP1),
 					resource.TestCheckResourceAttr(this, "network_interface.1.index", "3"),
 					// Private IP will be re-assigned because it is not specified in the configuration
 					resource.TestCheckResourceAttr(this, "network_interface.2.index", "4"),
-					checkStringDoesNotChange(this, "network_interface.2.ip_address", &thisIP4),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.2.ip_address", &thisIP4),
 					resource.TestCheckResourceAttr(this, "network_interface.2.additional_ip_address.#", "1"),
 					resource.TestCheckResourceAttr(this, "network_interface.3.index", "5"),
-					checkStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP5),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.3.ip_address", &thisIP5),
 					// IP family change
 					resource.TestCheckResourceAttr(family, "network_interface.0.ip_address_family", "IPv6"),
 				),
@@ -119,9 +100,9 @@ func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(this, "network_interface.#", "3"),
 					resource.TestCheckResourceAttr(this, "network_interface.0.index", "5"),
-					checkStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP5),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.0.ip_address", &thisIP5),
 					resource.TestCheckResourceAttr(this, "network_interface.1.index", "10"),
-					checkStringDoesNotChange(this, "network_interface.1.ip_address", &thisIP1),
+					upcloud.CheckStringDoesNotChange(this, "network_interface.1.ip_address", &thisIP1),
 					resource.TestCheckResourceAttr(this, "network_interface.2.index", "3"),
 					// Private IP will be re-assigned because it is not specified in the configuration
 				),
