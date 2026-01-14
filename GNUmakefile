@@ -43,13 +43,9 @@ testacc-database:
 	@echo "Running acceptance tests in ./upcloud/database only..."
 	TF_ACC=1 go test ./upcloud/database $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
 
-testacc-objectstorage:
-	@echo "Running acceptance tests in ./upcloud/objectstorage only..."
-	TF_ACC=1 go test ./upcloud/objectstorage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
-
-testacc-slowtests:
-	@echo "Running slow acceptance tests in ./upcloud/slowtests..."
-	TF_ACC=1 go test ./upcloud/slowtests $(TESTARGS) -v -parallel=4 -timeout=150m
+testacc-managedobjectstorage:
+	@echo "Running acceptance tests in ./upcloud/managedobjectstorage only..."
+	TF_ACC=1 go test ./upcloud/managedobjectstorage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
 
 vet:
 	@echo "go vet ."
