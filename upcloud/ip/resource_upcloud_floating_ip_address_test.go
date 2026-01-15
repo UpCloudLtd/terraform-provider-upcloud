@@ -1,4 +1,4 @@
-package upcloud
+package iptests
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -23,8 +24,8 @@ func TestAccUpcloudFloatingIPAddress_basic(t *testing.T) {
 	expectedAccess := "public"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFloatingIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -61,8 +62,8 @@ func TestAccUpcloudFloatingIPAddress_create_with_server(t *testing.T) {
 	expectedAccess := "public"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"test"}, 0),
@@ -89,8 +90,8 @@ func TestAccUpcloudFloatingIPAddress_switch_between_servers(t *testing.T) {
 	secondServerResourceName := "upcloud_server.second"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testUpcloudFloatingIPAddressCreateWithServerConfig([]string{"first", "second"}, 0),
@@ -142,7 +143,7 @@ func testAccCheckFloatingIPAddressDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := upcloud.TestAccProvider.Meta().(*service.Service)
 		addresses, err := client.GetIPAddresses(context.Background())
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing Floating IP Addresses when deleting upcloud floating IP Address (%s): %s", rs.Primary.ID, err)
@@ -196,7 +197,7 @@ func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, as
 					type = "public"
 				}
 			}
-		`, serverName, DebianTemplateUUID))
+		`, serverName, upcloud.DebianTemplateUUID))
 	}
 
 	config.WriteString(fmt.Sprintf(`

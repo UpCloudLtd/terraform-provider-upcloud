@@ -63,6 +63,14 @@ testacc-filestorage:
 	@echo "Running acceptance tests in ./upcloud/filestorage only..."
 	TF_ACC=1 go test ./upcloud/filestorage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
 
+testacc-ip:
+	@echo "Running acceptance tests in ./upcloud/ip only..."
+	TF_ACC=1 go test ./upcloud/ip $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-storage:
+	@echo "Running acceptance tests in ./upcloud/storage only..."
+	TF_ACC=1 go test ./upcloud/storage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -ge 1 ]; then \

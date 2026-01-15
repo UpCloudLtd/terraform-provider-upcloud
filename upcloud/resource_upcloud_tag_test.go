@@ -84,7 +84,7 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := testAccProvider.Meta().(*service.Service)
+		client := TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetTags(context.Background())
 		if err != nil {
 			return err
@@ -103,7 +103,7 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := testAccProvider.Meta().(*service.Service)
+		client := TestAccProvider.Meta().(*service.Service)
 		tags, err := client.GetTags(context.Background())
 		if err != nil {
 			return fmt.Errorf(
