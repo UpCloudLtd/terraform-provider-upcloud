@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	availablePublicZones = 13
+	availablePublicZones = 15
 	allFilter            = "all"
 	publicFilter         = "public"
 	privateFilter        = "private"
