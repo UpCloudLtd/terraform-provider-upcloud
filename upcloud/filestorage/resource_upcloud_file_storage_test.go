@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -15,10 +16,10 @@ import (
 // Basic Lifecycle Test
 // -----------------------------------------------------------------------------
 func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
-	configStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_s1.tf")
-	configStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_s2.tf")
-	configStep3 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_s3.tf")
-	configStep4 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_s4.tf")
+	configStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s1.tf")
+	configStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s2.tf")
+	configStep3 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s3.tf")
+	configStep4 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s4.tf")
 
 	prefix := "tf-acc-test-file-storage-"
 	suffix := acctest.RandString(4)
@@ -29,8 +30,8 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 	aclTarget2 := fmt.Sprintf("172.16.%d.15", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configStep1,
@@ -102,7 +103,7 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 // Import Test
 // -----------------------------------------------------------------------------
 func TestAccUpCloudFileStorage_import(t *testing.T) {
-	configStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_file_storage/file_storage_s1.tf")
+	configStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s1.tf")
 
 	prefix := "tf-acc-test-file-storage-"
 	suffix := acctest.RandString(4)
@@ -112,8 +113,8 @@ func TestAccUpCloudFileStorage_import(t *testing.T) {
 	aclTarget := fmt.Sprintf("172.16.%d.12", subnet)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: configStep1,
