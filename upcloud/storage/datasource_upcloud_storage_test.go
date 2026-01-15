@@ -3,6 +3,7 @@ package upcloud
 import (
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -10,8 +11,8 @@ func TestAccDataSourceUpCloudStorage(t *testing.T) {
 	templateResourceName := "data.upcloud_storage.ubuntu_template"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: dataSourceUpCloudStorageTestTemplateConfig(),
