@@ -1,10 +1,11 @@
-package upcloud
+package firewalltests
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	upc "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -19,8 +20,8 @@ func TestUpcloudFirewallRules_basic(t *testing.T) {
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -67,8 +68,8 @@ func TestUpcloudFirewallRules_update(t *testing.T) {
 	resourceName := "upcloud_firewall_rules.my_rule"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -94,8 +95,8 @@ func TestUpcloudFirewallRules_import(t *testing.T) {
 	resourceName := firewallRulesResourceName
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckFirewallRulesDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -119,7 +120,7 @@ func testAccCheckFirewallRulesDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 
 		_, err := client.GetFirewallRules(context.Background(), &request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
@@ -148,7 +149,7 @@ func testAccCheckFirewallRulesExists(resourceName string, firewallRules *upcloud
 			return fmt.Errorf("No Firewall ID is set")
 		}
 
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetFirewallRules(context.Background(), &request.GetFirewallRulesRequest{
 			ServerUUID: rs.Primary.ID,
 		})
@@ -272,7 +273,7 @@ func testUpcloudFirewallRulesInstanceConfig() string {
 				source_address_end = "192.168.1.255"
 				source_address_start = "192.168.1.1"
 			}
-		}`, DebianTemplateUUID)
+		}`, upc.DebianTemplateUUID)
 }
 
 func testUpcloudFirewallRulesInstanceConfigUpdate() string {
@@ -327,5 +328,5 @@ func testUpcloudFirewallRulesInstanceConfigUpdate() string {
 				source_address_start = "192.168.3.1"
 			}
 
-		}`, DebianTemplateUUID)
+		}`, upc.DebianTemplateUUID)
 }

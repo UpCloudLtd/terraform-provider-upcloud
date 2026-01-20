@@ -1,18 +1,19 @@
-package upcloud
+package loadbalancertests
 
 import (
 	"regexp"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccUpcloudLoadBalancer(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
-	testDataS4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_s4.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
+	testDataS4 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s4.tf")
 
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
@@ -42,13 +43,13 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 	var uuid string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					CheckStringDoesNotChange(lbName, "id", &uuid),
+					upcloud.CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
 					resource.TestCheckResourceAttr(lbName, "zone", "fi-hel2"),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "1"),
@@ -189,7 +190,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
-					CheckStringDoesNotChange(lbName, "id", &uuid),
+					upcloud.CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "plan", "production-small"),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "maintenance_dow", "monday"),
@@ -220,7 +221,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS3,
 				Check: resource.ComposeTestCheckFunc(
-					CheckStringDoesNotChange(lbName, "id", &uuid),
+					upcloud.CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "2"),
 					resource.TestCheckResourceAttr(lbName, "network", ""),
 					resource.TestCheckResourceAttr(lbName, "networks.#", "2"),
@@ -252,7 +253,7 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 			{
 				Config: testDataS4,
 				Check: resource.ComposeTestCheckFunc(
-					CheckStringDoesNotChange(lbName, "id", &uuid),
+					upcloud.CheckStringDoesNotChange(lbName, "id", &uuid),
 					resource.TestCheckResourceAttr(lbName, "ip_addresses.#", "0"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", ""),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", ""),
@@ -264,14 +265,14 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 
 func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 	// These test data files should fail in pre-plan validation. Thus, these tests are run in plan-only mode.
-	testDataE1 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e1.tf")
-	testDataE2 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e2.tf")
-	testDataE3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e3.tf")
-	testDataE4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
+	testDataE1 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e1.tf")
+	testDataE2 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e2.tf")
+	testDataE3 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e3.tf")
+	testDataE4 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testDataE1,
@@ -298,11 +299,11 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
-	testdata := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
+	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"http": {
 				VersionConstraint: "~> 3.4",
@@ -318,13 +319,13 @@ func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
-	testData := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_minimal.tf")
+	testData := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_minimal.tf")
 
 	name := "upcloud_loadbalancer.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testData,

@@ -1,4 +1,4 @@
-package upcloud
+package routertests
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	upc "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
@@ -20,8 +21,8 @@ func TestAccUpCloudRouter(t *testing.T) {
 
 	staticRoutes := []upcloud.StaticRoute{{Name: "test-route", Nexthop: "10.0.0.100", Route: "0.0.0.0/0"}}
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -54,8 +55,8 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 	updateStaticRoutes := []upcloud.StaticRoute{{Name: "test-route-2", Nexthop: "10.0.0.101", Route: "0.0.0.0/0"}}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -87,14 +88,14 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_detach(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_router/detach_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_router/detach_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/detach_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/detach_s2.tf")
 
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -122,14 +123,14 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_router/delete_attached_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_router/delete_attached_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/delete_attached_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/delete_attached_s2.tf")
 
 	var router upcloud.Router
 	var network upcloud.Network
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckRouterNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -156,14 +157,14 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_staticRoutes(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_router/static_routes_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_router/static_routes_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/static_routes_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/static_routes_s2.tf")
 
 	router := "upcloud_router.this"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,
@@ -195,7 +196,7 @@ func testAccCheckRouterExists(resourceName string, router *upcloud.Router) resou
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
@@ -218,7 +219,7 @@ func testAccCheckRouterDoesntExist(resourceName string, router *upcloud.Router) 
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 		_, err := client.GetRouterDetails(context.Background(), &request.GetRouterDetailsRequest{
 			UUID: router.UUID,
 		})
@@ -245,7 +246,7 @@ func testAccCheckNetworkExists(resourceName string, network *upcloud.Network) re
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetNetworkDetails(context.Background(), &request.GetNetworkDetailsRequest{
 			UUID: rs.Primary.ID,
 		})
@@ -277,7 +278,7 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 		routers, err := client.GetRouters(context.Background())
 		if err != nil {
 			return fmt.Errorf("[WARN] Error listing routers when deleting upcloud router (%s): %s", rs.Primary.ID, err)
@@ -294,7 +295,7 @@ func testAccCheckRouterDestroy(s *terraform.State) error {
 }
 
 func testAccCheckRouterNetworkDestroy(s *terraform.State) error {
-	client := TestAccProvider.Meta().(*service.Service)
+	client := upc.TestAccProvider.Meta().(*service.Service)
 	for _, rs := range s.RootModule().Resources {
 		switch rs.Type {
 		case "upcloud_router":

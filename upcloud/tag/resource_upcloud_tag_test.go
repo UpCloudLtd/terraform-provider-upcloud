@@ -1,4 +1,4 @@
-package upcloud
+package tagtests
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	upc "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -19,8 +20,8 @@ func TestAccUpcloudTag_basic(t *testing.T) {
 	expectedNames := []string{tag1, tag2}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -51,8 +52,8 @@ func TestAccUpCloudTag_import(t *testing.T) {
 	expectedNames := []string{tag1}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		CheckDestroy:             testAccCheckTagDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -84,7 +85,7 @@ func testAccCheckTagsExists(resourceName string, tags *upcloud.Tags) resource.Te
 		}
 
 		// Use the API SDK to locate the remote resource.
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 		latest, err := client.GetTags(context.Background())
 		if err != nil {
 			return err
@@ -103,7 +104,7 @@ func testAccCheckTagDestroy(s *terraform.State) error {
 			continue
 		}
 
-		client := TestAccProvider.Meta().(*service.Service)
+		client := upc.TestAccProvider.Meta().(*service.Service)
 		tags, err := client.GetTags(context.Background())
 		if err != nil {
 			return fmt.Errorf(

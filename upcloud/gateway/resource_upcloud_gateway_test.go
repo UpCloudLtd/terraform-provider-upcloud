@@ -1,4 +1,4 @@
-package upcloud
+package gatewaytests
 
 import (
 	"regexp"
@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccUpcloudGateway(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_gateway/gateway_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_gateway/gateway_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_gateway/gateway_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_gateway/gateway_s2.tf")
 
 	name := "upcloud_gateway.this"
 	conn1Name := "upcloud_gateway_connection.this"
@@ -20,8 +21,8 @@ func TestAccUpcloudGateway(t *testing.T) {
 	tunnel2Name := "upcloud_gateway_connection_tunnel.this2"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
@@ -164,7 +165,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 }
 
 func TestAccUpcloudGateway_LabelsValidation(t *testing.T) {
-	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_gateway/gateway_e.tf")
+	testDataE := utils.ReadTestDataFile(t, "../testdata/upcloud_gateway/gateway_e.tf")
 
 	labelsPlaceholder := `TEST_KEY = "TEST_VALUE"`
 	stepsData := []struct {
@@ -202,8 +203,8 @@ func TestAccUpcloudGateway_LabelsValidation(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps:                    steps,
 	})
 }
