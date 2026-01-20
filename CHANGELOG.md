@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_loadbalancer: do not set value for `networks` field when it is not defined in configuration. This prevents _inconsistent result_ errors when using the deprecated `network` field.
+
 ## [5.33.1] - 2026-01-12
 
 ### Fixed

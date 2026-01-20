@@ -483,23 +483,25 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 	data.Name = types.StringValue(loadbalancer.Name)
 	data.Network = types.StringValue(loadbalancer.NetworkUUID)
 
-	networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
-	for i, network := range loadbalancer.Networks {
-		dataNetwork := loadbalancerNetworkModel{
-			Name:    types.StringValue(network.Name),
-			Type:    types.StringValue(string(network.Type)),
-			Family:  types.StringValue(string(network.Family)),
-			DNSName: types.StringValue(network.DNSName),
-			ID:      types.StringValue(utils.MarshalID(loadbalancer.UUID, network.Name)),
+	if !data.Networks.IsNull() || isImport {
+		networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
+		for i, network := range loadbalancer.Networks {
+			dataNetwork := loadbalancerNetworkModel{
+				Name:    types.StringValue(network.Name),
+				Type:    types.StringValue(string(network.Type)),
+				Family:  types.StringValue(string(network.Family)),
+				DNSName: types.StringValue(network.DNSName),
+				ID:      types.StringValue(utils.MarshalID(loadbalancer.UUID, network.Name)),
+			}
+			if network.Type == upcloud.LoadBalancerNetworkTypePrivate {
+				dataNetwork.Network = types.StringValue(network.UUID)
+			}
+			networks[i] = dataNetwork
 		}
-		if network.Type == upcloud.LoadBalancerNetworkTypePrivate {
-			dataNetwork.Network = types.StringValue(network.UUID)
-		}
-		networks[i] = dataNetwork
-	}
 
-	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
-	respDiagnostics.Append(diags...)
+		data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
+		respDiagnostics.Append(diags...)
+	}
 
 	if data.IPAddresses.IsNull() && !isImport {
 		data.IPAddresses = types.SetNull(data.IPAddresses.ElementType(ctx))

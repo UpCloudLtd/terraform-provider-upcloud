@@ -343,3 +343,23 @@ func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 		},
 	})
 }
+
+func TestAccUpcloudLoadBalancer_network(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_network.tf")
+
+	name := "upcloud_loadbalancer.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testData,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(name, "operational_state", "running"),
+					resource.TestCheckResourceAttr(name, "networks.#", "0"),
+				),
+			},
+		},
+	})
+}
