@@ -8,6 +8,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - upcloud_loadbalancer: do not set value for `networks` field when it is not defined in configuration. This prevents _inconsistent result_ errors when using the deprecated `network` field.
+- upcloud_loadbalancer: allow clearing `network` field when `networks` value contains the same network UUID in the second element of the list. This allows using import to migrate from the deprecated `network` field to `networks` field.
 
 ## [5.33.1] - 2026-01-12
 

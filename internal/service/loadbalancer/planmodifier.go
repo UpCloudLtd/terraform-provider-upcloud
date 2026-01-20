@@ -7,6 +7,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
 
 func getNetworksPlanModifier() planmodifier.List {
@@ -48,4 +49,42 @@ func validateNetworks(networkModels []loadbalancerNetworkModel) diag.Diagnostics
 	}
 
 	return diags
+}
+
+const networkRequiresReplaceIfDescription = "clearing the network field is only allowed when equivalent `networks` block is defined"
+
+func networkRequiresReplaceIfFunc(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+	prev := req.StateValue.ValueString()
+	next := req.PlanValue.ValueString()
+
+	if prev == "" || next != "" {
+		resp.RequiresReplace = true
+		return
+	}
+
+	var plan loadBalancerModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if plan.Networks.IsNull() {
+		resp.RequiresReplace = true
+		return
+	}
+
+	var networkModels []loadbalancerNetworkModel
+	resp.Diagnostics.Append(plan.Networks.ElementsAs(ctx, &networkModels, false)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Equivalent `networks` block contains two entries. First for public network and second for private network where UUID should match network value.
+	if len(networkModels) != 2 || networkModels[1].ID.ValueString() != prev {
+		resp.RequiresReplace = true
+	}
+
+	resp.RequiresReplace = false
 }

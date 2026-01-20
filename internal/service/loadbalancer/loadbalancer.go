@@ -205,7 +205,11 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:            true,
 				Default:             stringdefault.StaticString(""),
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.RequiresReplaceIf(
+						networkRequiresReplaceIfFunc,
+						networkRequiresReplaceIfDescription,
+						networkRequiresReplaceIfDescription,
+					),
 				},
 			},
 			"nodes": schema.ListNestedAttribute{
@@ -481,7 +485,10 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 	data.MaintenanceDOW = types.StringValue(string(loadbalancer.MaintenanceDOW))
 	data.MaintenanceTime = types.StringValue(loadbalancer.MaintenanceTime)
 	data.Name = types.StringValue(loadbalancer.Name)
-	data.Network = types.StringValue(loadbalancer.NetworkUUID)
+
+	if data.Network.ValueString() != "" || isImport {
+		data.Network = types.StringValue(loadbalancer.NetworkUUID)
+	}
 
 	if !data.Networks.IsNull() || isImport {
 		networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
