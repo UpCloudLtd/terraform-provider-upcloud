@@ -1,9 +1,10 @@
-package upcloud
+package iptests
 
 import (
 	"fmt"
 	"testing"
 
+	upc "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -12,8 +13,8 @@ func TestAccDataSourceUpCloudIPAddresses_basic(t *testing.T) {
 	resourceName := "data.upcloud_ip_addresses.empty"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudIPAddressesConfigEmpty(),

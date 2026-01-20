@@ -16,13 +16,13 @@ import (
 
 var (
 	TestAccProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
-	testAccProvider          *schema.Provider
+	TestAccProvider          *schema.Provider
 )
 
 const DebianTemplateUUID = "01000000-0000-4000-8000-000020070100"
 
 func init() {
-	testAccProvider = Provider()
+	TestAccProvider = Provider()
 	TestAccProviderFactories = make(map[string]func() (tfprotov6.ProviderServer, error))
 	TestAccProviderFactories["upcloud"] = func() (tfprotov6.ProviderServer, error) {
 		factory, err := NewProviderServerFactory()
@@ -38,7 +38,7 @@ func TestAccPreCheck(t *testing.T) {
 		t.Fatal("UPCLOUD_PASSWORD must be set for acceptance tests")
 	}
 
-	err := testAccProvider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
+	err := TestAccProvider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
 	if err != nil {
 		t.Fatal(err)
 	}
