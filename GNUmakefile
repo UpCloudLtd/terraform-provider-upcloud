@@ -55,6 +55,14 @@ testacc-network:
 	@echo "Running acceptance tests in ./upcloud/network only..."
 	TF_ACC=1 go test ./upcloud/network $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
 
+testacc-cloud:
+	@echo "Running acceptance tests in ./upcloud/cloud only..."
+	TF_ACC=1 go test ./upcloud/cloud $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-filestorage:
+	@echo "Running acceptance tests in ./upcloud/filestorage only..."
+	TF_ACC=1 go test ./upcloud/filestorage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -ge 1 ]; then \

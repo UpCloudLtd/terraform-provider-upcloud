@@ -30,7 +30,9 @@ jobs:
                 managedobjectstorage, 
                 database, 
                 server, 
-                network
+                network,
+                cloud,
+                filestorage
               ]
 
     steps:

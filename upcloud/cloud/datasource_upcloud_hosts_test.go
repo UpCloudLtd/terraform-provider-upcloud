@@ -1,10 +1,11 @@
-package upcloud
+package cloudtests
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -13,8 +14,8 @@ func TestAccUpCloudHosts_basic(t *testing.T) {
 	resourceName := "data.upcloud_hosts.empty"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceUpCloudHostsConfigEmpty(),
