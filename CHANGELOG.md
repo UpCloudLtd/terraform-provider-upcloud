@@ -5,10 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer: support replacing `network` field with an equivalent `networks` configuration. Equivalent networks configuration consists of two networks blocks: the first should be a public IPv4 network and the second a private IPv4 with `network` set to same value as the main level `network` field was. This enables migrating from the deprecated `network` field to `networks` field.
+
 ### Fixed
 
 - upcloud_loadbalancer: do not set value for `networks` field when it is not defined in configuration. This prevents _inconsistent result_ errors when using the deprecated `network` field.
-- upcloud_loadbalancer: allow clearing `network` field when `networks` value contains the same network UUID in the second element of the list. This allows using import to migrate from the deprecated `network` field to `networks` field.
+- upcloud_loadbalancer: allow renaming networks without replacing the load balancer.
 
 ## [5.33.1] - 2026-01-12
 
