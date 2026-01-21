@@ -2,9 +2,11 @@ package loadbalancer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
@@ -21,9 +23,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &manualCertificateBundleResource{}
-	_ resource.ResourceWithConfigure   = &manualCertificateBundleResource{}
-	_ resource.ResourceWithImportState = &manualCertificateBundleResource{}
+	_ resource.Resource                 = &manualCertificateBundleResource{}
+	_ resource.ResourceWithConfigure    = &manualCertificateBundleResource{}
+	_ resource.ResourceWithImportState  = &manualCertificateBundleResource{}
+	_ resource.ResourceWithUpgradeState = &manualCertificateBundleResource{}
 )
 
 func NewManualCertificateBundleResource() resource.Resource {
@@ -55,7 +58,23 @@ type manualCertificateBundleModel struct {
 }
 
 func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+	resp.Schema = manualCertificateBundleSchemaV1()
+}
+
+func manualCertificateBundleSchemaV1() schema.Schema {
+	s := manualCertificateBundleSchemaV0()
+	s.Version = 1
+	intermediates, ok := s.Attributes["intermediates"].(schema.StringAttribute)
+	if ok {
+		intermediates.Default = stringdefault.StaticString("")
+		s.Attributes["intermediates"] = intermediates
+	}
+
+	return s
+}
+
+func manualCertificateBundleSchemaV0() schema.Schema {
+	return schema.Schema{
 		MarkdownDescription: "This resource represents manual certificate bundle",
 		Attributes: map[string]schema.Attribute{
 			"certificate": schema.StringAttribute{
@@ -99,18 +118,72 @@ func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.S
 				Sensitive:           true,
 			},
 		},
+		Version: 0,
+	}
+}
+
+func (r *manualCertificateBundleResource) UpgradeState(_ context.Context) map[int64]resource.StateUpgrader {
+	schemaV0 := manualCertificateBundleSchemaV0()
+	return map[int64]resource.StateUpgrader{
+		// State upgrade implementation from 0 to 1
+		// No need to change the state as the upgrade is only adding a default value to `intermediates`
+		0: {
+			PriorSchema: &schemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var priorStateData manualCertificateBundleModel
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, priorStateData)...)
+			},
+		},
 	}
 }
 
 func setManualCertificateBundleValues(_ context.Context, data *manualCertificateBundleModel, bundle *upcloud.LoadBalancerCertificateBundle) diag.Diagnostics {
 	var respDiagnostics diag.Diagnostics
 
-	data.Certificate = types.StringValue(bundle.Certificate)
-	data.Intermediates = types.StringValue(bundle.Intermediates)
+	isImport := data.Certificate.IsNull()
+
 	data.Name = types.StringValue(bundle.Name)
 	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
 	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
 	data.OperationalState = types.StringValue(string(bundle.OperationalState))
+
+	apiCertificate, diags := normalizeCertificate(bundle.Certificate)
+	respDiagnostics.Append(diags...)
+	if isImport {
+		data.Certificate = types.StringValue(apiCertificate)
+	} else {
+		configCertificate, configDiags := normalizeCertificate(data.Certificate.ValueString())
+		respDiagnostics.Append(configDiags...)
+
+		if configCertificate != apiCertificate {
+			respDiagnostics.AddError(
+				"Configured certificate does not match the certificate in the API response",
+				fmt.Sprintf("Configured:   %s\nAPI response: %s", configCertificate, apiCertificate),
+			)
+		}
+	}
+
+	apiIntermediates, diags := normalizeCertificate(bundle.Intermediates)
+	respDiagnostics.Append(diags...)
+
+	if isImport {
+		data.Intermediates = types.StringValue(apiIntermediates)
+	} else {
+		configIntermediates, configDiags := normalizeCertificate(data.Intermediates.ValueString())
+		respDiagnostics.Append(configDiags...)
+
+		if configIntermediates != apiIntermediates {
+			respDiagnostics.AddError(
+				"Configured intermediates does not match the intermediates in the API response",
+				fmt.Sprintf("Configured:   %s\nAPI response: %s", configIntermediates, apiIntermediates),
+			)
+		}
+	}
 
 	return respDiagnostics
 }
@@ -183,12 +256,16 @@ func (r *manualCertificateBundleResource) Read(ctx context.Context, req resource
 func (r *manualCertificateBundleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data manualCertificateBundleModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	apiReq := &request.ModifyLoadBalancerCertificateBundleRequest{
-		UUID:          data.ID.ValueString(),
-		Name:          data.Name.ValueString(),
-		Certificate:   data.Certificate.ValueString(),
-		Intermediates: data.Intermediates.ValueStringPointer(),
+		UUID:        data.ID.ValueString(),
+		Name:        data.Name.ValueString(),
+		Certificate: data.Certificate.ValueString(),
+		// Use ValueString() to get empty string if not set, this will clear the intermediates
+		Intermediates: upcloud.StringPtr(data.Intermediates.ValueString()),
 		PrivateKey:    data.PrivateKey.ValueString(),
 	}
 
