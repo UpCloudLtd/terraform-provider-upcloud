@@ -1,4 +1,4 @@
-package upcloud
+package servergrouptests
 
 import (
 	"fmt"
@@ -6,19 +6,20 @@ import (
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccUpCloudServerGroup_ServerGroupMembers(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_group_members_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_group_members_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_group_members_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_group_members_s2.tf")
 
 	group1 := "upcloud_server_group.tf_test_1"
 	group2 := "upcloud_server_group.tf_test_2"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,
@@ -47,14 +48,14 @@ func TestAccUpCloudServerGroup_ServerGroupMembers(t *testing.T) {
 }
 
 func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_server_group_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/server_server_group_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_server_group_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_server_group_s2.tf")
 
 	server := func(i int) string { return fmt.Sprintf("upcloud_server.test_%d", i) }
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataStep1,
@@ -75,11 +76,11 @@ func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
 }
 
 func TestAccUpCloudServerGroup_TrackMembersValidation(t *testing.T) {
-	testDataE := utils.ReadTestDataFile(t, "testdata/upcloud_server_group/errors.tf")
+	testDataE := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/errors.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testDataE,
