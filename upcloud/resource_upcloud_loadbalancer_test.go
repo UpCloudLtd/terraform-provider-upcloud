@@ -215,6 +215,8 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(be1Name, "properties.0.sticky_session_cookie_name", "Sticky-Session"),
 					resource.TestCheckResourceAttr(be1Name, "properties.0.outbound_proxy_protocol", "v1"),
 					resource.TestCheckResourceAttr(be2sm1Name, "weight", "0"),
+					resource.TestCheckResourceAttr(cbm1Name, "certificate", "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURRVENDQWltZ0F3SUJBZ0lCQVRBTkJna3Foa2lHOXcwQkFRc0ZBREJDTVFzd0NRWURWUVFHRXdKWVdERVYKTUJNR0ExVUVCd3dNUkdWbVlYVnNkQ0JEYVhSNU1Sd3dHZ1lEVlFRS0RCTkVaV1poZFd4MElFTnZiWEJoYm5rZwpUSFJrTUI0WERUSTFNVEl4TVRFeE1ETXpNVm9YRFRJMk1USXhNVEV4TURNek1Wb3dRakVMTUFrR0ExVUVCaE1DCldGZ3hGVEFUQmdOVkJBY01ERVJsWm1GMWJIUWdRMmwwZVRFY01Cb0dBMVVFQ2d3VFJHVm1ZWFZzZENCRGIyMXcKWVc1NUlFeDBaRENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFNMmI4QjZRRUliUQp0eER4aktkdkY5VWhvbSt2am1tK29nUDdxRUIycHE2N3FWQUhzcWtSSm9BUmF3VHhub1g4SGsxY1YxRW1TQmVwCmhkMnA2SkxVYmhPcS9aaU45NVN4QXpwUWxtMk1GUzE0Q3Q2NlFIMisySVI1allSR2lRQTBobjN6N3ZyVWF3NGEKZk9BTlJueWlCcUJpcHZFOUc2U1RHTTlVeThub292Qmg4N29sSGNUVE00RnRuYUNWMnA0UlIweFpwa0VzS2UrcAoyMGFNdDJMYWJrTkRFcC9BNmQrUzljc0txNnpGbkxBdHU0c1FLWU5lcXlmbDcxZXowQ0MxV3I4ZExwWTZLb20yCjNWMmtUdlJuSjZibk9YK1JsendDbzJyT3pFclBkZTM4Q2F2aVZYcllLUHhuMDJtakoxMW0zNGFWVmFiWXJtVG8KaGxDMW9rcmwzQmtDQXdFQUFhTkNNRUF3SFFZRFZSME9CQllFRklpcWZTQU1VZ2M0dUttZ0NMQ09nWVlqNmowQgpNQjhHQTFVZEl3UVlNQmFBRlBaVEQ3cExpcFJucUJ6WWEvZzA4OVlNelBwa01BMEdDU3FHU0liM0RRRUJDd1VBCkE0SUJBUUJEKzE4NTU4SWttOEZRUy91V25icUFrU0Q0Tm1tM1R5bFdNa3ZiSGRrejZzZ0FTOEZjMUI5b2ZORm4KR09WRDdXNkE3Vkx1L3VZTFE3b3k3NXBub1VPdVNQV1hWeEtHM0k5TUFpNlA4V2FWZmNUS05HSkFSR25CY1cvdQp4S29HSVY5dC9WRzNHWUVuQzFJN1FSR2dsQy9SeGFEWVE5Tnc1bkM2OEMrZ1JtalVhdEpPdDNLVmR3U3luUnAxCno4b0tEaVBFbjFHT0pYRm54eWN6Y0lydE5FdFd3ZGZEN24yTS90OEVHaUQ4eGJJdnVKVXVmdGRucFJhN3ZJNTcKYVJvUHRmenh6bUg4YTFQTWxXRnRldEgvbFFMLzdHNWdiZU4xd2VRczJjZzJ1bHROTmltajVmNmNHNUhYODM2RAo0QWdJNWFjMDBlalpVYWpycFRDVVRnRThENXpRCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"),
+					resource.TestCheckResourceAttr(cbm1Name, "private_key", "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2d0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktrd2dnU2xBZ0VBQW9JQkFRRE5tL0Fla0JDRzBMY1EKOFl5bmJ4ZlZJYUp2cjQ1cHZxSUQrNmhBZHFhdXU2bFFCN0twRVNhQUVXc0U4WjZGL0I1TlhGZFJKa2dYcVlYZApxZWlTMUc0VHF2MllqZmVVc1FNNlVKWnRqQlV0ZUFyZXVrQjl2dGlFZVkyRVJva0FOSVo5OCs3NjFHc09HbnpnCkRVWjhvZ2FnWXFieFBSdWtreGpQVk12SjZLTHdZZk82SlIzRTB6T0JiWjJnbGRxZUVVZE1XYVpCTENudnFkdEcKakxkaTJtNURReEtmd09uZmt2WExDcXVzeFp5d0xidUxFQ21EWHFzbjVlOVhzOUFndFZxL0hTNldPaXFKdHQxZApwRTcwWnllbTV6bC9rWmM4QXFOcXpzeEt6M1h0L0FtcjRsVjYyQ2o4WjlOcG95ZGRadCtHbFZXbTJLNWs2SVpRCnRhSks1ZHdaQWdNQkFBRUNnZ0VBUEZWWTVhOENtbnplYTBObU1hK2d2N0xwOW5uK2dUc21VYUxrSVY1djFQQk8KWTZTT29admR2MURkSllzOUtEWHVNbWM1WEIrdW9mcmx4RURhZFZPT3BZalVkNUtaSnZHMmI4TThFUk05RjZXVgpFdngyZGkrdFcxcEwwNWZiRmN0VDk5dS9zYXpwYVM4T203UnBqYU1CN01obUVuNExBWVVFajdwalBuRmNkc3JRClE0cE9NenhRTk5zM1VtRThibXZXV0ZkeGF1Yi9yVkV1VU9zMWNiNmU0L2hOTkJHNjBTOGpFRVpuQU1QSm9BK3IKbGRmd2lGYnZuMXhLcjZaTWZmU0IvOXU0bGUrSlRSS2ZzV2U0bzZBS2R2Z3ZkY3BYcmRtMlY1UTNYZ1BqYlNWWApPTExUTXdhUjZaV3QrQnVQNExpOEFoL3ozR0tMbnlzck5pRFpSWFVkelFLQmdRRDdaM21PdFF3d3NHMjNmTDFKClhtaHd5azBKcWJwMkhWNmU0UEdWK214VkoyL0l1RkhKeDRWbGdDbkxLeU56bWxyaGNWcks1MkozYlFyaW9CRHoKcVM2Vmdpd3loeUJxUzI0RzJvN2JzdFJIbjNhZklIQ3VsZituRHM3TklBTVpRSWVaVjFINjNjcE1pZWVhNzYydwpuWVc2enRDd3BSWm9pc3F2RDRTWCtycXR6d0tCZ1FEUlhpYVR0cXlsemVmWGxRNUZGVGZCeDNKYmR5aExFUDZhCncyR0RFOWlFamROTXVLRnJSRjVqeklDL25GQXE3SjZia1YvN2Y3c3dBdzlxOTBmQXljZkNiS1F5TFJxV0lUMDAKM2JFbEdRUk4yZ0xlSitNVkZMSEVocEJXZHBEZGsxM2lObXpkcnhGeFhXRmlEVmNvM3huVUx0NmtqTDROaS9jdApuaS94Z2xYNWx3S0JnUUN3alJKSXJjeEp4UnpINXNublpHMWtDQzNodzFnMjZwa3dhamcrWXdjQkpoalNsTjZiCkhZc0lwT0MwMVM2b1dKWEtESmorTlZCcEhpS3UxRW9UVTVScldtYy9kTFhHOEFIc3ZqL2srY2txSTBwaXBaMTgKZmNwenYycHJremVaM0Q5ZDZIeWgrRy9CSUhlTnp4UGpIRHgxM0JlaWRjMHV6WWxaTjBTZWxtM1M4UUtCZ1FERgpwTGFRSFJOd1ZpZDFxTjFXczhmMTR6eitRVWRGVGQ2NzVKTnA5Tk1obHUwUWNQN1l6eXEzMVhiNDZ5djJ5WGFVCjd6Q0hyN1hhaGhrSTVqVFROdWlmam9XV1pHUERzODhlMStVQlcxTm4xdFY4T0hVekVsMGFZOWxmOWYrZFhCOTEKaStGTGlKZlR4ODVGak1ocDZlcHRGbTNSTXBlN0hCVVQrRS9VRWpEdE13S0JnUUNPNEppV0NScVBweXhTTkFFegp2NHhUUmsyRHJLOWdKTVFqU1dsTWlQUldkalpvTnkzMTdsS2c2V3JBTGRiVU9DOUEzUlg4NnpDU00zT0tuTW91Cmt2TlJMTnBuTEdWbkZMN0U4MWdkc1pYazB5Tzg2bTg1UW9RcFdPZkxrMnBsdUg4ZU02VDNqUnBVcHFWTlV6TXYKZlRoYVJiM0VqTmJVRUx2S3R5V1NnZG9rd1E9PQotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg=="),
 				),
 			},
 			{
@@ -386,6 +388,78 @@ func TestAccUpcloudLoadBalancer_network(t *testing.T) {
 					CheckStringDoesNotChange(migrateName, "id", &migrateUUID),
 					CheckStringDoesNotChange(renameName, "id", &renameUUID),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudLoadBalancerManualCertificateBundle(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/manual_certificate_bundle_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/manual_certificate_bundle_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/manual_certificate_bundle_s3.tf")
+	testDataS4 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/manual_certificate_bundle_s4.tf")
+	testDataS5 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/manual_certificate_bundle_s5.tf")
+	name := "upcloud_loadbalancer_manual_certificate_bundle.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create with dirty certificates (whitespace, comments)
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "certificate"),
+					resource.TestCheckResourceAttrSet(name, "intermediates"),
+				),
+			},
+			{
+				// Step 2: Re-apply with clean certificates, diff expected because values in the state are not normalized
+				Config:   testDataS2,
+				PlanOnly: false,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "certificate"),
+					resource.TestCheckResourceAttrSet(name, "intermediates"),
+				),
+			},
+			{
+				// Step 3: Update with intermediates = "" (empty string)
+				Config:   testDataS3,
+				PlanOnly: false,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "certificate"),
+					resource.TestCheckResourceAttr(name, "intermediates", ""),
+				),
+			},
+			{
+				// Step 4: Update with intermediates not configured, no diff expected
+				Config:   testDataS4,
+				PlanOnly: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "certificate"),
+					resource.TestCheckResourceAttr(name, "intermediates", ""),
+				),
+			},
+			{
+				// Step 5: Update with intermediates set to null, no diff expected
+				Config:   testDataS5,
+				PlanOnly: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "certificate"),
+					resource.TestCheckResourceAttr(name, "intermediates", ""),
+				),
+			},
+			{
+				// Step 6: Import test
+				ResourceName:            name,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"private_key"},
 			},
 		},
 	})

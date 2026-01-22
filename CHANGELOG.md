@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_loadbalancer: do not set value for `networks` field when it is not defined in configuration. This prevents _inconsistent result_ errors when using the deprecated `network` field.
 - upcloud_loadbalancer: allow renaming networks without replacing the load balancer.
+- upcloud_manual_certificate_bundle: `certificate` and `intermediates` values are normalized when comparing configuration against API response to avoid inconsistent result after apply because of differences in comments or whitespace.
 
 ## [5.33.1] - 2026-01-12
 
