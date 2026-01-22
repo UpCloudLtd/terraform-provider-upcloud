@@ -1,4 +1,4 @@
-package upcloud
+package networktests
 
 import (
 	"errors"

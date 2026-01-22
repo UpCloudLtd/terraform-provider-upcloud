@@ -1,4 +1,4 @@
-package networkpeeringtests
+package loadbalancertests
 
 import (
 	"testing"
