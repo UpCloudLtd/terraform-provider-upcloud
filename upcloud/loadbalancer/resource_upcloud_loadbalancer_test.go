@@ -346,9 +346,9 @@ func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancer_network(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_network_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_network_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "testdata/upcloud_loadbalancer/loadbalancer_network_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_network_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_network_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_network_s3.tf")
 
 	migrateName := "upcloud_loadbalancer.migrate_then_rename"
 	renameName := "upcloud_loadbalancer.migrate_and_rename"
@@ -356,16 +356,16 @@ func TestAccUpcloudLoadBalancer_network(t *testing.T) {
 	var migrateUUID, renameUUID string
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProviderFactories,
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					CheckStringDoesNotChange(migrateName, "id", &migrateUUID),
+					upcloud.CheckStringDoesNotChange(migrateName, "id", &migrateUUID),
 					resource.TestCheckResourceAttr(migrateName, "operational_state", "running"),
 					resource.TestCheckResourceAttr(migrateName, "networks.#", "0"),
-					CheckStringDoesNotChange(renameName, "id", &renameUUID),
+					upcloud.CheckStringDoesNotChange(renameName, "id", &renameUUID),
 					resource.TestCheckResourceAttr(renameName, "operational_state", "running"),
 					resource.TestCheckResourceAttr(renameName, "networks.#", "0"),
 				),
@@ -373,10 +373,10 @@ func TestAccUpcloudLoadBalancer_network(t *testing.T) {
 			{
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
-					CheckStringDoesNotChange(migrateName, "id", &migrateUUID),
+					upcloud.CheckStringDoesNotChange(migrateName, "id", &migrateUUID),
 					resource.TestCheckResourceAttr(migrateName, "operational_state", "running"),
 					resource.TestCheckResourceAttr(migrateName, "networks.#", "2"),
-					CheckStringDoesNotChange(renameName, "id", &renameUUID),
+					upcloud.CheckStringDoesNotChange(renameName, "id", &renameUUID),
 					resource.TestCheckResourceAttr(renameName, "operational_state", "running"),
 					resource.TestCheckResourceAttr(renameName, "networks.#", "2"),
 				),
@@ -384,8 +384,8 @@ func TestAccUpcloudLoadBalancer_network(t *testing.T) {
 			{
 				Config: testDataS3,
 				Check: resource.ComposeTestCheckFunc(
-					CheckStringDoesNotChange(migrateName, "id", &migrateUUID),
-					CheckStringDoesNotChange(renameName, "id", &renameUUID),
+					upcloud.CheckStringDoesNotChange(migrateName, "id", &migrateUUID),
+					upcloud.CheckStringDoesNotChange(renameName, "id", &renameUUID),
 				),
 			},
 		},
