@@ -1143,7 +1143,7 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
 [Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.2...HEAD
-[5.33.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.1...v5.33.2
+[5.33.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.1...v5.33.2
 [5.33.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.0...v5.33.1
 [5.33.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.32.0...v5.33.0
 [5.32.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.31.1...v5.32.0
