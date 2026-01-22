@@ -2,6 +2,7 @@ package loadbalancer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
@@ -205,7 +206,11 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:            true,
 				Default:             stringdefault.StaticString(""),
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.RequiresReplaceIf(
+						networkRequiresReplaceIfFunc,
+						networkRequiresReplaceIfDescription,
+						networkRequiresReplaceIfDescription,
+					),
 				},
 			},
 			"nodes": schema.ListNestedAttribute{
@@ -292,7 +297,7 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 							Description: "Network family. Currently only `IPv4` is supported.",
 							Required:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.RequiresReplace(),
+								networksNestedValueRequiresReplaceIf(),
 							},
 							Validators: []validator.String{
 								stringvalidator.OneOf(
@@ -303,9 +308,6 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 						"id": schema.StringAttribute{
 							MarkdownDescription: "The unique identifier of the network.",
 							Computed:            true,
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-							},
 						},
 						"name": schema.StringAttribute{
 							MarkdownDescription: "The name of the network. Must be unique within the service.",
@@ -319,14 +321,14 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 							MarkdownDescription: "Private network UUID. Required for private networks and must reside in loadbalancer zone. For public network the field should be omitted.",
 							Optional:            true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.RequiresReplace(),
+								networksNestedValueRequiresReplaceIf(),
 							},
 						},
 						"type": schema.StringAttribute{
 							MarkdownDescription: "The type of the network. Only one public network can be attached and at least one private network must be attached.",
 							Required:            true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.RequiresReplace(),
+								networksNestedValueRequiresReplaceIf(),
 							},
 							Validators: []validator.String{
 								stringvalidator.OneOf(
@@ -346,7 +348,11 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 					),
 				},
 				PlanModifiers: []planmodifier.List{
-					listplanmodifier.RequiresReplace(),
+					listplanmodifier.RequiresReplaceIf(
+						networksRequiresReplaceIfFunc,
+						networksRequiresReplaceIfDescription,
+						networksRequiresReplaceIfDescription,
+					),
 					getNetworksPlanModifier(),
 				},
 			},
@@ -481,25 +487,30 @@ func setLoadBalancerValues(ctx context.Context, data *loadBalancerModel, loadbal
 	data.MaintenanceDOW = types.StringValue(string(loadbalancer.MaintenanceDOW))
 	data.MaintenanceTime = types.StringValue(loadbalancer.MaintenanceTime)
 	data.Name = types.StringValue(loadbalancer.Name)
-	data.Network = types.StringValue(loadbalancer.NetworkUUID)
 
-	networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
-	for i, network := range loadbalancer.Networks {
-		dataNetwork := loadbalancerNetworkModel{
-			Name:    types.StringValue(network.Name),
-			Type:    types.StringValue(string(network.Type)),
-			Family:  types.StringValue(string(network.Family)),
-			DNSName: types.StringValue(network.DNSName),
-			ID:      types.StringValue(utils.MarshalID(loadbalancer.UUID, network.Name)),
-		}
-		if network.Type == upcloud.LoadBalancerNetworkTypePrivate {
-			dataNetwork.Network = types.StringValue(network.UUID)
-		}
-		networks[i] = dataNetwork
+	if data.Network.ValueString() != "" || isImport {
+		data.Network = types.StringValue(loadbalancer.NetworkUUID)
 	}
 
-	data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
-	respDiagnostics.Append(diags...)
+	if !data.Networks.IsNull() || isImport {
+		networks := make([]loadbalancerNetworkModel, len(loadbalancer.Networks))
+		for i, network := range loadbalancer.Networks {
+			dataNetwork := loadbalancerNetworkModel{
+				Name:    types.StringValue(network.Name),
+				Type:    types.StringValue(string(network.Type)),
+				Family:  types.StringValue(string(network.Family)),
+				DNSName: types.StringValue(network.DNSName),
+				ID:      types.StringValue(utils.MarshalID(loadbalancer.UUID, network.Name)),
+			}
+			if network.Type == upcloud.LoadBalancerNetworkTypePrivate {
+				dataNetwork.Network = types.StringValue(network.UUID)
+			}
+			networks[i] = dataNetwork
+		}
+
+		data.Networks, diags = types.ListValueFrom(ctx, data.Networks.ElementType(ctx), networks)
+		respDiagnostics.Append(diags...)
+	}
 
 	if data.IPAddresses.IsNull() && !isImport {
 		data.IPAddresses = types.SetNull(data.IPAddresses.ElementType(ctx))
@@ -675,10 +686,10 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 
 	// Ensure network renaming is handled before modifying the load balancer
 	if !data.Networks.Equal(state.Networks) {
-		var dataNetworks []request.LoadBalancerNetwork
+		var dataNetworks []loadbalancerNetworkModel
 		resp.Diagnostics.Append(data.Networks.ElementsAs(ctx, &dataNetworks, false)...)
 
-		var stateNetworks []request.LoadBalancerNetwork
+		var stateNetworks []loadbalancerNetworkModel
 		resp.Diagnostics.Append(state.Networks.ElementsAs(ctx, &stateNetworks, false)...)
 
 		if resp.Diagnostics.HasError() {
@@ -686,12 +697,18 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		}
 
 		for i, network := range dataNetworks {
-			if network.Name != stateNetworks[i].Name {
+			// Use default name instead of previous name when previous name is not available. This is the case when migrating from deprecated 'network' field to 'networks' blocks.
+			prevName := fmt.Sprintf("%s-%s", network.Type.ValueString(), network.Family.ValueString())
+			if i < len(stateNetworks) {
+				prevName = stateNetworks[i].Name.ValueString()
+			}
+
+			if network.Name.ValueString() != prevName {
 				networkAPIReq := request.ModifyLoadBalancerNetworkRequest{
 					ServiceUUID: data.ID.ValueString(),
-					Name:        stateNetworks[i].Name,
+					Name:        prevName,
 					Network: request.ModifyLoadBalancerNetwork{
-						Name: network.Name,
+						Name: network.Name.ValueString(),
 					},
 				}
 				if _, err := r.client.ModifyLoadBalancerNetwork(ctx, &networkAPIReq); err != nil {
@@ -699,7 +716,6 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 						"Unable to modify loadbalancer network",
 						utils.ErrorDiagnosticDetail(err),
 					)
-
 					return
 				}
 			}
