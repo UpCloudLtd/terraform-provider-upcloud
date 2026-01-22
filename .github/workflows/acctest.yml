@@ -23,19 +23,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [
-                unittests, 
-                core, 
-                kubernetes, 
-                managedobjectstorage, 
-                database, 
-                server, 
-                network,
-                cloud,
-                filestorage,
-                ip,
-                storage
-              ]
+        group:
+          - unittests
+          - core
+          - kubernetes
+          - managedobjectstorage
+          - database
+          - server
+          - network
+          - cloud
+          - filestorage
+          - ip
+          - storage
+          - firewall
+          - gateway
+          - loadbalancer
+          - networkpeering
+          - router
+          - servergroup
+          - tag
 
     steps:
       - name: Checkout source code
