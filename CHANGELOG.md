@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.33.2] - 2026-01-22
+
 ### Added
 
 - upcloud_loadbalancer: support replacing `network` field with an equivalent `networks` configuration. Equivalent networks configuration consists of two networks blocks: the first should be a public IPv4 network and the second a private IPv4 with `network` set to same value as the main level `network` field was. This enables migrating from the deprecated `network` field to `networks` field.
@@ -1140,7 +1142,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.1...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.2...HEAD
+[5.33.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.1...v5.33.2
 [5.33.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.0...v5.33.1
 [5.33.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.32.0...v5.33.0
 [5.32.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.31.1...v5.32.0
