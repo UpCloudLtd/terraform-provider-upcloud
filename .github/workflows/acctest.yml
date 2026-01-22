@@ -34,7 +34,14 @@ jobs:
                 cloud,
                 filestorage,
                 ip,
-                storage
+                storage,
+                firewall,
+                gateway,
+                loadbalancer,
+                networkpeering,
+                router,
+                servergroup,
+                tag
               ]
 
     steps:

@@ -71,6 +71,34 @@ testacc-storage:
 	@echo "Running acceptance tests in ./upcloud/storage only..."
 	TF_ACC=1 go test ./upcloud/storage $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
 
+testacc-firewall:
+	@echo "Running acceptance tests in ./upcloud/firewall only..."
+	TF_ACC=1 go test ./upcloud/firewall $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-gateway:
+	@echo "Running acceptance tests in ./upcloud/gateway only..."
+	TF_ACC=1 go test ./upcloud/gateway $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-loadbalancer:
+	@echo "Running acceptance tests in ./upcloud/loadbalancer only..."
+	TF_ACC=1 go test ./upcloud/loadbalancer $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-networkpeering:
+	@echo "Running acceptance tests in ./upcloud/networkpeering only..."
+	TF_ACC=1 go test ./upcloud/networkpeering $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-router:
+	@echo "Running acceptance tests in ./upcloud/router only..."
+	TF_ACC=1 go test ./upcloud/router $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-servergroup:
+	@echo "Running acceptance tests in ./upcloud/servergroup only..."
+	TF_ACC=1 go test ./upcloud/servergroup $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
+testacc-tag:
+	@echo "Running acceptance tests in ./upcloud/tag only..."
+	TF_ACC=1 go test ./upcloud/tag $(TESTARGS) -v -parallel=4 -count=1 -timeout=150m
+
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -ge 1 ]; then \
