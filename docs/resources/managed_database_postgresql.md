@@ -103,7 +103,9 @@ Optional Attributes:
 - `autovacuum_vacuum_scale_factor` (Number) Specifies a fraction of the table size to add to autovacuum_vacuum_threshold when deciding whether to trigger a VACUUM (e.g. `0.2` for 20% of the table size). The default is `0.2`.
 - `autovacuum_vacuum_threshold` (Number) Specifies the minimum number of updated or deleted tuples needed to trigger a VACUUM in any one table. The default is `50`.
 - `backup_hour` (Number) The hour of day (in UTC) when backup for the service is started. New backup is only started if previous backup has already completed.
+- `backup_interval_hours` (Number) Backup interval in hours. Interval in hours between automatic backups. Minimum value is 3 hours. Must be a divisor of 24 (3, 4, 6, 8, 12, 24).  (Applicable to ACU plans only).
 - `backup_minute` (Number) The minute of an hour when backup for the service is started. New backup is only started if previous backup has already completed.
+- `backup_retention_days` (Number) Backup retention in days. Number of days to retain automatic backups. Backups older than this value will be automatically deleted. (Applicable to ACU plans only).
 - `bgwriter_delay` (Number) Specifies the delay between activity rounds for the background writer in milliseconds. The default is `200`.
 - `bgwriter_flush_after` (Number) Whenever more than bgwriter_flush_after bytes have been written by the background writer, attempt to force the OS to issue these writes to the underlying storage. Specified in kilobytes. Setting of 0 disables forced writeback. The default is `512`.
 - `bgwriter_lru_maxpages` (Number) In each round, no more than this many buffers will be written by the background writer. Setting this to zero disables background writing. The default is `100`.
