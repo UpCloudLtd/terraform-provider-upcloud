@@ -404,7 +404,7 @@ Optional Attributes:
 
 - `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
 - `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
-- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries. The value should be a time value with unit, e.g. 1m, 5s, 1h.
 
 
 <a id="nestedblock--properties--search_insights_top_queries--latency"></a>
@@ -414,7 +414,7 @@ Optional Attributes:
 
 - `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
 - `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
-- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries. The value should be a time value with unit, e.g. 1m, 5s, 1h.
 
 
 <a id="nestedblock--properties--search_insights_top_queries--memory"></a>
@@ -424,7 +424,7 @@ Optional Attributes:
 
 - `enabled` (Boolean) Enable or disable top N query monitoring by the metric. Enable or disable top N query monitoring by the metric.
 - `top_n_size` (Number) Specify the value of N for the top N queries by the metric.
-- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries.
+- `window_size` (String) The window size of the top N queries by the metric. Configure the window size of the top N queries. The value should be a time value with unit, e.g. 1m, 5s, 1h.
 
 
 
