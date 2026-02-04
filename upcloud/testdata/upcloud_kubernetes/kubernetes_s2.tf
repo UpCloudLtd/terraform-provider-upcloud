@@ -102,7 +102,3 @@ resource "upcloud_kubernetes_node_group" "g4" {
 data "upcloud_kubernetes_cluster" "main" {
   id = upcloud_kubernetes_cluster.main.id
 }
-
-ephemeral "upcloud_kubernetes_cluster" "main" {
-  id = upcloud_kubernetes_cluster.main.id
-}

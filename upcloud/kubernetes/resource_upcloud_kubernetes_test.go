@@ -228,3 +228,43 @@ func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
 		},
 	})
 }
+
+func TestEndToEndKubernetes(t *testing.T) {
+	t.Log(`This testcase:
+
+- Creates a Kubernetes cluster with one node group.
+- Configures Kubernetes provider to connect to the created cluster using ephemeral cluster resource.
+- Deploys hello deployment and service to the cluster.
+- Uses http data source to verify that the deployment is reachable through a node port.
+`)
+
+	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_e2e.tf")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"http": {
+				VersionConstraint: "~> 3.4",
+			},
+			"kubernetes": {
+				VersionConstraint: "~> 3.0",
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				// Create the cluster first and add kubernetes resources in the next step.
+				Config: testdata,
+			},
+			{
+				Config: testdata,
+				ConfigVariables: map[string]config.Variable{
+					"enable_kubernetes_resources": config.BoolVariable(true),
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.http.hello.0", "status_code", "200"),
+				),
+			},
+		},
+	})
+}
