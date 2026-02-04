@@ -24,15 +24,15 @@ type kubernetesClusterEphemeral struct {
 	client *service.Service
 }
 
-func (d *kubernetesClusterEphemeral) Metadata(_ context.Context, req ephemeral.MetadataRequest, resp *ephemeral.MetadataResponse) {
+func (e *kubernetesClusterEphemeral) Metadata(_ context.Context, req ephemeral.MetadataRequest, resp *ephemeral.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_kubernetes_cluster"
 }
 
-func (d *kubernetesClusterEphemeral) Configure(_ context.Context, req ephemeral.ConfigureRequest, resp *ephemeral.ConfigureResponse) {
-	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+func (e *kubernetesClusterEphemeral) Configure(_ context.Context, req ephemeral.ConfigureRequest, resp *ephemeral.ConfigureResponse) {
+	e.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
-func (d *kubernetesClusterEphemeral) Schema(_ context.Context, _ ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
+func (e *kubernetesClusterEphemeral) Schema(_ context.Context, _ ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Managed Kubernetes cluster details. Please refer to [Terraform documentation on sensitive data](https://www.terraform.io/language/state/sensitive-data) to keep the credential data as safe as possible.",
 		Attributes: map[string]schema.Attribute{
@@ -70,13 +70,16 @@ func (d *kubernetesClusterEphemeral) Schema(_ context.Context, _ ephemeral.Schem
 	}
 }
 
-func (d *kubernetesClusterEphemeral) Open(ctx context.Context, req ephemeral.OpenRequest, resp *ephemeral.OpenResponse) {
+func (e *kubernetesClusterEphemeral) Open(ctx context.Context, req ephemeral.OpenRequest, resp *ephemeral.OpenResponse) {
 	var data kubernetesClusterDataModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	clusterID := data.ID.ValueString()
 
-	s, err := d.client.GetKubernetesKubeconfig(ctx, &request.GetKubernetesKubeconfigRequest{
+	s, err := e.client.GetKubernetesKubeconfig(ctx, &request.GetKubernetesKubeconfigRequest{
 		UUID: clusterID,
 	})
 	if err != nil {

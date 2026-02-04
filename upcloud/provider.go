@@ -152,8 +152,9 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	tflog.Info(ctx, "UpCloud service connection configured for plugin framework provider", map[string]interface{}{"http_client": fmt.Sprintf("%#v", httpClient), "request_timeout": requestTimeout})
 
-	resp.ResourceData = service
 	resp.DataSourceData = service
+	resp.EphemeralResourceData = service
+	resp.ResourceData = service
 }
 
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
