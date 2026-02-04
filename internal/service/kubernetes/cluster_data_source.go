@@ -64,6 +64,47 @@ func (m *kubernetesClusterDataModel) setB64Decoded(field string, encoded string)
 	return diags
 }
 
+func setClusterKubeconfigData(ctx context.Context, s string, data *kubernetesClusterDataModel) (diags diag.Diagnostics) {
+	if s == "" {
+		diags.AddError(
+			"Cluster kubeconfig is empty",
+			"API returned an empty kubeconfig for the cluster.",
+		)
+		return
+	}
+
+	data.Kubeconfig = types.StringValue(s)
+
+	k := kubeconfig{}
+	err := yaml.Unmarshal([]byte(s), &k)
+	if err != nil {
+		diags.AddError(
+			"Kubeconfig YAML unmarshal failed",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	currentContext := strings.Split(k.CurrentContext, "@")
+	data.Name = types.StringValue(currentContext[1])
+
+	for _, v := range k.Clusters {
+		if v.Name == currentContext[1] {
+			diags.Append(data.setB64Decoded("ClusterCACertificate", v.Cluster.CertificateAuthorityData)...)
+			data.Host = types.StringValue(v.Cluster.Server)
+		}
+	}
+
+	for _, v := range k.Users {
+		if v.Name == currentContext[0] {
+			diags.Append(data.setB64Decoded("ClientCertificate", v.User.ClientCertificateData)...)
+			diags.Append(data.setB64Decoded("ClientKey", v.User.ClientKeyData)...)
+		}
+	}
+
+	return diags
+}
+
 func (d *kubernetesClusterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Managed Kubernetes cluster details. Please refer to [Terraform documentation on sensitive data](https://www.terraform.io/language/state/sensitive-data) to keep the credential data as safe as possible.",
@@ -122,42 +163,7 @@ func (d *kubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
 		}
 		return
 	}
-	if s == "" {
-		resp.Diagnostics.AddError(
-			"Cluster kubeconfig is empty",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
 
-	data.Kubeconfig = types.StringValue(s)
-
-	k := kubeconfig{}
-	err = yaml.Unmarshal([]byte(s), &k)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Kubeconfig YAML unmarshal failed",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	currentContext := strings.Split(k.CurrentContext, "@")
-	data.Name = types.StringValue(currentContext[1])
-
-	for _, v := range k.Clusters {
-		if v.Name == currentContext[1] {
-			resp.Diagnostics.Append(data.setB64Decoded("ClusterCACertificate", v.Cluster.CertificateAuthorityData)...)
-			data.Host = types.StringValue(v.Cluster.Server)
-		}
-	}
-
-	for _, v := range k.Users {
-		if v.Name == currentContext[0] {
-			resp.Diagnostics.Append(data.setB64Decoded("ClientCertificate", v.User.ClientCertificateData)...)
-			resp.Diagnostics.Append(data.setB64Decoded("ClientKey", v.User.ClientKeyData)...)
-		}
-	}
-
+	resp.Diagnostics.Append(setClusterKubeconfigData(ctx, s, &data)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
