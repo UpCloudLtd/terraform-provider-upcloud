@@ -53,8 +53,10 @@ type upcloudProvider struct {
 	userAgent string
 }
 
-var _ provider.Provider = &upcloudProvider{}
-var _ provider.ProviderWithEphemeralResources = &upcloudProvider{}
+var (
+	_ provider.Provider                       = &upcloudProvider{}
+	_ provider.ProviderWithEphemeralResources = &upcloudProvider{}
+)
 
 func New() provider.Provider {
 	return &upcloudProvider{
