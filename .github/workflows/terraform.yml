@@ -6,6 +6,7 @@ on:
     - cron: "0 0 * * *"
   pull_request:
     paths:
+      - .github/workflows/acctest.yml
       - .github/workflows/terraform.yml
       - go.mod
       - internal/**
