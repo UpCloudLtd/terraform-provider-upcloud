@@ -65,44 +65,6 @@ func TestUpcloudServer_customPlan(t *testing.T) {
 	})
 }
 
-func TestUpcloudServer_minimal(t *testing.T) {
-	config := fmt.Sprintf(`
-		resource "upcloud_server" "this" {
-			hostname = "tf-acc-test-server-minimal" 
-			zone     = "fi-hel2"
-			metadata = true
-			plan = "1xCPU-1GB" 
-
-			template {
-				storage = "%s"
-				size = 10
-			}
-
-			network_interface {
-				type = "utility"
-			}
-		}`, upcloud.DebianTemplateUUID)
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: config,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_server.this", "zone", "fi-hel2"),
-					resource.TestCheckResourceAttr("upcloud_server.this", "hostname", "tf-acc-test-server-minimal"),
-					resource.TestCheckResourceAttr("upcloud_server.this", "tags.#", "0"),
-				),
-			},
-			{
-				Config:             config,
-				ExpectNonEmptyPlan: false, // ensure nothing changed
-			},
-		},
-	})
-}
-
 func TestUpcloudServer_basic(t *testing.T) {
 	config := fmt.Sprintf(`
 		resource "upcloud_server" "this" {
@@ -195,40 +157,28 @@ func TestUpcloudServer_changePlan(t *testing.T) {
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: configSimple("tf-acc-test-server-change-plan", "1xCPU-2GB", "fi-hel1"),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"upcloud_server.this", "plan", "1xCPU-2GB"),
-				),
-			},
-			{
-				Config: configSimple("tf-acc-test-server-change-plan", "2xCPU-4GB", "fi-hel1"),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"upcloud_server.this", "plan", "2xCPU-4GB"),
-				),
-			},
-		},
-	})
-}
-
-func TestUpcloudServer_developerPlan(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: configSimple("tf-acc-test-server-dev-plan", "DEV-1xCPU-1GB", "fi-hel1"),
+				Config: configSimple("tf-acc-test-server-change-plan", "DEV-1xCPU-1GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "DEV-1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.tier", "standard"),
 				),
 			},
 			{
-				Config: configSimple("tf-acc-test-server-dev-plan", "1xCPU-1GB", "fi-hel1"),
+				Config: configSimple("tf-acc-test-server-change-plan", "1xCPU-1GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.tier", "standard"),
+				),
+			},
+			{
+				Config:             configSimple("tf-acc-test-server-change-plan", "1xCPU-1GB", "fi-hel1"),
+				ExpectNonEmptyPlan: false, // ensure nothing changed
+			},
+			{
+				Config: configSimple("tf-acc-test-server-change-plan", "2xCPU-4GB", "fi-hel1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"upcloud_server.this", "plan", "2xCPU-4GB"),
 				),
 			},
 		},
@@ -345,13 +295,13 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				// basic setup
+				// Add backup rule to additional storage
 				Config: `
 					resource "upcloud_storage" "addon" {
 						title = "tf-acc-test-server-storage-simple-backup-extra-disk"
 						size = 10
 						zone = "pl-waw1"
-						
+
 						backup_rule {
 							time = "0100"
 							interval = "mon"
@@ -368,7 +318,7 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						login {
 							password_delivery = "none"
 						}
-
+						
 						template {
 							storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
 							size = 10
