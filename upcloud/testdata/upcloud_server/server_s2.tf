@@ -33,12 +33,6 @@ resource "upcloud_server" "server1" {
     additional_ip_address {
       ip_address = "172.102.0.4"
     }
-    additional_ip_address {
-      ip_address = "172.102.0.5"
-    }
-    additional_ip_address {
-      ip_address = "172.102.0.6"
-    }
   }
 
   login {
