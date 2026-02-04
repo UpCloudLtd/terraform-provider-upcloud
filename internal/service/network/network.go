@@ -625,15 +625,21 @@ func setValues(ctx context.Context, data *networkModel, network *upcloud.Network
 	return respDiagnostics
 }
 
-func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.IPNetwork, diag.Diagnostics) {
+func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.IPNetwork, []request.ModifyNetworkClearIPNetworksFields, diag.Diagnostics) {
 	var planNetworks []ipNetworkModel
 	respDiagnostics := dataIPNetworks.ElementsAs(ctx, &planNetworks, false)
 
 	networks := make([]upcloud.IPNetwork, 0, len(planNetworks))
+	clearFields := make([]request.ModifyNetworkClearIPNetworksFields, len(planNetworks))
 
-	for _, ipnet := range planNetworks {
+	for i, ipnet := range planNetworks {
 		dhcpdns, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPDns)
 		respDiagnostics.Append(diags...)
+
+		// dhcp_dns is optional and computed so only clear the field if user has set it to empty set. When undefined or null, use value from API like for other computed fields.
+		if len(dhcpdns) == 0 && !ipnet.DHCPDns.IsNull() && !ipnet.DHCPDns.IsUnknown() {
+			clearFields[i].DHCPDns = true
+		}
 
 		dhcproutes, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPRoutes)
 		respDiagnostics.Append(diags...)
@@ -723,7 +729,7 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 		networks = append(networks, ipNet)
 	}
 
-	return networks, respDiagnostics
+	return networks, clearFields, respDiagnostics
 }
 
 func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -746,7 +752,7 @@ func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest
 		Router: data.Router.ValueString(),
 	}
 
-	networks, diags := buildIPNetworks(ctx, data.IPNetwork)
+	networks, _, diags := buildIPNetworks(ctx, data.IPNetwork)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -815,12 +821,13 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 		Labels: &labelsSlice,
 	}
 
-	networks, diags := buildIPNetworks(ctx, data.IPNetwork)
+	networks, clearFields, diags := buildIPNetworks(ctx, data.IPNetwork)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	apiReq.IPNetworks = networks
+	apiReq.ClearIPNetworksFields = clearFields
 
 	network, err := r.client.ModifyNetwork(ctx, &apiReq)
 	if err != nil {

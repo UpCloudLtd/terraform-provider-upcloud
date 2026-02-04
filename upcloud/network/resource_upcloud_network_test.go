@@ -102,6 +102,15 @@ func TestAccUpCloudNetwork_basicUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_routes.0", "192.168.100.0/24"),
 				),
 			},
+			{
+				// Clear dhcp_dns value
+				Config: testAccNetworkConfig(netName+"_2", "fi-hel1", cidr, gateway, true, false, false, []string{}, []string{"192.168.100.0/24"}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccNetworkExists("upcloud_network.test_network"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName+"_2"),
+					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_dns.#", "0"),
+				),
+			},
 		},
 	})
 }
@@ -488,9 +497,15 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 		  gateway            = "%s"`, gateway))
 	}
 
-	if len(dhcpDNS) > 0 {
+	if dhcpDNS != nil {
+		s := ""
+
+		if len(dhcpDNS) > 0 {
+			s = fmt.Sprintf(`"%s"`, strings.Join(dhcpDNS, "\", \""))
+		}
+
 		config.WriteString(fmt.Sprintf(`
-		  dhcp_dns			 = ["%s"]`, strings.Join(dhcpDNS, "\", \"")))
+		  dhcp_dns			 = [%s]`, s))
 	}
 
 	if len(dhcpRoutes) > 0 {
