@@ -636,6 +636,7 @@ func buildIPNetworks(ctx context.Context, dataIPNetworks types.List) ([]upcloud.
 		dhcpdns, diags := utils.SetAsSliceOfStrings(ctx, ipnet.DHCPDns)
 		respDiagnostics.Append(diags...)
 
+		// dhcp_dns is optional and computed so only clear the field if user has set it to empty set. When undefined or null, use value from API like for other computed fields.
 		if len(dhcpdns) == 0 && !ipnet.DHCPDns.IsNull() && !ipnet.DHCPDns.IsUnknown() {
 			clearFields[i].DHCPDns = true
 		}
