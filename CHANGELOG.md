@@ -5,7 +5,13 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_network: clear `dhcp_dns` when it has been set to an empty set.
+
 ## [5.33.3] - 2026-02-03
+
+### Changed
 
 - upcloud_managed_database_opensearch: support for OpenSearch 3
 
