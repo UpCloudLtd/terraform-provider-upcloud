@@ -133,7 +133,7 @@ install-tools:
 
 docs: install-tools
 	terraform fmt -recursive examples/
-	$(TOOLS_DIR)/tfplugindocs
+	$(TOOLS_DIR)/tfplugindocs --blocks-section
 	./scripts/group-docs.sh
 
 release-notes: CHANGELOG_HEADER = ^\#\# \[

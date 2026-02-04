@@ -2,7 +2,7 @@
 
 subcategory_missing=""
 
-for d in resources data-sources; do
+for d in data-sources ephemeral-resources resources; do
     files=$(ls "docs/$d")
 
     for f in $files; do

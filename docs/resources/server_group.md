@@ -63,6 +63,8 @@ resource "upcloud_server_group" "main" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 terraform import upcloud_server_group.main ead4544f-10bf-42a3-b98a-a0fea2e2ad14
 ```

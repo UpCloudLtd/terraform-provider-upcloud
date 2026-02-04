@@ -64,6 +64,8 @@ resource "upcloud_floating_ip_address" "my_new_floating_address" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 terraform import upcloud_floating_ip_address.my_new_floating_address 94.237.114.205
 ```
