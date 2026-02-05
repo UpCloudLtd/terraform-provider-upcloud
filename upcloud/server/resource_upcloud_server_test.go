@@ -151,35 +151,42 @@ func configSimple(hostname, plan, zone string) string {
 	}`, hostname, plan, zone, upcloud.DebianTemplateUUID)
 }
 
-func TestUpcloudServer_changePlan(t *testing.T) {
+func TestUpcloudServer_plan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: configSimple("tf-acc-test-server-change-plan", "DEV-1xCPU-1GB", "fi-hel1"),
+				Config: configSimple("tf-acc-test-server-plan", "DEV-1xCPU-1GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "DEV-1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.tier", "standard"),
 				),
 			},
 			{
-				Config: configSimple("tf-acc-test-server-change-plan", "1xCPU-1GB", "fi-hel1"),
+				Config: configSimple("tf-acc-test-server-plan", "1xCPU-1GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "plan", "1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.tier", "standard"),
 				),
 			},
 			{
-				Config:             configSimple("tf-acc-test-server-change-plan", "1xCPU-1GB", "fi-hel1"),
+				Config:             configSimple("tf-acc-test-server-plan", "1xCPU-1GB", "fi-hel1"),
 				ExpectNonEmptyPlan: false, // ensure nothing changed
 			},
 			{
-				Config: configSimple("tf-acc-test-server-change-plan", "2xCPU-4GB", "fi-hel1"),
+				Config: configSimple("tf-acc-test-server-plan", "2xCPU-4GB", "fi-hel1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"upcloud_server.this", "plan", "2xCPU-4GB"),
 				),
+			},
+			{
+				// Test validation: updating with invalid plan should fail
+				Config:             configSimple("tf-acc-test-server-plan", "1xCPU-1G", "fi-hel1"),
+				ExpectNonEmptyPlan: true,
+				ExpectError:        regexp.MustCompile("expected plan to be one of"),
+				Check:              resource.TestCheckResourceAttr("upcloud_server.this", "plan", "2xCPU-4GB"),
 			},
 		},
 	})
@@ -897,28 +904,6 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	}
 
 	return builder.String()
-}
-
-func TestUpcloudServer_updatePreChecks(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: configSimple("tf-acc-test-server-update-pre-checks", "1xCPU-1GB", "fi-hel2"),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("upcloud_server.this", "plan"),
-				),
-			},
-			{
-				// Test updating with invalid plan
-				Config:             configSimple("tf-acc-test-server-create-pre-checks", "1xCPU-1G", "fi-hel1"),
-				ExpectNonEmptyPlan: true,
-				ExpectError:        regexp.MustCompile("expected plan to be one of"),
-				Check:              resource.TestCheckResourceAttr("upcloud_server.this", "plan", "1xCPU-1GB"),
-			},
-		},
-	})
 }
 
 func TestUpcloudServer_createPreChecks(t *testing.T) {
