@@ -74,11 +74,9 @@ jobs:
       - name: "Print ${{ inputs.tool }} version"
         run: ${{ inputs.tool }} version
 
-      - name: Run unit tests
-        run: |
-          if [ "${{ matrix.group }}" == "unittests" ]; then
-            make test
-          fi
+      - name: Run unittests
+        run: make test
+        if: matrix.group == 'unittests'
 
       - name: Run ${{ matrix.group }} acceptance tests
         env:
