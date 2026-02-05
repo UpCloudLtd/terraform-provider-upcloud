@@ -16,6 +16,9 @@
     "zone.md": "Cloud",
     "zones.md": "Cloud"
   },
+  "ephemeral-resources": {
+    "kubernetes_cluster.md": "Kubernetes"
+  },
   "resources": {
     "firewall_rules.md": "Servers",
     "server.md": "Servers",

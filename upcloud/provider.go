@@ -24,6 +24,7 @@ import (
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -52,7 +53,10 @@ type upcloudProvider struct {
 	userAgent string
 }
 
-var _ provider.Provider = New()
+var (
+	_ provider.Provider                       = &upcloudProvider{}
+	_ provider.ProviderWithEphemeralResources = &upcloudProvider{}
+)
 
 func New() provider.Provider {
 	return &upcloudProvider{
@@ -148,8 +152,9 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	tflog.Info(ctx, "UpCloud service connection configured for plugin framework provider", map[string]interface{}{"http_client": fmt.Sprintf("%#v", httpClient), "request_timeout": requestTimeout})
 
-	resp.ResourceData = service
 	resp.DataSourceData = service
+	resp.EphemeralResourceData = service
+	resp.ResourceData = service
 }
 
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
@@ -205,5 +210,11 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 		managedobjectstorage.NewPoliciesDataSource,
 		managedobjectstorage.NewRegionsDataSource,
 		storage.NewStorageDataSource,
+	}
+}
+
+func (p *upcloudProvider) EphemeralResources(_ context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		kubernetes.NewKubernetesClusterEphemeral,
 	}
 }

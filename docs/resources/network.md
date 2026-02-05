@@ -123,6 +123,8 @@ Read-Only:
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 terraform import upcloud_network.my_example_network 03e44422-07b8-4798-a597-c8eab1fa64df
 ```
