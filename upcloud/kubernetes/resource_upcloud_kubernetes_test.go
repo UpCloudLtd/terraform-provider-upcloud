@@ -9,6 +9,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"golang.org/x/mod/semver"
 )
 
@@ -260,6 +261,12 @@ func TestEndToEndKubernetes(t *testing.T) {
 				Config: testdata,
 				ConfigVariables: map[string]config.Variable{
 					"enable_kubernetes_resources": config.BoolVariable(true),
+				},
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_kubernetes_cluster.main", plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction("upcloud_kubernetes_node_group.default", plancheck.ResourceActionNoop),
+					},
 				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.http.hello.0", "status_code", "200"),
