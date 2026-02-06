@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_kubernetes_cluster: add ephemeral resource for getting kubeconfig of a cluster.
 
+### Fixed
+
+- upcloud_managed_object_storage_user_policy: remove resource from state if resource has been deleted outside of Terraform.
+
 ## [5.33.4] - 2026-02-04
 
 ### Fixed
