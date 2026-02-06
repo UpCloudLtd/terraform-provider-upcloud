@@ -18,6 +18,7 @@ func withPrefixDB(text string) string {
 func TestAccUpcloudManagedDatabase(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s3.tf")
 
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
@@ -166,6 +167,10 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(valkeyName, "zone", "pl-waw1"),
 					resource.TestCheckResourceAttr(valkeyName, "powered", "true"),
 				),
+			},
+			{
+				// Check that clearing user access control blocks works without data consistency errors
+				Config: testDataS3,
 			},
 		},
 	})
