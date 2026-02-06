@@ -82,7 +82,7 @@ Required Attributes:
 
 - `family` (String) Network family. Currently only `IPv4` is supported.
 - `name` (String) Network name. Must be unique within the service.
-- `type` (String) Network type.
+- `type` (String) Network type (`private` / `public`).
 
 Optional Attributes:
 
