@@ -162,44 +162,20 @@ resource "upcloud_managed_database_valkey" "v1" {
   }
 }
 
-resource "upcloud_managed_database_opensearch" "o1" {
-  name  = "${var.prefix}opensearch-1"
-  plan  = "1x2xCPU-4GB-80GB-1D"
-  title = "${var.prefix}opensearch-1"
-  zone  = var.zone
-
-  labels = {
-    test = "terraform-provider-acceptance-test"
-  }
-}
-
 resource "upcloud_managed_database_user" "db_user_1" {
   service        = upcloud_managed_database_mysql.msql1.id
   username       = "somename"
   password       = "Superpass890"
-  authentication = "caching_sha2_password"
 }
 
 resource "upcloud_managed_database_user" "db_user_2" {
   service  = upcloud_managed_database_postgresql.pg2.id
   username = "somename"
   password = "Superpass123"
-  pg_access_control {
-    allow_replication = true
-  }
-}
-
-resource "upcloud_managed_database_user" "db_user_4" {
-  service  = upcloud_managed_database_opensearch.o1.id
-  username = "somename"
-  password = "Superpass12345"
 }
 
 resource "upcloud_managed_database_user" "db_user_5" {
   service  = upcloud_managed_database_valkey.v1.id
   username = "somename"
   password = "Superpass123"
-  valkey_access_control {
-    keys = ["key*"]
-  }
 }

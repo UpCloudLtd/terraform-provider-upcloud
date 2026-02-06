@@ -8,512 +8,667 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceUser() *schema.Resource {
-	return &schema.Resource{
-		Description:   "This resource represents a user in managed database",
-		CreateContext: resourceUserCreate,
-		ReadContext:   resourceUserRead,
-		UpdateContext: resourceUserUpdate,
-		DeleteContext: resourceUserDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Schema: schemaUser(),
-	}
+var (
+	_ resource.Resource                = &databaseUserResource{}
+	_ resource.ResourceWithConfigure   = &databaseUserResource{}
+	_ resource.ResourceWithImportState = &databaseUserResource{}
+)
+
+func NewUserResource() resource.Resource {
+	return &databaseUserResource{}
 }
 
-func schemaUser() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"service": {
-			Description: "Service's UUID for which this user belongs to",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
-		},
-		"username": {
-			Description: "Name of the database user",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
-		},
-		"password": {
-			Description:      "Password for the database user. Defaults to a random value",
-			Type:             schema.TypeString,
-			Sensitive:        true,
-			Computed:         true,
-			Optional:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(8, 256)),
-		},
-		"type": {
-			Description: "Type of the user. Only normal type users can be created",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"authentication": {
-			Description: "MySQL only, authentication type.",
-			Type:        schema.TypeString,
-			// caching_sha2_password is used by default, but that can not be set via Default field as that would set the value also for non MySQL users.
-			Optional: true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-				string(upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password),
-				string(upcloud.ManagedDatabaseUserAuthenticationMySQLNativePassword),
-			}, false)),
-		},
-		"pg_access_control": {
-			Description:   "PostgreSQL access control object.",
-			ConflictsWith: []string{"opensearch_access_control", "valkey_access_control"},
-			Type:          schema.TypeList,
-			Optional:      true,
-			MaxItems:      1,
-			Elem: &schema.Resource{
-				Schema: schemaPostgreSQLUserAccessControl(),
-			},
-		},
-		"valkey_access_control": {
-			Description: "Valkey access control object.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			MaxItems:    1,
-			Elem: &schema.Resource{
-				Schema: schemaValkeyUserAccessControl(),
-			},
-		},
-		"opensearch_access_control": {
-			Description: "OpenSearch access control object.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			MaxItems:    1,
-			Elem: &schema.Resource{
-				Schema: schemaOpenSearchUserAccessControl(),
-			},
-		},
-	}
+type databaseUserResource struct {
+	client *service.Service
 }
 
-func schemaPostgreSQLUserAccessControl() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"allow_replication": {
-			Description: "Grant replication privilege",
-			Type:        schema.TypeBool,
-			Default:     true,
-			Optional:    true,
-		},
-	}
+func (r *databaseUserResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_managed_database_user"
 }
 
-func schemaValkeyUserAccessControl() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"categories": {
-			Description: "Set access control to all commands in specified categories.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
-		"channels": {
-			Description: "Set access control to Pub/Sub channels.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
-		"commands": {
-			Description: "Set access control to commands.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
-		"keys": {
-			Description: "Set access control to keys.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
-	}
+// Configure adds the provider configured client to the resource.
+func (r *databaseUserResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
-func schemaOpenSearchUserAccessControl() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"rules": {
-			Description: "Set user access control rules.",
-			Type:        schema.TypeList,
-			Required:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"index": {
-						Description: "Set index name, pattern or top level API.",
-						Type:        schema.TypeString,
-						Required:    true,
+type databaseUserModel struct {
+	ID                      types.String `tfsdk:"id"`
+	Service                 types.String `tfsdk:"service"`
+	Username                types.String `tfsdk:"username"`
+	Password                types.String `tfsdk:"password"`
+	Type                    types.String `tfsdk:"type"`
+	Authentication          types.String `tfsdk:"authentication"`
+	PgAccessControl         types.List   `tfsdk:"pg_access_control"`
+	ValkeyAccessControl     types.List   `tfsdk:"valkey_access_control"`
+	OpensearchAccessControl types.List   `tfsdk:"opensearch_access_control"`
+}
+
+type pgAccessControlModel struct {
+	AllowReplication types.Bool `tfsdk:"allow_replication"`
+}
+
+type valkeyAccessControlModel struct {
+	Categories types.List `tfsdk:"categories"`
+	Channels   types.List `tfsdk:"channels"`
+	Commands   types.List `tfsdk:"commands"`
+	Keys       types.List `tfsdk:"keys"`
+}
+
+type opensearchAccessControlModel struct {
+	Rules types.List `tfsdk:"rules"`
+}
+
+type opensearchAccessControlRuleModel struct {
+	Index      types.String `tfsdk:"index"`
+	Permission types.String `tfsdk:"permission"`
+}
+
+func (r *databaseUserResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	emptyStringList := types.ListValueMust(types.StringType, []attr.Value{})
+
+	resp.Schema = schema.Schema{
+		MarkdownDescription: `This resource represents a user in managed database.`,
+		Attributes: map[string]schema.Attribute{
+			"service": schema.StringAttribute{
+				Description: "Service's UUID for which this user belongs to",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"id": schema.StringAttribute{
+				Description: "ID of the user. ID is in {service UUID}/{username} format.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"username": schema.StringAttribute{
+				Description: "Name of the database user",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"password": schema.StringAttribute{
+				Description: "Password for the database user. Defaults to a random value",
+				Optional:    true,
+				Computed:    true,
+				Sensitive:   true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(8, 256),
+				},
+			},
+			"type": schema.StringAttribute{
+				Description: "Type of the user. Only normal type users can be created",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"authentication": schema.StringAttribute{
+				Description: "MySQL only, authentication type.",
+				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password),
+						string(upcloud.ManagedDatabaseUserAuthenticationMySQLNativePassword),
+					),
+				},
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"pg_access_control": schema.ListNestedBlock{
+				Description: "PostgreSQL access control object.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"allow_replication": schema.BoolAttribute{
+							Description: "Grant replication privilege",
+							Optional:    true,
+							Computed:    true,
+							Default:     booldefault.StaticBool(true),
+						},
 					},
-					"permission": {
-						Description: "Set permission access.",
-						Type:        schema.TypeString,
-						Required:    true,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionAdmin),
-							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionDeny),
-							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionRead),
-							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionReadWrite),
-							string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionWrite),
-						}, false)),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 1),
+					listvalidator.ConflictsWith(
+						path.MatchRoot("opensearch_access_control"),
+						path.MatchRoot("valkey_access_control"),
+					),
+				},
+			},
+			"valkey_access_control": schema.ListNestedBlock{
+				Description: "Valkey access control object.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"categories": schema.ListAttribute{
+							Description: "Set access control to all commands in specified categories.",
+							ElementType: types.StringType,
+							Optional:    true,
+							Computed:    true,
+							Default:     listdefault.StaticValue(emptyStringList),
+						},
+						"channels": schema.ListAttribute{
+							Description: "Set access control to Pub/Sub channels.",
+							ElementType: types.StringType,
+							Optional:    true,
+							Computed:    true,
+							Default:     listdefault.StaticValue(emptyStringList),
+						},
+						"commands": schema.ListAttribute{
+							Description: "Set access control to commands.",
+							ElementType: types.StringType,
+							Optional:    true,
+							Computed:    true,
+							Default:     listdefault.StaticValue(emptyStringList),
+						},
+						"keys": schema.ListAttribute{
+							Description: "Set access control to keys.",
+							ElementType: types.StringType,
+							Optional:    true,
+							Computed:    true,
+							Default:     listdefault.StaticValue(emptyStringList),
+						},
 					},
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 1),
+					listvalidator.ConflictsWith(
+						path.MatchRoot("opensearch_access_control"),
+					),
+				},
+			},
+			"opensearch_access_control": schema.ListNestedBlock{
+				Description: "OpenSearch access control object.",
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"rules": schema.ListNestedBlock{
+							Description: "Set user access control rules.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"index": schema.StringAttribute{
+										Description: "Set index name, pattern or top level API.",
+										Required:    true,
+									},
+									"permission": schema.StringAttribute{
+										Description: "Set permission access.",
+										Required:    true,
+										Validators: []validator.String{
+											stringvalidator.OneOf(
+												string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionAdmin),
+												string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionDeny),
+												string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionRead),
+												string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionReadWrite),
+												string(upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermissionWrite),
+											),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(0, 1),
 				},
 			},
 		},
 	}
 }
 
-func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
-
-	if d.HasChange("type") && d.Get("type").(string) != string(upcloud.ManagedDatabaseUserTypeNormal) {
-		return diag.FromErr(fmt.Errorf("only type `normal` users can be created"))
+func listValuePointerMust(s *[]string) types.List {
+	if s == nil {
+		return types.ListNull(types.StringType)
 	}
 
-	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
+	vals := make([]attr.Value, len(*s))
+	for i, v := range *s {
+		vals[i] = types.StringValue(v)
+	}
+
+	return types.ListValueMust(types.StringType, vals)
+}
+
+func setDatabaseUserValues(ctx context.Context, data *databaseUserModel, user *upcloud.ManagedDatabaseUser) diag.Diagnostics {
+	var respDiagnostics, d diag.Diagnostics
+
+	isImport := data.Username.ValueString() == ""
+
+	data.Username = types.StringValue(user.Username)
+	data.Password = types.StringValue(user.Password)
+	data.Type = types.StringValue(string(user.Type))
+
+	if !data.Authentication.IsNull() || (isImport && user.Authentication != "") {
+		data.Authentication = types.StringValue(string(user.Authentication))
+	}
+
+	if (!data.PgAccessControl.IsNull() || isImport) && user.PGAccessControl != nil {
+		pgData := pgAccessControlModel{
+			AllowReplication: types.BoolPointerValue(user.PGAccessControl.AllowReplication),
+		}
+		data.PgAccessControl, d = types.ListValueFrom(ctx, data.PgAccessControl.ElementType(ctx), []pgAccessControlModel{pgData})
+		respDiagnostics.Append(d...)
+	}
+
+	if (!data.ValkeyAccessControl.IsNull() || isImport) && user.ValkeyAccessControl != nil {
+		valkeyData := valkeyAccessControlModel{
+			Categories: listValuePointerMust(user.ValkeyAccessControl.Categories),
+			Channels:   listValuePointerMust(user.ValkeyAccessControl.Channels),
+			Commands:   listValuePointerMust(user.ValkeyAccessControl.Commands),
+			Keys:       listValuePointerMust(user.ValkeyAccessControl.Keys),
+		}
+		data.ValkeyAccessControl, d = types.ListValueFrom(ctx, data.ValkeyAccessControl.ElementType(ctx), []valkeyAccessControlModel{valkeyData})
+		respDiagnostics.Append(d...)
+	}
+
+	if (!data.OpensearchAccessControl.IsNull() || isImport) && user.OpenSearchAccessControl != nil && user.OpenSearchAccessControl.Rules != nil {
+		rulesData := make([]opensearchAccessControlRuleModel, len(*user.OpenSearchAccessControl.Rules))
+		for i, r := range *user.OpenSearchAccessControl.Rules {
+			rulesData[i] = opensearchAccessControlRuleModel{
+				Index:      types.StringValue(r.Index),
+				Permission: types.StringValue(string(r.Permission)),
+			}
+		}
+
+		rules, d := types.ListValueFrom(ctx, types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"index":      types.StringType,
+				"permission": types.StringType,
+			},
+		}, rulesData)
+		respDiagnostics.Append(d...)
+
+		data.OpensearchAccessControl, d = types.ListValueFrom(ctx, data.OpensearchAccessControl.ElementType(ctx), []opensearchAccessControlModel{{Rules: rules}})
+		respDiagnostics.Append(d...)
+	}
+
+	return respDiagnostics
+}
+
+func getPgAccessControl(ctx context.Context, data *databaseUserModel) (*upcloud.ManagedDatabaseUserPGAccessControl, diag.Diagnostics) {
+	if data.PgAccessControl.IsUnknown() {
+		return nil, nil
+	}
+
+	if data.PgAccessControl.IsNull() {
+		return &upcloud.ManagedDatabaseUserPGAccessControl{
+			AllowReplication: upcloud.BoolPtr(true),
+		}, nil
+	}
+
+	var pgAccessControl []pgAccessControlModel
+	d := data.PgAccessControl.ElementsAs(ctx, &pgAccessControl, false)
+	if d.HasError() {
+		return nil, d
+	}
+
+	if len(pgAccessControl) == 0 {
+		return nil, nil
+	}
+
+	return &upcloud.ManagedDatabaseUserPGAccessControl{
+		AllowReplication: upcloud.BoolPtr(*pgAccessControl[0].AllowReplication.ValueBoolPointer()),
+	}, nil
+}
+
+func asStringSlicePointer(ctx context.Context, list types.List) (*[]string, diag.Diagnostics) {
+	if list.IsUnknown() {
+		return nil, nil
+	}
+
+	stringSlice := []string{}
+
+	if list.IsNull() {
+		return &stringSlice, nil
+	}
+
+	d := list.ElementsAs(ctx, &stringSlice, false)
+	return &stringSlice, d
+}
+
+func getValkeyAccessControl(ctx context.Context, data *databaseUserModel) (*upcloud.ManagedDatabaseUserValkeyAccessControl, diag.Diagnostics) {
+	if data.ValkeyAccessControl.IsUnknown() {
+		return nil, nil
+	}
+
+	if data.ValkeyAccessControl.IsNull() {
+		return &upcloud.ManagedDatabaseUserValkeyAccessControl{
+			Categories: &[]string{},
+			Channels:   &[]string{},
+			Commands:   &[]string{},
+			Keys:       &[]string{},
+		}, nil
+	}
+
+	var valkeyAccessControl []valkeyAccessControlModel
+	d := data.ValkeyAccessControl.ElementsAs(ctx, &valkeyAccessControl, false)
+	if d.HasError() {
+		return nil, d
+	}
+
+	if len(valkeyAccessControl) == 0 {
+		return nil, nil
+	}
+
+	var diags diag.Diagnostics
+
+	categories, d := asStringSlicePointer(ctx, valkeyAccessControl[0].Categories)
+	diags.Append(d...)
+
+	channels, d := asStringSlicePointer(ctx, valkeyAccessControl[0].Channels)
+	diags.Append(d...)
+
+	commands, d := asStringSlicePointer(ctx, valkeyAccessControl[0].Commands)
+	diags.Append(d...)
+
+	keys, d := asStringSlicePointer(ctx, valkeyAccessControl[0].Keys)
+	diags.Append(d...)
+
+	return &upcloud.ManagedDatabaseUserValkeyAccessControl{
+		Categories: categories,
+		Channels:   channels,
+		Commands:   commands,
+		Keys:       keys,
+	}, diags
+}
+
+func getOpensearchAccessControl(ctx context.Context, data *databaseUserModel) (*upcloud.ManagedDatabaseUserOpenSearchAccessControl, diag.Diagnostics) {
+	if data.OpensearchAccessControl.IsUnknown() {
+		return nil, nil
+	}
+
+	if data.OpensearchAccessControl.IsNull() {
+		return &upcloud.ManagedDatabaseUserOpenSearchAccessControl{
+			Rules: &[]upcloud.ManagedDatabaseUserOpenSearchAccessControlRule{},
+		}, nil
+	}
+
+	var opensearchAccessControl []opensearchAccessControlModel
+	d := data.OpensearchAccessControl.ElementsAs(ctx, &opensearchAccessControl, false)
+	if d.HasError() {
+		return nil, d
+	}
+
+	if len(opensearchAccessControl) == 0 {
+		return nil, nil
+	}
+
+	var rulesData []opensearchAccessControlRuleModel
+	d = opensearchAccessControl[0].Rules.ElementsAs(ctx, &rulesData, false)
+	if d.HasError() {
+		return nil, d
+	}
+
+	rules := make([]upcloud.ManagedDatabaseUserOpenSearchAccessControlRule, len(rulesData))
+
+	for i, r := range rulesData {
+		rules[i] = upcloud.ManagedDatabaseUserOpenSearchAccessControlRule{
+			Index:      r.Index.ValueString(),
+			Permission: upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermission(r.Permission.ValueString()),
+		}
+	}
+
+	return &upcloud.ManagedDatabaseUserOpenSearchAccessControl{
+		Rules: &rules,
+	}, nil
+}
+
+func checkDatabaseIsRunning(ctx context.Context, client *service.Service, uuid, action string) (diags diag.Diagnostics) {
+	db, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: uuid})
 	if err != nil {
-		return diag.FromErr(err)
-	}
-	if !serviceDetails.Powered {
-		return diag.FromErr(fmt.Errorf("cannot create a user while managed database %v (%v) is powered off", serviceDetails.Name, serviceID))
+		diags.AddError(
+			fmt.Sprintf("Unable to read managed database details during user %s", action),
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
-		UUID:         serviceID,
+	if !db.Powered {
+		diags.AddError(
+			"Managed database service is not powered on",
+			fmt.Sprintf("Managed database service with UUID %s must be powered on to %s users", uuid, action),
+		)
+		return
+	}
+
+	_, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
+		UUID:         uuid,
 		DesiredState: upcloud.ManagedDatabaseStateRunning,
 	})
 	if err != nil {
-		return diag.FromErr(err)
+		diags.AddError(
+			fmt.Sprintf("Error waiting for managed database to be running during user %s", action),
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
-	req := &request.CreateManagedDatabaseUserRequest{
-		ServiceUUID: serviceID,
-		Username:    d.Get("username").(string),
-		Password:    d.Get("password").(string),
+	return
+}
+
+func (r *databaseUserResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data databaseUserModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	switch serviceDetails.Type {
-	case upcloud.ManagedDatabaseServiceTypeMySQL:
-		if val, ok := d.Get("authentication").(string); ok && val != "" {
-			req.Authentication = upcloud.ManagedDatabaseUserAuthenticationType(val)
+
+	uuid := data.Service.ValueString()
+
+	resp.Diagnostics.Append(checkDatabaseIsRunning(ctx, r.client, uuid, "create")...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	data.ID = types.StringValue(utils.MarshalID(uuid, data.Username.ValueString()))
+
+	apiReq := &request.CreateManagedDatabaseUserRequest{
+		ServiceUUID:    uuid,
+		Username:       data.Username.ValueString(),
+		Password:       data.Password.ValueString(),
+		Authentication: upcloud.ManagedDatabaseUserAuthenticationType(data.Authentication.ValueString()),
+	}
+
+	pgAccessControl, d := getPgAccessControl(ctx, &data)
+	apiReq.PGAccessControl = pgAccessControl
+	resp.Diagnostics.Append(d...)
+
+	valkeyAccessControl, d := getValkeyAccessControl(ctx, &data)
+	apiReq.ValkeyAccessControl = valkeyAccessControl
+	resp.Diagnostics.Append(d...)
+
+	opensearchAccessControl, d := getOpensearchAccessControl(ctx, &data)
+	apiReq.OpenSearchAccessControl = opensearchAccessControl
+	resp.Diagnostics.Append(d...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	user, err := r.client.CreateManagedDatabaseUser(ctx, apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed database user",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	setDatabaseUserValues(ctx, &data, user)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *databaseUserResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data databaseUserModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	var uuid, name string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &uuid, &name)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	data.Service = types.StringValue(uuid)
+
+	user, err := r.client.GetManagedDatabaseUser(ctx, &request.GetManagedDatabaseUserRequest{
+		ServiceUUID: uuid,
+		Username:    name,
+	})
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
 		} else {
-			req.Authentication = upcloud.ManagedDatabaseUserAuthenticationCachingSHA2Password
+			resp.Diagnostics.AddError(
+				"Unable to read managed database user details",
+				utils.ErrorDiagnosticDetail(err),
+			)
 		}
-	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
-		if v, ok := d.Get("pg_access_control.0.allow_replication").(bool); ok {
-			req.PGAccessControl = &upcloud.ManagedDatabaseUserPGAccessControl{
-				AllowReplication: &v,
-			}
-		}
-	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
-		req.OpenSearchAccessControl = openSearchAccessControlFromResourceData(d)
-	case upcloud.ManagedDatabaseServiceTypeValkey:
-		req.ValkeyAccessControl = valkeyAccessControlFromResourceData(d)
+		return
 	}
 
-	if _, err = client.CreateManagedDatabaseUser(ctx, req); err != nil {
-		return diag.FromErr(err)
-	}
-	d.SetId(utils.MarshalID(serviceID, d.Get("username").(string)))
-
-	tflog.Info(ctx, "managed database user created", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": d.Get("username").(string), "service_uuid": serviceID,
-	})
-
-	return resourceUserRead(ctx, d, meta)
+	setDatabaseUserValues(ctx, &data, user)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *databaseUserResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data, state databaseUserModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	var serviceID, username string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &username); err != nil {
-		return diag.FromErr(err)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
+	var uuid, name string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &uuid, &name)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(checkDatabaseIsRunning(ctx, r.client, uuid, "update")...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	userReq := &request.ModifyManagedDatabaseUserRequest{
+		ServiceUUID:    uuid,
+		Username:       name,
+		Password:       data.Password.ValueString(),
+		Authentication: upcloud.ManagedDatabaseUserAuthenticationType(data.Authentication.ValueString()),
+	}
+
+	user, err := r.client.ModifyManagedDatabaseUser(ctx, userReq)
 	if err != nil {
-		return utils.HandleResourceError(d.Get("username").(string), d, err)
+		resp.Diagnostics.AddError(
+			"Unable to modify managed database user",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	// If service UUID is not set already set it based on the Id. This is the case for example when importing existing user.
-	if _, ok := d.GetOk("service"); !ok {
-		err := d.Set("service", serviceID)
+	acHasChanges := false
+	acReq := &request.ModifyManagedDatabaseUserAccessControlRequest{
+		ServiceUUID: uuid,
+		Username:    name,
+	}
+
+	if !data.PgAccessControl.Equal(state.PgAccessControl) {
+		acHasChanges = true
+		pgAccessControl, d := getPgAccessControl(ctx, &data)
+		acReq.PGAccessControl = pgAccessControl
+		resp.Diagnostics.Append(d...)
+	}
+
+	if !data.ValkeyAccessControl.Equal(state.ValkeyAccessControl) {
+		acHasChanges = true
+		valkeyAccessControl, d := getValkeyAccessControl(ctx, &data)
+		acReq.ValkeyAccessControl = valkeyAccessControl
+		resp.Diagnostics.Append(d...)
+	}
+
+	if !data.OpensearchAccessControl.Equal(state.OpensearchAccessControl) {
+		acHasChanges = true
+		opensearchAccessControl, d := getOpensearchAccessControl(ctx, &data)
+		acReq.OpenSearchAccessControl = opensearchAccessControl
+		resp.Diagnostics.Append(d...)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if acHasChanges {
+		ac, err := r.client.ModifyManagedDatabaseUserAccessControl(ctx, acReq)
 		if err != nil {
-			return diag.FromErr(err)
+			resp.Diagnostics.AddError(
+				"Unable to update managed database user access control",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
 		}
+
+		user.PGAccessControl = ac.PGAccessControl
+		user.ValkeyAccessControl = ac.ValkeyAccessControl
+		user.OpenSearchAccessControl = ac.OpenSearchAccessControl
 	}
 
-	userDetails, err := client.GetManagedDatabaseUser(ctx, &request.GetManagedDatabaseUserRequest{
-		ServiceUUID: serviceID,
-		Username:    username,
-	})
-	if err != nil {
-		return utils.HandleResourceError(d.Get("username").(string), d, err)
-	}
-
-	tflog.Info(ctx, "managed database user read", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID,
-	})
-	return copyUserDetailsToResource(d, userDetails)
+	resp.Diagnostics.Append(setDatabaseUserValues(ctx, &data, user)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (r *databaseUserResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data databaseUserModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if !serviceDetails.Powered {
-		return diag.FromErr(fmt.Errorf("cannot modify a user while managed database %v (%v) is powered off", serviceDetails.Name, serviceID))
-	}
+	var uuid, name string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &uuid, &name)...)
 
-	var username string
-	if utils.UnmarshalID(d.Id(), &serviceID, &username) != nil {
-		return diag.FromErr(err)
-	}
-	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
-		UUID:         serviceID,
-		DesiredState: upcloud.ManagedDatabaseStateRunning,
-	})
-	if err != nil {
-		return diag.FromErr(err)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	req := &request.ModifyManagedDatabaseUserRequest{
-		ServiceUUID: serviceID,
-		Username:    username,
-		Password:    d.Get("password").(string),
-	}
-	if serviceDetails.Type == upcloud.ManagedDatabaseServiceTypeMySQL {
-		if val, ok := d.Get("authentication").(string); ok && val != "" {
-			req.Authentication = upcloud.ManagedDatabaseUserAuthenticationType(val)
-		}
-	}
-	if _, err = client.ModifyManagedDatabaseUser(ctx, req); err != nil {
-		return diag.FromErr(err)
+	resp.Diagnostics.Append(checkDatabaseIsRunning(ctx, r.client, uuid, "delete")...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	switch serviceDetails.Type {
-	case upcloud.ManagedDatabaseServiceTypePostgreSQL:
-		if d.HasChange("pg_access_control.0") {
-			if _, err := modifyPostgreSQLUserAccessControl(ctx, client, d); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	case upcloud.ManagedDatabaseServiceTypeOpenSearch:
-		if d.HasChange("opensearch_access_control.0") {
-			if _, err := modifyOpenSearchUserAccessControl(ctx, client, d); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	case upcloud.ManagedDatabaseServiceTypeValkey:
-		if d.HasChange("valkey_access_control.0") {
-			if _, err := modifyValkeyUserAccessControl(ctx, client, d); err != nil {
-				return diag.FromErr(err)
-			}
-		}
+	if err := r.client.DeleteManagedDatabaseUser(ctx, &request.DeleteManagedDatabaseUserRequest{
+		ServiceUUID: uuid,
+		Username:    name,
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete database user",
+			utils.ErrorDiagnosticDetail(err),
+		)
 	}
-	tflog.Info(ctx, "managed database user updated", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID,
-	})
-
-	return resourceUserRead(ctx, d, meta)
 }
 
-func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
-
-	if d.Get("type").(string) == string(upcloud.ManagedDatabaseUserTypePrimary) {
-		if d.HasChange("username") {
-			return diag.FromErr(fmt.Errorf("primary username cannot be changed %q", d.Id()))
-		}
-		tflog.Debug(ctx, "ignoring delete for primary user %q", map[string]interface{}{"uuid": d.Id()})
-		return nil
-	}
-
-	serviceID := d.Get("service").(string)
-	serviceDetails, err := client.GetManagedDatabase(ctx, &request.GetManagedDatabaseRequest{UUID: serviceID})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if !serviceDetails.Powered {
-		return diag.FromErr(fmt.Errorf("cannot delete a user while managed database %v (%v) is powered off", serviceDetails.Name, serviceID))
-	}
-
-	var username string
-	if err := utils.UnmarshalID(d.Id(), &serviceID, &username); err != nil {
-		return diag.FromErr(err)
-	}
-	serviceDetails, err = client.WaitForManagedDatabaseState(ctx, &request.WaitForManagedDatabaseStateRequest{
-		UUID:         serviceID,
-		DesiredState: upcloud.ManagedDatabaseStateRunning,
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	err = client.DeleteManagedDatabaseUser(ctx, &request.DeleteManagedDatabaseUserRequest{
-		ServiceUUID: serviceID,
-		Username:    username,
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	tflog.Info(ctx, "managed database user deleted", map[string]interface{}{
-		"service_name": serviceDetails.Name, "username": username, "service_uuid": serviceID,
-	})
-
-	return nil
-}
-
-func copyUserDetailsToResource(d *schema.ResourceData, details *upcloud.ManagedDatabaseUser) diag.Diagnostics {
-	if err := d.Set("username", details.Username); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("password", details.Password); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("type", details.Type); err != nil {
-		return diag.FromErr(err)
-	}
-	if details.Authentication != "" {
-		if err := d.Set("authentication", details.Authentication); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if details.PGAccessControl != nil {
-		if err := d.Set("pg_access_control", []map[string]interface{}{
-			{
-				"allow_replication": details.PGAccessControl.AllowReplication,
-			},
-		}); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if details.ValkeyAccessControl != nil {
-		if err := d.Set("valkey_access_control", []map[string][]string{
-			{
-				"categories": *details.ValkeyAccessControl.Categories,
-				"channels":   *details.ValkeyAccessControl.Channels,
-				"commands":   *details.ValkeyAccessControl.Commands,
-				"keys":       *details.ValkeyAccessControl.Keys,
-			},
-		}); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if details.OpenSearchAccessControl != nil {
-		rules := make([]map[string]interface{}, 0)
-		for _, rule := range *details.OpenSearchAccessControl.Rules {
-			rules = append(rules, map[string]interface{}{
-				"index":      rule.Index,
-				"permission": string(rule.Permission),
-			})
-		}
-
-		if err := d.Set("opensearch_access_control", []map[string]interface{}{
-			{
-				"rules": rules,
-			},
-		}); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	return nil
-}
-
-func modifyPostgreSQLUserAccessControl(ctx context.Context, svc *service.Service, d *schema.ResourceData) (*upcloud.ManagedDatabaseUser, error) {
-	req := &request.ModifyManagedDatabaseUserAccessControlRequest{
-		ServiceUUID: d.Get("service").(string),
-		Username:    d.Get("username").(string),
-		PGAccessControl: &upcloud.ManagedDatabaseUserPGAccessControl{
-			AllowReplication: upcloud.BoolPtr(d.Get("pg_access_control.0.allow_replication").(bool)),
-		},
-	}
-	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
-}
-
-func modifyValkeyUserAccessControl(ctx context.Context, svc *service.Service, d *schema.ResourceData) (*upcloud.ManagedDatabaseUser, error) {
-	req := &request.ModifyManagedDatabaseUserAccessControlRequest{
-		ServiceUUID:         d.Get("service").(string),
-		Username:            d.Get("username").(string),
-		ValkeyAccessControl: valkeyAccessControlFromResourceData(d),
-	}
-	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
-}
-
-func valkeyAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserValkeyAccessControl {
-	acl := &upcloud.ManagedDatabaseUserValkeyAccessControl{}
-	if v, ok := d.Get("valkey_access_control.0.categories").([]interface{}); ok {
-		categories := make([]string, len(v))
-		for i := range v {
-			categories[i] = v[i].(string)
-		}
-		acl.Categories = &categories
-	}
-	if v, ok := d.Get("valkey_access_control.0.channels").([]interface{}); ok {
-		channels := make([]string, len(v))
-		for i := range v {
-			channels[i] = v[i].(string)
-		}
-		acl.Channels = &channels
-	}
-	if v, ok := d.Get("valkey_access_control.0.commands").([]interface{}); ok {
-		commands := make([]string, len(v))
-		for i := range v {
-			commands[i] = v[i].(string)
-		}
-		acl.Commands = &commands
-	}
-	if v, ok := d.Get("valkey_access_control.0.keys").([]interface{}); ok {
-		keys := make([]string, len(v))
-		for i := range v {
-			keys[i] = v[i].(string)
-		}
-		acl.Keys = &keys
-	}
-	return acl
-}
-
-func openSearchAccessControlFromResourceData(d *schema.ResourceData) *upcloud.ManagedDatabaseUserOpenSearchAccessControl {
-	acl := &upcloud.ManagedDatabaseUserOpenSearchAccessControl{}
-	if v, ok := d.Get("opensearch_access_control.0.rules").([]interface{}); ok {
-		rules := make([]upcloud.ManagedDatabaseUserOpenSearchAccessControlRule, len(v))
-		for i := range v {
-			if index, ok := d.Get(fmt.Sprintf("opensearch_access_control.0.rules.%d.index", i)).(string); ok {
-				rules[i].Index = index
-			}
-			if permission, ok := d.Get(fmt.Sprintf("opensearch_access_control.0.rules.%d.permission", i)).(string); ok {
-				rules[i].Permission = upcloud.ManagedDatabaseUserOpenSearchAccessControlRulePermission(permission)
-			}
-		}
-		acl.Rules = &rules
-	}
-	return acl
-}
-
-func modifyOpenSearchUserAccessControl(ctx context.Context, svc *service.Service, d *schema.ResourceData) (*upcloud.ManagedDatabaseUser, error) {
-	req := &request.ModifyManagedDatabaseUserAccessControlRequest{
-		ServiceUUID:             d.Get("service").(string),
-		Username:                d.Get("username").(string),
-		OpenSearchAccessControl: openSearchAccessControlFromResourceData(d),
-	}
-	return svc.ModifyManagedDatabaseUserAccessControl(ctx, req)
+func (r *databaseUserResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
