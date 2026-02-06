@@ -165,7 +165,7 @@ func (r *managedObjectStorageResource) Schema(_ context.Context, _ resource.Sche
 							},
 						},
 						"type": schema.StringAttribute{
-							MarkdownDescription: "Network type.",
+							MarkdownDescription: "Network type (`private` or `public`).",
 							Required:            true,
 							Validators: []validator.String{
 								stringvalidator.OneOf(
