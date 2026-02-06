@@ -147,10 +147,14 @@ func (r *managedObjectStorageUserPolicyResource) Read(ctx context.Context, req r
 		ServiceUUID: serviceUUID,
 	})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read managed object storage user policies",
-			utils.ErrorDiagnosticDetail(err),
-		)
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read managed object storage user policies",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
 		return
 	}
 

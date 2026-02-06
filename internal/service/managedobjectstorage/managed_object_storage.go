@@ -412,6 +412,7 @@ func (r *managedObjectStorageResource) Delete(ctx context.Context, req resource.
 			"Unable to delete managed object storage",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
 	}
 
 	if err := r.client.WaitForManagedObjectStorageDeletion(ctx, &request.WaitForManagedObjectStorageDeletionRequest{
