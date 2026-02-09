@@ -244,7 +244,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 								int64planmodifier.RequiresReplace(),
 							},
 							Validators: []validator.Int64{
-								int64validator.Between(25, 4096),
+								int64validator.Between(1, 4096),
 							},
 						},
 						"storage_tier": schema.StringAttribute{
@@ -284,7 +284,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 								int64planmodifier.RequiresReplace(),
 							},
 							Validators: []validator.Int64{
-								int64validator.Between(25, 4096),
+								int64validator.Between(1, 4096),
 							},
 						},
 						"storage_tier": schema.StringAttribute{
@@ -324,7 +324,7 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 								int64planmodifier.RequiresReplace(),
 							},
 							Validators: []validator.Int64{
-								int64validator.Between(25, 4096),
+								int64validator.Between(1, 4096),
 							},
 						},
 						"storage_tier": schema.StringAttribute{
