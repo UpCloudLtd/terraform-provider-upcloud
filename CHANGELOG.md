@@ -5,7 +5,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-## [5.34.0] - 2026-02-06
+## [5.34.0] - 2026-02-09
 
 ### Added
 
