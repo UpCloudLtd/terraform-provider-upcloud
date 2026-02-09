@@ -13,6 +13,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_managed_object_storage_user_policy: remove resource from state if resource has been deleted.
 - upcloud_managed_object_storage: do not wait for object storage instance to be deleted if delete request failed.
+- upcloud_kubernetes_node_group: relax `storage_size` validation to allow all positive integer smaller than 4096.
 
 ## [5.33.4] - 2026-02-04
 
