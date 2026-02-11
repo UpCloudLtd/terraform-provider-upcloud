@@ -978,9 +978,19 @@ func configHotResize(planName string, hotResize bool, captureUptime bool, checkU
 	}
 
 	return fmt.Sprintf(`
+		variable "basename" {
+			type = string
+			default = "tf-acc-test-"
+		}
+
+		variable "zone" {
+			default = "pl-waw1"
+			type    = string
+		}
+
 		resource "upcloud_server" "hot_resize" {
-			hostname    = "tf-acc-test-server-hot-resize"
-			zone        = "pl-waw1"
+			hostname    = "${var.basename}hot-resize-server"
+			zone        = var.zone
 			plan        = "%s"
 			metadata    = true
 			hot_resize  = %t

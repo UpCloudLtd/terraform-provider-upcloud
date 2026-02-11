@@ -117,6 +117,18 @@ To run the end-to-end tests, use the following command:
 make testacc TESTARGS='-run=TestEndToEnd'
 ```
 
+You can use `TF_VAR_basename` and `TF_VAR_zone` environment variables to set the basename and zone for the end-to-end tests. For example:
+
+```sh
+TF_VAR_basename="test-pl-waw1-" TF_VAR_zone="pl-waw1" make testacc TESTARGS='-run=TestEndToEnd'
+```
+
+The end-to-end testcases should:
+
+- Have a name starting with `TestEndToEnd`.
+- Use basename and zone variables in configuration. The basename variable should have a default value of `tf-acc-test-`.
+- Document the test with `t.Log` function in the beginning of the test function.
+
 ## Debugging
 
 To print UpCloud API requests and responses, set Terraform log level to debug or lower. For example, when running an apply:
