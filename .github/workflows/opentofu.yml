@@ -2,10 +2,8 @@ name: OpenTofu
 
 on:
   workflow_dispatch:
-  # Use terraform for nightly tests, because OpenTofu produces non-empty diff without changes in database tests.
-  # TODO: check these tests after related resources and data-sources are migrated to plugin framework.
-  # schedule:
-  #   - cron: "0 0 * * *"
+  schedule:
+    - cron: "0 0 * * *"
   push:
     branches:
       - test-tofu-acctest # for testing
