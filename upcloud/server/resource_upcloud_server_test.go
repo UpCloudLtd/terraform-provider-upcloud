@@ -240,7 +240,7 @@ func configBackupRule(time, interval string, retention int) string {
 }
 
 func TestUpcloudServer_simpleBackup(t *testing.T) {
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
@@ -1076,7 +1076,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
 	}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
@@ -1132,7 +1132,7 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
 	}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
