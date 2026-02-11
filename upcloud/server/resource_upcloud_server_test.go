@@ -1046,7 +1046,14 @@ func generateSSHKey(t *testing.T, keyDir string) error {
 	return nil
 }
 
-func TestUpcloudServer_hotResize(t *testing.T) {
+func TestEndToEndServer_HotResize(t *testing.T) {
+	t.Log(`This testcase:
+
+- Creates a server and configures SSH key access to the server.
+- Attempts to hot resize the server to a new plan and verifies that the plan change was successful.
+- Uses a provisioner and a SSH connection to the server to verify that the server was not restarted during the hot resize by comparing the server's uptime before and after the hot resize.
+`)
+
 	// Skip if we're not running acceptance tests
 	if os.Getenv("TF_ACC") == "" {
 		t.Skip("Skipping hot resize test as TF_ACC is not set")
