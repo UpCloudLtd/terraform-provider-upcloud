@@ -107,6 +107,28 @@ make testacc TESTARGS='-run=TestUpcloudServer_*'
 In order to view the documentation change rendering visite
 [the terraform documentation preview](https://registry.terraform.io/tools/doc-preview).
 
+### End-to-end tests
+
+While the focus of the tests in this repository is to test the provider's functionality, there are some cases when it makes sense to also validate the target resource or system. For example, ephemeral Kubernetes cluster resource can be tested by using the resource to configure Kubernetes provider. These tests that do end-to-end validations are prefixed with TestEndToEnd and are executed as a part of the acceptance test suite.
+
+To run the end-to-end tests, use the following command:
+
+```sh
+make testacc TESTARGS='-run=TestEndToEnd'
+```
+
+You can use `TF_VAR_basename` and `TF_VAR_zone` environment variables to set the basename and zone for the end-to-end tests. For example:
+
+```sh
+TF_VAR_basename="test-pl-waw1-" TF_VAR_zone="pl-waw1" make testacc TESTARGS='-run=TestEndToEnd'
+```
+
+The end-to-end testcases should:
+
+- Have a name starting with `TestEndToEnd`.
+- Use basename and zone variables in configuration. The basename variable should have a default value of `tf-acc-test-`.
+- Document the test with `t.Log` function in the beginning of the test function.
+
 ## Debugging
 
 To print UpCloud API requests and responses, set Terraform log level to debug or lower. For example, when running an apply:

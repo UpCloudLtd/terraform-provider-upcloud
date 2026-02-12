@@ -25,7 +25,7 @@ jobs:
       matrix:
         group:
           - unittests
-          - core
+          - provider
           - kubernetes
           - managedobjectstorage
           - database
@@ -83,12 +83,7 @@ jobs:
           UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
           UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
         if: env.UPCLOUD_PASSWORD != '' && matrix.group != 'unittests'
-        run: |
-          if [ "${{ matrix.group }}" == "core" ]; then
-            make testacc
-          else
-            make testacc-${{ matrix.group }}
-          fi
+        run: make testacc-${{ matrix.group }}
 
   Cleanup:
     runs-on: ubuntu-latest

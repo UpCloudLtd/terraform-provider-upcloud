@@ -171,7 +171,16 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	})
 }
 
-func TestAccUpcloudManagedDatabase_terminationProtection(t *testing.T) {
+func TestEndToEndManagedDatabase_TerminationProtection(t *testing.T) {
+	t.Log(`This testcase:
+
+- Creates a managed database with termination protection enabled.
+- Tries to power off the service while termination protection is enabled and expects an error.
+- Tries to delete the service while termination protection is enabled and expects an error.
+- Disables termination protection and powers off the service.
+- Deletes the service.
+`)
+
 	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/termination_protection.tf")
 	db := "upcloud_managed_database_mysql.this.0"
 

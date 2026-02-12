@@ -1,7 +1,7 @@
 // This file is used for the all test steps in the termination protection test. The variables below to define the changes between test steps.
 
-variable "prefix" {
-  default = "tf-acc-test-db-termination-protection-"
+variable "basename" {
+  default = "tf-acc-test-"
   type    = string
 }
 
@@ -30,6 +30,10 @@ variable "powered" {
   type    = bool
 }
 
+locals {
+  name_prefix = "${var.basename}db-termination-protection-"
+}
+
 resource "upcloud_managed_database_mysql" "this" {
   count = var.db_count
 
@@ -37,6 +41,6 @@ resource "upcloud_managed_database_mysql" "this" {
   plan                   = "1x1xCPU-2GB-25GB"
   powered                = var.powered
   termination_protection = var.termination_protection
-  title                  = "${var.prefix}db-${count.index}"
+  title                  = "${local.name_prefix}${count.index}"
   zone                   = var.zone
 }

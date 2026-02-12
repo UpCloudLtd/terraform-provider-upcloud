@@ -1,5 +1,5 @@
 variable "basename" {
-  default = "tf-acc-test-lb-rules-"
+  default = "tf-acc-test-"
   type    = string
 }
 
@@ -12,10 +12,11 @@ locals {
   header_and_header_body = "header-and-header (animal=cat AND color=blue)"
   header_or_header_body  = "header-or-header (animal=cat OR animal=dog)"
   default_body           = "default"
+  name_prefix            = "${var.basename}lb-rules-"
 }
 
 resource "upcloud_network" "this" {
-  name = "${var.basename}net"
+  name = "${local.name_prefix}net"
   zone = var.zone
   ip_network {
     address = "10.0.10.0/24"
@@ -25,7 +26,7 @@ resource "upcloud_network" "this" {
 }
 
 resource "upcloud_loadbalancer" "this" {
-  name = "${var.basename}lb"
+  name = "${local.name_prefix}lb"
   plan = "development"
   zone = var.zone
 
