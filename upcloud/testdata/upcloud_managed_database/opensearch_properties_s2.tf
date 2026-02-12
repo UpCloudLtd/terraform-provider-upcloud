@@ -19,6 +19,7 @@ resource "upcloud_managed_database_opensearch" "opensearch_properties" {
   properties {
     automatic_utility_network_ip_filter = true
     public_access                       = true
+    version                             = "2.19"
 
     segrep {
       pressure_enabled          = true
