@@ -163,6 +163,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		database.NewOpenSearchResource,
 		database.NewPostgresResource,
 		database.NewValkeyResource,
+		database.NewUserResource,
 		firewall.NewFirewallRulesResource,
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
