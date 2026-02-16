@@ -3,7 +3,6 @@ package upcloud
 import (
 	"context"
 	"fmt"
-	"os"
 	"regexp"
 	"testing"
 
@@ -31,13 +30,6 @@ func init() {
 }
 
 func TestAccPreCheck(t *testing.T) {
-	if v := os.Getenv("UPCLOUD_USERNAME"); v == "" {
-		t.Fatal("UPCLOUD_USERNAME must be set for acceptance tests")
-	}
-	if v := os.Getenv("UPCLOUD_PASSWORD"); v == "" {
-		t.Fatal("UPCLOUD_PASSWORD must be set for acceptance tests")
-	}
-
 	err := TestAccProvider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
 	if err != nil {
 		t.Fatal(err)

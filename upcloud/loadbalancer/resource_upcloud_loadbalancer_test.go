@@ -300,7 +300,13 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 	})
 }
 
-func TestAccUpcloudLoadBalancer_Rules(t *testing.T) {
+func TestEndToEndLoadBalancer_Rules(t *testing.T) {
+	t.Log(`This testcase:
+
+- Creates a load balancer with frontend rules.
+- Validates the rules with http data source.
+`)
+
 	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
 
 	resource.ParallelTest(t, resource.TestCase{

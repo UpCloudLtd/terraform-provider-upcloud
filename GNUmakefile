@@ -32,6 +32,10 @@ test: fmtcheck
 	go test $$(go list ./... | grep -v 'vendor' | grep -vE '/upcloud($|/)') $(TESTARGS) -v -timeout=20m -parallel=4 -count=1
 
 testacc: fmtcheck
+	@echo "Running all acceptance tests..."
+	TF_ACC=1 go test ./upcloud/... $(TESTARGS) -v -parallel=14 -timeout=240m
+
+testacc-provider: fmtcheck
 	@echo "Running acceptance tests in ./upcloud only..."
 	TF_ACC=1 go test ./upcloud $(TESTARGS) -v -parallel=14 -timeout=240m
 

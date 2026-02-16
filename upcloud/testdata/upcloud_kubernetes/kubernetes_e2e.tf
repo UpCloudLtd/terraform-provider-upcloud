@@ -1,5 +1,5 @@
 variable "basename" {
-  default = "tf-acc-test-k8s-e2e-"
+  default = "tf-acc-test-"
   type    = string
 }
 
@@ -18,12 +18,16 @@ variable "enable_kubernetes_resources" {
   default = false
 }
 
+locals {
+  name_prefix = "${var.basename}k8s-e2e-"
+}
+
 resource "upcloud_router" "main" {
-  name = "${var.basename}router"
+  name = "${local.name_prefix}router"
 }
 
 resource "upcloud_network" "main" {
-  name   = "${var.basename}net"
+  name   = "${local.name_prefix}net"
   zone   = var.zone
   router = upcloud_router.main.id
 
@@ -36,7 +40,7 @@ resource "upcloud_network" "main" {
 
 resource "upcloud_kubernetes_cluster" "main" {
   control_plane_ip_filter = ["0.0.0.0/0"]
-  name                    = "${var.basename}cluster"
+  name                    = "${local.name_prefix}cluster"
   network                 = upcloud_network.main.id
   zone                    = var.zone
 }

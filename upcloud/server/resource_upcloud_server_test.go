@@ -240,7 +240,7 @@ func configBackupRule(time, interval string, retention int) string {
 }
 
 func TestUpcloudServer_simpleBackup(t *testing.T) {
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
@@ -978,9 +978,19 @@ func configHotResize(planName string, hotResize bool, captureUptime bool, checkU
 	}
 
 	return fmt.Sprintf(`
+		variable "basename" {
+			type = string
+			default = "tf-acc-test-"
+		}
+
+		variable "zone" {
+			default = "pl-waw1"
+			type    = string
+		}
+
 		resource "upcloud_server" "hot_resize" {
-			hostname    = "tf-acc-test-server-hot-resize"
-			zone        = "pl-waw1"
+			hostname    = "${var.basename}hot-resize-server"
+			zone        = var.zone
 			plan        = "%s"
 			metadata    = true
 			hot_resize  = %t
@@ -1046,7 +1056,14 @@ func generateSSHKey(t *testing.T, keyDir string) error {
 	return nil
 }
 
-func TestUpcloudServer_hotResize(t *testing.T) {
+func TestEndToEndServer_HotResize(t *testing.T) {
+	t.Log(`This testcase:
+
+- Creates a server and configures SSH key access to the server.
+- Attempts to hot resize the server to a new plan and verifies that the plan change was successful.
+- Uses a provisioner and a SSH connection to the server to verify that the server was not restarted during the hot resize by comparing the server's uptime before and after the hot resize.
+`)
+
 	// Skip if we're not running acceptance tests
 	if os.Getenv("TF_ACC") == "" {
 		t.Skip("Skipping hot resize test as TF_ACC is not set")
@@ -1059,7 +1076,7 @@ func TestUpcloudServer_hotResize(t *testing.T) {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
 	}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
@@ -1115,7 +1132,7 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
 	}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
