@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_user Resource - terraform-provider-upcloud"
 subcategory: Databases
 description: |-
-  This resource represents a user in managed database
+  This resource represents a user in managed database.
 ---
 
 # upcloud_managed_database_user (Resource)
 
-This resource represents a user in managed database
+This resource represents a user in managed database.
 
 ## Example Usage
 
@@ -42,13 +42,13 @@ resource "upcloud_managed_database_user" "example_user" {
 
 ### Blocks
 
-- `opensearch_access_control` (Block List, Max: 1) OpenSearch access control object. (see [below for nested schema](#nestedblock--opensearch_access_control))
-- `pg_access_control` (Block List, Max: 1) PostgreSQL access control object. (see [below for nested schema](#nestedblock--pg_access_control))
-- `valkey_access_control` (Block List, Max: 1) Valkey access control object. (see [below for nested schema](#nestedblock--valkey_access_control))
+- `opensearch_access_control` (Block List) OpenSearch access control object. (see [below for nested schema](#nestedblock--opensearch_access_control))
+- `pg_access_control` (Block List) PostgreSQL access control object. (see [below for nested schema](#nestedblock--pg_access_control))
+- `valkey_access_control` (Block List) Valkey access control object. (see [below for nested schema](#nestedblock--valkey_access_control))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the user. ID is in {service UUID}/{username} format.
 - `type` (String) Type of the user. Only normal type users can be created
 
 <a id="nestedblock--opensearch_access_control"></a>
@@ -56,7 +56,7 @@ resource "upcloud_managed_database_user" "example_user" {
 
 Blocks:
 
-- `rules` (Block List, Min: 1) Set user access control rules. (see [below for nested schema](#nestedblock--opensearch_access_control--rules))
+- `rules` (Block List) Set user access control rules. (see [below for nested schema](#nestedblock--opensearch_access_control--rules))
 
 <a id="nestedblock--opensearch_access_control--rules"></a>
 ### Nested Schema for `opensearch_access_control.rules`
