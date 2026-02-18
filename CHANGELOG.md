@@ -5,7 +5,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
 - upcloud_file_storage: remove EXPERIMENTAL message. Resource is in general availability
 
