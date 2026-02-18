@@ -3,12 +3,12 @@
 page_title: "upcloud_file_storage Resource - terraform-provider-upcloud"
 subcategory: File Storage
 description: |-
-  Resource for managing UpCloud file storages (EXPERIMENTAL)
+  Resource for managing UpCloud file storages. See UpCloud File Storage https://upcloud.com/products/file-storage/ product page for more details about the service.
 ---
 
 # upcloud_file_storage (Resource)
 
-Resource for managing UpCloud file storages (EXPERIMENTAL)
+Resource for managing UpCloud file storages. See UpCloud [File Storage](https://upcloud.com/products/file-storage/) product page for more details about the service.
 
 ## Example Usage
 
