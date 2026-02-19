@@ -3,7 +3,9 @@ package upcloud
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
@@ -58,4 +60,8 @@ func CheckStringDoesNotChange(name, key string, expected *string) resource.TestC
 		}
 		return nil
 	}
+}
+
+func UsingOpenTofu() bool {
+	return strings.HasSuffix(os.Getenv("TF_ACC_TERRAFORM_PATH"), "tofu")
 }

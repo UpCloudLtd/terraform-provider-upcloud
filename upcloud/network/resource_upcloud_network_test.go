@@ -454,19 +454,19 @@ func testAccNetworkLabelsConfig(name string, zone string, address string, labels
 func testAccNetworkConfigWithFamily(name string, zone string, address string, gateway string, family string, dhcp bool, dhcpDefaultRoute bool, router bool, dhcpDNS []string, dhcpRoutes []string, labels map[string]string) string {
 	config := strings.Builder{}
 
-	config.WriteString(fmt.Sprintf(`
+	fmt.Fprintf(&config, `
 	  resource "upcloud_network" "test_network" {
 		name = "%s"
 		zone = "%s"
-	`, name, zone))
+	`, name, zone)
 
 	if len(labels) > 0 {
 		config.WriteString(`
 		labels = {
 		`)
 		for k, v := range labels {
-			config.WriteString(fmt.Sprintf(`
-			"%s" = "%s"`, k, v))
+			fmt.Fprintf(&config, `
+			"%s" = "%s"`, k, v)
 		}
 		config.WriteString(`
 		}
@@ -479,7 +479,7 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 		`)
 	}
 
-	config.WriteString(fmt.Sprintf(`
+	fmt.Fprintf(&config, `
 		ip_network {
 		  address            = "%s"
 		  dhcp               = "%t"
@@ -490,11 +490,11 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 		address,
 		dhcp,
 		dhcpDefaultRoute,
-		family))
+		family)
 
 	if gateway != "" {
-		config.WriteString(fmt.Sprintf(`
-		  gateway            = "%s"`, gateway))
+		fmt.Fprintf(&config, `
+		  gateway            = "%s"`, gateway)
 	}
 
 	if dhcpDNS != nil {
@@ -504,13 +504,13 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 			s = fmt.Sprintf(`"%s"`, strings.Join(dhcpDNS, "\", \""))
 		}
 
-		config.WriteString(fmt.Sprintf(`
-		  dhcp_dns			 = [%s]`, s))
+		fmt.Fprintf(&config, `
+		  dhcp_dns			 = [%s]`, s)
 	}
 
 	if len(dhcpRoutes) > 0 {
-		config.WriteString(fmt.Sprintf(`
-		  dhcp_routes		 = ["%s"]`, strings.Join(dhcpRoutes, "\", \"")))
+		fmt.Fprintf(&config, `
+		  dhcp_routes		 = ["%s"]`, strings.Join(dhcpRoutes, "\", \""))
 	}
 
 	config.WriteString(`
@@ -519,11 +519,11 @@ func testAccNetworkConfigWithFamily(name string, zone string, address string, ga
 	`)
 
 	if router {
-		config.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&config, `
 		  resource "upcloud_router" "test_network_router" {
 			  name = "%s_router"
 		  }
-		`, name))
+		`, name)
 	}
 
 	return config.String()

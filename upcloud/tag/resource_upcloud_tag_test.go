@@ -130,11 +130,11 @@ func testUpcloudTagInstanceConfig(names []string) string {
 	config := strings.Builder{}
 
 	for idx, name := range names {
-		config.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&config, `
 		resource "upcloud_tag" "my_tag_%s" {
   			name = "%s"
   			description = "Represents the %s environment"
-		}`, fmt.Sprint(idx+1), name, name))
+		}`, fmt.Sprint(idx+1), name, name)
 	}
 
 	return config.String()
