@@ -256,6 +256,8 @@ func TestEndToEndKubernetes(t *testing.T) {
 			{
 				// Create the cluster first and add kubernetes resources in the next step.
 				Config: testdata,
+				// OpenTofu adds open action for the ephemeral resource which causes the plan to be non-empty.
+				ExpectNonEmptyPlan: upcloud.UsingOpenTofu(),
 			},
 			{
 				Config: testdata,
