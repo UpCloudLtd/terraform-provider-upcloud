@@ -273,6 +273,8 @@ func TestEndToEndKubernetes(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.http.hello.0", "status_code", "200"),
 				),
+				// OpenTofu adds open action for the ephemeral resource which causes the plan to be non-empty.
+				ExpectNonEmptyPlan: upcloud.UsingOpenTofu(),
 			},
 		},
 	})
