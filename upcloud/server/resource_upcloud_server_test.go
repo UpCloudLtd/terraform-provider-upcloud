@@ -830,7 +830,7 @@ type networkInterface struct {
 func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 	var builder strings.Builder
 
-	builder.WriteString(fmt.Sprintf(`
+	fmt.Fprintf(&builder, `
 		resource "upcloud_server" "this" {
 			zone     = "fi-hel1"
 			hostname = "tf-acc-test-server-network-interface"
@@ -841,22 +841,22 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 					storage = "%s"
 					size = 10
 			}
-	`, upcloud.DebianTemplateUUID))
+	`, upcloud.DebianTemplateUUID)
 
 	for i, ni := range nis {
-		builder.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&builder, `
 				network_interface {
 					type = "%s"
-		`, ni.niType))
+		`, ni.niType)
 
 		if ni.network && !ni.newNetwork {
-			builder.WriteString(fmt.Sprintf(`
+			fmt.Fprintf(&builder, `
 						network = upcloud_network.test_network_%d.id
-			`, i))
+			`, i)
 		} else if ni.newNetwork {
-			builder.WriteString(fmt.Sprintf(`
+			fmt.Fprintf(&builder, `
 						network = upcloud_network.test_network_%d.id
-			`, 10+i))
+			`, 10+i)
 		}
 		builder.WriteString(`
 				}
@@ -869,7 +869,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 
 	for i, ni := range nis {
 		if ni.network {
-			builder.WriteString(fmt.Sprintf(`
+			fmt.Fprintf(&builder, `
 				resource "upcloud_network" "test_network_%d" {
 					name = "tf-acc-test-server-network-interface-net-%d"
 					zone = "fi-hel1"
@@ -882,11 +882,11 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, i, i, i, i))
+			`, i, i, i, i)
 		}
 
 		if ni.newNetwork {
-			builder.WriteString(fmt.Sprintf(`
+			fmt.Fprintf(&builder, `
 				resource "upcloud_network" "test_network_%d" {
 					name = "tf-acc-test-server-network-interface-net-%d"
 					zone = "fi-hel1"
@@ -899,7 +899,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, 10+i, 10+i, 10+i, 10+i))
+			`, 10+i, 10+i, 10+i, 10+i)
 		}
 	}
 

@@ -166,9 +166,9 @@ func testUpcloudFloatingIPAddressBasicConfig(releasePolicy string) string {
 	`)
 
 	if releasePolicy != "" {
-		config.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&config, `
 			release_policy = "%s"
-		`, releasePolicy))
+		`, releasePolicy)
 	}
 
 	config.WriteString(`
@@ -181,7 +181,7 @@ func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, as
 	config := strings.Builder{}
 
 	for _, serverName := range serverNames {
-		config.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&config, `
 			resource "upcloud_server" "%s" {
 				zone     = "fi-hel1"
 				hostname = "tf-acc-test-floating-ip-vm"
@@ -197,14 +197,14 @@ func testUpcloudFloatingIPAddressCreateWithServerConfig(serverNames []string, as
 					type = "public"
 				}
 			}
-		`, serverName, upcloud.DebianTemplateUUID))
+		`, serverName, upcloud.DebianTemplateUUID)
 	}
 
-	config.WriteString(fmt.Sprintf(`
+	fmt.Fprintf(&config, `
 		resource "upcloud_floating_ip_address" "test" {
   			mac_address = upcloud_server.%s.network_interface[0].mac_address
 		}
-	`, serverNames[assignedServerIndex]))
+	`, serverNames[assignedServerIndex])
 
 	return config.String()
 }

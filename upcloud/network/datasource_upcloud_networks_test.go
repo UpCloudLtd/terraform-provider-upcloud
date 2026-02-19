@@ -60,11 +60,11 @@ func testAccNetworksConfig(zone string, filterName string) string {
 
 	builder.WriteString(`data "upcloud_networks" "my_example_networks" {`)
 	if zone != "" {
-		builder.WriteString(fmt.Sprintf(`  zone = "%s"`, zone))
+		fmt.Fprintf(&builder, `  zone = "%s"`, zone)
 	}
 
 	if filterName != "" {
-		builder.WriteString(fmt.Sprintf(`  filter_name = "%s"`, filterName))
+		fmt.Fprintf(&builder, `  filter_name = "%s"`, filterName)
 	}
 	builder.WriteString("}")
 
