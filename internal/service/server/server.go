@@ -263,7 +263,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				},
 			},
 			"tags": schema.SetAttribute{
-				Description: "The server related tags",
+				Description: "Tags to attach to the server. Note that tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.",
 				Computed:    true,
 				Optional:    true,
 				ElementType: types.StringType,

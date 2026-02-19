@@ -3,10 +3,13 @@
 page_title: "upcloud_tags Data Source - terraform-provider-upcloud"
 subcategory: Cloud
 description: |-
+  ~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
   Data-source is deprecated.
 ---
 
 # upcloud_tags (Data Source)
+
+~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
 
 Data-source is deprecated.
 

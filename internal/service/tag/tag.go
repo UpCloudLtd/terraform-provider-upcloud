@@ -14,7 +14,9 @@ import (
 
 func ResourceTag() *schema.Resource {
 	return &schema.Resource{
-		Description:   "This resource is deprecated, use tags schema in server resource",
+		Description: `~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
+
+This resource is deprecated, use tags schema in server resource`,
 		CreateContext: resourceTagCreate,
 		ReadContext:   resourceTagRead,
 		UpdateContext: resourceTagUpdate,

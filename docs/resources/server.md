@@ -75,7 +75,7 @@ resource "upcloud_server" "example" {
 - `nic_model` (String) The model of the server's network interfaces
 - `plan` (String) The pricing plan used for the server. You can list available server plans with `upctl server plans`
 - `server_group` (String) The UUID of a server group to attach this server to. Note that the server can also be attached to a server group via the `members` property of `upcloud_server_group`. Only one of the these should be defined at a time. This value is only updated if it has been set to non-zero value.
-- `tags` (Set of String) The server related tags
+- `tags` (Set of String) Tags to attach to the server. Note that tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
 - `timezone` (String) The timezone of the server. The timezone must be a valid timezone string, e.g. `Europe/Helsinki`.
 - `title` (String) A short, informational description of the server.
 - `user_data` (String) Defines URL for a server setup script, or the script body itself

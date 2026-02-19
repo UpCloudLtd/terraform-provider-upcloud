@@ -3,10 +3,13 @@
 page_title: "upcloud_tag Resource - terraform-provider-upcloud"
 subcategory: Cloud
 description: |-
+  ~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
   This resource is deprecated, use tags schema in server resource
 ---
 
 # upcloud_tag (Resource)
+
+~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
 
 This resource is deprecated, use tags schema in server resource
 
