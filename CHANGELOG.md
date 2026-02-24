@@ -9,6 +9,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_file_storage: remove EXPERIMENTAL message. Resource is in general availability
 
+### Fixed
+
+- upcloud_managed_database_*: do not error during plan when the actual `ip_filter` contains entries not present in the configuration (e.g. added via the web UI). The provider now surfaces the real state so that Terraform can plan to reconcile the difference.
+
 ## [5.34.0] - 2026-02-09
 
 ### Added

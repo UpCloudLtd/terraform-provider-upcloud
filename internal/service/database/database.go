@@ -112,20 +112,22 @@ func ignorePropChange(v any, plan tftypes.Value, key string, prop upcloud.Manage
 		ps, pOk := p.([]any)
 		vs, vOk := v.([]any)
 
-		notEqualErr := fmt.Errorf("planned and actual IP filter values do not match: planned %#v, got %#v", p, v)
 		if !pOk || !vOk || len(ps) != len(vs) {
-			return nil, notEqualErr
+			// Lengths differ (e.g. extra IPs added outside Terraform): return actual value
+			// so Terraform can plan to reconcile the difference.
+			return v, nil
 		}
 
 		for i := range ps {
 			pstr, pOk := ps[i].(string)
 			vstr, vOk := vs[i].(string)
 			if !pOk || !vOk {
-				return nil, notEqualErr
+				return v, nil
 			}
 
 			if pstr != vstr && vstr != pstr+"/32" {
-				return nil, notEqualErr
+				// Values differ beyond the /32 suffix normalisation: return actual value.
+				return v, nil
 			}
 		}
 		return p, nil
