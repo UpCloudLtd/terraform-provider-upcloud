@@ -5,13 +5,15 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.34.1] - 2026-02-25
+
 ### Changed
 
 - upcloud_file_storage: remove EXPERIMENTAL message. Resource is in general availability
 
 ### Fixed
 
-- upcloud_managed_database_*: do not error during plan when the actual `ip_filter` contains entries not present in the configuration (e.g. added via the web UI). The provider now surfaces the real state so that Terraform can plan to reconcile the difference.
+- upcloud_managed_database_*: do not error during plan when the actual `ip_filter` contains entries not present in the configuration (e.g. added via the web UI). The provider now surfaces the real state so that updating the value can be planned.
 
 ## [5.34.0] - 2026-02-09
 
@@ -1174,7 +1176,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.34.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.34.1...HEAD
+[5.34.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.34.0...v5.34.1
 [5.34.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.4...v5.34.0
 [5.33.4]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.3...v5.33.4
 [5.33.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.33.2...v5.33.3
