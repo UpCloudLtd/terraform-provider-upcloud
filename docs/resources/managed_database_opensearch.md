@@ -305,6 +305,8 @@ Optional Attributes:
 - `max_old_space_size` (Number) Limits the maximum amount of memory (in MiB) the OpenSearch Dashboards process can use. This sets the max_old_space_size option of the nodejs running the OpenSearch Dashboards. Note: the memory reserved by OpenSearch Dashboards is not available for OpenSearch.
 - `multiple_data_source_enabled` (Boolean) Enable or disable multiple data sources in OpenSearch Dashboards.
 - `opensearch_request_timeout` (Number) Timeout in milliseconds for requests made by OpenSearch Dashboards towards OpenSearch.
+- `session_keepalive` (Boolean) Determines whether the session TTL resets (is “kept alive”) on each user activity. Optional. Default is true.
+- `session_ttl` (String) Defines the time-to-live (TTL) for user sessions. The value should be a time value with unit, e.g. 1m, 5s, 1h, 3d, 100ms. Default is 1 hour.
 
 
 <a id="nestedblock--properties--remote_store"></a>
