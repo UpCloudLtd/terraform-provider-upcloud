@@ -12,7 +12,9 @@ import (
 
 func DataSourceTags() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data-source is deprecated.",
+		Description: `~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
+
+Data-source is deprecated.`,
 		ReadContext: dataSourceTagsRead,
 		Schema: map[string]*schema.Schema{
 			"tags": {
