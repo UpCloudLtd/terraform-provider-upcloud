@@ -1,14 +1,9 @@
 package servertests
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -17,7 +12,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"golang.org/x/crypto/ssh"
 )
 
 func configCustomPlan(cpu, mem int) string {
@@ -928,54 +922,7 @@ func TestUpcloudServer_createPreChecks(t *testing.T) {
 }
 
 func configHotResize(planName string, hotResize bool, captureUptime bool, checkUptime bool, keyDir string) string {
-	provisioner := ""
-
-	if captureUptime {
-		provisioner = `
-			provisioner "remote-exec" {
-				inline = [
-					"uptime -s > /tmp/server_start_time.txt",
-				]
-				connection {
-					type        = "ssh"
-					user        = "root"
-					host        = self.network_interface[0].ip_address
-					private_key = file("%s/id_rsa")
-				}
-			}
-		`
-		provisioner = fmt.Sprintf(provisioner, keyDir)
-	} else if checkUptime {
-		provisioner = `
-			provisioner "remote-exec" {
-				inline = [
-					"if [ -f /tmp/server_start_time.txt ]; then",
-					"  ORIGINAL_START_TIME=$(cat /tmp/server_start_time.txt)",
-					"  CURRENT_START_TIME=$(uptime -s)",
-					"  echo \"Original start time: $ORIGINAL_START_TIME\"",
-					"  echo \"Current start time: $CURRENT_START_TIME\"",
-					"  if [ \"$ORIGINAL_START_TIME\" = \"$CURRENT_START_TIME\" ]; then",
-					"    echo 'SUCCESS: Server was not restarted after hot resize'",
-					"    exit 0",
-					"  else",
-					"    echo 'ERROR: Server was restarted after hot resize'",
-					"    exit 1",
-					"  fi",
-					"else",
-					"  echo 'ERROR: Could not find server start time file'",
-					"  exit 1",
-					"fi",
-				]
-				connection {
-					type        = "ssh"
-					user        = "root"
-					host        = self.network_interface[0].ip_address
-					private_key = file("%s/id_rsa")
-				}
-			}
-		`
-		provisioner = fmt.Sprintf(provisioner, keyDir)
-	}
+	provisioner := upcloud.UptimeProvisioner(keyDir, captureUptime, checkUptime, "hot resize")
 
 	return fmt.Sprintf(`
 		variable "basename" {
@@ -1020,42 +967,6 @@ func configHotResize(planName string, hotResize bool, captureUptime bool, checkU
 	`, planName, hotResize, keyDir, upcloud.DebianTemplateUUID, provisioner)
 }
 
-// generateSSHKey generates an SSH key pair in the given directory
-func generateSSHKey(t *testing.T, keyDir string) error {
-	// Generate private key
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return fmt.Errorf("failed to generate private key: %w", err)
-	}
-
-	// Create private key file
-	privateKeyFile := filepath.Join(keyDir, "id_rsa")
-	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	privateKeyPEM := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: privateKeyBytes,
-		},
-	)
-	if err := os.WriteFile(privateKeyFile, privateKeyPEM, 0o600); err != nil {
-		return fmt.Errorf("failed to write private key: %w", err)
-	}
-
-	// Create public key file
-	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return fmt.Errorf("failed to generate public key: %w", err)
-	}
-	publicKeyBytes := ssh.MarshalAuthorizedKey(pub)
-	publicKeyFile := filepath.Join(keyDir, "id_rsa.pub")
-	if err := os.WriteFile(publicKeyFile, publicKeyBytes, 0o644); err != nil {
-		return fmt.Errorf("failed to write public key: %w", err)
-	}
-
-	t.Logf("Temporary SSH keys generated successfully in %s", keyDir)
-	return nil
-}
-
 func TestEndToEndServer_HotResize(t *testing.T) {
 	t.Log(`This testcase:
 
@@ -1071,10 +982,11 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 
 	// Create a temporary directory for SSH keys
 	keyDir := t.TempDir()
-	err := generateSSHKey(t, keyDir)
+	err := upcloud.GenerateSSHKeyPair(keyDir)
 	if err != nil {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
 	}
+	t.Logf("Temporary SSH keys generated successfully in %s", keyDir)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -1127,10 +1039,11 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 
 	// Create a temporary directory for SSH keys
 	keyDir := t.TempDir()
-	err := generateSSHKey(t, keyDir)
+	err := upcloud.GenerateSSHKeyPair(keyDir)
 	if err != nil {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
 	}
+	t.Logf("Temporary SSH keys generated successfully in %s", keyDir)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },

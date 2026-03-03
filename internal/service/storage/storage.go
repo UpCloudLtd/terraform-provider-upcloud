@@ -432,7 +432,7 @@ func (r *storageResource) Update(ctx context.Context, req resource.UpdateRequest
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	storage, err := r.client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+	_, err := r.client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
 		UUID:         data.ID.ValueString(),
 		DesiredState: upcloud.StorageStateOnline,
 	})
@@ -466,21 +466,7 @@ func (r *storageResource) Update(ctx context.Context, req resource.UpdateRequest
 		UUID:       data.ID.ValueString(),
 	}
 
-	// Attached server must be stopped before resizing the storage
-	sizeChanged := !data.Size.Equal(state.Size)
-	stopServer := len(storage.ServerUUIDs) > 0 && sizeChanged
-	if stopServer {
-		err := utils.VerifyServerStopped(ctx, request.StopServerRequest{UUID: storage.ServerUUIDs[0]}, r.client)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Unable to stop attached server while resizing storage",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return
-		}
-	}
-
-	storage, err = r.client.ModifyStorage(ctx, &apiReq)
+	storage, err := r.client.ModifyStorage(ctx, &apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify storage",
@@ -489,20 +475,9 @@ func (r *storageResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
+	sizeChanged := !data.Size.Equal(state.Size)
 	if sizeChanged && data.FilesystemAutoresize.ValueBool() {
 		resp.Diagnostics.Append(ResizeStoragePartitionAndFs(ctx, r.client, storage.UUID, data.DeleteAutoresizeBackup.ValueBool())...)
-	}
-
-	// Restart the attached server if it was stopped
-	if stopServer {
-		_, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: storage.ServerUUIDs[0]}, r.client)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Unable to restart attached server after resizing storage",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return
-		}
 	}
 
 	resp.Diagnostics.Append(setStorageValues(ctx, &data, storage)...)

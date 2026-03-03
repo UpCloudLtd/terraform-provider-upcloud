@@ -686,3 +686,85 @@ func TestAccUpCloudStorageBackup_labels(t *testing.T) {
 		},
 	})
 }
+
+func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping attached storage  resize test as TF_ACC is not set")
+	}
+
+	keyDir := t.TempDir()
+	if err := upc.GenerateSSHKeyPair(keyDir); err != nil {
+		t.Fatalf("Failed to generate SSH keys: %v", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
+		CheckDestroy:             testAccCheckStorageDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configResizeAttachedStorage(1, true, false, keyDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_storage.attached_disk", "size", "1"),
+					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
+				),
+			},
+			{
+				Config: configResizeAttachedStorage(2, false, false, keyDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_storage.attached_disk", "size", "2"),
+					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
+				),
+			},
+			{
+				Config: configResizeAttachedStorage(3, false, true, keyDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_storage.attached_disk", "size", "3"),
+					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
+				),
+			},
+		},
+	})
+}
+
+func configResizeAttachedStorage(storageSize int, captureUptime bool, checkUptime bool, keyDir string) string {
+	provisioner := upc.UptimeProvisioner(keyDir, captureUptime, checkUptime, "attached storage resize")
+
+	return fmt.Sprintf(`
+		resource "upcloud_storage" "attached_disk" {
+			size  = %d
+			tier  = "maxiops"
+			title = "tf-acc-test-storage-resize-attached-disk"
+			zone  = "pl-waw1"
+		}
+
+		resource "upcloud_server" "attached_disk_server" {
+			hostname = "tf-acc-test-storage-resize-attached-disk-server"
+			zone     = "pl-waw1"
+			plan     = "1xCPU-2GB"
+			metadata = true
+
+			login {
+				user = "root"
+				keys = [
+					file("%s/id_rsa.pub")
+				]
+			}
+
+			template {
+				storage = "%s"
+				size    = 10
+			}
+
+			storage_devices {
+				storage = upcloud_storage.attached_disk.id
+			}
+
+			network_interface {
+				type = "public"
+			}
+
+			%s
+		}
+	`, storageSize, keyDir, upc.DebianTemplateUUID, provisioner)
+}

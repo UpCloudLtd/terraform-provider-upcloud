@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- upcloud_storage: on storage resize, attached server(s) are not restarted anymore
+
 ## [5.34.1] - 2026-02-25
 
 ### Changed
