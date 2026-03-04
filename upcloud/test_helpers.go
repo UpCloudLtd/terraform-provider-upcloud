@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	tftest "github.com/hashicorp/terraform-plugin-testing/terraform"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 var (
@@ -28,14 +30,6 @@ var (
 )
 
 const DebianTemplateUUID = "01000000-0000-4000-8000-000020070100"
-
-type UptimeStep string
-
-const (
-	UptimeStepCapture UptimeStep = "capture"
-	UptimeStepCheck   UptimeStep = "check"
-	UptimeStepNoOp    UptimeStep = ""
-)
 
 func init() {
 	TestAccProvider = Provider()
@@ -188,16 +182,23 @@ func readServerStartTime(ipAddress, keyDir string) (string, error) {
 		return "", fmt.Errorf("failed to parse private key: %w", err)
 	}
 
-	config := &ssh.ClientConfig{
-		User:            "root",
-		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
-	}
-
 	var lastErr error
 
 	for range 30 {
+		callback, callbackErr := hostKeyCallback(ipAddress, keyDir)
+		if callbackErr != nil {
+			lastErr = callbackErr
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		config := &ssh.ClientConfig{
+			User:            "root",
+			Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+			HostKeyCallback: callback,
+			Timeout:         10 * time.Second,
+		}
+
 		client, dialErr := ssh.Dial("tcp", fmt.Sprintf("%s:22", ipAddress), config)
 		if dialErr != nil {
 			lastErr = dialErr
@@ -226,4 +227,29 @@ func readServerStartTime(ipAddress, keyDir string) (string, error) {
 	}
 
 	return "", fmt.Errorf("failed to read server start time from %s: %w", ipAddress, lastErr)
+}
+
+func hostKeyCallback(ipAddress, keyDir string) (ssh.HostKeyCallback, error) {
+	knownHostsPath := filepath.Join(keyDir, "known_hosts")
+
+	cmd := exec.Command("ssh-keyscan", "-T", "5", ipAddress)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan SSH host key for %s: %w", ipAddress, err)
+	}
+
+	if len(strings.TrimSpace(string(output))) == 0 {
+		return nil, fmt.Errorf("ssh-keyscan returned empty host key for %s", ipAddress)
+	}
+
+	if writeErr := os.WriteFile(knownHostsPath, output, 0o600); writeErr != nil {
+		return nil, fmt.Errorf("failed to write known_hosts file: %w", writeErr)
+	}
+
+	callback, callbackErr := knownhosts.New(knownHostsPath)
+	if callbackErr != nil {
+		return nil, fmt.Errorf("failed to create known_hosts callback: %w", callbackErr)
+	}
+
+	return callback, nil
 }
