@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	upc "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
@@ -692,6 +693,8 @@ func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
 		t.Skip("Skipping attached storage  resize test as TF_ACC is not set")
 	}
 
+	var templateServerID string
+
 	keyDir := t.TempDir()
 	if err := upc.GenerateSSHKeyPair(keyDir); err != nil {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
@@ -703,23 +706,35 @@ func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
 		CheckDestroy:             testAccCheckStorageDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: configResizeAttachedStorage(1, true, false, keyDir),
+				Config: configResizeAttachedStorageSourceServer(10),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_storage.attached_disk", "size", "1"),
+					resource.TestCheckResourceAttr("upcloud_server.template_server", "plan", "1xCPU-2GB"),
+					testAccCaptureResourceID("upcloud_server.template_server", &templateServerID),
+				),
+			},
+			{
+				PreConfig: func() {
+					if err := testAccStopServerByID(templateServerID); err != nil {
+						t.Fatalf("failed to stop template server: %v", err)
+					}
+				},
+				Config: configResizeAttachedStorage(10, upc.UptimeStepCapture, keyDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_storage.cloned_storage", "size", "10"),
 					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
 				),
 			},
 			{
-				Config: configResizeAttachedStorage(2, false, false, keyDir),
+				Config: configResizeAttachedStorage(11, upc.UptimeStepNoOp, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_storage.attached_disk", "size", "2"),
+					resource.TestCheckResourceAttr("upcloud_storage.cloned_storage", "size", "11"),
 					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
 				),
 			},
 			{
-				Config: configResizeAttachedStorage(3, false, true, keyDir),
+				Config: configResizeAttachedStorage(12, upc.UptimeStepCheck, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_storage.attached_disk", "size", "3"),
+					resource.TestCheckResourceAttr("upcloud_storage.cloned_storage", "size", "12"),
 					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
 				),
 			},
@@ -727,15 +742,97 @@ func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
 	})
 }
 
-func configResizeAttachedStorage(storageSize int, captureUptime bool, checkUptime bool, keyDir string) string {
-	provisioner := upc.UptimeProvisioner(keyDir, captureUptime, checkUptime, "attached storage resize")
+func testAccCaptureResourceID(resourceName string, target *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("not found: %s", resourceName)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("no ID is set for %s", resourceName)
+		}
+
+		*target = rs.Primary.ID
+
+		return nil
+	}
+}
+
+func testAccStopServerByID(serverID string) error {
+	if serverID == "" {
+		return fmt.Errorf("server ID is empty")
+	}
+
+	client := upc.TestAccProvider.Meta().(*service.Service)
+	ctx := context.Background()
+
+	_, err := client.StopServer(ctx, &request.StopServerRequest{
+		UUID:     serverID,
+		StopType: upcloud.StopTypeSoft,
+		Timeout:  2 * time.Minute,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
+		UUID:         serverID,
+		DesiredState: upcloud.ServerStateStopped,
+	})
+
+	return err
+}
+
+func configResizeAttachedStorageSourceServer(storageSize int) string {
+	return fmt.Sprintf(`
+		resource "upcloud_server" "template_server" {
+			hostname = "tf-acc-test-storage-resize-attached-disk-template-server"
+			zone     = "pl-waw1"
+			plan     = "1xCPU-2GB"
+			metadata = true
+
+			template {
+				storage = "%s"
+				size    = %d
+			}
+
+			network_interface {
+				type = "utility"
+			}
+		}
+	`, upc.DebianTemplateUUID, storageSize)
+}
+
+func configResizeAttachedStorage(storageSize int, step upc.UptimeStep, keyDir string) string {
+	provisioner := upc.UptimeProvisioner(keyDir, step, "attached storage resize")
 
 	return fmt.Sprintf(`
-		resource "upcloud_storage" "attached_disk" {
+		resource "upcloud_server" "template_server" {
+			hostname = "tf-acc-test-storage-resize-attached-disk-template-server"
+			zone     = "pl-waw1"
+			plan     = "1xCPU-2GB"
+			metadata = true
+
+			template {
+				storage = "%s"
+				size    = %d
+			}
+
+			network_interface {
+				type = "utility"
+			}
+		}
+
+		resource "upcloud_storage" "cloned_storage" {
 			size  = %d
 			tier  = "maxiops"
-			title = "tf-acc-test-storage-resize-attached-disk"
+			title = "tf-acc-test-storage-resize-attached-disk-clone"
 			zone  = "pl-waw1"
+
+			clone {
+				id = upcloud_server.template_server.template[0].id
+			}
 		}
 
 		resource "upcloud_server" "attached_disk_server" {
@@ -751,13 +848,8 @@ func configResizeAttachedStorage(storageSize int, captureUptime bool, checkUptim
 				]
 			}
 
-			template {
-				storage = "%s"
-				size    = 10
-			}
-
 			storage_devices {
-				storage = upcloud_storage.attached_disk.id
+				storage = upcloud_storage.cloned_storage.id
 			}
 
 			network_interface {
@@ -766,5 +858,5 @@ func configResizeAttachedStorage(storageSize int, captureUptime bool, checkUptim
 
 			%s
 		}
-	`, storageSize, keyDir, upc.DebianTemplateUUID, provisioner)
+	`, upc.DebianTemplateUUID, storageSize, storageSize, keyDir, provisioner)
 }

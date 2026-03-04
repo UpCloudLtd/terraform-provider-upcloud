@@ -28,6 +28,14 @@ var (
 
 const DebianTemplateUUID = "01000000-0000-4000-8000-000020070100"
 
+type UptimeStep string
+
+const (
+	UptimeStepCapture UptimeStep = "capture"
+	UptimeStepCheck   UptimeStep = "check"
+	UptimeStepNoOp    UptimeStep = ""
+)
+
 func init() {
 	TestAccProvider = Provider()
 	TestAccProviderFactories = make(map[string]func() (tfprotov6.ProviderServer, error))
@@ -103,8 +111,8 @@ func GenerateSSHKeyPair(keyDir string) error {
 	return nil
 }
 
-func UptimeProvisioner(keyDir string, captureUptime bool, checkUptime bool, operation string) string {
-	if captureUptime {
+func UptimeProvisioner(keyDir string, step UptimeStep, operation string) string {
+	if step == UptimeStepCapture {
 		provisioner := `
 			provisioner "remote-exec" {
 				inline = [
@@ -121,7 +129,7 @@ func UptimeProvisioner(keyDir string, captureUptime bool, checkUptime bool, oper
 		return fmt.Sprintf(provisioner, keyDir)
 	}
 
-	if checkUptime {
+	if step == UptimeStepCheck {
 		provisioner := `
 			provisioner "remote-exec" {
 				inline = [

@@ -921,8 +921,8 @@ func TestUpcloudServer_createPreChecks(t *testing.T) {
 	})
 }
 
-func configHotResize(planName string, hotResize bool, captureUptime bool, checkUptime bool, keyDir string) string {
-	provisioner := upcloud.UptimeProvisioner(keyDir, captureUptime, checkUptime, "hot resize")
+func configHotResize(planName string, hotResize bool, step upcloud.UptimeStep, keyDir string) string {
+	provisioner := upcloud.UptimeProvisioner(keyDir, step, "hot resize")
 
 	return fmt.Sprintf(`
 		variable "basename" {
@@ -994,7 +994,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Step 1: Create a server with 1xCPU-1GB plan and capture uptime
-				Config: configHotResize("1xCPU-1GB", true, true, false, keyDir),
+				Config: configHotResize("1xCPU-1GB", true, upcloud.UptimeStepCapture, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "hot_resize", "true"),
@@ -1006,7 +1006,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 			},
 			{
 				// Step 2: Apply hot resize to 1xCPU-2GB
-				Config: configHotResize("1xCPU-2GB", true, false, false, keyDir),
+				Config: configHotResize("1xCPU-2GB", true, upcloud.UptimeStepNoOp, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "hot_resize", "true"),
@@ -1018,7 +1018,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 			},
 			{
 				// Step 3: Verify that the server didn't restart by checking the uptime in a separate step
-				Config: configHotResize("1xCPU-2GB", true, false, true, keyDir),
+				Config: configHotResize("1xCPU-2GB", true, upcloud.UptimeStepCheck, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
 					func(_ *terraform.State) error {
