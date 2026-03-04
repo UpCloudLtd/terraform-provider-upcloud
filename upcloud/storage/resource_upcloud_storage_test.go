@@ -694,6 +694,7 @@ func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
 	}
 
 	var templateServerID string
+	var attachedServerStartTime string
 
 	keyDir := t.TempDir()
 	if err := upc.GenerateSSHKeyPair(keyDir); err != nil {
@@ -718,24 +719,26 @@ func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
 						t.Fatalf("failed to stop template server: %v", err)
 					}
 				},
-				Config: configResizeAttachedStorage(10, upc.UptimeStepCapture, keyDir),
+				Config: configResizeAttachedStorage(10, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.cloned_storage", "size", "10"),
 					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
+					upc.CaptureServerStartTime("upcloud_server.attached_disk_server", keyDir, &attachedServerStartTime),
 				),
 			},
 			{
-				Config: configResizeAttachedStorage(11, upc.UptimeStepNoOp, keyDir),
+				Config: configResizeAttachedStorage(11, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.cloned_storage", "size", "11"),
 					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
 				),
 			},
 			{
-				Config: configResizeAttachedStorage(12, upc.UptimeStepCheck, keyDir),
+				Config: configResizeAttachedStorage(12, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.cloned_storage", "size", "12"),
 					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
+					upc.CheckServerStartTimeUnchanged("upcloud_server.attached_disk_server", keyDir, &attachedServerStartTime, "attached storage resize"),
 				),
 			},
 		},
@@ -804,9 +807,7 @@ func configResizeAttachedStorageSourceServer(storageSize int) string {
 	`, upc.DebianTemplateUUID, storageSize)
 }
 
-func configResizeAttachedStorage(storageSize int, step upc.UptimeStep, keyDir string) string {
-	provisioner := upc.UptimeProvisioner(keyDir, step, "attached storage resize")
-
+func configResizeAttachedStorage(storageSize int, keyDir string) string {
 	return fmt.Sprintf(`
 		resource "upcloud_server" "template_server" {
 			hostname = "tf-acc-test-storage-resize-attached-disk-template-server"
@@ -855,8 +856,6 @@ func configResizeAttachedStorage(storageSize int, step upc.UptimeStep, keyDir st
 			network_interface {
 				type = "public"
 			}
-
-			%s
 		}
-	`, upc.DebianTemplateUUID, storageSize, storageSize, keyDir, provisioner)
+	`, upc.DebianTemplateUUID, storageSize, storageSize, keyDir)
 }

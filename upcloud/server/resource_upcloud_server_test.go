@@ -921,9 +921,7 @@ func TestUpcloudServer_createPreChecks(t *testing.T) {
 	})
 }
 
-func configHotResize(planName string, hotResize bool, step upcloud.UptimeStep, keyDir string) string {
-	provisioner := upcloud.UptimeProvisioner(keyDir, step, "hot resize")
-
+func configHotResize(planName string, hotResize bool, keyDir string) string {
 	return fmt.Sprintf(`
 		variable "basename" {
 			type = string
@@ -957,14 +955,12 @@ func configHotResize(planName string, hotResize bool, step upcloud.UptimeStep, k
 			network_interface {
 				type = "public"
 			}
-
-			%s
 		}
 
 		output "server_ip" {
 			value = upcloud_server.hot_resize.network_interface[0].ip_address
 		}
-	`, planName, hotResize, keyDir, upcloud.DebianTemplateUUID, provisioner)
+	`, planName, hotResize, keyDir, upcloud.DebianTemplateUUID)
 }
 
 func TestEndToEndServer_HotResize(t *testing.T) {
@@ -982,6 +978,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 
 	// Create a temporary directory for SSH keys
 	keyDir := t.TempDir()
+	var serverStartTime string
 	err := upcloud.GenerateSSHKeyPair(keyDir)
 	if err != nil {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
@@ -993,11 +990,11 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				// Step 1: Create a server with 1xCPU-1GB plan and capture uptime
-				Config: configHotResize("1xCPU-1GB", true, upcloud.UptimeStepCapture, keyDir),
+				Config: configHotResize("1xCPU-1GB", true, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "hot_resize", "true"),
+					upcloud.CaptureServerStartTime("upcloud_server.hot_resize", keyDir, &serverStartTime),
 					func(_ *terraform.State) error {
 						t.Logf("Initial server startup and uptime capture complete")
 						return nil
@@ -1005,8 +1002,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 				),
 			},
 			{
-				// Step 2: Apply hot resize to 1xCPU-2GB
-				Config: configHotResize("1xCPU-2GB", true, upcloud.UptimeStepNoOp, keyDir),
+				Config: configHotResize("1xCPU-2GB", true, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "hot_resize", "true"),
@@ -1017,10 +1013,10 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 				),
 			},
 			{
-				// Step 3: Verify that the server didn't restart by checking the uptime in a separate step
-				Config: configHotResize("1xCPU-2GB", true, upcloud.UptimeStepCheck, keyDir),
+				Config: configHotResize("1xCPU-2GB", true, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
+					upcloud.CheckServerStartTimeUnchanged("upcloud_server.hot_resize", keyDir, &serverStartTime, "hot resize"),
 					func(_ *terraform.State) error {
 						t.Logf("Server was successfully hot resize'd")
 						return nil
@@ -1039,6 +1035,7 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 
 	// Create a temporary directory for SSH keys
 	keyDir := t.TempDir()
+	var serverStartTime string
 	err := upcloud.GenerateSSHKeyPair(keyDir)
 	if err != nil {
 		t.Fatalf("Failed to generate SSH keys: %v", err)
@@ -1050,7 +1047,6 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				// Step 1: Create a server with 1xCPU-1GB plan and hot_resize=true, and capture uptime
 				Config: fmt.Sprintf(`
 					resource "upcloud_server" "mixed_changes" {
 						hostname    = "tf-acc-test-server-mixed-changes"
@@ -1074,34 +1070,20 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 						network_interface {
 							type = "public"
 						}
-
-						# Capture the initial server uptime for comparison later
-						provisioner "remote-exec" {
-							inline = [
-								"uptime -s > /tmp/server_start_time.txt",
-								"echo 'Initial server start time captured'",
-							]
-							connection {
-								type        = "ssh"
-								user        = "root"
-								host        = self.network_interface[0].ip_address
-								private_key = file("%s/id_rsa")
-							}
-						}
 					}
 
 					output "server_ip" {
 						value = upcloud_server.mixed_changes.network_interface[0].ip_address
 					}
-				`, keyDir, upcloud.DebianTemplateUUID, keyDir),
+				`, keyDir, upcloud.DebianTemplateUUID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "plan", "1xCPU-1GB"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "hot_resize", "true"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "network_interface.#", "1"),
+					upcloud.CaptureServerStartTime("upcloud_server.mixed_changes", keyDir, &serverStartTime),
 				),
 			},
 			{
-				// Step 2: Attempt to make both hot-resize-compatible change (plan) and a change requiring server restart (add network)
 				Config: fmt.Sprintf(`
 					resource "upcloud_server" "mixed_changes" {
 						hostname    = "tf-acc-test-server-mixed-changes"
@@ -1129,43 +1111,17 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 						network_interface {
 							type = "utility"  # Added network interface
 						}
-
-						# Check if the server was restarted by comparing the uptime
-						provisioner "remote-exec" {
-							inline = [
-								"if [ -f /tmp/server_start_time.txt ]; then",
-								"  ORIGINAL_START_TIME=$(cat /tmp/server_start_time.txt)",
-								"  CURRENT_START_TIME=$(uptime -s)",
-								"  echo \"Original start time: $ORIGINAL_START_TIME\"",
-								"  echo \"Current start time: $CURRENT_START_TIME\"",
-								"  if [ \"$ORIGINAL_START_TIME\" = \"$CURRENT_START_TIME\" ]; then",
-								"    echo 'ERROR: Server was not restarted when it should have been'",
-								"    exit 1",
-								"  else",
-								"    echo 'Server was correctly restarted as expected'",
-								"  fi",
-								"else",
-								"  echo 'ERROR: Could not find server start time file'",
-								"  exit 1",
-								"fi",
-							]
-							connection {
-								type        = "ssh"
-								user        = "root"
-								host        = self.network_interface[0].ip_address
-								private_key = file("%s/id_rsa")
-							}
-						}
 					}
 
 					output "server_ip" {
 						value = upcloud_server.mixed_changes.network_interface[0].ip_address
 					}
-				`, keyDir, upcloud.DebianTemplateUUID, keyDir),
+				`, keyDir, upcloud.DebianTemplateUUID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "plan", "1xCPU-2GB"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "hot_resize", "true"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "network_interface.#", "2"),
+					upcloud.CheckServerStartTimeChanged("upcloud_server.mixed_changes", keyDir, &serverStartTime, "hot resize with network change"),
 					func(_ *terraform.State) error {
 						t.Logf("Successfully applied both plan change and network interface change")
 						t.Logf("Server was restarted as expected when both hot resize and network changes were applied")

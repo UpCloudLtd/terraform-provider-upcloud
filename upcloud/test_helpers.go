@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -111,55 +112,118 @@ func GenerateSSHKeyPair(keyDir string) error {
 	return nil
 }
 
-func UptimeProvisioner(keyDir string, step UptimeStep, operation string) string {
-	if step == UptimeStepCapture {
-		provisioner := `
-			provisioner "remote-exec" {
-				inline = [
-					"uptime -s > /tmp/server_start_time.txt",
-				]
-				connection {
-					type        = "ssh"
-					user        = "root"
-					host        = self.network_interface[0].ip_address
-					private_key = file("%s/id_rsa")
-				}
-			}
-		`
-		return fmt.Sprintf(provisioner, keyDir)
+func CaptureServerStartTime(resourceName, keyDir string, captured *string) resource.TestCheckFunc {
+	return func(s *tftest.State) error {
+		startTime, err := readServerStartTimeFromState(s, resourceName, keyDir)
+		if err != nil {
+			return err
+		}
+
+		*captured = startTime
+
+		return nil
+	}
+}
+
+func CheckServerStartTimeUnchanged(resourceName, keyDir string, captured *string, operation string) resource.TestCheckFunc {
+	return func(s *tftest.State) error {
+		if *captured == "" {
+			return fmt.Errorf("captured start time for %s is empty", resourceName)
+		}
+
+		currentStartTime, err := readServerStartTimeFromState(s, resourceName, keyDir)
+		if err != nil {
+			return err
+		}
+
+		if currentStartTime != *captured {
+			return fmt.Errorf("server was restarted after %s: original=%s current=%s", operation, *captured, currentStartTime)
+		}
+
+		return nil
+	}
+}
+
+func CheckServerStartTimeChanged(resourceName, keyDir string, captured *string, operation string) resource.TestCheckFunc {
+	return func(s *tftest.State) error {
+		if *captured == "" {
+			return fmt.Errorf("captured start time for %s is empty", resourceName)
+		}
+
+		currentStartTime, err := readServerStartTimeFromState(s, resourceName, keyDir)
+		if err != nil {
+			return err
+		}
+
+		if currentStartTime == *captured {
+			return fmt.Errorf("server was not restarted after %s: original=%s current=%s", operation, *captured, currentStartTime)
+		}
+
+		return nil
+	}
+}
+
+func readServerStartTimeFromState(s *tftest.State, resourceName, keyDir string) (string, error) {
+	rs, ok := s.RootModule().Resources[resourceName]
+	if !ok {
+		return "", fmt.Errorf("root module has no resource called %s", resourceName)
 	}
 
-	if step == UptimeStepCheck {
-		provisioner := `
-			provisioner "remote-exec" {
-				inline = [
-					"if [ -f /tmp/server_start_time.txt ]; then",
-					"  ORIGINAL_START_TIME=$(cat /tmp/server_start_time.txt)",
-					"  CURRENT_START_TIME=$(uptime -s)",
-					"  echo \"Original start time: $ORIGINAL_START_TIME\"",
-					"  echo \"Current start time: $CURRENT_START_TIME\"",
-					"  if [ \"$ORIGINAL_START_TIME\" = \"$CURRENT_START_TIME\" ]; then",
-					"    echo 'SUCCESS: Server was not restarted after %s'",
-					"    exit 0",
-					"  else",
-					"    echo 'ERROR: Server was restarted after %s'",
-					"    exit 1",
-					"  fi",
-					"else",
-					"  echo 'ERROR: Could not find server start time file'",
-					"  exit 1",
-					"fi",
-				]
-				connection {
-					type        = "ssh"
-					user        = "root"
-					host        = self.network_interface[0].ip_address
-					private_key = file("%s/id_rsa")
-				}
-			}
-		`
-		return fmt.Sprintf(provisioner, operation, operation, keyDir)
+	ipAddress := rs.Primary.Attributes["network_interface.0.ip_address"]
+	if ipAddress == "" {
+		return "", fmt.Errorf("resource %s has empty network_interface.0.ip_address", resourceName)
 	}
 
-	return ""
+	return readServerStartTime(ipAddress, keyDir)
+}
+
+func readServerStartTime(ipAddress, keyDir string) (string, error) {
+	privateKey, err := os.ReadFile(filepath.Join(keyDir, "id_rsa"))
+	if err != nil {
+		return "", fmt.Errorf("failed to read private key: %w", err)
+	}
+
+	signer, err := ssh.ParsePrivateKey(privateKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse private key: %w", err)
+	}
+
+	config := &ssh.ClientConfig{
+		User:            "root",
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}
+
+	var lastErr error
+
+	for range 30 {
+		client, dialErr := ssh.Dial("tcp", fmt.Sprintf("%s:22", ipAddress), config)
+		if dialErr != nil {
+			lastErr = dialErr
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		session, sessionErr := client.NewSession()
+		if sessionErr != nil {
+			_ = client.Close()
+			lastErr = sessionErr
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		output, cmdErr := session.Output("uptime -s")
+		_ = session.Close()
+		_ = client.Close()
+		if cmdErr != nil {
+			lastErr = cmdErr
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		return strings.TrimSpace(string(output)), nil
+	}
+
+	return "", fmt.Errorf("failed to read server start time from %s: %w", ipAddress, lastErr)
 }
