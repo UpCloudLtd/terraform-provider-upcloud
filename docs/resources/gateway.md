@@ -58,7 +58,7 @@ resource "upcloud_gateway" "this" {
 
 ### Required Attributes
 
-- `features` (Set of String) Features enabled for the gateway. For more details, see [documentation](https://upcloud.com/resources/docs/networking#nat-and-vpn-gateways).
+- `features` (Set of String) Features enabled for the gateway. Valid item values are `nat` and `vpn`. For more details, see documentation on [NAT](https://upcloud.com/docs/products/nat-gateway/) and [VPN](https://upcloud.com/docs/products/vpn-gateway/) gateways.
 - `name` (String) Gateway name. Needs to be unique within the account.
 - `zone` (String) Zone in which the gateway will be hosted, e.g. `de-fra1`.
 
