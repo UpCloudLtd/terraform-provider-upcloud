@@ -710,7 +710,7 @@ func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
 				Config: configResizeAttachedStorageSourceServer(10),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.template_server", "plan", "1xCPU-2GB"),
-					testAccCaptureResourceID("upcloud_server.template_server", &templateServerID),
+					upc.CheckStringDoesNotChange("upcloud_server.template_server", "id", &templateServerID),
 				),
 			},
 			{
@@ -738,28 +738,11 @@ func TestEndToEndStorage_ResizeAttachedStorage(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.cloned_storage", "size", "12"),
 					resource.TestCheckResourceAttr("upcloud_server.attached_disk_server", "plan", "1xCPU-2GB"),
-					upc.CheckServerStartTimeUnchanged("upcloud_server.attached_disk_server", keyDir, &attachedServerStartTime, "attached storage resize"),
+					upc.CheckServerStartTime("upcloud_server.attached_disk_server", keyDir, &attachedServerStartTime, "attached storage resize", false),
 				),
 			},
 		},
 	})
-}
-
-func testAccCaptureResourceID(resourceName string, target *string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return fmt.Errorf("not found: %s", resourceName)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("no ID is set for %s", resourceName)
-		}
-
-		*target = rs.Primary.ID
-
-		return nil
-	}
 }
 
 func testAccStopServerByID(serverID string) error {

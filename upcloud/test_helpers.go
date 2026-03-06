@@ -108,7 +108,7 @@ func GenerateSSHKeyPair(keyDir string) error {
 
 func CaptureServerStartTime(resourceName, keyDir string, captured *string) resource.TestCheckFunc {
 	return func(s *tftest.State) error {
-		startTime, err := readServerStartTimeFromState(s, resourceName, keyDir)
+		startTime, err := readServerStartTime(s, resourceName, keyDir)
 		if err != nil {
 			return err
 		}
@@ -119,18 +119,22 @@ func CaptureServerStartTime(resourceName, keyDir string, captured *string) resou
 	}
 }
 
-func CheckServerStartTimeUnchanged(resourceName, keyDir string, captured *string, operation string) resource.TestCheckFunc {
+func CheckServerStartTime(resourceName, keyDir string, captured *string, operation string, expectChanged bool) resource.TestCheckFunc {
 	return func(s *tftest.State) error {
 		if *captured == "" {
 			return fmt.Errorf("captured start time for %s is empty", resourceName)
 		}
 
-		currentStartTime, err := readServerStartTimeFromState(s, resourceName, keyDir)
+		currentStartTime, err := readServerStartTime(s, resourceName, keyDir)
 		if err != nil {
 			return err
 		}
 
-		if currentStartTime != *captured {
+		if expectChanged && currentStartTime == *captured {
+			return fmt.Errorf("server was not restarted after %s: original=%s current=%s", operation, *captured, currentStartTime)
+		}
+
+		if !expectChanged && currentStartTime != *captured {
 			return fmt.Errorf("server was restarted after %s: original=%s current=%s", operation, *captured, currentStartTime)
 		}
 
@@ -138,26 +142,7 @@ func CheckServerStartTimeUnchanged(resourceName, keyDir string, captured *string
 	}
 }
 
-func CheckServerStartTimeChanged(resourceName, keyDir string, captured *string, operation string) resource.TestCheckFunc {
-	return func(s *tftest.State) error {
-		if *captured == "" {
-			return fmt.Errorf("captured start time for %s is empty", resourceName)
-		}
-
-		currentStartTime, err := readServerStartTimeFromState(s, resourceName, keyDir)
-		if err != nil {
-			return err
-		}
-
-		if currentStartTime == *captured {
-			return fmt.Errorf("server was not restarted after %s: original=%s current=%s", operation, *captured, currentStartTime)
-		}
-
-		return nil
-	}
-}
-
-func readServerStartTimeFromState(s *tftest.State, resourceName, keyDir string) (string, error) {
+func readServerStartTime(s *tftest.State, resourceName, keyDir string) (string, error) {
 	rs, ok := s.RootModule().Resources[resourceName]
 	if !ok {
 		return "", fmt.Errorf("root module has no resource called %s", resourceName)
@@ -167,11 +152,6 @@ func readServerStartTimeFromState(s *tftest.State, resourceName, keyDir string) 
 	if ipAddress == "" {
 		return "", fmt.Errorf("resource %s has empty network_interface.0.ip_address", resourceName)
 	}
-
-	return readServerStartTime(ipAddress, keyDir)
-}
-
-func readServerStartTime(ipAddress, keyDir string) (string, error) {
 	privateKey, err := os.ReadFile(filepath.Join(keyDir, "id_rsa"))
 	if err != nil {
 		return "", fmt.Errorf("failed to read private key: %w", err)

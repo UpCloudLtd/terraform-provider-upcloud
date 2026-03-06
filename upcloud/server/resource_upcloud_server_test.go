@@ -1016,7 +1016,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 				Config: configHotResize("1xCPU-2GB", true, keyDir),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.hot_resize", "plan", "1xCPU-2GB"),
-					upcloud.CheckServerStartTimeUnchanged("upcloud_server.hot_resize", keyDir, &serverStartTime, "hot resize"),
+					upcloud.CheckServerStartTime("upcloud_server.hot_resize", keyDir, &serverStartTime, "hot resize", false),
 					func(_ *terraform.State) error {
 						t.Logf("Server was successfully hot resize'd")
 						return nil
@@ -1121,7 +1121,7 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "plan", "1xCPU-2GB"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "hot_resize", "true"),
 					resource.TestCheckResourceAttr("upcloud_server.mixed_changes", "network_interface.#", "2"),
-					upcloud.CheckServerStartTimeChanged("upcloud_server.mixed_changes", keyDir, &serverStartTime, "hot resize with network change"),
+					upcloud.CheckServerStartTime("upcloud_server.mixed_changes", keyDir, &serverStartTime, "hot resize with network change", true),
 					func(_ *terraform.State) error {
 						t.Logf("Successfully applied both plan change and network interface change")
 						t.Logf("Server was restarted as expected when both hot resize and network changes were applied")
