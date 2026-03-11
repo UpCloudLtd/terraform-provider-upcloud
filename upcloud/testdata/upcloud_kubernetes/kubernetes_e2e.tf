@@ -3,6 +3,11 @@ variable "basename" {
   type    = string
 }
 
+variable "network_cidr" {
+  default = "172.23.45.0/24"
+  type    = string
+}
+
 variable "zone" {
   default = "pl-waw1"
   type    = string
@@ -18,8 +23,13 @@ variable "enable_kubernetes_resources" {
   default = false
 }
 
+variable "private_node_groups" {
+  type    = bool
+  default = false
+}
+
 locals {
-  name_prefix = "${var.basename}k8s-e2e-"
+  name_prefix = "${var.basename}k8s-e2e-${var.private_node_groups ? "priv-lb" : "publ-np"}-"
 }
 
 resource "upcloud_router" "main" {
@@ -32,9 +42,23 @@ resource "upcloud_network" "main" {
   router = upcloud_router.main.id
 
   ip_network {
-    address = "172.23.45.0/24"
+    address = var.network_cidr
     dhcp    = true
+    dhcp_default_route = var.private_node_groups
     family  = "IPv4"
+  }
+}
+
+resource "upcloud_gateway" "main" {
+  # Only deploy NAT gateway when using private node-groups
+  count = var.private_node_groups ? 1 : 0
+
+  name     = "${local.name_prefix}gw"
+  zone     = var.zone
+  features = ["nat"]
+
+  router {
+    id = upcloud_router.main.id
   }
 }
 
@@ -42,6 +66,7 @@ resource "upcloud_kubernetes_cluster" "main" {
   control_plane_ip_filter = ["0.0.0.0/0"]
   name                    = "${local.name_prefix}cluster"
   network                 = upcloud_network.main.id
+  private_node_groups     = var.private_node_groups
   zone                    = var.zone
 }
 
@@ -62,6 +87,10 @@ provider "kubernetes" {
   client_key             = ephemeral.upcloud_kubernetes_cluster.main.client_key
   cluster_ca_certificate = ephemeral.upcloud_kubernetes_cluster.main.cluster_ca_certificate
   host                   = ephemeral.upcloud_kubernetes_cluster.main.host
+
+  ignore_annotations = [
+    "^service\\.beta\\.kubernetes\\.io\\/.*load.*balancer.*"
+  ]
 }
 
 data "kubernetes_nodes" "this" {
@@ -126,11 +155,11 @@ resource "kubernetes_service_v1" "hello" {
     }
 
     port {
-      port        = 80
+      port = var.private_node_groups ? 443 : 80
       target_port = 80
     }
 
-    type = "NodePort"
+    type = var.private_node_groups ? "LoadBalancer" : "NodePort"
   }
 }
 
@@ -139,7 +168,8 @@ locals {
   has_external_ip = var.enable_kubernetes_resources ? contains(local.addresses.*.type, "ExternalIP") : false
   external_ip     = local.has_external_ip ? local.addresses[index(local.addresses.*.type, "ExternalIP")].address : "localhost"
   port            = var.enable_kubernetes_resources ? kubernetes_service_v1.hello[0].spec[0].port[0].node_port : 8080
-  service_url     = "http://${local.external_ip}:${local.port != null ? local.port : 8080}/"
+  lb_url = var.enable_kubernetes_resources && var.private_node_groups ? "https://${kubernetes_service_v1.hello[0].status[0].load_balancer[0].ingress[0].hostname}" : "localhost:8080"
+  service_url     = var.private_node_groups ? local.lb_url : "http://${local.external_ip}:${local.port != null ? local.port : 8080}/"
 }
 
 data "http" "hello" {
@@ -152,9 +182,11 @@ data "http" "hello" {
     kubernetes_service_v1.hello,
   ]
 
-  # Wait 5 minutes for the service to be ready.
+  # Wait for the service to be ready:
+  # - Max 5 minutes when using public node groups and NodePort service.
+  # - Max 15 minutes when using private node groups and LoadBalancer service.
   retry {
-    attempts     = 30
+    attempts     = var.private_node_groups ? 90 : 30
     min_delay_ms = 10e3
   }
 }
