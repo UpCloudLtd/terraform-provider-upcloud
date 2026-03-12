@@ -107,6 +107,7 @@ Optional Attributes:
 - `valkey_pubsub_client_output_buffer_limit` (Number) Pub/sub client output buffer hard limit in MB. Set output buffer limit for pub / sub clients in MB. The value is the hard limit, the soft limit is 1/4 of the hard limit. When setting the limit, be mindful of the available memory in the selected service plan.
 - `valkey_ssl` (Boolean) Require SSL to access Valkey.
 - `valkey_timeout` (Number) Valkey idle connection timeout in seconds.
+- `valkey_version` (String) Valkey major version.
 
 Blocks:
 

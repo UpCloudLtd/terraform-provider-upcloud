@@ -126,10 +126,10 @@ Optional Attributes:
 - `log_line_prefix` (String) Choose from one of the available log formats.
 - `log_min_duration_statement` (Number) Log statements that take more than this number of milliseconds to run, -1 disables.
 - `log_temp_files` (Number) Log statements for each temporary file created larger than this number of kilobytes, -1 disables.
-- `max_connections` (Number) Sets the PostgreSQL maximum number of concurrent connections to the database server. This is a limited-release parameter. Contact your account team to confirm your eligibility. You cannot decrease this parameter value when set. For services with a read replica, first increase the read replica's value. After the change is applied to the replica, you can increase the primary service's value. Changing this parameter causes a service restart.
+- `max_connections` (Number) Sets the PostgreSQL maximum number of concurrent connections to the database server. For services with a read replica, first increase the read replica's value. After the change is applied to the replica, you can increase the primary service's value. Changing this parameter causes a service restart.
 - `max_files_per_process` (Number) PostgreSQL maximum number of files that can be open per process. The default is `1000` (upstream default). Changing this parameter causes a service restart.
 - `max_locks_per_transaction` (Number) PostgreSQL maximum locks per transaction. Changing this parameter causes a service restart.
-- `max_logical_replication_workers` (Number) PostgreSQL maximum logical replication workers (taken from the pool of max_parallel_workers). The default is `4` (upstream default). Changing this parameter causes a service restart.
+- `max_logical_replication_workers` (Number) PostgreSQL maximum logical replication workers (taken from the pool defined by max_worker_processes). The default is `4` (upstream default). Changing this parameter causes a service restart.
 - `max_parallel_workers` (Number) Sets the maximum number of workers that the system can support for parallel queries. The default is `8` (upstream default).
 - `max_parallel_workers_per_gather` (Number) Sets the maximum number of workers that can be started by a single Gather or Gather Merge node. The default is `2` (upstream default).
 - `max_pred_locks_per_transaction` (Number) PostgreSQL maximum predicate locks per transaction. The default is `64` (upstream default). Changing this parameter causes a service restart.
@@ -153,6 +153,7 @@ Optional Attributes:
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 - `shared_buffers_percentage` (Number) Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60 (float), which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value. Changing this parameter causes a service restart.
+- `switchover_windows` (List of String)
 - `synchronous_replication` (String) Synchronous replication type. Note that the service plan also needs to support synchronous replication.
 - `temp_file_limit` (Number) PostgreSQL temporary file limit in KiB, -1 for unlimited.
 - `timezone` (String) PostgreSQL service timezone.
