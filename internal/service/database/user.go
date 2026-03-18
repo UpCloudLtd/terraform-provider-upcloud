@@ -555,6 +555,18 @@ func (r *databaseUserResource) Read(ctx context.Context, req resource.ReadReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
+func shouldModify(plan, state databaseUserModel) bool {
+	if !plan.Password.Equal(state.Password) && !plan.Password.IsUnknown() {
+		return true
+	}
+
+	if !plan.Authentication.Equal(state.Authentication) {
+		return true
+	}
+
+	return false
+}
+
 func (r *databaseUserResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data, state databaseUserModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -576,20 +588,36 @@ func (r *databaseUserResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	userReq := &request.ModifyManagedDatabaseUserRequest{
-		ServiceUUID:    uuid,
-		Username:       name,
-		Password:       data.Password.ValueString(),
-		Authentication: upcloud.ManagedDatabaseUserAuthenticationType(data.Authentication.ValueString()),
-	}
+	var user *upcloud.ManagedDatabaseUser
+	var err error
+	if shouldModify(data, state) {
+		userReq := &request.ModifyManagedDatabaseUserRequest{
+			ServiceUUID:    uuid,
+			Username:       name,
+			Password:       data.Password.ValueString(),
+			Authentication: upcloud.ManagedDatabaseUserAuthenticationType(data.Authentication.ValueString()),
+		}
 
-	user, err := r.client.ModifyManagedDatabaseUser(ctx, userReq)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to modify managed database user",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
+		user, err = r.client.ModifyManagedDatabaseUser(ctx, userReq)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to modify managed database user",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+	} else {
+		user, err = r.client.GetManagedDatabaseUser(ctx, &request.GetManagedDatabaseUserRequest{
+			ServiceUUID: uuid,
+			Username:    name,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to read managed database user details during update",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
 	}
 
 	acHasChanges := false
