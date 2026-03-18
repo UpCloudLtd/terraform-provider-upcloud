@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer: Add http_rewrite_path and http_rewrite_uri actions
+
 ## [5.35.0] - 2026-03-11
 
 ### Changed
