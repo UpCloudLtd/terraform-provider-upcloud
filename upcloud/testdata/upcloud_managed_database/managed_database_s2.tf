@@ -189,6 +189,11 @@ resource "upcloud_managed_database_user" "db_user_2" {
   }
 }
 
+resource "upcloud_managed_database_user" "db_user_3" {
+  service  = upcloud_managed_database_postgresql.pg2.id
+  username = "autopassword"
+}
+
 resource "upcloud_managed_database_user" "db_user_4" {
   service  = upcloud_managed_database_opensearch.o1.id
   username = "somename"

@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- managed_database_user: do not send modify user request with empty password value when password is unknown and there are no other changes to include in the request.
+
 ## [5.35.0] - 2026-03-11
 
 ### Changed
