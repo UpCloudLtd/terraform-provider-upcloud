@@ -150,6 +150,10 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.use_backend.0.backend_name", "lb-be-1-test"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_redirect.0.location", "/app"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_redirect.1.scheme", "https"),
+					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_rewrite_path.0.match_pattern", "^/old/(.*)$"),
+					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_rewrite_path.0.rewrite_to", "/new/\\1"),
+					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_rewrite_uri.0.match_pattern", "^/api/v1/(.*)$"),
+					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_rewrite_uri.0.rewrite_to", "/api/v2/\\1"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.status", "404"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.content_type", "text/plain"),
 					resource.TestCheckResourceAttr(fe1Rule1Name, "actions.0.http_return.0.payload", "UmVzb3VyY2Ugbm90IGZvdW5kIQ=="),
@@ -294,6 +298,41 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 			{
 				Config:      testDataE4,
 				ExpectError: regexp.MustCompile(`Invalid Attribute Combination`),
+				PlanOnly:    true,
+			},
+		},
+	})
+}
+
+func TestAccUpcloudLoadBalancer_HTTPRewriteValidation(t *testing.T) {
+	// These test data files should fail in pre-plan validation. Thus, these tests are run in plan-only mode.
+	testDataE5 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e5.tf")
+	testDataE6 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e6.tf")
+	testDataE7 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e7.tf")
+	testDataE8 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e8.tf")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testDataE5,
+				ExpectError: regexp.MustCompile(`Missing required argument|Missing required attribute|Missing Configuration for Required Attribute`),
+				PlanOnly:    true,
+			},
+			{
+				Config:      testDataE6,
+				ExpectError: regexp.MustCompile(`Invalid Attribute Value Length`),
+				PlanOnly:    true,
+			},
+			{
+				Config:      testDataE7,
+				ExpectError: regexp.MustCompile(`Missing required argument|Missing required attribute|Missing Configuration for Required Attribute`),
+				PlanOnly:    true,
+			},
+			{
+				Config:      testDataE8,
+				ExpectError: regexp.MustCompile(`Missing required argument|Missing required attribute|Missing Configuration for Required Attribute`),
 				PlanOnly:    true,
 			},
 		},
