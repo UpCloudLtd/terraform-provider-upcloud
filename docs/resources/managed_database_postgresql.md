@@ -151,6 +151,7 @@ Optional Attributes:
 - `pg_stat_monitor_pgsm_max_buckets` (Number) Sets the maximum number of buckets. Changing this parameter causes a service restart. Only available for PostgreSQL 13+.
 - `pg_stat_statements_track` (String) Controls which statements are counted. Specify top to track top-level statements (those issued directly by clients), all to also track nested statements (such as statements invoked within functions), or none to disable statement statistics collection. The default is `top`.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
+- `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 - `shared_buffers_percentage` (Number) Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60 (float), which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value. Changing this parameter causes a service restart.
 - `switchover_windows` (List of String)

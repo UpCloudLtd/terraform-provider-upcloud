@@ -138,6 +138,7 @@ Optional Attributes:
 - `override_main_response_version` (Boolean) Compatibility mode sets OpenSearch to report its version as 7.10 so clients continue to work. Default is false. Deprecated and ignored for service version 3.3 and higher.
 - `plugins_alerting_filter_by_backend_roles` (Boolean) Enable or disable filtering of alerting by backend roles. Requires Security plugin. Defaults to false.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
+- `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
 - `reindex_remote_whitelist` (List of String) reindex_remote_allowlist. Whitelisted addresses for reindexing. Changing this value will cause all OpenSearch instances to restart.
 - `script_max_compilations_rate` (String) Script max compilation rate - circuit breaker to prevent/minimize OOMs. Script compilation circuit breaker limits the number of inline script compilations within a period of time. Default is use-context.
 - `search_max_buckets` (Number) Maximum number of aggregation buckets allowed in a single response. OpenSearch default value is used when this is not defined.
