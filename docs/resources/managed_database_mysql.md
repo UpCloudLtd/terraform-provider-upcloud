@@ -136,6 +136,7 @@ Optional Attributes:
 - `net_read_timeout` (Number) The number of seconds to wait for more data from a connection before aborting the read.
 - `net_write_timeout` (Number) The number of seconds to wait for a block to be written to a connection before aborting the write.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
+- `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 - `slow_query_log` (Boolean) Slow query log enables capturing of slow queries. Setting slow_query_log to false also truncates the mysql.slow_log table.
 - `sort_buffer_size` (Number) Sort buffer size in bytes for ORDER BY optimization. Default is 262144 (256K).
