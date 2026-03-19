@@ -40,6 +40,11 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
   }
 
   actions {
+    http_rewrite_path {
+      match_pattern = "^/old/(.*)$"
+      rewrite_to    = "/new/\\1"
+    }
+
     use_backend {
       backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
     }
@@ -109,6 +114,8 @@ Blocks:
 
 - `http_redirect` (Block List) Redirects HTTP requests to specified location or URL scheme. Only either location or scheme can be defined at a time. (see [below for nested schema](#nestedblock--actions--http_redirect))
 - `http_return` (Block List) Returns HTTP response with specified HTTP status. (see [below for nested schema](#nestedblock--actions--http_return))
+- `http_rewrite_path` (Block List) Rewrites the HTTP request path using regex pattern matching. (see [below for nested schema](#nestedblock--actions--http_rewrite_path))
+- `http_rewrite_uri` (Block List) Rewrites the entire HTTP request URI using regex pattern matching. (see [below for nested schema](#nestedblock--actions--http_rewrite_uri))
 - `set_forwarded_headers` (Block List) Adds 'X-Forwarded-For / -Proto / -Port' headers in your forwarded requests (see [below for nested schema](#nestedblock--actions--set_forwarded_headers))
 - `set_request_header` (Block List) Set request header (see [below for nested schema](#nestedblock--actions--set_request_header))
 - `set_response_header` (Block List) Set response header (see [below for nested schema](#nestedblock--actions--set_response_header))
@@ -133,6 +140,24 @@ Required Attributes:
 - `content_type` (String) Content type.
 - `payload` (String) The payload.
 - `status` (Number) HTTP status code.
+
+
+<a id="nestedblock--actions--http_rewrite_path"></a>
+### Nested Schema for `actions.http_rewrite_path`
+
+Required Attributes:
+
+- `match_pattern` (String) Regex pattern to match against the request path.
+- `rewrite_to` (String) Replacement pattern.
+
+
+<a id="nestedblock--actions--http_rewrite_uri"></a>
+### Nested Schema for `actions.http_rewrite_uri`
+
+Required Attributes:
+
+- `match_pattern` (String) Regex pattern to match against the request URI.
+- `rewrite_to` (String) Replacement pattern.
 
 
 <a id="nestedblock--actions--set_forwarded_headers"></a>
