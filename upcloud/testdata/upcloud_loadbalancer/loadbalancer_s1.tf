@@ -250,6 +250,14 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
     http_redirect {
       scheme = "https"
     }
+    http_rewrite_path {
+      match_pattern = "^/old/(.*)$"
+      rewrite_to    = "/new/\\1"
+    }
+    http_rewrite_uri {
+      match_pattern = "^/api/v1/(.*)$"
+      rewrite_to    = "/api/v2/\\1"
+    }
     http_return {
       content_type = "text/plain"
       payload      = base64encode("Resource not found!")

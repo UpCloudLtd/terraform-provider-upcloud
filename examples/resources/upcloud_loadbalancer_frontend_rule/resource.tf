@@ -25,6 +25,11 @@ resource "upcloud_loadbalancer_frontend_rule" "lb_fe_1_r1" {
   }
 
   actions {
+    http_rewrite_path {
+      match_pattern = "^/old/(.*)$"
+      rewrite_to    = "/new/\\1"
+    }
+
     use_backend {
       backend_name = resource.upcloud_loadbalancer_backend.lb_be_1.name
     }

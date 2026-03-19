@@ -62,7 +62,7 @@ type frontendRuleModel struct {
 }
 
 func validateAtLeastOneAction(action string) validator.List {
-	fields := []string{"http_redirect", "http_return", "set_request_header", "set_response_header", "set_forwarded_headers", "tcp_reject", "use_backend"}
+	fields := []string{"http_redirect", "http_rewrite_path", "http_rewrite_uri", "http_return", "set_request_header", "set_response_header", "set_forwarded_headers", "tcp_reject", "use_backend"}
 	expressions := []path.Expression{}
 
 	for _, field := range fields {
@@ -167,6 +167,60 @@ func (r *frontendRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 							},
 							Validators: []validator.List{
 								validateAtLeastOneAction("http_redirect"),
+							},
+						},
+						"http_rewrite_path": schema.ListNestedBlock{
+							MarkdownDescription: "Rewrites the HTTP request path using regex pattern matching.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"match_pattern": schema.StringAttribute{
+										MarkdownDescription: "Regex pattern to match against the request path.",
+										Required:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(1, 255),
+										},
+									},
+									"rewrite_to": schema.StringAttribute{
+										MarkdownDescription: "Replacement pattern.",
+										Required:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(0, 255),
+										},
+									},
+								},
+							},
+						},
+						"http_rewrite_uri": schema.ListNestedBlock{
+							MarkdownDescription: "Rewrites the entire HTTP request URI using regex pattern matching.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"match_pattern": schema.StringAttribute{
+										MarkdownDescription: "Regex pattern to match against the request URI.",
+										Required:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(1, 255),
+										},
+									},
+									"rewrite_to": schema.StringAttribute{
+										MarkdownDescription: "Replacement pattern.",
+										Required:            true,
+										PlanModifiers: []planmodifier.String{
+											stringplanmodifier.RequiresReplace(),
+										},
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(0, 255),
+										},
+									},
+								},
 							},
 						},
 						"http_return": schema.ListNestedBlock{

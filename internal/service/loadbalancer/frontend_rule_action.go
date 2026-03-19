@@ -16,6 +16,8 @@ import (
 
 type frontendRuleActionModel struct {
 	HTTPRedirect        types.List `tfsdk:"http_redirect"`
+	HTTPRewritePath     types.List `tfsdk:"http_rewrite_path"`
+	HTTPRewriteURI      types.List `tfsdk:"http_rewrite_uri"`
 	HTTPReturn          types.List `tfsdk:"http_return"`
 	SetForwardedHeaders types.List `tfsdk:"set_forwarded_headers"`
 	SetRequestHeader    types.List `tfsdk:"set_request_header"`
@@ -28,6 +30,11 @@ type frontendRuleActionHTTPRedirectModel struct {
 	Location types.String `tfsdk:"location"`
 	Scheme   types.String `tfsdk:"scheme"`
 	Status   types.Int64  `tfsdk:"status"`
+}
+
+type frontendRuleActionHTTPRewriteModel struct {
+	MatchPattern types.String `tfsdk:"match_pattern"`
+	RewriteTo    types.String `tfsdk:"rewrite_to"`
 }
 
 type frontendRuleActionHTTPReturnModel struct {
@@ -134,6 +141,30 @@ func buildFrontendRuleActions(ctx context.Context, dataActions types.List) ([]up
 			actions = append(actions, action)
 		}
 
+		var httpRewritePaths []frontendRuleActionHTTPRewriteModel
+		diags = planAction.HTTPRewritePath.ElementsAs(ctx, &httpRewritePaths, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, httpRewritePath := range httpRewritePaths {
+			action := request.NewLoadBalancerHTTPRewritePathAction(httpRewritePath.MatchPattern.ValueString(), httpRewritePath.RewriteTo.ValueString())
+
+			actions = append(actions, action)
+		}
+
+		var httpRewriteURIs []frontendRuleActionHTTPRewriteModel
+		diags = planAction.HTTPRewriteURI.ElementsAs(ctx, &httpRewriteURIs, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		for _, httpRewriteURI := range httpRewriteURIs {
+			action := request.NewLoadBalancerHTTPRewriteURIAction(httpRewriteURI.MatchPattern.ValueString(), httpRewriteURI.RewriteTo.ValueString())
+
+			actions = append(actions, action)
+		}
+
 		var httpRedirects []frontendRuleActionHTTPRedirectModel
 		diags = planAction.HTTPRedirect.ElementsAs(ctx, &httpRedirects, false)
 		if diags.HasError() {
@@ -210,6 +241,8 @@ func setFrontendRuleActionsValues(ctx context.Context, data *frontendRuleModel, 
 	}
 
 	httpRedirects := make([]frontendRuleActionHTTPRedirectModel, 0)
+	httpRewritePaths := make([]frontendRuleActionHTTPRewriteModel, 0)
+	httpRewriteURIs := make([]frontendRuleActionHTTPRewriteModel, 0)
 	httpReturns := make([]frontendRuleActionHTTPReturnModel, 0)
 	setForwardedHeaders := make([]frontendRuleActionSetForwardedHeadersModel, 0)
 	setRequestHeader := make([]frontendRuleActionSetHeaderModel, 0)
@@ -239,6 +272,20 @@ func setFrontendRuleActionsValues(ctx context.Context, data *frontendRuleModel, 
 				ContentType: types.StringValue(a.HTTPReturn.ContentType),
 				Status:      types.Int64Value(int64(a.HTTPReturn.Status)),
 				Payload:     types.StringValue(a.HTTPReturn.Payload),
+			})
+		}
+
+		if a.HTTPRewritePath != nil {
+			httpRewritePaths = append(httpRewritePaths, frontendRuleActionHTTPRewriteModel{
+				MatchPattern: types.StringValue(a.HTTPRewritePath.MatchPattern),
+				RewriteTo:    types.StringValue(a.HTTPRewritePath.RewriteTo),
+			})
+		}
+
+		if a.HTTPRewriteURI != nil {
+			httpRewriteURIs = append(httpRewriteURIs, frontendRuleActionHTTPRewriteModel{
+				MatchPattern: types.StringValue(a.HTTPRewriteURI.MatchPattern),
+				RewriteTo:    types.StringValue(a.HTTPRewriteURI.RewriteTo),
 			})
 		}
 
@@ -282,6 +329,20 @@ func setFrontendRuleActionsValues(ctx context.Context, data *frontendRuleModel, 
 		respDiagnostics.Append(diags...)
 	} else {
 		respDiagnostics.AddError("cannot set frontend rule actions", "http_redirect element type not found")
+	}
+
+	if elementType, ok := elementTypes["http_rewrite_path"]; ok {
+		action.HTTPRewritePath, diags = types.ListValueFrom(ctx, elementType, httpRewritePaths)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule actions", "http_rewrite_path element type not found")
+	}
+
+	if elementType, ok := elementTypes["http_rewrite_uri"]; ok {
+		action.HTTPRewriteURI, diags = types.ListValueFrom(ctx, elementType, httpRewriteURIs)
+		respDiagnostics.Append(diags...)
+	} else {
+		respDiagnostics.AddError("cannot set frontend rule actions", "http_rewrite_uri element type not found")
 	}
 
 	if elementType, ok := elementTypes["http_return"]; ok {

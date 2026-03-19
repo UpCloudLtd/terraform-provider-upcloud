@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer: Add http_rewrite_path and http_rewrite_uri actions
+
 ### Fixed
 
 - managed_database_user: do not send modify user request with empty password value when password is unknown and there are no other changes to include in the request.
