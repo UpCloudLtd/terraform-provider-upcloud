@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 
+	v9 "github.com/UpCloudLtd/upcloud-go-api-generated/pkg/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
