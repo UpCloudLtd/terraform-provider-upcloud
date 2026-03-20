@@ -91,7 +91,7 @@ jobs:
     if: ${{ always() }}
     steps:
       - name: Install upctl
-        uses: UpCloudLtd/upcloud-cli-action@0b74850ba423d7d254b75518a31f19bd19aa839c # v1.0.0
+        uses: UpCloudLtd/upcloud-cli-action@431cd636a879b137a92c291f6c72f68e8c01b738 # v1.0.1
         with:
           username: ${{ secrets.UPCLOUD_USERNAME }}
           password: ${{ secrets.UPCLOUD_PASSWORD }}
