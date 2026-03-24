@@ -155,7 +155,8 @@ Optional Attributes:
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 - `shared_buffers_percentage` (Number) Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60 (float), which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value. Changing this parameter causes a service restart.
 - `switchover_windows` (List of String)
-- `synchronous_replication` (String) Synchronous replication type. Note that the service plan also needs to support synchronous replication.
+- `synchronous_commit` (String) Sets the current transaction's synchronization level. The default is `off`. This setting takes precedence over `synchronous_replication`.
+- `synchronous_replication` (String) Synchronous replication type. (deprecated, use synchronous_commit instead). Note that the service plan also needs to support synchronous replication. This setting is deprecated. Use synchronous_commit instead. Any change to this setting will automatically update synchronous_commit. Setting the value to quorum changes synchronous_commit to remote_write, while setting it to off changes synchronous_commit to off.
 - `temp_file_limit` (Number) PostgreSQL temporary file limit in KiB, -1 for unlimited.
 - `timezone` (String) PostgreSQL service timezone.
 - `track_activity_query_size` (Number) Specifies the number of bytes reserved to track the currently executing command for each active session. Changing this parameter causes a service restart.
