@@ -1429,6 +1429,14 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 				return
 			}
 
+			if _, err := r.client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+				UUID:         templateState.ID.ValueString(),
+				DesiredState: upcloud.StorageStateOnline,
+			}); err != nil {
+				resp.Diagnostics.AddError("Unable to wait for storage to reach online state after detach", utils.ErrorDiagnosticDetail(err))
+				return
+			}
+
 			if _, err := r.client.AttachStorage(ctx, &request.AttachStorageRequest{
 				Address:     newAddress,
 				ServerUUID:  uuid,
@@ -1462,6 +1470,14 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 				return
 			}
 
+			if _, err := r.client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+				UUID:         serverStorageDevice.UUID,
+				DesiredState: upcloud.StorageStateOnline,
+			}); err != nil {
+				resp.Diagnostics.AddError("Unable to wait for storage to reach online state after detach", utils.ErrorDiagnosticDetail(err))
+				return
+			}
+
 			// Remove backup rule from the detached storage, if it was a result of simple backup setting
 			if !plan.SimpleBackup.IsNull() {
 				if _, err := r.client.ModifyStorage(ctx, &request.ModifyStorageRequest{
@@ -1477,6 +1493,14 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		for _, storageDevice := range newStorageDevices {
 			if oldSet.includes(storageDevice) {
 				continue
+			}
+
+			if _, err := r.client.WaitForStorageState(ctx, &request.WaitForStorageStateRequest{
+				UUID:         storageDevice.Storage.ValueString(),
+				DesiredState: upcloud.StorageStateOnline,
+			}); err != nil {
+				resp.Diagnostics.AddError("Unable to wait for storage to reach online state before attach", utils.ErrorDiagnosticDetail(err))
+				return
 			}
 
 			if _, err := r.client.AttachStorage(ctx, &request.AttachStorageRequest{
