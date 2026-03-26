@@ -2,7 +2,7 @@ package servertests
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"os"
 	"regexp"
@@ -624,7 +624,7 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 func TestUpcloudServer_networkInterface(t *testing.T) {
 	var serverID string
 	// Generate once per test so all steps use the same base octet and network addresses are stable.
-	baseOctet := 10 + rand.Intn(230)
+	baseOctet := 10 + rand.IntN(230)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },

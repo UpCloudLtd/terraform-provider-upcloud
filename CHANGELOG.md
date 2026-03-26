@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_server: wait for storage to return to online state after detach before attaching it to another server
+
 ## [5.36.0] - 2026-03-20
 
 ### Added
