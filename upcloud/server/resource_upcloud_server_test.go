@@ -2,6 +2,7 @@ package servertests
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"os"
 	"regexp"
@@ -622,13 +623,15 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 
 func TestUpcloudServer_networkInterface(t *testing.T) {
 	var serverID string
+	// Generate once per test so all steps use the same base octet and network addresses are stable.
+	baseOctet := 10 + rand.IntN(230)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccServerNetworkInterfaceConfig(
+				Config: testAccServerNetworkInterfaceConfig(baseOctet,
 					networkInterface{
 						niType: "utility",
 					},
@@ -660,7 +663,7 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccServerNetworkInterfaceConfig(
+				Config: testAccServerNetworkInterfaceConfig(baseOctet,
 					networkInterface{
 						niType: "utility",
 					},
@@ -711,7 +714,7 @@ func TestUpcloudServer_networkInterface(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccServerNetworkInterfaceConfig(
+				Config: testAccServerNetworkInterfaceConfig(baseOctet,
 					networkInterface{
 						niType: "utility",
 					},
@@ -821,7 +824,7 @@ type networkInterface struct {
 	newNetwork bool
 }
 
-func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
+func testAccServerNetworkInterfaceConfig(baseOctet int, nis ...networkInterface) string {
 	var builder strings.Builder
 
 	fmt.Fprintf(&builder, `
@@ -876,7 +879,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, i, i, i, i)
+			`, i, i, baseOctet+i, baseOctet+i)
 		}
 
 		if ni.newNetwork {
@@ -893,7 +896,7 @@ func testAccServerNetworkInterfaceConfig(nis ...networkInterface) string {
 						gateway = "10.0.%d.1"
 					}
 				}
-			`, 10+i, 10+i, 10+i, 10+i)
+			`, 10+i, 10+i, baseOctet+10+i, baseOctet+10+i)
 		}
 	}
 
@@ -1153,6 +1156,34 @@ func TestUpcloudServer_metadataChange(t *testing.T) {
 				Config: testDataS2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(serverName, "metadata", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestUpcloudServer_storageDetachAttach(t *testing.T) {
+	// Step 1: shared storage attached to server_a
+	// Step 2: shared storage moved to server_b (detach from server_a, attach to server_b concurrently)
+	s1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_storage_detach_attach_s1.tf")
+	s2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_storage_detach_attach_s2.tf")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: s1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.server_a", "storage_devices.#", "1"),
+					resource.TestCheckResourceAttr("upcloud_server.server_b", "storage_devices.#", "0"),
+				),
+			},
+			{
+				Config: s2,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_server.server_a", "storage_devices.#", "0"),
+					resource.TestCheckResourceAttr("upcloud_server.server_b", "storage_devices.#", "1"),
 				),
 			},
 		},
