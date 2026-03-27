@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	v9 "github.com/UpCloudLtd/upcloud-go-api-generated/pkg/upcloud"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -44,9 +44,8 @@ type customDomainModel struct {
 	DomainName  types.String `tfsdk:"domain_name"`
 	ID          types.String `tfsdk:"id"`
 	ServiceUUID types.String `tfsdk:"service_uuid"`
-	// TODO: add mode when it is added to OpenAPI spec
-	// Mode        types.String `tfsdk:"mode"`
-	Type types.String `tfsdk:"type"`
+	Mode        types.String `tfsdk:"mode"`
+	Type        types.String `tfsdk:"type"`
 }
 
 func (r *managedObjectStorageCustomDomainResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -77,16 +76,15 @@ func (r *managedObjectStorageCustomDomainResource) Schema(_ context.Context, _ r
 					stringvalidator.OneOf("public"),
 				},
 			},
-			// TODO: add mode when it is added to OpenAPI spec
-			// "mode": schema.StringAttribute{
-			// 	MarkdownDescription: "Routing mode for the domain. Defaults to `api`.",
-			// 	Optional:            true,
-			// 	Computed:            true,
-			// 	Default:             stringdefault.StaticString("api"),
-			// 	Validators: []validator.String{
-			// 		stringvalidator.OneOf("api", "static-website"),
-			// 	},
-			// },
+			"mode": schema.StringAttribute{
+				MarkdownDescription: "Routing mode for the domain. Defaults to `api`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("api"),
+				Validators: []validator.String{
+					stringvalidator.OneOf("api", "static-website"),
+				},
+			},
 		},
 	}
 }
@@ -116,6 +114,7 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 		v9.AttachObjectStorageCustomDomainJSONRequestBody{
 			DomainName: data.DomainName.ValueString(),
 			Type:       v9.ObjectStorage2CustomDomainCreateType(data.Type.ValueString()),
+			Mode:       (*v9.ObjectStorage2CustomDomainCreateMode)(data.Mode.ValueStringPointer()),
 		},
 	)
 	if err != nil {
@@ -179,6 +178,7 @@ func (r *managedObjectStorageCustomDomainResource) Read(ctx context.Context, req
 
 	data.DomainName = types.StringValue(*customDomain.JSON200.DomainName)
 	data.Type = types.StringValue(*customDomain.JSON200.Type)
+	data.Mode = types.StringValue(string(*customDomain.JSON200.Mode))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -231,6 +231,7 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.DomainName.ValueString()))
 	data.DomainName = types.StringPointerValue(customDomain.JSON200.DomainName)
 	data.Type = types.StringPointerValue(customDomain.JSON200.Type)
+	data.Mode = types.StringPointerValue((*string)(customDomain.JSON200.Mode))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
