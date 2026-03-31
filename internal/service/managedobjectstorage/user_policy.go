@@ -2,11 +2,12 @@ package managedobjectstorage
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -26,7 +27,7 @@ func NewUserPolicyResource() resource.Resource {
 }
 
 type managedObjectStorageUserPolicyResource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (r *managedObjectStorageUserPolicyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -35,7 +36,7 @@ func (r *managedObjectStorageUserPolicyResource) Metadata(_ context.Context, req
 
 // Configure adds the provider configured client to the resource.
 func (r *managedObjectStorageUserPolicyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type userPolicyModel struct {
@@ -91,13 +92,7 @@ func (r *managedObjectStorageUserPolicyResource) Create(ctx context.Context, req
 
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.Username.ValueString(), data.Name.ValueString()))
 
-	apiReq := &request.AttachManagedObjectStorageUserPolicyRequest{
-		ServiceUUID: data.ServiceUUID.ValueString(),
-		Username:    data.Username.ValueString(),
-		Name:        data.Name.ValueString(),
-	}
-
-	err := r.client.AttachManagedObjectStorageUserPolicy(ctx, apiReq)
+	serviceUUID, err := uuid.Parse(data.ServiceUUID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage user policy",
@@ -106,12 +101,30 @@ func (r *managedObjectStorageUserPolicyResource) Create(ctx context.Context, req
 		return
 	}
 
+	apiResp, err := r.client.AttachObjectStorageUserPolicyWithResponse(ctx, serviceUUID, data.Username.ValueString(), v9.AttachObjectStorageUserPolicyJSONRequestBody{
+		Name: data.Name.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage user policy",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.StatusCode() >= http.StatusBadRequest {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage user policy",
+			fmt.Sprintf("API returned status %s", apiResp.Status()),
+		)
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func policyExists(policies []upcloud.ManagedObjectStorageUserPolicy, name string) bool {
+func policyExists(policies []v9.ObjectStorage2PolicyAttachmentResponse, name string) bool {
 	for _, p := range policies {
-		if p.Name == name {
+		if p.Name != nil && *p.Name == name {
 			return true
 		}
 	}
@@ -142,23 +155,38 @@ func (r *managedObjectStorageUserPolicyResource) Read(ctx context.Context, req r
 	data.Username = types.StringValue(username)
 	data.Name = types.StringValue(name)
 
-	policies, err := r.client.GetManagedObjectStorageUserPolicies(ctx, &request.GetManagedObjectStorageUserPoliciesRequest{
-		Username:    username,
-		ServiceUUID: serviceUUID,
-	})
+	svcUUID, err := uuid.Parse(serviceUUID)
 	if err != nil {
-		if utils.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-		} else {
-			resp.Diagnostics.AddError(
-				"Unable to read managed object storage user policies",
-				utils.ErrorDiagnosticDetail(err),
-			)
-		}
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user policies",
+			utils.ErrorDiagnosticDetail(err),
+		)
 		return
 	}
 
-	if !policyExists(policies, name) {
+	apiResp, err := r.client.ListObjectStorageAttachedUserPoliciesWithResponse(ctx, svcUUID, username)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user policies",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	if apiResp.StatusCode() == http.StatusNotFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	if apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user policies",
+			fmt.Sprintf("API returned status %s", apiResp.Status()),
+		)
+		return
+	}
+
+	if !policyExists(*apiResp.JSON200, name) {
 		resp.State.RemoveResource(ctx)
 	}
 
@@ -173,21 +201,34 @@ func (r *managedObjectStorageUserPolicyResource) Delete(ctx context.Context, req
 	var data userPolicyModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	var serviceUUID, username, name string
-	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUID, &username, &name)...)
+	var serviceUUIDStr, username, name string
+	resp.Diagnostics.Append(utils.UnmarshalIDDiag(data.ID.ValueString(), &serviceUUIDStr, &username, &name)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if err := r.client.DetachManagedObjectStorageUserPolicy(ctx, &request.DetachManagedObjectStorageUserPolicyRequest{
-		ServiceUUID: serviceUUID,
-		Username:    username,
-		Name:        name,
-	}); err != nil {
+	serviceUUID, err := uuid.Parse(serviceUUIDStr)
+	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage user policy",
 			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	apiResp, err := r.client.DetachObjectStorageUserPolicyWithResponse(ctx, serviceUUID, username, name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage user policy",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.StatusCode() >= http.StatusBadRequest {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage user policy",
+			fmt.Sprintf("API returned status %s", apiResp.Status()),
 		)
 	}
 }
