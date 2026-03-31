@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,7 +21,7 @@ var (
 )
 
 type regionsDataSource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (d *regionsDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -30,7 +29,7 @@ func (d *regionsDataSource) Metadata(_ context.Context, req datasource.MetadataR
 }
 
 func (d *regionsDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	d.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type regionsModel struct {
@@ -82,7 +81,7 @@ func (d *regionsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	data.ID = types.StringValue(time.Now().UTC().String())
 
-	regions, err := d.client.GetManagedObjectStorageRegions(ctx, &request.GetManagedObjectStorageRegionsRequest{})
+	result, err := d.client.ListObjectStorageRegionsWithResponse(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read managed object-storage regions",
@@ -90,15 +89,27 @@ func (d *regionsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		)
 		return
 	}
+	if result.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object-storage regions",
+			"Empty response received from the API",
+		)
+		return
+	}
 
+	regions := *result.JSON200
 	data.Regions = make([]regionModel, len(regions))
 	for i, region := range regions {
-		data.Regions[i].Name = types.StringValue(region.Name)
-		data.Regions[i].PrimaryZone = types.StringValue(region.PrimaryZone)
+		data.Regions[i].Name = types.StringPointerValue(region.Name)
+		data.Regions[i].PrimaryZone = types.StringPointerValue(region.PrimaryZone)
 
 		zonesSlice := make([]string, 0)
-		for _, zone := range region.Zones {
-			zonesSlice = append(zonesSlice, zone.Name)
+		if region.Zones != nil {
+			for _, zone := range *region.Zones {
+				if zone.Name != nil {
+					zonesSlice = append(zonesSlice, *zone.Name)
+				}
+			}
 		}
 
 		zones, diags := types.SetValueFrom(ctx, types.StringType, utils.NilAsEmptyList(zonesSlice))
