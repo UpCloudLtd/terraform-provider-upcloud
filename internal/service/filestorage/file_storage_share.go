@@ -63,9 +63,6 @@ func (r *fileStorageShareResource) Schema(_ context.Context, _ resource.SchemaRe
 			"id": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "UUID of the file storage share.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"file_storage": schema.StringAttribute{
 				Description: "UUID of the file storage service.",
@@ -158,9 +155,20 @@ func (r *fileStorageShareResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
+	var fileStorage, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &fileStorage, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal File storage share name",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
+	}
+
 	fileStorageShare, err := r.client.GetFileStorageShare(ctx, &request.GetFileStorageShareRequest{
-		ServiceUUID: data.FileStorage.ValueString(),
-		ShareName:   data.Name.ValueString(),
+		ServiceUUID: fileStorage,
+		ShareName:   name,
 	})
 	if err != nil {
 		if utils.IsNotFoundError(err) {
@@ -203,6 +211,8 @@ func (r *fileStorageShareResource) Update(ctx context.Context, req resource.Upda
 
 		return
 	}
+
+	plan.ID = types.StringValue(utils.MarshalID(fileStorage, planName))
 
 	resp.Diagnostics.Append(setFileStorageShareModel(ctx, &plan, fileStorageShare)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

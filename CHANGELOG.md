@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_file_storage_share: fix resource import by parsing the file storage service uuid and share name from id
+- upcloud_file_storage_share_acl: fix resource import by parsing the file storage service uuid, share name and acl name from id
+
 ## [5.36.1] - 2026-03-26
 
 ### Fixed
