@@ -9,8 +9,8 @@ variable "zone" {
 }
 
 resource "upcloud_managed_database_mysql" "mysql_properties" {
-  name  = "${var.prefix}"
-  title = "${var.prefix}"
+  name  = "${var.prefix}-db"
+  title = "${var.prefix}-db"
   plan  = "1x1xCPU-2GB-25GB"
   zone  = var.zone
   properties {
