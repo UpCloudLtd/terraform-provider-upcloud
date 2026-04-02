@@ -8,14 +8,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
+const (
+	objsto     = "upcloud_managed_object_storage.this"
+	bucket     = "upcloud_managed_object_storage_bucket.this"
+	staticSite = "upcloud_managed_object_storage_static_site.this"
+)
+
 func TestAccUpcloudManagedObjectStorageStaticSite(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_static_site_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_static_site_s2.tf")
 	staticSiteDomainName := ""
-
-	objsto := "upcloud_managed_object_storage.this"
-	bucket := "upcloud_managed_object_storage_bucket.this"
-	staticSite := "upcloud_managed_object_storage_static_site.this"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
