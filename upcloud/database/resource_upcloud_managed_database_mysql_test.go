@@ -7,6 +7,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
@@ -79,6 +80,38 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("innodb_thread_concurrency"), "2"),
 					resource.TestCheckResourceAttr(name, prop("innodb_write_io_threads"), "5"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedDatabaseMySQLProperties_UpgradeFromV5_35_0(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s1.tf")
+
+	name := "upcloud_managed_database_mysql.mysql_properties"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck: func() { upcloud.TestAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"upcloud": {
+						Source:            "upcloudltd/upcloud",
+						VersionConstraint: "= 5.35.0",
+					},
+				},
+				Config: testData,
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testData,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						// Update is expected as new unknown value properties are added
+						// create / delete is not expected
+						plancheck.ExpectResourceAction(name, plancheck.ResourceActionUpdate),
+					},
+				},
 			},
 		},
 	})
