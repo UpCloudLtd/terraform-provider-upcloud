@@ -2,6 +2,8 @@ package managedobjectstorage
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
@@ -99,7 +101,7 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.DomainName.ValueString()))
 
-	uuid, err := uuid.Parse(data.ServiceUUID.ValueString())
+	serviceUUID, err := uuid.Parse(data.ServiceUUID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to parse service UUID",
@@ -108,9 +110,9 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 		return
 	}
 
-	_, err = r.client.AttachObjectStorageCustomDomainWithResponse(
+	apiResp, err := r.client.AttachObjectStorageCustomDomainWithResponse(
 		ctx,
-		uuid,
+		serviceUUID,
 		v9.AttachObjectStorageCustomDomainJSONRequestBody{
 			DomainName: data.DomainName.ValueString(),
 			Type:       v9.ObjectStorage2CustomDomainCreateType(data.Type.ValueString()),
@@ -121,6 +123,13 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage custom domain",
 			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.StatusCode() != http.StatusCreated {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage custom domain",
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
 		)
 		return
 	}
@@ -149,7 +158,7 @@ func (r *managedObjectStorageCustomDomainResource) Read(ctx context.Context, req
 	}
 
 	data.ServiceUUID = types.StringValue(serviceUUID)
-	uuid, err := uuid.Parse(serviceUUID)
+	parsedUUID, err := uuid.Parse(serviceUUID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to parse service UUID",
@@ -158,27 +167,40 @@ func (r *managedObjectStorageCustomDomainResource) Read(ctx context.Context, req
 		return
 	}
 
-	customDomain, err := r.client.GetObjectStorageCustomDomainWithResponse(
+	apiResp, err := r.client.GetObjectStorageCustomDomainWithResponse(
 		ctx,
-		uuid,
+		parsedUUID,
 		domainName,
 	)
-
 	if err != nil {
-		if utils.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-		} else {
-			resp.Diagnostics.AddError(
-				"Unable to read managed object storage custom domain details",
-				utils.ErrorDiagnosticDetail(err),
-			)
-		}
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage custom domain details",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.StatusCode() == http.StatusNotFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if apiResp.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage custom domain details",
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+		)
 		return
 	}
 
-	data.DomainName = types.StringValue(*customDomain.JSON200.DomainName)
-	data.Type = types.StringValue(*customDomain.JSON200.Type)
-	data.Mode = types.StringValue(string(*customDomain.JSON200.Mode))
+	customDomain := apiResp.JSON200
+	if customDomain.DomainName != nil {
+		data.DomainName = types.StringValue(*customDomain.DomainName)
+	}
+	if customDomain.Type != nil {
+		data.Type = types.StringValue(*customDomain.Type)
+	}
+	if customDomain.Mode != nil {
+		data.Mode = types.StringValue(string(*customDomain.Mode))
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -198,7 +220,7 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 		return
 	}
 
-	uuid, err := uuid.Parse(serviceUUID)
+	parsedUUID, err := uuid.Parse(serviceUUID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to parse service UUID",
@@ -216,8 +238,8 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 		body.Type = &t
 	}
 
-	customDomain, err := r.client.ModifyObjectStorageCustomDomainWithResponse(ctx,
-		uuid,
+	apiResp, err := r.client.ModifyObjectStorageCustomDomainWithResponse(ctx,
+		parsedUUID,
 		domainName,
 		body,
 	)
@@ -226,12 +248,27 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 			"Unable to modify managed object storage custom domain",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
+	}
+	if apiResp.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError(
+			"Unable to modify managed object storage custom domain",
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+		)
+		return
 	}
 
+	customDomain := apiResp.JSON200
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.DomainName.ValueString()))
-	data.DomainName = types.StringPointerValue(customDomain.JSON200.DomainName)
-	data.Type = types.StringPointerValue(customDomain.JSON200.Type)
-	data.Mode = types.StringPointerValue((*string)(customDomain.JSON200.Mode))
+	if customDomain.DomainName != nil {
+		data.DomainName = types.StringValue(*customDomain.DomainName)
+	}
+	if customDomain.Type != nil {
+		data.Type = types.StringValue(*customDomain.Type)
+	}
+	if customDomain.Mode != nil {
+		data.Mode = types.StringValue(string(*customDomain.Mode))
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -246,7 +283,7 @@ func (r *managedObjectStorageCustomDomainResource) Delete(ctx context.Context, r
 		return
 	}
 
-	uuid, err := uuid.Parse(serviceUUID)
+	parsedUUID, err := uuid.Parse(serviceUUID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to parse service UUID",
@@ -255,15 +292,21 @@ func (r *managedObjectStorageCustomDomainResource) Delete(ctx context.Context, r
 		return
 	}
 
-	_, err = r.client.DeleteObjectStorageCustomDomainWithResponse(
+	apiResp, err := r.client.DeleteObjectStorageCustomDomainWithResponse(
 		ctx,
-		uuid,
+		parsedUUID,
 		domainName,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage custom domain",
 			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+	if apiResp.StatusCode() != http.StatusNoContent {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage custom domain",
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
 		)
 	}
 }
