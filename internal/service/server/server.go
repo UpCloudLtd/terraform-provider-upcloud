@@ -1393,7 +1393,12 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 				var backupRules []storage.BackupRuleModel
 				resp.Diagnostics.Append(templatePlan.BackupRule.ElementsAs(ctx, &backupRules, false)...)
 
-				apiReq.BackupRule = storage.BackupRule(backupRules[0])
+				if len(backupRules) > 0 {
+					apiReq.BackupRule = storage.BackupRule(backupRules[0])
+				} else {
+					// Backup rule is being removed, set to empty
+					apiReq.BackupRule = &upcloud.BackupRule{}
+				}
 			}
 
 			storageDetails, err := r.client.ModifyStorage(ctx, apiReq)
