@@ -2,7 +2,7 @@ package managedobjectstorage
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -132,12 +132,23 @@ func (r *managedObjectStorageUserResource) Create(ctx context.Context, req resou
 		)
 		return
 	}
-	if apiResp.JSON201 == nil {
+	if apiResp.StatusCode() != http.StatusCreated {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage user",
-			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 		return
+	}
+	if apiResp.JSON201 == nil {
+		var dest v9.ObjectStorage2CreateUser201
+		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to read created managed object storage user",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+		apiResp.JSON201 = &dest
 	}
 
 	resp.Diagnostics.Append(setUserValues(ctx, &data, apiResp.JSON201)...)
@@ -183,16 +194,27 @@ func (r *managedObjectStorageUserResource) Read(ctx context.Context, req resourc
 		)
 		return
 	}
+	if apiResp.StatusCode() == http.StatusNotFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if apiResp.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user details",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
+		return
+	}
 	if apiResp.JSON200 == nil {
-		if apiResp.HTTPResponse != nil && apiResp.HTTPResponse.StatusCode == http.StatusNotFound {
-			resp.State.RemoveResource(ctx)
-		} else {
+		var dest v9.ObjectStorage2GetUserDetails200
+		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
 			resp.Diagnostics.AddError(
 				"Unable to read managed object storage user details",
-				utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+				utils.ErrorDiagnosticDetail(err),
 			)
+			return
 		}
-		return
+		apiResp.JSON200 = &dest
 	}
 
 	resp.Diagnostics.Append(setUserValues(ctx, &data, apiResp.JSON200)...)
@@ -227,11 +249,18 @@ func (r *managedObjectStorageUserResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	_, err = r.client.DeleteObjectStorageUserWithResponse(ctx, svcUUID, username)
+	apiResp, err := r.client.DeleteObjectStorageUserWithResponse(ctx, svcUUID, username)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage user",
 			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage user",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 	}
 }

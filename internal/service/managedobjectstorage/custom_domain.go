@@ -2,7 +2,7 @@ package managedobjectstorage
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -111,7 +111,7 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 	if apiResp.StatusCode() != http.StatusCreated {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage custom domain",
-			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 		return
 	}
@@ -161,9 +161,20 @@ func (r *managedObjectStorageCustomDomainResource) Read(ctx context.Context, req
 	if apiResp.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError(
 			"Unable to read managed object storage custom domain details",
-			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 		return
+	}
+	if apiResp.JSON200 == nil {
+		var dest v9.ObjectStorage2GetCustomDomainDetails200
+		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to read managed object storage custom domain details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+		apiResp.JSON200 = &dest
 	}
 
 	customDomain := apiResp.JSON200
@@ -214,9 +225,20 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 	if apiResp.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError(
 			"Unable to modify managed object storage custom domain",
-			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 		return
+	}
+	if apiResp.JSON200 == nil {
+		var dest v9.ObjectStorage2ModifyCustomDomain200
+		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to modify managed object storage custom domain",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+		apiResp.JSON200 = &dest
 	}
 
 	customDomain := apiResp.JSON200
@@ -255,10 +277,10 @@ func (r *managedObjectStorageCustomDomainResource) Delete(ctx context.Context, r
 		)
 		return
 	}
-	if apiResp.StatusCode() != http.StatusNoContent {
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage custom domain",
-			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 	}
 }

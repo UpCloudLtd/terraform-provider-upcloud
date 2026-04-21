@@ -2,6 +2,7 @@ package managedobjectstorage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -144,12 +145,23 @@ func (r *managedObjectStorageBucketResource) Create(ctx context.Context, req res
 		)
 		return
 	}
-	if apiResp.StatusCode() != http.StatusCreated || apiResp.JSON201 == nil {
+	if apiResp.StatusCode() != http.StatusCreated {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage bucket",
 			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 		return
+	}
+	if apiResp.JSON201 == nil {
+		var dest v9.ObjectStorage2CreateBucket201
+		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to read created managed object storage bucket",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+		apiResp.JSON201 = &dest
 	}
 
 	setBucketValues(&data, apiResp.JSON201, data.Name.ValueString())
@@ -177,10 +189,6 @@ func getBucket(ctx context.Context, serviceUUID, name string, client *v9.ClientW
 		return nil, diags
 	}
 	if apiResp.StatusCode() == http.StatusNotFound {
-		diags.AddError(
-			"Unable to read managed object storage buckets",
-			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
-		)
 		return nil, diags
 	}
 	if apiResp.StatusCode() != http.StatusOK {
@@ -191,7 +199,15 @@ func getBucket(ctx context.Context, serviceUUID, name string, client *v9.ClientW
 		return nil, diags
 	}
 	if apiResp.JSON200 == nil {
-		return nil, diags
+		var dest v9.ObjectStorage2ListBucketMetrics200
+		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
+			diags.AddError(
+				"Unable to read managed object storage buckets",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return nil, diags
+		}
+		apiResp.JSON200 = &dest
 	}
 	buckets := *apiResp.JSON200
 	for i := range buckets {
@@ -299,7 +315,7 @@ func (r *managedObjectStorageBucketResource) Delete(ctx context.Context, req res
 			"Unable to delete managed object storage bucket",
 			utils.ErrorDiagnosticDetail(err),
 		)
-	} else if apiResp.StatusCode() < 200 || apiResp.StatusCode() >= 300 {
+	} else if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage bucket",
 			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),

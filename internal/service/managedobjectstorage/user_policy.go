@@ -2,7 +2,7 @@ package managedobjectstorage
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -111,10 +111,10 @@ func (r *managedObjectStorageUserPolicyResource) Create(ctx context.Context, req
 		)
 		return
 	}
-	if apiResp.StatusCode() >= http.StatusBadRequest {
+	if apiResp.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage user policy",
-			fmt.Sprintf("API returned status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 		return
 	}
@@ -178,12 +178,23 @@ func (r *managedObjectStorageUserPolicyResource) Read(ctx context.Context, req r
 		return
 	}
 
-	if apiResp.JSON200 == nil {
+	if apiResp.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError(
 			"Unable to read managed object storage user policies",
-			fmt.Sprintf("API returned status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 		return
+	}
+	if apiResp.JSON200 == nil {
+		var dest v9.ObjectStorage2ListAttachedUserPolicies200
+		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to read managed object storage user policies",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+		apiResp.JSON200 = &dest
 	}
 
 	if !policyExists(*apiResp.JSON200, name) {
@@ -225,10 +236,10 @@ func (r *managedObjectStorageUserPolicyResource) Delete(ctx context.Context, req
 		)
 		return
 	}
-	if apiResp.StatusCode() >= http.StatusBadRequest {
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage user policy",
-			fmt.Sprintf("API returned status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 	}
 }
