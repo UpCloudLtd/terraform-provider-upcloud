@@ -1,0 +1,39 @@
+{
+  "full_matrix": [
+    ".github/acctest-path-mapping.json",
+    ".github/workflows/acctest.yml",
+    ".github/workflows/terraform.yml",
+    "scripts/acctest-groups-from-diff.jq",
+    "scripts/acctest-groups-from-diff.sh",
+    "go.mod",
+    "go.sum",
+    "GNUmakefile",
+    "internal/config/",
+    "internal/utils/",
+    "internal/validator/",
+    "upcloud/testdata/",
+    "upcloud/provider.go",
+    "upcloud/sdkv2_provider.go",
+    "upcloud/test_helpers.go",
+    "upcloud/muxserver.go"
+  ],
+  "groups": {
+    "cloud": ["internal/service/cloud/", "upcloud/cloud/"],
+    "database": ["internal/service/database/", "upcloud/database/"],
+    "filestorage": ["internal/service/filestorage/", "upcloud/filestorage/"],
+    "firewall": ["internal/service/firewall/", "upcloud/firewall/"],
+    "gateway": ["internal/service/gateway/", "upcloud/gateway/"],
+    "ip": ["internal/service/ip/", "upcloud/ip/"],
+    "kubernetes": ["internal/service/kubernetes/", "upcloud/kubernetes/"],
+    "loadbalancer": ["internal/service/loadbalancer/", "upcloud/loadbalancer/"],
+    "managedobjectstorage": ["internal/service/managedobjectstorage/", "upcloud/managedobjectstorage/"],
+    "network": ["internal/service/network/", "upcloud/network/"],
+    "networkpeering": ["internal/service/networkpeering/", "upcloud/networkpeering/"],
+    "provider": ["upcloud/provider_test.go"],
+    "router": ["internal/service/router/", "upcloud/router/"],
+    "server": ["internal/service/server/", "upcloud/server/"],
+    "servergroup": ["internal/service/servergroup/", "upcloud/servergroup/"],
+    "storage": ["internal/service/storage/", "upcloud/storage/"],
+    "tag": ["internal/service/tag/", "upcloud/tag/"]
+  }
+}
