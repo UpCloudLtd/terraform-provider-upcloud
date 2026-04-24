@@ -111,7 +111,7 @@ func (r *managedObjectStorageUserPolicyResource) Create(ctx context.Context, req
 		)
 		return
 	}
-	if apiResp.StatusCode() != http.StatusOK {
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage user policy",
 			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
