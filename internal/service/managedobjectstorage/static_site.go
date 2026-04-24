@@ -2,7 +2,6 @@ package managedobjectstorage
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -305,21 +304,13 @@ func (r *managedObjectStorageStaticSiteResource) Create(ctx context.Context, req
 		return
 	}
 
-	if created.StatusCode() != http.StatusCreated {
-		diagUnexpectedStatus(&resp.Diagnostics, "create", created.StatusCode(), created.Body)
-		return
-	}
-
-	var dest v9.ObjectStorage2CreateStaticWebsite201
-	err = json.Unmarshal(created.Body, &dest)
-	if err != nil {
+	if created.JSON201 == nil {
 		resp.Diagnostics.AddError(
-			"Unable to read created managed object storage static site",
-			utils.ErrorDiagnosticDetail(err),
+			"Unable to create managed object storage user",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", created.HTTPResponse.Status)),
 		)
 		return
 	}
-	created.JSON201 = &dest
 
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), created.JSON201.DomainName))
 	resp.Diagnostics.Append(setStaticSiteValues(ctx, &data, created.JSON201)...)
