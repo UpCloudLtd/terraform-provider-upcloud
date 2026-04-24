@@ -11,7 +11,6 @@
     "internal/config/",
     "internal/utils/",
     "internal/validator/",
-    "upcloud/testdata/",
     "upcloud/provider.go",
     "upcloud/sdkv2_provider.go",
     "upcloud/test_helpers.go",

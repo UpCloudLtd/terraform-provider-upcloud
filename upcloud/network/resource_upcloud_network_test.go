@@ -278,7 +278,7 @@ func TestAccUpCloudNetwork_labels(t *testing.T) {
 }
 
 func TestAccUpcloudNetwork_EffectiveRoutes(t *testing.T) {
-	configStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_network/network_cfg1.tf")
+	configStep1 := utils.ReadTestDataFile(t, "testdata/network_cfg1.tf")
 
 	prefix := "tf-acc-test-network-"
 	netName := fmt.Sprintf("file-storage-net-%s", acctest.RandString(5))

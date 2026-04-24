@@ -16,10 +16,10 @@ import (
 // Basic Lifecycle Test
 // -----------------------------------------------------------------------------
 func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
-	configStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s1.tf")
-	configStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s2.tf")
-	configStep3 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s3.tf")
-	configStep4 := utils.ReadTestDataFile(t, "../testdata/upcloud_file_storage/file_storage_s4.tf")
+	configStep1 := utils.ReadTestDataFile(t, "testdata/file_storage_s1.tf")
+	configStep2 := utils.ReadTestDataFile(t, "testdata/file_storage_s2.tf")
+	configStep3 := utils.ReadTestDataFile(t, "testdata/file_storage_s3.tf")
+	configStep4 := utils.ReadTestDataFile(t, "testdata/file_storage_s4.tf")
 
 	prefix := "tf-acc-test-file-storage-"
 	suffix := acctest.RandString(4)
