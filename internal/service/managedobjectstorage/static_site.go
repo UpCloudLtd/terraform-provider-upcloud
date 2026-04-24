@@ -135,6 +135,7 @@ func (r *managedObjectStorageStaticSiteResource) Schema(_ context.Context, _ res
 					},
 				},
 				Validators: []validator.List{
+					errorPagesValidator{},
 					listvalidator.SizeBetween(0, 25),
 				},
 			},
@@ -159,6 +160,10 @@ func parseErrorPages(ctx context.Context, list types.List) ([]v9.ObjectStorage2S
 	var pages []errorPageModel
 	if diags := list.ElementsAs(ctx, &pages, false); diags.HasError() {
 		return nil, fmt.Errorf("failed to decode error_page block")
+	}
+
+	if err := validateErrorPageStatusMatcherAtIndex(pages); err != nil {
+		return nil, err
 	}
 
 	result := make([]v9.ObjectStorage2StaticWebsiteErrorPage, 0, len(pages))
@@ -241,6 +246,11 @@ func (r *managedObjectStorageStaticSiteResource) Create(ctx context.Context, req
 	var data staticSiteModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(validateErrorPages(ctx, data.ErrorPages, path.Root("error_page"))...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -376,6 +386,11 @@ func (r *managedObjectStorageStaticSiteResource) Update(ctx context.Context, req
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(validateErrorPages(ctx, data.ErrorPages, path.Root("error_page"))...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
