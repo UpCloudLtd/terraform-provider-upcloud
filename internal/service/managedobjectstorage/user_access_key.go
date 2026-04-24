@@ -2,7 +2,7 @@ package managedobjectstorage
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -167,15 +167,11 @@ func (r *managedObjectStorageUserAccessKeyResource) Create(ctx context.Context, 
 		return
 	}
 	if apiResp.JSON201 == nil {
-		var dest v9.ObjectStorage2CreateAccessKey201
-		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
-			resp.Diagnostics.AddError(
-				"Unable to read created managed object storage user access key",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return
-		}
-		apiResp.JSON201 = &dest
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage user access key",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
 	}
 
 	created := apiResp.JSON201
@@ -273,15 +269,11 @@ func (r *managedObjectStorageUserAccessKeyResource) Read(ctx context.Context, re
 		return
 	}
 	if apiResp.JSON200 == nil {
-		var dest v9.ObjectStorage2GetAccessKeyDetails200
-		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
-			resp.Diagnostics.AddError(
-				"Unable to read managed object storage user access key details",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return
-		}
-		apiResp.JSON200 = &dest
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user access key details",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
 	}
 
 	resp.Diagnostics.Append(setUserAccessKeyValues(&data, apiResp.JSON200)...)
@@ -321,15 +313,11 @@ func (r *managedObjectStorageUserAccessKeyResource) Update(ctx context.Context, 
 		return
 	}
 	if apiResp.JSON200 == nil {
-		var dest v9.ObjectStorage2ModifyAccessKeyDetails200
-		if err := json.Unmarshal(apiResp.Body, &dest); err != nil {
-			resp.Diagnostics.AddError(
-				"Unable to update managed object storage user access key",
-				utils.ErrorDiagnosticDetail(err),
-			)
-			return
-		}
-		apiResp.JSON200 = &dest
+		resp.Diagnostics.AddError(
+			"Unable to update managed object storage user access key",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
 	}
 
 	resp.Diagnostics.Append(setUserAccessKeyValues(&data, apiResp.JSON200)...)
