@@ -11,10 +11,10 @@ import (
 
 func TestAccUpcloudManagedObjectStoragePolicy_Versioning(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t,
-		"../testdata/upcloud_managed_object_storage/managed_object_storage_policy_version_s1.tf",
+		"testdata/managed_object_storage_policy_version_s1.tf",
 	)
 	testDataS2 := utils.ReadTestDataFile(t,
-		"../testdata/upcloud_managed_object_storage/managed_object_storage_policy_version_s2.tf",
+		"testdata/managed_object_storage_policy_version_s2.tf",
 	)
 
 	policy := "upcloud_managed_object_storage_policy.this"

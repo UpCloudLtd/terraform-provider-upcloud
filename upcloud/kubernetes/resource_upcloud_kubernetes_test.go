@@ -38,8 +38,8 @@ func getLatestVersions(t *testing.T) (string, string) {
 }
 
 func TestAccUpcloudKubernetes(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_s2.tf")
 
 	cName := "upcloud_kubernetes_cluster.main"
 	g1Name := "upcloud_kubernetes_node_group.g1"
@@ -150,9 +150,9 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 }
 
 func TestAccUpcloudKubernetes_labels(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_labels_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_labels_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/kubernetes_labels_s3.tf")
 
 	cluster := "upcloud_kubernetes_cluster.main"
 
@@ -192,8 +192,8 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 }
 
 func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_storage_encryption_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_storage_encryption_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s2.tf")
 	nodeGroup := "upcloud_kubernetes_node_group.main"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -239,7 +239,7 @@ func TestEndToEndKubernetes(t *testing.T) {
 - Uses http data source to verify that the deployment is reachable through a node port.
 `)
 
-	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_e2e.tf")
+	testdata := utils.ReadTestDataFile(t, "testdata/kubernetes_e2e.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },

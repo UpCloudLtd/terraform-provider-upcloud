@@ -6,7 +6,12 @@ on:
       - .github/workflows/acctest.yml
       - .github/workflows/terraform.yml
       - go.mod
+      - go.sum
+      - GNUmakefile
       - internal/**
+      - .github/acctest-path-mapping.json
+      - scripts/acctest-groups-from-diff.jq
+      - scripts/acctest-groups-from-diff.sh
       - upcloud/**
 
 jobs:

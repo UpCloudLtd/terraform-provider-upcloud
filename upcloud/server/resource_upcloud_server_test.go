@@ -1137,8 +1137,8 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 }
 
 func TestUpcloudServer_metadataChange(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_metadata_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_metadata_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_metadata_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/server_metadata_s2.tf")
 
 	serverName := "upcloud_server.this"
 
@@ -1165,8 +1165,8 @@ func TestUpcloudServer_metadataChange(t *testing.T) {
 func TestUpcloudServer_storageDetachAttach(t *testing.T) {
 	// Step 1: shared storage attached to server_a
 	// Step 2: shared storage moved to server_b (detach from server_a, attach to server_b concurrently)
-	s1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_storage_detach_attach_s1.tf")
-	s2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_storage_detach_attach_s2.tf")
+	s1 := utils.ReadTestDataFile(t, "testdata/server_storage_detach_attach_s1.tf")
+	s2 := utils.ReadTestDataFile(t, "testdata/server_storage_detach_attach_s2.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },

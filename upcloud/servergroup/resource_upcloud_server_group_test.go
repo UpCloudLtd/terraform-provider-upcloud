@@ -11,8 +11,8 @@ import (
 )
 
 func TestAccUpCloudServerGroup_ServerGroupMembers(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_group_members_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_group_members_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/server_group_members_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/server_group_members_s2.tf")
 
 	group1 := "upcloud_server_group.tf_test_1"
 	group2 := "upcloud_server_group.tf_test_2"
@@ -48,8 +48,8 @@ func TestAccUpCloudServerGroup_ServerGroupMembers(t *testing.T) {
 }
 
 func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_server_group_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/server_server_group_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/server_server_group_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/server_server_group_s2.tf")
 
 	server := func(i int) string { return fmt.Sprintf("upcloud_server.test_%d", i) }
 
@@ -76,7 +76,7 @@ func TestAccUpCloudServerGroup_ServerServerGroup(t *testing.T) {
 }
 
 func TestAccUpCloudServerGroup_TrackMembersValidation(t *testing.T) {
-	testDataE := utils.ReadTestDataFile(t, "../testdata/upcloud_server_group/errors.tf")
+	testDataE := utils.ReadTestDataFile(t, "testdata/errors.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },

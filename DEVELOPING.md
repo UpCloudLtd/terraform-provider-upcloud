@@ -104,6 +104,16 @@ acceptance tests.
 make testacc TESTARGS='-run=TestUpcloudServer_*'
 ```
 
+### CI acceptance test matrix (pull requests)
+
+Terraform pull request workflows run acceptance tests in a matrix (`make testacc-<product>`, plus `make test` as `unittests`). Which matrix legs run for a given PR is decided from the changed file list using:
+
+- [`.github/acctest-path-mapping.json`](.github/acctest-path-mapping.json) — path rules (`groups` keys must match `testacc-*` Makefile targets; trailing `/` on a path means prefix match).
+- [`scripts/acctest-groups-from-diff.sh`](scripts/acctest-groups-from-diff.sh) — small shell wrapper that loads the mapping and diff into jq.
+- [`scripts/acctest-groups-from-diff.jq`](scripts/acctest-groups-from-diff.jq) — selection logic that builds the matrix JSON from the mapping file and the PR diff. Doc-only / unmapped paths alone → **unittests** only; if some paths map to products and some do not, only the **matched** product legs run (plus unittests).
+
+When you introduce a **new** product acceptance package, add `make testacc-<name>` in the `GNUmakefile` and add the same `<name>` under `groups` in `acctest-path-mapping.json` with the appropriate `internal/service/<name>/` and `upcloud/<name>/` prefixes (see existing entries).
+
 In order to view the documentation change rendering visite
 [the terraform documentation preview](https://registry.terraform.io/tools/doc-preview).
 
@@ -139,7 +149,7 @@ TF_LOG=debug terraform apply
 
 ## Generating documentation
 
-The documentation in [docs](./docs/) directory is generated with [tfplugindocs](https://github.com/hashicorp/terraform-plugin-docs). This is done automatically when changes are merged to the `main` branch. If there are documentation changes, actions will create a new pull request for documentation changes. Review and merge this pull-request.
+The documentation in [docs](./docs) directory is generated with [tfplugindocs](https://github.com/hashicorp/terraform-plugin-docs). This is done automatically when changes are merged to the `main` branch. If there are documentation changes, actions will create a new pull request for documentation changes. Review and merge this pull-request.
 
 To generate the docs locally, run `make docs`. This installs the tool and builds the docs.
 

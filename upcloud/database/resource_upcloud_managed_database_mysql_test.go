@@ -13,8 +13,8 @@ import (
 )
 
 func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/mysql_properties_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/mysql_properties_s2.tf")
 
 	name := "upcloud_managed_database_mysql.mysql_properties"
 	prefix := fmt.Sprintf("tf-acc-test-mysql-%s-", acctest.RandString(4))
@@ -94,7 +94,7 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 }
 
 func TestAccUpcloudManagedDatabaseMySQLProperties_UpgradeFromV5_35_0(t *testing.T) {
-	testData := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s1.tf")
+	testData := utils.ReadTestDataFile(t, "testdata/mysql_properties_s1.tf")
 
 	name := "upcloud_managed_database_mysql.mysql_properties"
 	prefix := fmt.Sprintf("tf-acc-test-mysql-%s-", acctest.RandString(4))
