@@ -6,14 +6,21 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
+	"github.com/hashicorp/terraform-plugin-testing/config"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/mysql_properties_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/mysql_properties_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/mysql_properties_s2.tf")
 
 	name := "upcloud_managed_database_mysql.mysql_properties"
+	prefix := fmt.Sprintf("tf-acc-test-mysql-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
 	prop := func(name string) string {
 		return fmt.Sprintf("properties.0.%s", name)
 	}
@@ -22,7 +29,8 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testDataS1,
+				Config:          testDataS1,
+				ConfigVariables: variables,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(name, "zone", "fi-hel2"),
@@ -68,7 +76,8 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 				),
 			},
 			{
-				Config: testDataS2,
+				Config:          testDataS2,
+				ConfigVariables: variables,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, prop("admin_username"), "demoadmin"),
 					resource.TestCheckResourceAttr(name, prop("admin_password"), "2VCNXEV6SVfpr3X1"),
@@ -79,6 +88,44 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("innodb_thread_concurrency"), "2"),
 					resource.TestCheckResourceAttr(name, prop("innodb_write_io_threads"), "5"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedDatabaseMySQLProperties_UpgradeFromV5_35_0(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/mysql_properties_s1.tf")
+
+	name := "upcloud_managed_database_mysql.mysql_properties"
+	prefix := fmt.Sprintf("tf-acc-test-mysql-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck: func() { upcloud.TestAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"upcloud": {
+						Source:            "upcloudltd/upcloud",
+						VersionConstraint: "= 5.35.0",
+					},
+				},
+				Config:          testData,
+				ConfigVariables: variables,
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testData,
+				ConfigVariables:          variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						// Update is expected as new unknown value properties are added
+						// create / delete is not expected
+						plancheck.ExpectResourceAction(name, plancheck.ResourceActionUpdate),
+					},
+				},
 			},
 		},
 	})

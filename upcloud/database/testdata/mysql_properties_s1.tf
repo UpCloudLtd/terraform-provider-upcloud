@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "tf-acc-test-mysql-props-"
+  default = "tf-acc-test-mysql-"
   type    = string
 }
 
@@ -9,8 +9,8 @@ variable "zone" {
 }
 
 resource "upcloud_managed_database_mysql" "mysql_properties" {
-  name  = "mysql-props-test"
-  title = "${var.prefix}db"
+  name  = "${var.prefix}-db"
+  title = "${var.prefix}-db"
   plan  = "1x1xCPU-2GB-25GB"
   zone  = var.zone
   properties {

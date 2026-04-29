@@ -101,7 +101,6 @@ Optional Attributes:
 - `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name. When you set a custom domain for a service deployed in a VPC, the service certificate is only created for the public-* hostname and the custom domain.
 - `custom_keystores` (List of String) OpenSearch custom keystores. Allow to register custom keystores in OpenSearch.
 - `custom_repos` (List of String) OpenSearch custom repositories. Allow to register object storage repositories in OpenSearch.
-- `elasticsearch_version` (String) Elasticsearch version.
 - `email_sender_name` (String) Sender name placeholder to be used in Opensearch Dashboards and Opensearch keystore. This should be identical to the Sender name defined in Opensearch dashboards.
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
 - `email_sender_username` (String) Sender username for Opensearch alerts.

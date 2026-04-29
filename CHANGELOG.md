@@ -5,6 +5,26 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.36.3] - 2026-04-24
+
+### Fixed
+
+- upcloud_server: fix panic when removing only backup rule in the server
+
+## [5.36.2] - 2026-04-02
+
+### Fixed
+
+- upcloud_file_storage_share: fix resource import by parsing the file storage service uuid and share name from id
+- upcloud_file_storage_share_acl: fix resource import by parsing the file storage service uuid, share name and acl name from id
+- upcloud_managed_database_*: do not plan replacement for unconfigured create-only properties, such as MySQL `properties.lower_case_table_names`
+
+## [5.36.1] - 2026-03-26
+
+### Fixed
+
+- upcloud_server: wait for storage to return to online state after detach before attaching it to another server
+
 ## [5.36.0] - 2026-03-20
 
 ### Added
@@ -1192,7 +1212,10 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.3...HEAD
+[5.36.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.2...v5.36.3
+[5.36.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.1...v5.36.2
+[5.36.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.0...v5.36.1
 [5.36.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.35.0...v5.36.0
 [5.35.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.34.1...v5.35.0
 [5.34.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.34.0...v5.34.1

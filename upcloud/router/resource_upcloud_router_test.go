@@ -88,8 +88,8 @@ func TestAccUpCloudRouter_update(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_detach(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/detach_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/detach_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/detach_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/detach_s2.tf")
 
 	var router upcloud.Router
 	var network upcloud.Network
@@ -123,8 +123,8 @@ func TestAccUpCloudRouter_detach(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/delete_attached_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/delete_attached_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/delete_attached_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/delete_attached_s2.tf")
 
 	var router upcloud.Router
 	var network upcloud.Network
@@ -157,8 +157,8 @@ func TestAccUpCloudRouter_attachedDelete(t *testing.T) {
 }
 
 func TestAccUpCloudRouter_staticRoutes(t *testing.T) {
-	testDataStep1 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/static_routes_s1.tf")
-	testDataStep2 := utils.ReadTestDataFile(t, "../testdata/upcloud_router/static_routes_s2.tf")
+	testDataStep1 := utils.ReadTestDataFile(t, "testdata/static_routes_s1.tf")
+	testDataStep2 := utils.ReadTestDataFile(t, "testdata/static_routes_s2.tf")
 
 	router := "upcloud_router.this"
 
