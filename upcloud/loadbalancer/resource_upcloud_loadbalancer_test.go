@@ -10,10 +10,10 @@ import (
 )
 
 func TestAccUpcloudLoadBalancer(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s3.tf")
-	testDataS4 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_s4.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/loadbalancer_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/loadbalancer_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/loadbalancer_s3.tf")
+	testDataS4 := utils.ReadTestDataFile(t, "testdata/loadbalancer_s4.tf")
 
 	lbName := "upcloud_loadbalancer.lb"
 	dnsName := "upcloud_loadbalancer_resolver.lb_dns_1"
@@ -271,10 +271,10 @@ func TestAccUpcloudLoadBalancer(t *testing.T) {
 
 func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 	// These test data files should fail in pre-plan validation. Thus, these tests are run in plan-only mode.
-	testDataE1 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e1.tf")
-	testDataE2 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e2.tf")
-	testDataE3 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e3.tf")
-	testDataE4 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e4.tf")
+	testDataE1 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e1.tf")
+	testDataE2 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e2.tf")
+	testDataE3 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e3.tf")
+	testDataE4 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e4.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -306,10 +306,10 @@ func TestAccUpcloudLoadBalancer_HTTPRedirectValidation(t *testing.T) {
 
 func TestAccUpcloudLoadBalancer_HTTPRewriteValidation(t *testing.T) {
 	// These test data files should fail in pre-plan validation. Thus, these tests are run in plan-only mode.
-	testDataE5 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e5.tf")
-	testDataE6 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e6.tf")
-	testDataE7 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e7.tf")
-	testDataE8 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_e8.tf")
+	testDataE5 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e5.tf")
+	testDataE6 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e6.tf")
+	testDataE7 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e7.tf")
+	testDataE8 := utils.ReadTestDataFile(t, "testdata/loadbalancer_e8.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -346,7 +346,7 @@ func TestEndToEndLoadBalancer_Rules(t *testing.T) {
 - Validates the rules with http data source.
 `)
 
-	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_rules_e2e.tf")
+	testdata := utils.ReadTestDataFile(t, "testdata/loadbalancer_rules_e2e.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -366,7 +366,7 @@ func TestEndToEndLoadBalancer_Rules(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
-	testData := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_minimal.tf")
+	testData := utils.ReadTestDataFile(t, "testdata/loadbalancer_minimal.tf")
 
 	name := "upcloud_loadbalancer.this"
 
@@ -393,9 +393,9 @@ func TestAccUpcloudLoadBalancer_minimal(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancer_network(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_network_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_network_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/loadbalancer_network_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/loadbalancer_network_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/loadbalancer_network_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/loadbalancer_network_s3.tf")
 
 	migrateName := "upcloud_loadbalancer.migrate_then_rename"
 	renameName := "upcloud_loadbalancer.migrate_and_rename"
@@ -440,11 +440,11 @@ func TestAccUpcloudLoadBalancer_network(t *testing.T) {
 }
 
 func TestAccUpcloudLoadBalancerManualCertificateBundle(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/manual_certificate_bundle_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/manual_certificate_bundle_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/manual_certificate_bundle_s3.tf")
-	testDataS4 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/manual_certificate_bundle_s4.tf")
-	testDataS5 := utils.ReadTestDataFile(t, "../testdata/upcloud_loadbalancer/manual_certificate_bundle_s5.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/manual_certificate_bundle_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/manual_certificate_bundle_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/manual_certificate_bundle_s3.tf")
+	testDataS4 := utils.ReadTestDataFile(t, "testdata/manual_certificate_bundle_s4.tf")
+	testDataS5 := utils.ReadTestDataFile(t, "testdata/manual_certificate_bundle_s5.tf")
 	name := "upcloud_loadbalancer_manual_certificate_bundle.this"
 
 	resource.ParallelTest(t, resource.TestCase{

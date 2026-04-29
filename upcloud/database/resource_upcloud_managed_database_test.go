@@ -16,9 +16,9 @@ func withPrefixDB(text string) string {
 }
 
 func TestAccUpcloudManagedDatabase(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/managed_database_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_database_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_database_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/managed_database_s3.tf")
 
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
@@ -186,7 +186,7 @@ func TestEndToEndManagedDatabase_TerminationProtection(t *testing.T) {
 - Deletes the service.
 `)
 
-	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/termination_protection.tf")
+	testdata := utils.ReadTestDataFile(t, "testdata/termination_protection.tf")
 	db := "upcloud_managed_database_mysql.this.0"
 
 	variables := func(dbCount int32, powered bool, termination_protection bool) map[string]config.Variable {
@@ -240,8 +240,8 @@ func TestEndToEndManagedDatabase_TerminationProtection(t *testing.T) {
 }
 
 func TestAccUpcloudManagedDatabase_import_minimalProperties(t *testing.T) {
-	configS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/postgresql_import_minimal_properties_s1.tf")
-	configS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_database/postgresql_import_minimal_properties_s2.tf")
+	configS1 := utils.ReadTestDataFile(t, "testdata/postgresql_import_minimal_properties_s1.tf")
+	configS2 := utils.ReadTestDataFile(t, "testdata/postgresql_import_minimal_properties_s2.tf")
 
 	resourceName := "upcloud_managed_database_postgresql.props"
 	prop := func(name string) string {

@@ -10,8 +10,8 @@ import (
 )
 
 func TestAccUpcloudServerNetwork(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/server_s2.tf")
 
 	server1Name := "upcloud_server.server1"
 
@@ -48,9 +48,9 @@ func TestAccUpcloudServerNetwork(t *testing.T) {
 }
 
 func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_server/server_ifaces_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_ifaces_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/server_ifaces_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/server_ifaces_s3.tf")
 
 	this := "upcloud_server.this"
 	family := "upcloud_server.family"

@@ -17,31 +17,42 @@ permissions:
   contents: read
 
 jobs:
+  SelectGroups:
+    runs-on: ubuntu-latest
+    outputs:
+      groups: ${{ steps.select.outputs.groups }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      # Matrix: scripts/acctest-groups-from-diff.sh; rules: .github/acctest-path-mapping.json
+      - name: Select acceptance test groups
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" != "pull_request" || -z "${BASE_SHA:-}" ]]; then
+            groups=$(bash ./scripts/acctest-groups-from-diff.sh --all)
+          else
+            groups=$(git diff --name-only "$BASE_SHA...HEAD" | bash ./scripts/acctest-groups-from-diff.sh)
+          fi
+
+          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+          echo "Selected groups: $groups"
+
   Test:
+    needs: SelectGroups
     runs-on: ubuntu-latest
     timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
-        group:
-          - unittests
-          - provider
-          - kubernetes
-          - managedobjectstorage
-          - database
-          - server
-          - network
-          - cloud
-          - filestorage
-          - ip
-          - storage
-          - firewall
-          - gateway
-          - loadbalancer
-          - networkpeering
-          - router
-          - servergroup
-          - tag
+        group: ${{ fromJson(needs.SelectGroups.outputs.groups) }}
 
     steps:
       - name: Checkout source code

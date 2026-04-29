@@ -38,8 +38,8 @@ func getLatestVersions(t *testing.T) (string, string) {
 }
 
 func TestAccUpcloudKubernetes(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_s2.tf")
 
 	cName := "upcloud_kubernetes_cluster.main"
 	g1Name := "upcloud_kubernetes_node_group.g1"
@@ -150,9 +150,9 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 }
 
 func TestAccUpcloudKubernetes_labels(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s2.tf")
-	testDataS3 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_labels_s3.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_labels_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_labels_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/kubernetes_labels_s3.tf")
 
 	cluster := "upcloud_kubernetes_cluster.main"
 
@@ -192,8 +192,8 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 }
 
 func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_storage_encryption_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_storage_encryption_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s2.tf")
 	nodeGroup := "upcloud_kubernetes_node_group.main"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -230,16 +230,23 @@ func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
 	})
 }
 
-func TestEndToEndKubernetes(t *testing.T) {
-	t.Log(`This testcase:
+func testEndToEndKubernetes(t *testing.T, cidr string, privateNodeGroups bool) {
+	serviceType := "NodePort"
+	nodeAccess := "public"
+	if privateNodeGroups {
+		serviceType = "LoadBalancer"
+		nodeAccess = "private"
+	}
 
-- Creates a Kubernetes cluster with one node group.
+	t.Logf(`This testcase:
+
+- Creates a Kubernetes cluster with one %s node group.
 - Configures Kubernetes provider to connect to the created cluster using ephemeral cluster resource.
 - Deploys hello deployment and service to the cluster.
-- Uses http data source to verify that the deployment is reachable through a node port.
-`)
+- Uses http data source to verify that the deployment is reachable through a %s.
+`, nodeAccess, serviceType)
 
-	testdata := utils.ReadTestDataFile(t, "../testdata/upcloud_kubernetes/kubernetes_e2e.tf")
+	testdata := utils.ReadTestDataFile(t, "testdata/kubernetes_e2e.tf")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -256,6 +263,10 @@ func TestEndToEndKubernetes(t *testing.T) {
 			{
 				// Create the cluster first and add kubernetes resources in the next step.
 				Config: testdata,
+				ConfigVariables: map[string]config.Variable{
+					"private_node_groups": config.BoolVariable(privateNodeGroups),
+					"network_cidr":        config.StringVariable(cidr),
+				},
 				// OpenTofu adds open action for the ephemeral resource which causes the plan to be non-empty.
 				ExpectNonEmptyPlan: upcloud.UsingOpenTofu(),
 			},
@@ -263,6 +274,8 @@ func TestEndToEndKubernetes(t *testing.T) {
 				Config: testdata,
 				ConfigVariables: map[string]config.Variable{
 					"enable_kubernetes_resources": config.BoolVariable(true),
+					"network_cidr":                config.StringVariable(cidr),
+					"private_node_groups":         config.BoolVariable(privateNodeGroups),
 				},
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
@@ -278,4 +291,12 @@ func TestEndToEndKubernetes(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestEndToEndKubernetes_PublicNodePort(t *testing.T) {
+	testEndToEndKubernetes(t, "172.23.45.0/24", false)
+}
+
+func TestEndToEndKubernetes_PrivateLoadBalancer(t *testing.T) {
+	testEndToEndKubernetes(t, "172.23.46.0/24", true)
 }
