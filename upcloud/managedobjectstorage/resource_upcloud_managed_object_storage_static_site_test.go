@@ -15,8 +15,8 @@ const (
 )
 
 func TestAccUpcloudManagedObjectStorageStaticSite(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_static_site_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_managed_object_storage/managed_object_storage_static_site_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_static_site_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_static_site_s2.tf")
 	staticSiteDomainName := ""
 
 	resource.ParallelTest(t, resource.TestCase{
