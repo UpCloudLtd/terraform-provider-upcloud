@@ -1,12 +1,15 @@
 package managedobjectstoragetests
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
+	"github.com/hashicorp/terraform-plugin-testing/config"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -156,6 +159,56 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionNoop),
 						plancheck.ExpectResourceAction(customDomain, plancheck.ResourceActionDestroy),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedObjectStorage_NetworkChange_UpgradeFromV5_36_3(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_network_change_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_network_change_s2.tf")
+
+	objsto := "upcloud_managed_object_storage.this"
+	prefix := fmt.Sprintf("tf-acc-test-objsto-swap-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck: func() { upcloud.TestAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"upcloud": {
+						Source:            "upcloudltd/upcloud",
+						VersionConstraint: "= 5.36.3",
+					},
+				},
+				Config:          testDataS1,
+				ConfigVariables: variables,
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testDataS2,
+				ConfigVariables:          variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(objsto, "network.#", "2"),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testDataS2,
+				ConfigVariables:          variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionNoop),
 					},
 				},
 			},
