@@ -306,7 +306,7 @@ func (r *managedObjectStorageStaticSiteResource) Create(ctx context.Context, req
 
 	if created.JSON201 == nil {
 		resp.Diagnostics.AddError(
-			"Unable to create managed object storage user",
+			"Unable to create managed object storage static site",
 			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", created.HTTPResponse.Status)),
 		)
 		return
