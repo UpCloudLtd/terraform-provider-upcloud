@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -32,7 +32,7 @@ func NewPolicyResource() resource.Resource {
 }
 
 type managedObjectStoragePolicyResource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (r *managedObjectStoragePolicyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -41,7 +41,7 @@ func (r *managedObjectStoragePolicyResource) Metadata(_ context.Context, req res
 
 // Configure adds the provider configured client to the resource.
 func (r *managedObjectStoragePolicyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type policyModel struct {
@@ -126,26 +126,36 @@ func (r *managedObjectStoragePolicyResource) Schema(_ context.Context, _ resourc
 	}
 }
 
-func setPolicyValues(_ context.Context, data *policyModel, policy *upcloud.ManagedObjectStoragePolicy) diag.Diagnostics {
+func setPolicyValues(_ context.Context, data *policyModel, policy *v9.ObjectStorage2PolicyDetailResponse) diag.Diagnostics {
 	var respDiagnostics diag.Diagnostics
 
-	data.ARN = types.StringValue(policy.ARN)
-	data.AttachmentCount = types.Int64Value(int64(policy.AttachmentCount))
-	data.CreatedAt = types.StringValue(policy.CreatedAt.String())
-	data.DefaultVersionID = types.StringValue(policy.DefaultVersionID)
-	data.Name = types.StringValue(policy.Name)
-	data.System = types.BoolValue(policy.System)
-	data.UpdatedAt = types.StringValue(policy.UpdatedAt.String())
+	data.ARN = types.StringPointerValue(policy.Arn)
+	data.DefaultVersionID = types.StringPointerValue(policy.DefaultVersionId)
+	data.Name = types.StringPointerValue(policy.Name)
+	data.System = types.BoolPointerValue(policy.System)
+	if policy.AttachmentCount != nil {
+		data.AttachmentCount = types.Int64Value(int64(*policy.AttachmentCount))
+	}
+	if policy.CreatedAt != nil {
+		data.CreatedAt = types.StringValue(policy.CreatedAt.String())
+	}
+	if policy.UpdatedAt != nil {
+		data.UpdatedAt = types.StringValue(policy.UpdatedAt.String())
+	}
 
 	if data.Description.IsNull() || data.Description.IsUnknown() {
-		if policy.Description == "" {
+		if policy.Description == nil || *policy.Description == "" {
 			data.Description = types.StringNull()
 		} else {
-			data.Description = types.StringValue(policy.Description)
+			data.Description = types.StringPointerValue(policy.Description)
 		}
 	}
 
-	apiDocument, diags := normalizePolicyDocument(policy.Document)
+	var apiDocStr string
+	if policy.Document != nil {
+		apiDocStr = *policy.Document
+	}
+	apiDocument, diags := normalizePolicyDocument(apiDocStr)
 	respDiagnostics.Append(diags...)
 	// Document is required, so it should only be empty during import.
 	if data.Document.IsNull() {
@@ -175,17 +185,7 @@ func (r *managedObjectStoragePolicyResource) Create(ctx context.Context, req res
 
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.Name.ValueString()))
 
-	apiReq := &request.CreateManagedObjectStoragePolicyRequest{
-		Name:        data.Name.ValueString(),
-		Document:    data.Document.ValueString(),
-		ServiceUUID: data.ServiceUUID.ValueString(),
-	}
-
-	if !data.Description.IsNull() && !data.Description.IsUnknown() {
-		apiReq.Description = data.Description.ValueString()
-	}
-
-	policy, err := r.client.CreateManagedObjectStoragePolicy(ctx, apiReq)
+	svcUUID, err := uuid.Parse(data.ServiceUUID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage policy",
@@ -194,7 +194,32 @@ func (r *managedObjectStoragePolicyResource) Create(ctx context.Context, req res
 		return
 	}
 
-	resp.Diagnostics.Append(setPolicyValues(ctx, &data, policy)...)
+	apiReq := v9.CreateObjectStoragePolicyJSONRequestBody{
+		Name:     data.Name.ValueString(),
+		Document: data.Document.ValueString(),
+	}
+	if !data.Description.IsNull() && !data.Description.IsUnknown() {
+		desc := data.Description.ValueString()
+		apiReq.Description = &desc
+	}
+
+	apiResp, err := r.client.CreateObjectStoragePolicyWithResponse(ctx, svcUUID, apiReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage policy",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.JSON201 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage policy",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setPolicyValues(ctx, &data, apiResp.JSON201)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -220,23 +245,36 @@ func (r *managedObjectStoragePolicyResource) Read(ctx context.Context, req resou
 
 	data.ServiceUUID = types.StringValue(serviceUUID)
 
-	policy, err := r.client.GetManagedObjectStoragePolicy(ctx, &request.GetManagedObjectStoragePolicyRequest{
-		Name:        name,
-		ServiceUUID: serviceUUID,
-	})
+	svcUUID, err := uuid.Parse(serviceUUID)
 	if err != nil {
-		if utils.IsNotFoundError(err) {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage policy details",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	apiResp, err := r.client.GetObjectStoragePolicyWithResponse(ctx, svcUUID, name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage policy details",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.JSON200 == nil {
+		if apiResp.HTTPResponse != nil && apiResp.HTTPResponse.StatusCode == http.StatusNotFound {
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
 				"Unable to read managed object storage policy details",
-				utils.ErrorDiagnosticDetail(err),
+				utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
 			)
 		}
 		return
 	}
 
-	resp.Diagnostics.Append(setPolicyValues(ctx, &data, policy)...)
+	resp.Diagnostics.Append(setPolicyValues(ctx, &data, apiResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -254,14 +292,23 @@ func (r *managedObjectStoragePolicyResource) Update(ctx context.Context, req res
 	stateDoc, diags := normalizePolicyDocument(state.Document.ValueString())
 	resp.Diagnostics.Append(diags...)
 
+	svcUUID, err := uuid.Parse(plan.ServiceUUID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to update managed object storage policy",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
 	if planDoc != stateDoc {
-		_, err := r.client.CreateManagedObjectStoragePolicyVersion(
+		apiResp, err := r.client.CreateObjectStoragePolicyVersionWithResponse(
 			ctx,
-			&request.CreateManagedObjectStoragePolicyVersionRequest{
-				ServiceUUID: plan.ServiceUUID.ValueString(),
-				Name:        plan.Name.ValueString(),
-				Document:    plan.Document.ValueString(),
-				IsDefault:   true,
+			svcUUID,
+			plan.Name.ValueString(),
+			v9.CreateObjectStoragePolicyVersionJSONRequestBody{
+				Document:  plan.Document.ValueString(),
+				IsDefault: true,
 			},
 		)
 		if err != nil {
@@ -271,12 +318,16 @@ func (r *managedObjectStoragePolicyResource) Update(ctx context.Context, req res
 			)
 			return
 		}
+		if apiResp.JSON201 == nil {
+			resp.Diagnostics.AddError(
+				"Unable to create managed object storage policy version",
+				utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+			)
+			return
+		}
 	}
 
-	policy, err := r.client.GetManagedObjectStoragePolicy(ctx, &request.GetManagedObjectStoragePolicyRequest{
-		Name:        plan.Name.ValueString(),
-		ServiceUUID: plan.ServiceUUID.ValueString(),
-	})
+	readResp, err := r.client.GetObjectStoragePolicyWithResponse(ctx, svcUUID, plan.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read managed object storage policy details",
@@ -284,8 +335,15 @@ func (r *managedObjectStoragePolicyResource) Update(ctx context.Context, req res
 		)
 		return
 	}
+	if readResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage policy details",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", readResp.HTTPResponse.Status)),
+		)
+		return
+	}
 
-	resp.Diagnostics.Append(setPolicyValues(ctx, &plan, policy)...)
+	resp.Diagnostics.Append(setPolicyValues(ctx, &plan, readResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -300,13 +358,25 @@ func (r *managedObjectStoragePolicyResource) Delete(ctx context.Context, req res
 		return
 	}
 
-	if err := r.client.DeleteManagedObjectStoragePolicy(ctx, &request.DeleteManagedObjectStoragePolicyRequest{
-		ServiceUUID: serviceUUID,
-		Name:        name,
-	}); err != nil {
+	svcUUID, err := uuid.Parse(serviceUUID)
+	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage policy",
 			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	apiResp, err := r.client.DeleteObjectStoragePolicyWithResponse(ctx, svcUUID, name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage policy",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	} else if apiResp.StatusCode() < 200 || apiResp.StatusCode() >= 300 {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage policy",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 	}
 }
