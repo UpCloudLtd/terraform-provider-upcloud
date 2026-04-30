@@ -134,6 +134,34 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 		return
 	}
 
+	if apiResp.JSON201 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage custom domain",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
+	}
+
+	if apiResp.JSON201.DomainName == nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage custom domain",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: missing domain name in response")),
+		)
+		return
+	}
+
+	customDomain := apiResp.JSON201
+	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), *apiResp.JSON201.DomainName))
+	if customDomain.DomainName != nil {
+		data.DomainName = types.StringValue(*customDomain.DomainName)
+	}
+	if customDomain.Type != nil {
+		data.Type = types.StringValue(*customDomain.Type)
+	}
+	if customDomain.Mode != nil {
+		data.Mode = types.StringValue(string(*customDomain.Mode))
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
