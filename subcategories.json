@@ -37,6 +37,7 @@
     "managed_object_storage_bucket.md": "Object Storage",
     "managed_object_storage_custom_domain.md": "Object Storage",
     "managed_object_storage_policy.md": "Object Storage",
+    "managed_object_storage_static_site.md": "Object Storage",
     "managed_object_storage_user.md": "Object Storage",
     "managed_object_storage_user_access_key.md": "Object Storage",
     "managed_object_storage_user_policy.md": "Object Storage",

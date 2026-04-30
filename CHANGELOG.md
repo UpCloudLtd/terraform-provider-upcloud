@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_object_storage_static_site: new resource for Managed Object Storage static website configuration
+
 ## [5.36.3] - 2026-04-24
 
 ### Fixed

@@ -195,6 +195,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		managedobjectstorage.NewManagedObjectStorageResource,
 		managedobjectstorage.NewBucketResource,
 		managedobjectstorage.NewCustomDomainResource,
+		managedobjectstorage.NewStaticSiteResource,
 		managedobjectstorage.NewPolicyResource,
 		managedobjectstorage.NewUserResource,
 		managedobjectstorage.NewUserAccessKeyResource,
