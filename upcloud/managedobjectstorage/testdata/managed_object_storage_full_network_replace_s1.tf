@@ -13,6 +13,14 @@ variable "region" {
   type    = string
 }
 
+variable "cidr_a" {
+  type = string
+}
+
+variable "cidr_b" {
+  type = string
+}
+
 resource "upcloud_router" "this" {
   name = "${var.prefix}router"
 }
@@ -22,7 +30,7 @@ resource "upcloud_network" "private_a" {
   zone = var.zone
 
   ip_network {
-    address = "172.18.3.0/24"
+    address = var.cidr_a
     dhcp    = false
     family  = "IPv4"
   }

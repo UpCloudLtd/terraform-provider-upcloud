@@ -177,8 +177,11 @@ func TestAccUpcloudManagedObjectStorage_FullNetworkReplace(t *testing.T) {
 
 	objsto := managedObjectStorageResource
 	prefix := fmt.Sprintf("tf-acc-test-objsto-fullswap-%s-", acctest.RandString(4))
+	octet := acctest.RandIntRange(10, 250)
 	variables := map[string]config.Variable{
 		"prefix": config.StringVariable(prefix),
+		"cidr_a": config.StringVariable(fmt.Sprintf("172.%d.1.0/24", octet)),
+		"cidr_b": config.StringVariable(fmt.Sprintf("172.%d.2.0/24", octet)),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -222,8 +225,11 @@ func TestAccUpcloudManagedObjectStorage_NetworkChange(t *testing.T) {
 
 	objsto := managedObjectStorageResource
 	prefix := fmt.Sprintf("tf-acc-test-objsto-swap-%s-", acctest.RandString(4))
+	octet := acctest.RandIntRange(10, 250)
 	variables := map[string]config.Variable{
 		"prefix": config.StringVariable(prefix),
+		"cidr_a": config.StringVariable(fmt.Sprintf("172.%d.1.0/24", octet)),
+		"cidr_b": config.StringVariable(fmt.Sprintf("172.%d.2.0/24", octet)),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
