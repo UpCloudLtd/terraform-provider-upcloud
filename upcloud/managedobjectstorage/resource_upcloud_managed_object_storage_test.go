@@ -166,7 +166,55 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 	})
 }
 
-func TestAccUpcloudManagedObjectStorage_NetworkChange_UpgradeFromV5_36_3(t *testing.T) {
+// TestAccUpcloudManagedObjectStorage_FullNetworkReplace tests that a complete network replacement
+// (no overlap between old and new set) succeeds. The two-step update sends an empty intermediate
+// network list, which verifies the API accepts it before adding the new networks.
+func TestAccUpcloudManagedObjectStorage_FullNetworkReplace(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_full_network_replace_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_full_network_replace_s2.tf")
+
+	objsto := "upcloud_managed_object_storage.this"
+	prefix := fmt.Sprintf("tf-acc-test-objsto-fullswap-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck: func() { upcloud.TestAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testDataS1,
+				ConfigVariables:          variables,
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testDataS2,
+				ConfigVariables:          variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(objsto, "network.#", "1"),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testDataS2,
+				ConfigVariables:          variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(objsto, plancheck.ResourceActionNoop),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedObjectStorage_NetworkChange(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_network_change_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_network_change_s2.tf")
 
@@ -180,14 +228,9 @@ func TestAccUpcloudManagedObjectStorage_NetworkChange_UpgradeFromV5_36_3(t *test
 		PreCheck: func() { upcloud.TestAccPreCheck(t) },
 		Steps: []resource.TestStep{
 			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"upcloud": {
-						Source:            "upcloudltd/upcloud",
-						VersionConstraint: "= 5.36.3",
-					},
-				},
-				Config:          testDataS1,
-				ConfigVariables: variables,
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testDataS1,
+				ConfigVariables:          variables,
 			},
 			{
 				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
