@@ -14,11 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
+const managedObjectStorageResource = "upcloud_managed_object_storage.this"
+
 func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_s2.tf")
 
-	this := "upcloud_managed_object_storage.this"
+	this := managedObjectStorageResource
 	minimal := "upcloud_managed_object_storage.minimal"
 	bucket := "upcloud_managed_object_storage_bucket.this"
 
@@ -122,7 +124,7 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_custom_domain_s2.tf")
 	testDataS3 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_custom_domain_s3.tf")
 
-	objsto := "upcloud_managed_object_storage.this"
+	objsto := managedObjectStorageResource
 	customDomain := "upcloud_managed_object_storage_custom_domain.this"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -173,7 +175,7 @@ func TestAccUpcloudManagedObjectStorage_FullNetworkReplace(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_full_network_replace_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_full_network_replace_s2.tf")
 
-	objsto := "upcloud_managed_object_storage.this"
+	objsto := managedObjectStorageResource
 	prefix := fmt.Sprintf("tf-acc-test-objsto-fullswap-%s-", acctest.RandString(4))
 	variables := map[string]config.Variable{
 		"prefix": config.StringVariable(prefix),
@@ -218,7 +220,7 @@ func TestAccUpcloudManagedObjectStorage_NetworkChange(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_network_change_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_network_change_s2.tf")
 
-	objsto := "upcloud_managed_object_storage.this"
+	objsto := managedObjectStorageResource
 	prefix := fmt.Sprintf("tf-acc-test-objsto-swap-%s-", acctest.RandString(4))
 	variables := map[string]config.Variable{
 		"prefix": config.StringVariable(prefix),
