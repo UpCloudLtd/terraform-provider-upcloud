@@ -346,6 +346,7 @@ func (r *managedObjectStorageCustomDomainResource) Delete(ctx context.Context, r
 			"Unable to delete managed object storage custom domain",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
 	}
 	if apiResp.StatusCode() != http.StatusNoContent {
 		resp.Diagnostics.AddError(
