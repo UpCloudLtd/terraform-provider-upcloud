@@ -286,8 +286,24 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 		return
 	}
 
+	if apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify managed object storage custom domain",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
+	}
+
+	if apiResp.JSON200.DomainName == nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify managed object storage custom domain",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: missing domain name in response")),
+		)
+		return
+	}
+
 	customDomain := apiResp.JSON200
-	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.DomainName.ValueString()))
+	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), *customDomain.DomainName))
 	if customDomain.DomainName != nil {
 		data.DomainName = types.StringValue(*customDomain.DomainName)
 	}
