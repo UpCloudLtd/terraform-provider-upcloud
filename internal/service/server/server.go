@@ -837,7 +837,7 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 	resp.Diagnostics.Append(state.StorageDevices.ElementsAs(ctx, &stateDevices, false)...)
 	resp.Diagnostics.Append(plan.StorageDevices.ElementsAs(ctx, &planDevices, false)...)
 	if !changeRequiresServerStop(*state, *plan, stateDevices, planDevices) {
-		plan.Host = types.Int64Value(int64(server.Host))
+		plan.Host = types.Int64Value(server.HostID)
 	}
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, plan)...)
@@ -847,7 +847,7 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 	var respDiagnostics, diags diag.Diagnostics
 
 	data.ID = types.StringValue(server.UUID)
-	data.Host = types.Int64Value(int64(server.Host))
+	data.Host = types.Int64Value(server.HostID)
 	data.Hostname = types.StringValue(server.Hostname)
 	data.Title = types.StringValue(server.Title)
 	data.Zone = types.StringValue(server.Zone)
@@ -1009,7 +1009,7 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 	apiReq := &request.CreateServerRequest{
 		BootOrder:    data.BootOrder.ValueString(),
 		CoreNumber:   int(data.CPU.ValueInt64()),
-		Host:         int(data.Host.ValueInt64()),
+		HostID:       data.Host.ValueInt64(),
 		Hostname:     data.Hostname.ValueString(),
 		Labels:       &labelsSlice,
 		MemoryAmount: int(data.Mem.ValueInt64()),
@@ -1530,7 +1530,7 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}
 
-	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, Host: int(config.Host.ValueInt64())}, r.client)
+	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, HostID: config.Host.ValueInt64()}, r.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to start server", utils.ErrorDiagnosticDetail(err))
 		return

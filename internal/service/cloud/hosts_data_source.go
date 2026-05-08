@@ -136,7 +136,7 @@ func (d *hostsDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	dataHosts := make([]hostModel, len(hosts.Hosts))
 	for i, host := range hosts.Hosts {
-		dataHosts[i].ID = types.Int64Value(int64(host.ID))
+		dataHosts[i].ID = types.Int64Value(host.HostID)
 		dataHosts[i].Description = types.StringValue(host.Description)
 		dataHosts[i].Zone = types.StringValue(host.Zone)
 		dataHosts[i].WindowsEnabled = utils.AsBool(host.WindowsEnabled)
