@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_server: use 64-bit integers when parsing server host value from JSON response. No changes to the resource schema.
+
 ## [5.36.3] - 2026-04-24
 
 ### Fixed
