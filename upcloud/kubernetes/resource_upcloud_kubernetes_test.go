@@ -44,7 +44,7 @@ func hasPrefix(prefix string) resource.CheckResourceAttrWithFunc {
 		if strings.HasPrefix(value, prefix) {
 			return nil
 		}
-		return fmt.Errorf("unexpected node group name to have prefix %q, got: %s", prefix, value)
+		return fmt.Errorf("expected value to have prefix %q, got: %s", prefix, value)
 	}
 }
 
