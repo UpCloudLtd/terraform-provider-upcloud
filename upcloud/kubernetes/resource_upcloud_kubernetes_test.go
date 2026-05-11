@@ -89,7 +89,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
 					resource.TestCheckResourceAttr(cName, "version", s1Version),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
-					resource.TestCheckResourceAttr(g1Name, "name_prefix", "small-"),
+					resource.TestCheckResourceAttr(g1Name, "name_prefix", "small"),
 					resource.TestCheckResourceAttrWith(g1Name, "name", hasPrefix("small-")),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
 					resource.TestCheckResourceAttr(g1Name, "anti_affinity", "true"),
