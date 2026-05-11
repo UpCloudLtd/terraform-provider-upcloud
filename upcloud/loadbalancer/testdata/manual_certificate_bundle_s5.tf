@@ -102,5 +102,5 @@ resource "upcloud_loadbalancer_manual_certificate_bundle" "this" {
   certificate = local.certificate_clean
   # intermediates set to null
   intermediates = null
-  private_key = local.private_key
+  private_key   = local.private_key
 }

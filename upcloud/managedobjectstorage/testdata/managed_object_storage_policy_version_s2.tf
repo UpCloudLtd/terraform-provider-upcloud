@@ -15,9 +15,9 @@ resource "upcloud_managed_object_storage_policy" "this" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "ReadWrite"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "ReadWrite"
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "s3:PutObject"
         ]
