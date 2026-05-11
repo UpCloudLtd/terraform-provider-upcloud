@@ -2,6 +2,8 @@ package kubernetestests
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -35,6 +37,15 @@ func getLatestVersions(t *testing.T) (string, string) {
 		return v[0], v[0]
 	}
 	return v[n-2], v[n-1]
+}
+
+func hasPrefix(prefix string) resource.CheckResourceAttrWithFunc {
+	return func(value string) error {
+		if strings.HasPrefix(value, prefix) {
+			return nil
+		}
+		return fmt.Errorf("unexpected node group name to have prefix %q, got: %s", prefix, value)
+	}
 }
 
 func TestAccUpcloudKubernetes(t *testing.T) {
@@ -78,7 +89,8 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
 					resource.TestCheckResourceAttr(cName, "version", s1Version),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
-					resource.TestCheckResourceAttr(g1Name, "name", "small"),
+					resource.TestCheckResourceAttr(g1Name, "name_prefix", "small-"),
+					resource.TestCheckResourceAttrWith(g1Name, "name", hasPrefix("small-")),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
 					resource.TestCheckResourceAttr(g1Name, "anti_affinity", "true"),
 					resource.TestCheckResourceAttr(g2Name, "anti_affinity", "false"),
