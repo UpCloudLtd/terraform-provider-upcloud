@@ -14,13 +14,13 @@ variable "router-name" {
 }
 
 variable "network-cidr" {
-  default    = "10.0.0.1/24"
-  type        = string
+  default = "10.0.0.1/24"
+  type    = string
 }
 
 variable "gateway-ip" {
-    default   = "10.0.0.1"
-  type        = string
+  default = "10.0.0.1"
+  type    = string
 }
 
 resource "upcloud_router" "r" {

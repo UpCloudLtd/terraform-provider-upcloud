@@ -14,7 +14,7 @@ resource "upcloud_managed_database_postgresql" "props" {
   plan  = "1x1xCPU-2GB-25GB"
   zone  = var.zone
   properties {
-    version = 17
+    version     = 17
     service_log = false
   }
 }

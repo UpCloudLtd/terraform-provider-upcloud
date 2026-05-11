@@ -19,22 +19,22 @@ variable "zone" {
 }
 
 resource "upcloud_network" "this" {
-    name = "${var.prefix}${var.suffix}"
-    zone = var.zone
+  name = "${var.prefix}${var.suffix}"
+  zone = var.zone
 
-    ip_network {
-        address = "${var.cidr}"
-        dhcp    = true
-        family  = "IPv4"
-    }
+  ip_network {
+    address = var.cidr
+    dhcp    = true
+    family  = "IPv4"
+  }
 }
 resource "upcloud_file_storage" "this" {
-    name              = "${var.prefix}${var.suffix}-s3"
-    size              = 250
-    zone              = var.zone
-    configured_status = "started"
+  name              = "${var.prefix}${var.suffix}-s3"
+  size              = 250
+  zone              = var.zone
+  configured_status = "started"
 
-    labels = {
-        single = "onlyone"
-    }
+  labels = {
+    single = "onlyone"
+  }
 }

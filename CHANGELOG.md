@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_kubernetes_node_group: `name_prefix` field to help generating a unique name for the node group. This enables using `create_then_destroy` lifecycle strategy with the node-group resource.
+
 ### Fixed
 
 - upcloud_server: use 64-bit integers when parsing server host value from JSON response. No changes to the resource schema.
