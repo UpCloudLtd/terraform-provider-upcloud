@@ -114,7 +114,6 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					}),
 					resource.TestCheckResourceAttr(g1Name, "utility_network_access", "true"),
 					resource.TestCheckResourceAttr(g2Name, "utility_network_access", "false"),
-
 					resource.TestCheckResourceAttr(g3Name, "name", "encrypted-custom"),
 					resource.TestCheckResourceAttr(g3Name, "plan", "custom"),
 					resource.TestCheckResourceAttr(g3Name, "storage_encryption", "data-at-rest"),
@@ -140,6 +139,15 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Config: testDataS2,
 				// Test cluster upgrade
 				ConfigVariables: variables(s2Version),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(cName, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(g1Name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(g2Name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(g3Name, plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction(g4Name, plancheck.ResourceActionCreate),
+					},
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "control_plane_ip_filter.#", "0"),
 					resource.TestCheckResourceAttr(cName, "version", s2Version),
