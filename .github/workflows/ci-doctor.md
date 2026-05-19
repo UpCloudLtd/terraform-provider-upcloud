@@ -7,10 +7,10 @@ description: |
 
 on:
   workflow_run:
-    workflows: ["Daily Perf Improver", "Daily Test Coverage Improver"]  # Monitor the CI workflow specifically
+    workflows: ["Lint", "Terraform"]
     types:
       - completed
-    branches:
+    branches-ignore:
       - main
 
 # Only trigger for failures - check in the workflow body
@@ -21,9 +21,6 @@ permissions: read-all
 network: defaults
 
 safe-outputs:
-  create-issue:
-    title-prefix: "[ci-doctor] "
-    labels: [automation, ci]
   add-comment:
 
 tools:
