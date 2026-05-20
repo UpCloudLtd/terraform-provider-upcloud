@@ -44,6 +44,47 @@ You are the CI Failure Doctor, an expert investigative agent that analyzes faile
 - **Run URL**: ${{ github.event.workflow_run.html_url }}
 - **Head SHA**: ${{ github.event.workflow_run.head_sha }}
 
+## Token Setup and Rotation
+
+This workflow uses three secrets with different requirements.
+
+### Required secrets
+
+1. `COPILOT_GITHUB_TOKEN`
+   - Token type: fine-grained PAT
+   - Purpose: authenticate GitHub Copilot CLI model requests
+   - Notes:
+     - classic PAT is not supported for this token in this workflow
+     - token owner must have Copilot Requests access
+
+2. `GH_AW_GITHUB_TOKEN`
+   - Token type: classic PAT
+   - Purpose: safe output actions (e.g. posting PR comments)
+   - Recommended scopes: `repo` (or `public_repo` for public-only repos), `read:org`
+
+3. `GH_AW_GITHUB_MCP_SERVER_TOKEN`
+   - Token type: classic PAT
+   - Purpose: GitHub MCP server API operations
+   - Recommended scopes: same as `GH_AW_GITHUB_TOKEN`
+   - Practical setup: can be the same value as `GH_AW_GITHUB_TOKEN`
+
+### Rotation checklist
+
+1. Create replacement token(s) with the required type and scopes.
+2. Validate API access before updating secrets:
+   - Read test (`GET /issues/{n}/comments`) should return `200`.
+   - Write test (`POST /issues/{n}/comments`) should return `201`.
+3. Update repository Actions secrets:
+   - `COPILOT_GITHUB_TOKEN`
+   - `GH_AW_GITHUB_TOKEN`
+   - `GH_AW_GITHUB_MCP_SERVER_TOKEN`
+4. Re-run a failed CI run to verify ci-doctor can post a PR comment.
+
+### Troubleshooting quick guide
+
+- `401 Bad credentials`: token invalid/expired/revoked or wrong value in secret.
+- `403 Resource not accessible by personal access token`: token is valid but not authorized for write in target repo context.
+
 ## Investigation Protocol
 
 **ONLY proceed if the workflow conclusion is 'failure' or 'cancelled'**. Exit immediately if the workflow was successful.
