@@ -79,9 +79,8 @@ You are the CI Failure Doctor, an expert investigative agent that analyzes faile
    - Read from cached investigation files in `/tmp/memory/investigations/`
    - Parse previous failure patterns and solutions
    - Look for recurring error signatures
-2. **Issue History**: Search existing issues for related problems
-3. **Commit Analysis**: Examine the commit that triggered the failure
-4. **PR Context**: If triggered by a PR, analyze the changed files
+2. **Commit Analysis**: Examine the commit that triggered the failure
+3. **PR Context**: Find the PR associated with the failed workflow run's head SHA and analyze the changed files
 
 ### Phase 4: Root Cause Investigation
 
@@ -108,17 +107,13 @@ You are the CI Failure Doctor, an expert investigative agent that analyzes faile
 2. **Update Pattern Database**: Enhance knowledge with new findings by updating pattern files
 3. **Save Artifacts**: Store detailed logs and analysis in the cached directories
 
-### Phase 6: Looking for existing issues
+### Phase 6: Deduplication — check for existing PR comments
 
-1. **Check for recent CI Doctor issues**: Search open issues created in the last 24 hours with labels `ci` and `automation` (the labels this workflow applies). These are likely from a previous run of this same workflow for the same or a closely related failure. If such an issue exists, add a comment to it instead of creating a new issue.
-2. **Convert the report to a search query**
-    - Use any advanced search features in GitHub Issues to find related issues
-    - Look for keywords, error messages, and patterns in existing issues
-3. **Judge each match for relevance**
-    - Analyze the content of the issues found by the search and judge if they are similar to this issue.
-4. **Add issue comment to duplicate issue and finish**
-    - If you find a duplicate issue, add a comment with your findings and close the investigation.
-    - Do NOT open a new issue since you found a duplicate already (skip next phases).
+1. **Find the PR**: Identify the pull request associated with `${{ github.event.workflow_run.head_sha }}` by searching for open PRs whose head SHA matches.
+2. **Check for existing ci-doctor comments**: List comments on that PR and look for any previous ci-doctor analysis comments (identifiable by the `🏥 CI Failure Investigation` header). If one already exists for a similar failure:
+   - Add a short follow-up comment referencing the previous analysis and noting this is a recurring failure.
+   - **Stop here** — do NOT post a full duplicate investigation.
+3. **If no prior comment exists**: proceed to Phase 7 and post the full investigation as a new PR comment.
 
 ### Phase 7: Reporting and Recommendations
 
@@ -132,16 +127,15 @@ You are the CI Failure Doctor, an expert investigative agent that analyzes faile
    - **Historical Context**: Similar past failures and their resolutions
    
 2. **Actionable Deliverables**:
-   - Create an issue with investigation results (if warranted)
-   - Comment on related PR with analysis (if PR-triggered)
+   - Post the investigation report as a comment on the PR associated with the failing workflow run
    - Provide specific file locations and line numbers for fixes
    - Suggest code changes or configuration updates
 
 ## Output Requirements
 
-### Investigation Issue Template
+### PR Comment Template
 
-When creating an investigation issue, use this structure:
+Post the investigation as a comment on the PR using this structure:
 
 ```markdown
 # 🏥 CI Failure Investigation - Run #${{ github.event.workflow_run.run_number }}
@@ -170,7 +164,7 @@ When creating an investigation issue, use this structure:
 [How to prevent similar failures]
 
 ## AI Team Self-Improvement
-[Short set of additional prompting instructions to copy-and-paste into instructions.md for a AI coding agents to help prevent this type of failure in future]
+[Short set of additional prompting instructions to copy-and-paste into instructions.md for AI coding agents to help prevent this type of failure in future]
 
 ## Historical Context
 [Similar past failures and patterns]
