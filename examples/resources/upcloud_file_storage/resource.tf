@@ -29,6 +29,15 @@ resource "upcloud_file_storage" "example" {
   }
 }
 
+# Encrypted file storage — encryption is set at creation and cannot be changed.
+resource "upcloud_file_storage" "encrypted" {
+  name              = "example-encrypted-file-storage"
+  size              = 250
+  zone              = "fi-hel2"
+  configured_status = "stopped"
+  encrypt           = true
+}
+
 resource "upcloud_file_storage_share" "example" {
   file_storage = upcloud_file_storage.example.id
   name         = "write-to-project"
