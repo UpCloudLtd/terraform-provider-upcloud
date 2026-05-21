@@ -16,6 +16,9 @@ resource "upcloud_file_storage" "example" {
   zone              = "fi-hel2"
   configured_status = "stopped"
 
+  # Encryption is set at creation and cannot be changed.
+  encrypt           = true
+
   labels = {
     environment = "staging"
     customer    = "example-customer"

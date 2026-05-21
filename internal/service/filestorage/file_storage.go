@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -54,6 +55,7 @@ func (r *fileStorageResource) Configure(_ context.Context, req resource.Configur
 
 type fileStorageModel struct {
 	ID               types.String `tfsdk:"id"`
+	Encrypt          types.Bool   `tfsdk:"encrypt"`
 	Name             types.String `tfsdk:"name"`
 	Size             types.Int64  `tfsdk:"size"`
 	Zone             types.String `tfsdk:"zone"`
@@ -121,6 +123,15 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 			"labels": utils.LabelsAttribute("file storage"),
+			"encrypt": schema.BoolAttribute{
+				Description: "Sets if the file storage is encrypted at rest. Encryption can only be enabled at creation time and cannot be changed later. Defaults to `false`.",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"network": schema.SetNestedBlock{
@@ -163,6 +174,7 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 
 func setFileStorageModel(ctx context.Context, data *fileStorageModel, fileStorage *upcloud.FileStorage) diag.Diagnostics {
 	data.ID = types.StringValue(fileStorage.UUID)
+	data.Encrypt = types.BoolValue(fileStorage.Encrypted)
 	data.Name = types.StringValue(fileStorage.Name)
 	data.Size = types.Int64Value(int64(fileStorage.SizeGiB))
 	data.Zone = types.StringValue(fileStorage.Zone)
@@ -218,6 +230,7 @@ func (r *fileStorageResource) Create(ctx context.Context, req resource.CreateReq
 		SizeGiB:          int(data.Size.ValueInt64()),
 		Zone:             data.Zone.ValueString(),
 		ConfiguredStatus: upcloud.FileStorageConfiguredStatus(data.ConfiguredStatus.ValueString()),
+		Encrypted:        data.Encrypt.ValueBool(),
 		Labels:           utils.LabelsMapToSlice(labels),
 	}
 

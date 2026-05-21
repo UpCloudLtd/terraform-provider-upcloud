@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_file_storage: add `encrypt` attribute.
+
 ## [5.37.0] - 2026-05-12
 
 ### Added
