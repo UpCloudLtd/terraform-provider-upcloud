@@ -17,7 +17,7 @@ resource "upcloud_file_storage" "example" {
   configured_status = "stopped"
 
   # Encryption is set at creation and cannot be changed.
-  encrypt           = true
+  encrypt = true
 
   labels = {
     environment = "staging"
