@@ -16,6 +16,9 @@ resource "upcloud_file_storage" "example" {
   zone              = "fi-hel2"
   configured_status = "stopped"
 
+  # Encryption is set at creation and cannot be changed.
+  encrypt           = true
+
   labels = {
     environment = "staging"
     customer    = "example-customer"
@@ -27,15 +30,6 @@ resource "upcloud_file_storage" "example" {
     uuid       = upcloud_network.this.id
     ip_address = "172.16.8.11"
   }
-}
-
-# Encrypted file storage — encryption is set at creation and cannot be changed.
-resource "upcloud_file_storage" "encrypted" {
-  name              = "example-encrypted-file-storage"
-  size              = 250
-  zone              = "fi-hel2"
-  configured_status = "stopped"
-  encrypt           = true
 }
 
 resource "upcloud_file_storage_share" "example" {

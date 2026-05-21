@@ -124,7 +124,7 @@ func (r *fileStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"labels": utils.LabelsAttribute("file storage"),
 			"encrypt": schema.BoolAttribute{
-				Description: "Sets if the file storage is encrypted at rest. Encryption can only be enabled at creation time and cannot be changed later.",
+				Description: "Sets if the file storage is encrypted at rest. Encryption can only be enabled at creation time and cannot be changed later. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
@@ -230,7 +230,7 @@ func (r *fileStorageResource) Create(ctx context.Context, req resource.CreateReq
 		SizeGiB:          int(data.Size.ValueInt64()),
 		Zone:             data.Zone.ValueString(),
 		ConfiguredStatus: upcloud.FileStorageConfiguredStatus(data.ConfiguredStatus.ValueString()),
-		Encrypted:        !data.Encrypt.IsNull() && !data.Encrypt.IsUnknown() && data.Encrypt.ValueBool(),
+		Encrypted:        data.Encrypt.ValueBool(),
 		Labels:           utils.LabelsMapToSlice(labels),
 	}
 

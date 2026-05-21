@@ -3,13 +3,8 @@ variable "prefix" {
   type    = string
 }
 
-variable "suffix" {
-  default = "suffix"
-  type    = string
-}
-
 resource "upcloud_file_storage" "encrypted" {
-  name              = "${var.prefix}${var.suffix}-enc"
+  name              = "${var.prefix}-encrypted"
   size              = 250
   zone              = "fi-hel2"
   configured_status = "stopped"
