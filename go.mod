@@ -5,7 +5,8 @@ go 1.25.3
 require (
 	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.2-0.20260218111517-78b5a1eb8206
 	github.com/UpCloudLtd/upcloud-go-api/v8 v8.35.0
-	github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260325142902-ff360d09fd8a
+	github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260526083052-9ac542532f30
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-uuid v1.0.3
@@ -35,7 +36,6 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-checkpoint v0.5.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
