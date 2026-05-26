@@ -327,12 +327,11 @@ func (r *firewallRulesetRuleResource) Create(ctx context.Context, req resource.C
 		resp.Diagnostics.AddError("Unable to create firewall ruleset rule", utils.ErrorDiagnosticDetail(err))
 		return
 	}
-	if apiResp.JSON201 == nil {
-		status := "<nil response>"
-		if apiResp.HTTPResponse != nil {
-			status = apiResp.HTTPResponse.Status
-		}
-		resp.Diagnostics.AddError("Unable to create firewall ruleset rule", fmt.Sprintf("unexpected response: %s", status))
+	if apiResp.StatusCode() != http.StatusCreated {
+		resp.Diagnostics.AddError(
+			"Unable to create firewall ruleset rule",
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+		)
 		return
 	}
 
@@ -375,16 +374,15 @@ func (r *firewallRulesetRuleResource) Read(ctx context.Context, req resource.Rea
 		resp.Diagnostics.AddError("Unable to read firewall ruleset rule", utils.ErrorDiagnosticDetail(err))
 		return
 	}
-	if apiResp.HTTPResponse != nil && apiResp.HTTPResponse.StatusCode == http.StatusNotFound {
+	if apiResp.StatusCode() == http.StatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	if apiResp.JSON200 == nil {
-		status := "<nil response>"
-		if apiResp.HTTPResponse != nil {
-			status = apiResp.HTTPResponse.Status
-		}
-		resp.Diagnostics.AddError("Unable to read firewall ruleset rule", fmt.Sprintf("unexpected response: %s", status))
+	if apiResp.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError(
+			"Unable to read firewall ruleset rule",
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+		)
 		return
 	}
 
@@ -481,12 +479,11 @@ func (r *firewallRulesetRuleResource) Update(ctx context.Context, req resource.U
 		resp.Diagnostics.AddError("Unable to update firewall ruleset rule", utils.ErrorDiagnosticDetail(err))
 		return
 	}
-	if apiResp.JSON200 == nil {
-		status := "<nil response>"
-		if apiResp.HTTPResponse != nil {
-			status = apiResp.HTTPResponse.Status
-		}
-		resp.Diagnostics.AddError("Unable to update firewall ruleset rule", fmt.Sprintf("unexpected response: %s", status))
+	if apiResp.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError(
+			"Unable to update firewall ruleset rule",
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+		)
 		return
 	}
 
@@ -523,14 +520,10 @@ func (r *firewallRulesetRuleResource) Delete(ctx context.Context, req resource.D
 		resp.Diagnostics.AddError("Unable to delete firewall ruleset rule", utils.ErrorDiagnosticDetail(err))
 		return
 	}
-	if apiResp.HTTPResponse == nil {
-		resp.Diagnostics.AddError("Unable to delete firewall ruleset rule", "unexpected empty API response")
-		return
-	}
-	if apiResp.HTTPResponse.StatusCode != http.StatusNoContent && apiResp.HTTPResponse.StatusCode != http.StatusNotFound {
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
 		resp.Diagnostics.AddError(
 			"Unable to delete firewall ruleset rule",
-			fmt.Sprintf("unexpected response: %s", apiResp.HTTPResponse.Status),
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
 		)
 	}
 }
