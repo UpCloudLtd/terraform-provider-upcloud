@@ -72,6 +72,7 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 			"description": schema.StringAttribute{
 				Description: "Description of the firewall ruleset.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"stateful": schema.BoolAttribute{
 				Description: "Whether rules are evaluated statefully. Create-only in API.",
@@ -83,10 +84,12 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 			"enabled": schema.BoolAttribute{
 				Description: "Whether the ruleset is enabled.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"default_dns_rules_enabled": schema.BoolAttribute{
 				Description: "Whether default DNS rules are enabled.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"labels": schema.MapAttribute{
 				Description: "Ruleset labels as key/value pairs.",
@@ -118,7 +121,9 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 
 func toAPILabels(ctx context.Context, labels types.Map) (*[]v9.FirewallRulesetCreateLabel, error) {
 	if labels.IsNull() || labels.IsUnknown() {
-		return nil, nil
+		// Return pointer to empty slice instead of nil to explicitly clear labels
+		emptyLabels := []v9.FirewallRulesetCreateLabel{}
+		return &emptyLabels, nil
 	}
 
 	labelMap := map[string]string{}
@@ -188,18 +193,19 @@ func setRulesetState(ctx context.Context, state *firewallRulesetModel, api *v9.F
 		state.UpdatedAt = types.StringValue(api.UpdatedAt.String())
 	}
 
-	labels := map[string]string{}
-	if api.Labels != nil {
+	if api.Labels == nil || len(*api.Labels) == 0 {
+		state.Labels = types.MapNull(types.StringType)
+	} else {
+		labels := map[string]string{}
 		for _, l := range *api.Labels {
 			labels[l.Key] = l.Value
 		}
+		mapped, diags := types.MapValueFrom(ctx, types.StringType, labels)
+		if diags.HasError() {
+			return fmt.Errorf("unable to set labels")
+		}
+		state.Labels = mapped
 	}
-
-	mapped, diags := types.MapValueFrom(ctx, types.StringType, labels)
-	if diags.HasError() {
-		return fmt.Errorf("unable to set labels")
-	}
-	state.Labels = mapped
 
 	return nil
 }
@@ -250,10 +256,11 @@ func (r *firewallRulesetResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 	if apiResp.StatusCode() != http.StatusCreated {
-		resp.Diagnostics.AddError(
-			"Unable to create firewall ruleset",
-			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
-		)
+		detail := fmt.Sprintf("API returned unexpected status %s", apiResp.Status())
+		if apiResp.HTTPResponse != nil && apiResp.Body != nil {
+			detail = fmt.Sprintf("%s. Response: %s", detail, string(apiResp.Body))
+		}
+		resp.Diagnostics.AddError("Unable to create firewall ruleset", detail)
 		return
 	}
 
@@ -321,21 +328,22 @@ func (r *firewallRulesetResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	body := v9.ModifyFirewallRulesetJSONRequestBody{}
-	if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
-		body.Name = plan.Name.ValueStringPointer()
+	// API uses PATCH semantics: omitted optional fields keep their existing values.
+	// Always send: name (required) and labels (to allow clearing).
+	// Conditionally send: all optional fields only when explicitly set in config.
+	body := v9.ModifyFirewallRulesetJSONRequestBody{
+		Name:   plan.Name.ValueStringPointer(),
+		Labels: labels,
 	}
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+
+	if !plan.Description.IsNull() {
 		body.Description = plan.Description.ValueStringPointer()
 	}
-	if !plan.Enabled.IsNull() && !plan.Enabled.IsUnknown() {
+	if !plan.Enabled.IsNull() {
 		body.Enabled = plan.Enabled.ValueBoolPointer()
 	}
-	if !plan.DefaultDNSRulesEnabled.IsNull() && !plan.DefaultDNSRulesEnabled.IsUnknown() {
+	if !plan.DefaultDNSRulesEnabled.IsNull() {
 		body.DefaultDnsRulesEnabled = plan.DefaultDNSRulesEnabled.ValueBoolPointer()
-	}
-	if labels != nil {
-		body.Labels = labels
 	}
 
 	rulesetUUID, err := uuid.Parse(state.ID.ValueString())
@@ -378,15 +386,15 @@ func (r *firewallRulesetResource) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
-	apiResp, err := r.client.DeleteFirewallRulesetWithResponse(ctx, rulesetUUID)
+	apiResp, err := r.client.DeleteFirewallRuleset(ctx, rulesetUUID)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete firewall ruleset", utils.ErrorDiagnosticDetail(err))
 		return
 	}
-	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
+	if apiResp.StatusCode != http.StatusNoContent && apiResp.StatusCode != http.StatusNotFound {
 		resp.Diagnostics.AddError(
 			"Unable to delete firewall ruleset",
-			fmt.Sprintf("API returned unexpected status %s", apiResp.Status()),
+			fmt.Sprintf("API returned unexpected status %s", apiResp.Status),
 		)
 	}
 }
