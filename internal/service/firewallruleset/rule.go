@@ -8,6 +8,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -126,11 +127,17 @@ func (r *firewallRulesetRuleResource) Schema(_ context.Context, _ resource.Schem
 				Description: "Rule order position.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 1000),
+				},
 			},
 			"icmp_type": schema.Int64Attribute{
 				Description: "ICMP type.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.Int64{
+					int64validator.Between(0, 255),
+				},
 			},
 			"source_address_cidr": schema.StringAttribute{
 				Description: "Source CIDR.",
@@ -151,11 +158,17 @@ func (r *firewallRulesetRuleResource) Schema(_ context.Context, _ resource.Schem
 				Description: "Source port range start.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 65535),
+				},
 			},
 			"source_port_end": schema.Int64Attribute{
 				Description: "Source port range end.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 65535),
+				},
 			},
 			"destination_address_cidr": schema.StringAttribute{
 				Description: "Destination CIDR.",
@@ -176,11 +189,17 @@ func (r *firewallRulesetRuleResource) Schema(_ context.Context, _ resource.Schem
 				Description: "Destination port range start.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 65535),
+				},
 			},
 			"destination_port_end": schema.Int64Attribute{
 				Description: "Destination port range end.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 65535),
+				},
 			},
 		},
 	}
@@ -443,7 +462,7 @@ func (r *firewallRulesetRuleResource) Update(ctx context.Context, req resource.U
 	if !plan.Position.IsNull() && plan.Position.ValueInt64() != 0 {
 		body.Position = plan.Position.ValueInt64Pointer()
 	}
-	if !plan.ICMPType.IsNull() && plan.ICMPType.ValueInt64() != 0 {
+	if !plan.ICMPType.IsNull() && plan.ICMPType.ValueInt64() >= 0 {
 		body.IcmpType = plan.ICMPType.ValueInt64Pointer()
 	}
 	if !plan.SourceAddressCIDR.IsNull() && plan.SourceAddressCIDR.ValueString() != "" {
