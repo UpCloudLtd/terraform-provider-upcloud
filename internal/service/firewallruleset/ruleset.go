@@ -145,7 +145,7 @@ func toAPILabels(ctx context.Context, labels types.Map) (*[]v9.FirewallRulesetCr
 	return &apiLabels, nil
 }
 
-func setRulesetState(ctx context.Context, state *firewallRulesetModel, api *v9.FirewallRulesetDetailResponse) error {
+func setRulesetValues(ctx context.Context, state *firewallRulesetModel, api *v9.FirewallRulesetDetailResponse) error {
 	if api.Uuid != nil {
 		state.ID = types.StringValue(api.Uuid.String())
 	}
@@ -264,7 +264,7 @@ func (r *firewallRulesetResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	if err := setRulesetState(ctx, &plan, apiResp.JSON201); err != nil {
+	if err := setRulesetValues(ctx, &plan, apiResp.JSON201); err != nil {
 		resp.Diagnostics.AddError("Unable to create firewall ruleset", utils.ErrorDiagnosticDetail(err))
 		return
 	}
@@ -306,7 +306,7 @@ func (r *firewallRulesetResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	if err := setRulesetState(ctx, &state, apiResp.JSON200); err != nil {
+	if err := setRulesetValues(ctx, &state, apiResp.JSON200); err != nil {
 		resp.Diagnostics.AddError("Unable to read firewall ruleset", utils.ErrorDiagnosticDetail(err))
 		return
 	}
@@ -365,7 +365,7 @@ func (r *firewallRulesetResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	if err := setRulesetState(ctx, &plan, apiResp.JSON200); err != nil {
+	if err := setRulesetValues(ctx, &plan, apiResp.JSON200); err != nil {
 		resp.Diagnostics.AddError("Unable to update firewall ruleset", utils.ErrorDiagnosticDetail(err))
 		return
 	}
