@@ -149,10 +149,11 @@ type templateModel struct {
 }
 
 type loginModel struct {
-	User             types.String `tfsdk:"user"`
-	Keys             types.List   `tfsdk:"keys"`
-	CreatePassword   types.Bool   `tfsdk:"create_password"`
-	PasswordDelivery types.String `tfsdk:"password_delivery"`
+	User              types.String `tfsdk:"user"`
+	Keys              types.List   `tfsdk:"keys"`
+	CreatePassword    types.Bool   `tfsdk:"create_password"`
+	GeneratedPassword types.String `tfsdk:"generated_password"`
+	PasswordDelivery  types.String `tfsdk:"password_delivery"`
 }
 
 type simpleBackupModel struct {
@@ -552,6 +553,13 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Default:     booldefault.StaticBool(false),
 							PlanModifiers: []planmodifier.Bool{
 								boolplanmodifier.UseStateForUnknown(),
+							},
+						},
+						"generated_password": schema.StringAttribute{
+							Description: "The generated password for the server",
+							Computed:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
 							},
 						},
 						"password_delivery": schema.StringAttribute{
@@ -1145,6 +1153,16 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 		templates[0].ID = types.StringValue(server.StorageDevices[0].UUID)
 		data.Template, diags = types.ListValueFrom(ctx, data.Template.ElementType(ctx), templates)
+		resp.Diagnostics.Append(diags...)
+	}
+
+	if !data.Login.IsNull() {
+		var login []loginModel
+		resp.Diagnostics.Append(data.Login.ElementsAs(ctx, &login, false)...)
+		if len(login) > 0 {
+			login[0].GeneratedPassword = types.StringValue(server.GeneratedPassword)
+		}
+		data.Login, diags = types.SetValueFrom(ctx, data.Login.ElementType(ctx), login)
 		resp.Diagnostics.Append(diags...)
 	}
 
