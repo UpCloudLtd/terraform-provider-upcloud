@@ -91,17 +91,17 @@ make testacc
 
 In order to run an individual acceptance test, the '-run' flag can be used
 together with a regular expression.  The following example uses a regular
-expression matching single test called 'TestUpcloudServer_basic'.
+expression matching single test called 'TestAccUpCloudServer_basic'.
 
 ```sh
-make testacc TESTARGS='-run=TestUpcloudServer_basic'
+make testacc TESTARGS='-run=TestAccUpCloudServer_basic'
 ```
 
 The following example uses a regular expression to execute a grouping of basic
 acceptance tests.
 
 ```sh
-make testacc TESTARGS='-run=TestUpcloudServer_*'
+make testacc TESTARGS='-run=TestAccUpCloudServer_*'
 ```
 
 ### CI acceptance test matrix (pull requests)
