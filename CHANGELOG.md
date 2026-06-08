@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_server: add `password` attribute to `login` block for retrieving system generated one-time password.
+
+### Changed
+
+- upcloud_server: change `login` block from set to list to avoid `password` attribute causing resource to be recreated. The maximum length for `login` block is one, so this is not a breaking change.
+
 ## [5.38.0] - 2026-05-21
 
 ### Added

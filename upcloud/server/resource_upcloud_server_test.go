@@ -11,7 +11,9 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
+	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -35,7 +37,7 @@ func configCustomPlan(cpu, mem int) string {
 		}`, cpu, mem, upcloud.DebianTemplateUUID)
 }
 
-func TestUpcloudServer_customPlan(t *testing.T) {
+func TestAccUpCloudServer_customPlan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
@@ -60,7 +62,7 @@ func TestUpcloudServer_customPlan(t *testing.T) {
 	})
 }
 
-func TestUpcloudServer_basic(t *testing.T) {
+func TestAccUpCloudServer_basic(t *testing.T) {
 	config := fmt.Sprintf(`
 		resource "upcloud_server" "this" {
 			zone     = "fi-hel1"
@@ -146,7 +148,7 @@ func configSimple(hostname, plan, zone string) string {
 	}`, hostname, plan, zone, upcloud.DebianTemplateUUID)
 }
 
-func TestUpcloudServer_plan(t *testing.T) {
+func TestAccUpCloudServer_plan(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
@@ -234,7 +236,7 @@ func configBackupRule(time, interval string, retention int) string {
 		}`, upcloud.DebianTemplateUUID, time, interval, retention)
 }
 
-func TestUpcloudServer_simpleBackup(t *testing.T) {
+func TestAccUpCloudServer_simpleBackup(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
@@ -291,7 +293,7 @@ func TestUpcloudServer_simpleBackup(t *testing.T) {
 	})
 }
 
-func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
+func TestAccUpCloudServer_simpleBackupWithStorage(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
@@ -379,6 +381,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
@@ -425,6 +432,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
@@ -467,6 +479,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "simple_backup.#", "0"),
@@ -518,6 +535,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.0.time", "2200"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.0.interval", "daily"),
@@ -556,7 +578,7 @@ func configTags(tags ...string) string {
 		}`, tagsStr, upcloud.DebianTemplateUUID)
 }
 
-func TestUpcloudServer_updateTags(t *testing.T) {
+func TestAccUpCloudServer_updateTags(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
@@ -621,7 +643,7 @@ func TestUpcloudServer_updateTags(t *testing.T) {
 	})
 }
 
-func TestUpcloudServer_networkInterface(t *testing.T) {
+func TestAccUpCloudServer_networkInterface(t *testing.T) {
 	var serverID string
 	// Generate once per test so all steps use the same base octet and network addresses are stable.
 	baseOctet := 10 + rand.IntN(230)
@@ -903,7 +925,7 @@ func testAccServerNetworkInterfaceConfig(baseOctet int, nis ...networkInterface)
 	return builder.String()
 }
 
-func TestUpcloudServer_createPreChecks(t *testing.T) {
+func TestAccUpCloudServer_createPreChecks(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
@@ -1030,7 +1052,7 @@ func TestEndToEndServer_HotResize(t *testing.T) {
 	})
 }
 
-func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
+func TestAccUpCloudServer_hotResizeWithNetworkChange(t *testing.T) {
 	// Skip if we're not running acceptance tests
 	if os.Getenv("TF_ACC") == "" {
 		t.Skip("Skipping hot resize with network change test as TF_ACC is not set")
@@ -1136,7 +1158,7 @@ func TestUpcloudServer_hotResizeWithNetworkChange(t *testing.T) {
 	})
 }
 
-func TestUpcloudServer_metadataChange(t *testing.T) {
+func TestAccUpCloudServer_metadataChange(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_metadata_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/server_metadata_s2.tf")
 
@@ -1154,6 +1176,11 @@ func TestUpcloudServer_metadataChange(t *testing.T) {
 			},
 			{
 				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(serverName, plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(serverName, "metadata", "true"),
 				),
@@ -1162,7 +1189,44 @@ func TestUpcloudServer_metadataChange(t *testing.T) {
 	})
 }
 
-func TestUpcloudServer_storageDetachAttach(t *testing.T) {
+func TestAccUpCloudServer_oneTimePassword(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_otp.tf")
+
+	serverName := "upcloud_server.this"
+
+	var otp string
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(serverName, "login.0.password"),
+					upcloud.CheckStringDoesNotChange(serverName, "login.0.password", &otp),
+				),
+			},
+			{
+				Config: testDataS1,
+				ConfigVariables: map[string]config.Variable{
+					"step": config.StringVariable("modified-"),
+				},
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(serverName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(serverName, "login.0.password"),
+					upcloud.CheckStringDoesNotChange(serverName, "login.0.password", &otp),
+				),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudServer_storageDetachAttach(t *testing.T) {
 	// Step 1: shared storage attached to server_a
 	// Step 2: shared storage moved to server_b (detach from server_a, attach to server_b concurrently)
 	s1 := utils.ReadTestDataFile(t, "testdata/server_storage_detach_attach_s1.tf")

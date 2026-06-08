@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccUpcloudServerNetwork(t *testing.T) {
+func TestAccUpCloudServerNetwork(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/server_s2.tf")
 
@@ -47,7 +47,7 @@ func TestAccUpcloudServerNetwork(t *testing.T) {
 	})
 }
 
-func TestAccUpcloudServerInterfaceMatching(t *testing.T) {
+func TestAccUpCloudServerInterfaceMatching(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_ifaces_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/server_ifaces_s2.tf")
 	testDataS3 := utils.ReadTestDataFile(t, "testdata/server_ifaces_s3.tf")
