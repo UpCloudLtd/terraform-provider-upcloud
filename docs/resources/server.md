@@ -83,7 +83,7 @@ resource "upcloud_server" "example" {
 
 ### Blocks
 
-- `login` (Block Set) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
+- `login` (Block List) Configure access credentials to the server (see [below for nested schema](#nestedblock--login))
 - `network_interface` (Block List) One or more blocks describing the network interfaces of the server.
 
     In addition to list order, the configured network interfaces are matched to the server's actual network interfaces by `index` and `ip_address` fields. This is to avoid public and utility network interfaces being re-assigned when the server is updated. This might result to inaccurate diffs in the plan, when interfaces are re-ordered or when interface is removed from the middle of the list.
@@ -110,6 +110,10 @@ Optional Attributes:
 - `keys` (List of String) A list of ssh keys to access the server
 - `password_delivery` (String) The delivery method for the server's root password (one of `none`, `email` or `sms`)
 - `user` (String) Username to be create to access the server
+
+Read-Only:
+
+- `password` (String, Sensitive) The generated one-time password for the server
 
 
 <a id="nestedblock--network_interface"></a>
