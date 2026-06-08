@@ -11,7 +11,9 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
+	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -379,6 +381,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
@@ -425,6 +432,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_server.this", "simple_backup.*", map[string]string{
@@ -467,6 +479,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_storage.addon", "backup_rule.#", "0"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "simple_backup.#", "0"),
@@ -518,6 +535,11 @@ func TestUpcloudServer_simpleBackupWithStorage(t *testing.T) {
 						}
 					}
 				`,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_server.this", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.0.time", "2200"),
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.backup_rule.0.interval", "daily"),
@@ -1154,8 +1176,50 @@ func TestUpcloudServer_metadataChange(t *testing.T) {
 			},
 			{
 				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(serverName, plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(serverName, "metadata", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccUpCloudServer_oneTimePassword(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/server_otp.tf")
+
+	serverName := "upcloud_server.this"
+
+	var otp string
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(serverName, "login.0.password"),
+					upcloud.CheckStringDoesNotChange(serverName, "login.0.password", &otp),
+				),
+			},
+			{
+				Config: testDataS1,
+				ConfigVariables: map[string]config.Variable{
+					"step": config.StringVariable("modified-"),
+				},
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(serverName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(serverName, "login.0.password"),
+					upcloud.CheckStringDoesNotChange(serverName, "login.0.password", &otp),
 				),
 			},
 		},
