@@ -559,10 +559,8 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 						"password": schema.StringAttribute{
 							Description: "The generated one-time password for the server",
 							Computed:    true,
-							// Sensitive: true seems to cause issues with RequiresReplace on the login block level. Thus, not used here.
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-							},
+							Sensitive:   true,
+							// PlanModifiers handled at the resource level because UseStateForUnknown here does not seem to work nicely with sensitive or null values.
 						},
 						"password_delivery": schema.StringAttribute{
 							Description: "The delivery method for the server's root password (one of `none`, `email` or `sms`)",
@@ -806,6 +804,32 @@ func (r *serverResource) updateNetworkInterfacesPlan(ctx context.Context, server
 	resp.Diagnostics.Append(diags...)
 }
 
+// Similar to attribute level UseStateForUnknown, but also copies null value from state and seems to work nicely with sensitive values.
+func (r *serverResource) updateOTPasswordPlan(ctx context.Context, state, plan *serverModel, resp *resource.ModifyPlanResponse) {
+	isCreate := state.ID.IsUnknown()
+
+	if plan.Login.IsNull() || isCreate {
+		return
+	}
+
+	var login []loginModel
+	resp.Diagnostics.Append(state.Login.ElementsAs(ctx, &login, false)...)
+	if len(login) == 0 {
+		return
+	}
+	stateLogin := login[0]
+
+	resp.Diagnostics.Append(plan.Login.ElementsAs(ctx, &login, false)...)
+	if len(login) == 0 {
+		return
+	}
+	login[0].Password = stateLogin.Password
+
+	var diags diag.Diagnostics
+	plan.Login, diags = types.ListValueFrom(ctx, plan.Login.ElementType(ctx), login)
+	resp.Diagnostics.Append(diags...)
+}
+
 func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	var plan *serverModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -841,6 +865,7 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 
 	r.updateTagsPlan(server, plan)
 	r.updateNetworkInterfacesPlan(ctx, server, state, plan, resp)
+	r.updateOTPasswordPlan(ctx, state, plan, resp)
 
 	// Host might change if server is migrated to different host, so update host here instead of using state for unknown.
 	var stateDevices, planDevices []storageDeviceModel
