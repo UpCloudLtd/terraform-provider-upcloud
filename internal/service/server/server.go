@@ -27,6 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -94,7 +95,7 @@ type serverModel struct {
 	Plan              types.String `tfsdk:"plan"`
 	StorageDevices    types.Set    `tfsdk:"storage_devices"`
 	Template          types.List   `tfsdk:"template"`
-	Login             types.Set    `tfsdk:"login"`
+	Login             types.List   `tfsdk:"login"`
 	SimpleBackup      types.Set    `tfsdk:"simple_backup"`
 	BootOrder         types.String `tfsdk:"boot_order"`
 	HotResize         types.Bool   `tfsdk:"hot_resize"`
@@ -149,11 +150,11 @@ type templateModel struct {
 }
 
 type loginModel struct {
-	User              types.String `tfsdk:"user"`
-	Keys              types.List   `tfsdk:"keys"`
-	CreatePassword    types.Bool   `tfsdk:"create_password"`
-	GeneratedPassword types.String `tfsdk:"generated_password"`
-	PasswordDelivery  types.String `tfsdk:"password_delivery"`
+	User             types.String `tfsdk:"user"`
+	Keys             types.List   `tfsdk:"keys"`
+	CreatePassword   types.Bool   `tfsdk:"create_password"`
+	Password         types.String `tfsdk:"password"`
+	PasswordDelivery types.String `tfsdk:"password_delivery"`
 }
 
 type simpleBackupModel struct {
@@ -527,13 +528,13 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 					},
 				},
 			},
-			"login": schema.SetNestedBlock{
+			"login": schema.ListNestedBlock{
 				Description: "Configure access credentials to the server",
-				PlanModifiers: []planmodifier.Set{
-					setplanmodifier.RequiresReplace(),
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
 				},
-				Validators: []validator.Set{
-					setvalidator.SizeAtMost(1),
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
 				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
@@ -555,9 +556,10 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 								boolplanmodifier.UseStateForUnknown(),
 							},
 						},
-						"generated_password": schema.StringAttribute{
-							Description: "The generated password for the server",
+						"password": schema.StringAttribute{
+							Description: "The generated one-time password for the server",
 							Computed:    true,
+							// Sensitive: true seems to cause issues with RequiresReplace on the login block level. Thus, not used here.
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.UseStateForUnknown(),
 							},
@@ -680,7 +682,7 @@ func (r *serverResource) UpgradeState(_ context.Context) map[int64]resource.Stat
 					if len(login) > 0 && login[0].User.ValueString() == "" {
 						login[0].User = types.StringNull()
 
-						data.Login, _ = types.SetValueFrom(ctx, data.Login.ElementType(ctx), login)
+						data.Login, _ = types.ListValueFrom(ctx, data.Login.ElementType(ctx), login)
 					}
 				}
 
@@ -1043,6 +1045,9 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 	if !data.Login.IsNull() {
 		var login []loginModel
 		resp.Diagnostics.Append(data.Login.ElementsAs(ctx, &login, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
 		loginOpts, deliveryMethod, diags := buildLoginOpts(ctx, login[0])
 		resp.Diagnostics.Append(diags...)
@@ -1160,9 +1165,13 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 		var login []loginModel
 		resp.Diagnostics.Append(data.Login.ElementsAs(ctx, &login, false)...)
 		if len(login) > 0 {
-			login[0].GeneratedPassword = types.StringValue(server.GeneratedPassword)
+			if server.OneTimePassword != "" {
+				login[0].Password = types.StringValue(server.OneTimePassword)
+			} else {
+				login[0].Password = types.StringNull()
+			}
 		}
-		data.Login, diags = types.SetValueFrom(ctx, data.Login.ElementType(ctx), login)
+		data.Login, diags = types.ListValueFrom(ctx, data.Login.ElementType(ctx), login)
 		resp.Diagnostics.Append(diags...)
 	}
 
