@@ -58,9 +58,6 @@ func (r *fileStorageShareACLResource) Schema(_ context.Context, _ resource.Schem
 			"id": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "UUID of the file storage share ACL.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"file_storage": schema.StringAttribute{
 				Description: "UUID of the file storage service.",
@@ -171,10 +168,21 @@ func (r *fileStorageShareACLResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
+	var fileStorage, shareName, name string
+	err := utils.UnmarshalID(data.ID.ValueString(), &fileStorage, &shareName, &name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to unmarshal File storage share ACL ID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
+	}
+
 	fileStorageShareACL, err := r.client.GetFileStorageShareACL(ctx, &request.GetFileStorageShareACLRequest{
-		ServiceUUID: data.FileStorage.ValueString(),
-		ShareName:   data.ShareName.ValueString(),
-		ACLName:     data.Name.ValueString(),
+		ServiceUUID: fileStorage,
+		ShareName:   shareName,
+		ACLName:     name,
 	})
 	if err != nil {
 		if utils.IsNotFoundError(err) {
@@ -200,11 +208,17 @@ func (r *fileStorageShareACLResource) Update(ctx context.Context, req resource.U
 		return
 	}
 
+	fileStorage := state.FileStorage.ValueString()
+	shareName := state.ShareName.ValueString()
+	stateName := state.Name.ValueString()
+	planName := plan.Name.ValueString()
+
 	patchRequest := &request.ModifyFileStorageShareACLRequest{
-		ServiceUUID: state.FileStorage.ValueString(),
-		ShareName:   state.ShareName.ValueString(),
-		ACLName:     state.Name.ValueString(),
+		ServiceUUID: fileStorage,
+		ShareName:   shareName,
+		ACLName:     stateName,
 		ModifyFileStorageShareACL: request.ModifyFileStorageShareACL{
+			Name:   upcloud.StringPtr(planName),
 			Target: upcloud.StringPtr(plan.Target.ValueString()),
 			Permission: func() *upcloud.FileStorageShareACLPermission {
 				p := upcloud.FileStorageShareACLPermission(plan.Permission.ValueString())
@@ -217,6 +231,8 @@ func (r *fileStorageShareACLResource) Update(ctx context.Context, req resource.U
 		resp.Diagnostics.AddError("Error updating file storage share ACL", utils.ErrorDiagnosticDetail(err))
 		return
 	}
+
+	plan.ID = types.StringValue(utils.MarshalID(fileStorage, shareName, planName))
 
 	resp.Diagnostics.Append(setFileStorageShareACLModel(ctx, &plan, fileStorageShareACL)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

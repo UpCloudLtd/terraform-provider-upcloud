@@ -11,8 +11,8 @@ import (
 )
 
 func TestAccUpcloudGateway(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "../testdata/upcloud_gateway/gateway_s1.tf")
-	testDataS2 := utils.ReadTestDataFile(t, "../testdata/upcloud_gateway/gateway_s2.tf")
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/gateway_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/gateway_s2.tf")
 
 	name := "upcloud_gateway.this"
 	conn1Name := "upcloud_gateway_connection.this"
@@ -165,7 +165,7 @@ func TestAccUpcloudGateway(t *testing.T) {
 }
 
 func TestAccUpcloudGateway_LabelsValidation(t *testing.T) {
-	testDataE := utils.ReadTestDataFile(t, "../testdata/upcloud_gateway/gateway_e.tf")
+	testDataE := utils.ReadTestDataFile(t, "testdata/gateway_e.tf")
 
 	labelsPlaceholder := `TEST_KEY = "TEST_VALUE"`
 	stepsData := []struct {

@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash"
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"os/exec"
 	"path"
