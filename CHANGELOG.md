@@ -9,6 +9,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_firewall_ruleset: new resource for managing SDN firewall rulesets
 - upcloud_firewall_ruleset_rule: new resource for managing individual firewall rules within rulesets
+- upcloud_managed_object_storage_*: migrated to v9 API client except service resource
 
 ## [5.36.3] - 2026-04-24
 
