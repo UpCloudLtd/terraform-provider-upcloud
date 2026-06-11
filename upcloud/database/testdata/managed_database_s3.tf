@@ -163,9 +163,9 @@ resource "upcloud_managed_database_valkey" "v1" {
 }
 
 resource "upcloud_managed_database_user" "db_user_1" {
-  service        = upcloud_managed_database_mysql.msql1.id
-  username       = "somename"
-  password       = "Superpass890"
+  service  = upcloud_managed_database_mysql.msql1.id
+  username = "somename"
+  password = "Superpass890"
 }
 
 resource "upcloud_managed_database_user" "db_user_2" {

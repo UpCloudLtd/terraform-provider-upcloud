@@ -135,6 +135,7 @@ Optional Attributes:
 - `net_buffer_length` (Number) Start sizes of connection buffer and result buffer. Default is 16384 (16K). Changing this parameter will lead to a restart of the MySQL service.
 - `net_read_timeout` (Number) The number of seconds to wait for more data from a connection before aborting the read.
 - `net_write_timeout` (Number) The number of seconds to wait for a block to be written to a connection before aborting the write.
+- `performance_schema_events_statements_history_size` (Number) The number of rows per thread in the events_statements_history table. Changing this parameter will lead to a restart of the MySQL service.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.

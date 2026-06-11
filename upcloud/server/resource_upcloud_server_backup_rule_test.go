@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-// TestUpcloudServer_removeBackupRule tests the scenario where a backup_rule
+// TestAccUpCloudServer_removeBackupRule tests the scenario where a backup_rule
 // is removed from a template after the server is created.
-func TestUpcloudServer_removeBackupRule(t *testing.T) {
+func TestAccUpCloudServer_removeBackupRule(t *testing.T) {
 	s1 := utils.ReadTestDataFile(t, "testdata/server_backup_rule_s1.tf")
 	s2 := utils.ReadTestDataFile(t, "testdata/server_backup_rule_s2.tf")
 

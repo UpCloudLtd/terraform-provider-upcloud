@@ -2,6 +2,8 @@ package kubernetestests
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -35,6 +37,15 @@ func getLatestVersions(t *testing.T) (string, string) {
 		return v[0], v[0]
 	}
 	return v[n-2], v[n-1]
+}
+
+func hasPrefix(prefix string) resource.CheckResourceAttrWithFunc {
+	return func(value string) error {
+		if strings.HasPrefix(value, prefix) {
+			return nil
+		}
+		return fmt.Errorf("expected value to have prefix %q, got: %s", prefix, value)
+	}
 }
 
 func TestAccUpcloudKubernetes(t *testing.T) {
@@ -78,7 +89,8 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
 					resource.TestCheckResourceAttr(cName, "version", s1Version),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
-					resource.TestCheckResourceAttr(g1Name, "name", "small"),
+					resource.TestCheckResourceAttr(g1Name, "name_prefix", "small"),
+					resource.TestCheckResourceAttrWith(g1Name, "name", hasPrefix("small-")),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
 					resource.TestCheckResourceAttr(g1Name, "anti_affinity", "true"),
 					resource.TestCheckResourceAttr(g2Name, "anti_affinity", "false"),
@@ -102,7 +114,6 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					}),
 					resource.TestCheckResourceAttr(g1Name, "utility_network_access", "true"),
 					resource.TestCheckResourceAttr(g2Name, "utility_network_access", "false"),
-
 					resource.TestCheckResourceAttr(g3Name, "name", "encrypted-custom"),
 					resource.TestCheckResourceAttr(g3Name, "plan", "custom"),
 					resource.TestCheckResourceAttr(g3Name, "storage_encryption", "data-at-rest"),
@@ -128,6 +139,15 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Config: testDataS2,
 				// Test cluster upgrade
 				ConfigVariables: variables(s2Version),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(cName, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(g1Name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(g2Name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(g3Name, plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction(g4Name, plancheck.ResourceActionCreate),
+					},
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "control_plane_ip_filter.#", "0"),
 					resource.TestCheckResourceAttr(cName, "version", s2Version),
