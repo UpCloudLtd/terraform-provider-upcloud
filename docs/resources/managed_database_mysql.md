@@ -138,6 +138,7 @@ Optional Attributes:
 - `performance_schema_events_statements_history_size` (Number) The number of rows per thread in the events_statements_history table. Changing this parameter will lead to a restart of the MySQL service.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
+- `relay_log_space_limit` (Number) The maximum amount of space in bytes to use for all relay logs while replicating from an external migration source. When the limit is reached, the replication I/O thread stops fetching relay log events until the SQL thread has caught up. Raise this to give a large migration a bigger relay-log budget; ensure the service disk is sized accordingly. The setting applies only on the node replicating from the external source; standby nodes always use the Aiven-managed default (the smaller of 5 GiB and 30% of the service disk), which is also used when this option is left unset. Changing this parameter will lead to a restart of the MySQL service.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 - `slow_query_log` (Boolean) Slow query log enables capturing of slow queries. Setting slow_query_log to false also truncates the mysql.slow_log table.
 - `sort_buffer_size` (Number) Sort buffer size in bytes for ORDER BY optimization. Default is 262144 (256K).
