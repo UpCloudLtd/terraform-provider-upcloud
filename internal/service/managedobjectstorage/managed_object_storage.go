@@ -245,9 +245,9 @@ func networkKey(n upcloud.ManagedObjectStorageNetwork) string {
 
 // hasRemovedNetworks reports whether any network in current is absent from desired.
 func hasRemovedNetworks(current, desired []upcloud.ManagedObjectStorageNetwork) bool {
-	desiredKeys := make(map[string]struct{}, len(desired))
+	desiredKeys := make(map[string]bool, len(desired))
 	for _, n := range desired {
-		desiredKeys[networkKey(n)] = struct{}{}
+		desiredKeys[networkKey(n)] = true
 	}
 	for _, n := range current {
 		if _, ok := desiredKeys[networkKey(n)]; !ok {
@@ -259,9 +259,9 @@ func hasRemovedNetworks(current, desired []upcloud.ManagedObjectStorageNetwork) 
 
 // retainedNetworks returns the networks from current that also appear in desired.
 func retainedNetworks(current, desired []upcloud.ManagedObjectStorageNetwork) []upcloud.ManagedObjectStorageNetwork {
-	desiredKeys := make(map[string]struct{}, len(desired))
+	desiredKeys := make(map[string]bool, len(desired))
 	for _, n := range desired {
-		desiredKeys[networkKey(n)] = struct{}{}
+		desiredKeys[networkKey(n)] = true
 	}
 	retained := make([]upcloud.ManagedObjectStorageNetwork, 0)
 	for _, n := range current {
