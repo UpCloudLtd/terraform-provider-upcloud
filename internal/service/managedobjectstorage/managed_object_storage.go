@@ -234,6 +234,44 @@ func setManagedObjectStorageValues(ctx context.Context, data *managedObjectStora
 	return respDiagnostics
 }
 
+// networkKey returns a string that uniquely identifies a managed object storage network.
+func networkKey(n upcloud.ManagedObjectStorageNetwork) string {
+	uuid := ""
+	if n.UUID != nil {
+		uuid = *n.UUID
+	}
+	return fmt.Sprintf("%s/%s/%s/%s", n.Family, n.Name, n.Type, uuid)
+}
+
+// hasRemovedNetworks reports whether any network in current is absent from desired.
+func hasRemovedNetworks(current, desired []upcloud.ManagedObjectStorageNetwork) bool {
+	desiredKeys := make(map[string]bool, len(desired))
+	for _, n := range desired {
+		desiredKeys[networkKey(n)] = true
+	}
+	for _, n := range current {
+		if _, ok := desiredKeys[networkKey(n)]; !ok {
+			return true
+		}
+	}
+	return false
+}
+
+// retainedNetworks returns the networks from current that also appear in desired.
+func retainedNetworks(current, desired []upcloud.ManagedObjectStorageNetwork) []upcloud.ManagedObjectStorageNetwork {
+	desiredKeys := make(map[string]bool, len(desired))
+	for _, n := range desired {
+		desiredKeys[networkKey(n)] = true
+	}
+	retained := make([]upcloud.ManagedObjectStorageNetwork, 0)
+	for _, n := range current {
+		if _, ok := desiredKeys[networkKey(n)]; ok {
+			retained = append(retained, n)
+		}
+	}
+	return retained
+}
+
 func buildNetworks(ctx context.Context, dataNetworks types.Set) ([]upcloud.ManagedObjectStorageNetwork, diag.Diagnostics) {
 	var planNetworks []networkModel
 	respDiagnostics := dataNetworks.ElementsAs(ctx, &planNetworks, false)
@@ -361,6 +399,9 @@ func (r *managedObjectStorageResource) Update(ctx context.Context, req resource.
 	var data managedObjectStorageModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
+	var state managedObjectStorageModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -375,6 +416,38 @@ func (r *managedObjectStorageResource) Update(ctx context.Context, req resource.
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	stateNetworks, diags := buildNetworks(ctx, state.Network)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// The API returns 500 when private networks are swapped in a single PATCH: remove old
+	// networks first and wait for a stable state before adding the new ones.
+	if hasRemovedNetworks(stateNetworks, networks) {
+		intermediate := retainedNetworks(stateNetworks, networks)
+		intermReq := &request.ModifyManagedObjectStorageRequest{
+			UUID:             data.ID.ValueString(),
+			ConfiguredStatus: (*upcloud.ManagedObjectStorageConfiguredStatus)(data.ConfiguredStatus.ValueStringPointer()),
+			Labels:           &labelsSlice,
+			Name:             data.Name.ValueStringPointer(),
+			Networks:         &intermediate,
+		}
+		intermObjsto, err := r.client.ModifyManagedObjectStorage(ctx, intermReq)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to modify managed object storage",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return
+		}
+		_, intermDiags := r.waitForManagedObjectStorageState(ctx, intermObjsto)
+		resp.Diagnostics.Append(intermDiags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	apiReq := &request.ModifyManagedObjectStorageRequest{

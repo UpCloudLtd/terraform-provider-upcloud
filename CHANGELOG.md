@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_object_storage: fix 500 error when swapping a private networks
+
 ## [5.39.0] - 2026-06-09
 
 ### Added
