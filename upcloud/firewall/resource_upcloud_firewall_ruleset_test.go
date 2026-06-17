@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccUpCloudFirewallRuleset_basic(t *testing.T) {
@@ -30,7 +29,6 @@ func TestAccUpCloudFirewallRuleset_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetName),
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "description", "Test firewall ruleset"),
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "enabled", "true"),
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "stateful", "true"),
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "default_dns_rules_enabled", "false"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "id"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "version"),
@@ -164,116 +162,48 @@ func TestAccUpCloudFirewallRuleset_labels(t *testing.T) {
 	})
 }
 
-func TestAccUpCloudFirewallRuleset_stateful_forceNew(t *testing.T) {
-	t.Skip("API currently rejects stateful=false with 'Invalid firewall type: public' - stateless rulesets may require different firewall type or are not available in public API")
-
-	testDataStateful := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_stateful.tf")
-	testDataStateless := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_stateless.tf")
-
-	rulesetName := fmt.Sprintf("tf-acc-test-ruleset-stateful-%s", acctest.RandString(10))
-
-	var initialUUID string
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: testDataStateful,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "stateful", "true"),
-					upcloud.CheckStringDoesNotChange("upcloud_firewall_ruleset.test", "id", &initialUUID),
-				),
-			},
-			{
-				// Changing stateful should force replacement
-				Config: testDataStateless,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "stateful", "false"),
-					func(s *terraform.State) error {
-						rs := s.RootModule().Resources["upcloud_firewall_ruleset.test"]
-						if rs.Primary.ID == initialUUID {
-							return fmt.Errorf("expected ID to change after stateful modification, but got same ID: %s", initialUUID)
-						}
-						return nil
-					},
-				),
-			},
-		},
-	})
-}
-
-func TestAccUpCloudFirewallRuleset_minimal(t *testing.T) {
-	testData := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_minimal.tf")
+// TestAccUpCloudFirewallRuleset_minimalToFull creates with only a name, imports,
+// then adds all optional fields — covering both the minimal and null-to-value cases
+// in one create/destroy cycle.
+func TestAccUpCloudFirewallRuleset_minimalToFull(t *testing.T) {
+	testDataMinimal := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_minimal.tf")
+	testDataFull := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_s1.tf")
 
 	rulesetName := fmt.Sprintf("tf-acc-test-ruleset-minimal-%s", acctest.RandString(10))
+	vars := map[string]config.Variable{"ruleset_name": config.StringVariable(rulesetName)}
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testData,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
+				// Create with only a name — verifies minimal config works and computed attrs are set.
+				Config:          testDataMinimal,
+				ConfigVariables: vars,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetName),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "id"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "version"),
-				),
-			},
-			{
-				Config: testData,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
-				ResourceName:      "upcloud_firewall_ruleset.test",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
-func TestAccUpCloudFirewallRuleset_nullToValue(t *testing.T) {
-	testDataNull := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_minimal.tf")
-	testDataWithValues := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_s1.tf")
-
-	rulesetName := fmt.Sprintf("tf-acc-test-ruleset-null-%s", acctest.RandString(10))
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				// Create with minimal config (no optional fields)
-				Config: testDataNull,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetName),
-					// Description is Optional+Computed; when omitted, API doesn't return it, so it's null in state
+					// Description is Optional+Computed; when omitted it must be null in state.
 					resource.TestCheckNoResourceAttr("upcloud_firewall_ruleset.test", "description"),
 				),
 			},
 			{
-				// Add optional fields
-				Config: testDataWithValues,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
+				ResourceName:      "upcloud_firewall_ruleset.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				Config:            testDataMinimal,
+				ConfigVariables:   vars,
+			},
+			{
+				// Add all optional fields — verifies null-to-value transitions produce no spurious replace.
+				Config:          testDataFull,
+				ConfigVariables: vars,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetName),
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "description", "Test firewall ruleset"),
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "enabled", "true"),
+					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "default_dns_rules_enabled", "false"),
 				),
 			},
 		},

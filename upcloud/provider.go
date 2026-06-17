@@ -180,7 +180,6 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		database.NewUserResource,
 		firewall.NewFirewallRulesResource,
 		firewallruleset.NewFirewallRulesetResource,
-		firewallruleset.NewFirewallRulesetRuleResource,
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
 		kubernetes.NewKubernetesNodeGroupResource,
