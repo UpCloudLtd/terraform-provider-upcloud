@@ -11,44 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccUpCloudFirewallRuleset_basic(t *testing.T) {
-	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_s1.tf")
-
-	rulesetName := fmt.Sprintf("tf-acc-test-ruleset-%s", acctest.RandString(10))
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: testDataS1,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetName),
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "description", "Test firewall ruleset"),
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "enabled", "true"),
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "default_dns_rules_enabled", "false"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "id"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "version"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "created_at"),
-					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "updated_at"),
-				),
-			},
-			{
-				Config: testDataS1,
-				ConfigVariables: map[string]config.Variable{
-					"ruleset_name": config.StringVariable(rulesetName),
-				},
-				ResourceName:      "upcloud_firewall_ruleset.test",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccUpCloudFirewallRuleset_update(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_s2.tf")
@@ -184,6 +146,8 @@ func TestAccUpCloudFirewallRuleset_minimalToFull(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetName),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "id"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "version"),
+					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "created_at"),
+					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "updated_at"),
 					// Description is Optional+Computed; when omitted it must be null in state.
 					resource.TestCheckNoResourceAttr("upcloud_firewall_ruleset.test", "description"),
 				),
