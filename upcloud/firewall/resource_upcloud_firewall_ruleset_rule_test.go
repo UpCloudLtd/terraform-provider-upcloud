@@ -50,12 +50,12 @@ func TestAccUpCloudFirewallRuleset_withRules(t *testing.T) {
 			},
 			{
 				// Import the ruleset; rules must be read back correctly.
-				ResourceName:      "upcloud_firewall_ruleset.test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "upcloud_firewall_ruleset.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"updated_at", "version"},
-				Config:            testDataS1,
-				ConfigVariables:   vars,
+				Config:                  testDataS1,
+				ConfigVariables:         vars,
 			},
 			{
 				// Reorder (HTTPS first, HTTP second) and add SSH as third rule.
