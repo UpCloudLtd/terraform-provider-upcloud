@@ -205,7 +205,7 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 							Computed:    true,
 						},
 						"position": schema.Int64Attribute{
-							Description: "Rule position (1-based). Computed from the rule's index in the list; cannot be configured.",
+							Description: "Rule position (1-based). Computed from the rule's index in the list.",
 							Computed:    true,
 						},
 						"icmp_type": schema.Int64Attribute{
