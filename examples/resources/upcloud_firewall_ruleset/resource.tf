@@ -2,7 +2,6 @@
 resource "upcloud_firewall_ruleset" "example" {
   name        = "example-ruleset"
   description = "Example firewall ruleset for production servers"
-  stateful    = true
 
   # Enable default DNS rules to allow DNS traffic
   default_dns_rules_enabled = true
@@ -32,6 +31,5 @@ resource "upcloud_server" "example" {
 resource "upcloud_firewall_ruleset" "server_ruleset" {
   name        = "server-ruleset"
   description = "Firewall rules for example server"
-  stateful    = true
   server_uuid = upcloud_server.example.id
 }

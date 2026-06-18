@@ -3,6 +3,5 @@ variable "ruleset_name" {
 }
 
 resource "upcloud_firewall_ruleset" "test" {
-  name     = var.ruleset_name
-  stateful = true
+  name = var.ruleset_name
 }

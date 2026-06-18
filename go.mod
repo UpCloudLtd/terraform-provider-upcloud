@@ -5,7 +5,7 @@ go 1.25.3
 require (
 	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.2-0.20260218111517-78b5a1eb8206
 	github.com/UpCloudLtd/upcloud-go-api/v8 v8.37.0
-	github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260611130528-1c6b6241a4c2
+	github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260617185413-91e273556c74
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
@@ -62,7 +62,6 @@ require (
 	github.com/oapi-codegen/runtime v1.3.0 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
