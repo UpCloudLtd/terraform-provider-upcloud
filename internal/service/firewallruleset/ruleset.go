@@ -506,21 +506,9 @@ func setRulesetValues(ctx context.Context, state *firewallRulesetModel, api *v9.
 	if api.Name != nil {
 		state.Name = types.StringValue(*api.Name)
 	}
-	if api.Description == nil {
-		state.Description = types.StringNull()
-	} else {
-		state.Description = types.StringValue(*api.Description)
-	}
-	if api.Enabled == nil {
-		state.Enabled = types.BoolNull()
-	} else {
-		state.Enabled = types.BoolValue(*api.Enabled)
-	}
-	if api.DefaultDnsRulesEnabled == nil {
-		state.DefaultDNSRulesEnabled = types.BoolNull()
-	} else {
-		state.DefaultDNSRulesEnabled = types.BoolValue(*api.DefaultDnsRulesEnabled)
-	}
+	state.Description = types.StringPointerValue(api.Description)
+	state.Enabled = types.BoolPointerValue(api.Enabled)
+	state.DefaultDNSRulesEnabled = types.BoolPointerValue(api.DefaultDnsRulesEnabled)
 	if api.ServerUuid == nil {
 		state.ServerUUID = types.StringNull()
 	} else {
