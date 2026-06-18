@@ -344,31 +344,20 @@ func ruleFromAPI(api v9.FirewallRulesetRuleDetailResponse) ruleBlockModel {
 		Action:    types.StringValue(interfaceString(api.Action)),
 		Direction: types.StringValue(interfaceString(api.Direction)),
 		Family:    types.StringValue(interfaceString(api.Family)),
+		Enabled:   types.BoolPointerValue(api.Enabled),
+		Comment:   types.StringPointerValue(api.Comment),
+		Position:  types.Int64PointerValue(api.Position),
+		ICMPType:  types.Int64PointerValue(api.IcmpType),
+
+		SourcePortStart:      types.Int64PointerValue(api.SourcePortStart),
+		SourcePortEnd:        types.Int64PointerValue(api.SourcePortEnd),
+		DestinationPortStart: types.Int64PointerValue(api.DestinationPortStart),
+		DestinationPortEnd:   types.Int64PointerValue(api.DestinationPortEnd),
 	}
 	if api.Protocol == nil {
 		r.Protocol = types.StringNull()
 	} else {
 		r.Protocol = types.StringValue(interfaceString(api.Protocol))
-	}
-	if api.Enabled == nil {
-		r.Enabled = types.BoolNull()
-	} else {
-		r.Enabled = types.BoolValue(*api.Enabled)
-	}
-	if api.Comment == nil {
-		r.Comment = types.StringNull()
-	} else {
-		r.Comment = types.StringValue(*api.Comment)
-	}
-	if api.Position == nil {
-		r.Position = types.Int64Null()
-	} else {
-		r.Position = types.Int64Value(*api.Position)
-	}
-	if api.IcmpType == nil {
-		r.ICMPType = types.Int64Null()
-	} else {
-		r.ICMPType = types.Int64Value(*api.IcmpType)
 	}
 	if api.SourceAddressCidr == nil || *api.SourceAddressCidr == "" {
 		r.SourceAddressCIDR = types.StringNull()
@@ -385,16 +374,6 @@ func ruleFromAPI(api v9.FirewallRulesetRuleDetailResponse) ruleBlockModel {
 	} else {
 		r.SourceAddressEnd = types.StringValue(*api.SourceAddressEnd)
 	}
-	if api.SourcePortStart == nil {
-		r.SourcePortStart = types.Int64Null()
-	} else {
-		r.SourcePortStart = types.Int64Value(*api.SourcePortStart)
-	}
-	if api.SourcePortEnd == nil {
-		r.SourcePortEnd = types.Int64Null()
-	} else {
-		r.SourcePortEnd = types.Int64Value(*api.SourcePortEnd)
-	}
 	if api.DestinationAddressCidr == nil || *api.DestinationAddressCidr == "" {
 		r.DestinationAddressCIDR = types.StringNull()
 	} else {
@@ -409,16 +388,6 @@ func ruleFromAPI(api v9.FirewallRulesetRuleDetailResponse) ruleBlockModel {
 		r.DestinationAddressEnd = types.StringNull()
 	} else {
 		r.DestinationAddressEnd = types.StringValue(*api.DestinationAddressEnd)
-	}
-	if api.DestinationPortStart == nil {
-		r.DestinationPortStart = types.Int64Null()
-	} else {
-		r.DestinationPortStart = types.Int64Value(*api.DestinationPortStart)
-	}
-	if api.DestinationPortEnd == nil {
-		r.DestinationPortEnd = types.Int64Null()
-	} else {
-		r.DestinationPortEnd = types.Int64Value(*api.DestinationPortEnd)
 	}
 	return r
 }
