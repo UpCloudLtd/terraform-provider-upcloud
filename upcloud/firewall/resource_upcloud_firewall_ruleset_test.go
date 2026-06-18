@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccUpCloudFirewallRuleset_update(t *testing.T) {
@@ -39,6 +40,11 @@ func TestAccUpCloudFirewallRuleset_update(t *testing.T) {
 				Config: testDataS2,
 				ConfigVariables: map[string]config.Variable{
 					"ruleset_name": config.StringVariable(rulesetNameUpdated),
+				},
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_firewall_ruleset.test", plancheck.ResourceActionUpdate),
+					},
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetNameUpdated),
@@ -103,6 +109,11 @@ func TestAccUpCloudFirewallRuleset_labels(t *testing.T) {
 				Config: testDataS2,
 				ConfigVariables: map[string]config.Variable{
 					"ruleset_name": config.StringVariable(rulesetName),
+				},
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("upcloud_firewall_ruleset.test", plancheck.ResourceActionUpdate),
+					},
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "labels.%", "2"),
