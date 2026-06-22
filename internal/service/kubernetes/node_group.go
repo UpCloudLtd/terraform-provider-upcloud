@@ -73,6 +73,7 @@ type kubernetesNodeGroupModel struct {
 	ID                   types.String `tfsdk:"id"`
 	Labels               types.Map    `tfsdk:"labels"`
 	Name                 types.String `tfsdk:"name"`
+	NamePrefix           types.String `tfsdk:"name_prefix"`
 	NodeCount            types.Int64  `tfsdk:"node_count"`
 	Plan                 types.String `tfsdk:"plan"`
 	SSHKeys              types.Set    `tfsdk:"ssh_keys"`
@@ -110,8 +111,10 @@ type taintModel struct {
 }
 
 func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	nameReValidator := stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name should only contain lowercase alphanumeric characters and dashes (a-z, 0-9, -). Name should not start or end with a dash. Regular expresion used to check validation: %s", resourceNameRegexp))
+
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource represents a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster.",
+		MarkdownDescription: "This resource represents a node group in a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster. The node groups are used to define the worker nodes of the cluster.",
 		Attributes: map[string]schema.Attribute{
 			"anti_affinity": schema.BoolAttribute{
 				MarkdownDescription: "If set to true, nodes in this group will be placed on separate compute hosts. Please note that anti-affinity policy is considered 'best effort' and enabling it does not fully guarantee that the nodes will end up on different hardware.",
@@ -140,14 +143,30 @@ func (r *kubernetesNodeGroupResource) Schema(_ context.Context, _ resource.Schem
 				mapplanmodifier.RequiresReplace(),
 			),
 			"name": schema.StringAttribute{
-				MarkdownDescription: "The name of the node group. Needs to be unique within a cluster.",
-				Required:            true,
+				MarkdownDescription: "The name of the node group. Needs to be unique within a cluster. Either `name` or `name_prefix` must be specified.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(resourceNameMaxLength),
-					stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("name should only contain lowercase alphanumeric characters and dashes (a-z, 0-9, -). Name should not start or end with a dash. Regular expresion used to check validation: %s", resourceNameRegexp)),
+					nameReValidator,
+					stringvalidator.ExactlyOneOf(
+						path.MatchRoot("name_prefix"),
+					),
+				},
+			},
+			"name_prefix": schema.StringAttribute{
+				MarkdownDescription: "Like name, but appends a random string to the end to create a unique name beginning with the specified prefix. This enables using `create_before_destroy` lifecycle setting. Conflicts with `name`.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtMost(resourceNameMaxLength - 6), // 6 characters are reserved for the random suffix
+					nameReValidator,
 				},
 			},
 			"node_count": schema.Int64Attribute{
@@ -469,12 +488,18 @@ func (r *kubernetesNodeGroupResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	name := data.Name.ValueString()
+	if name == "" && !data.NamePrefix.IsNull() {
+		name = utils.WithRandomSuffix(data.NamePrefix.ValueString())
+		data.Name = types.StringValue(name)
+	}
+
 	apiReq := request.CreateKubernetesNodeGroupRequest{
 		ClusterUUID: data.Cluster.ValueString(),
 		NodeGroup: request.KubernetesNodeGroup{
 			Count:                int(data.NodeCount.ValueInt64()),
 			Labels:               utils.LabelsMapToSlice(labels),
-			Name:                 data.Name.ValueString(),
+			Name:                 name,
 			Plan:                 data.Plan.ValueString(),
 			SSHKeys:              sshKeys,
 			Storage:              "",
@@ -713,6 +738,13 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 	respDiagnostics.Append(diags...)
 
 	data.Name = types.StringValue(ng.Name)
+
+	namePrefixRe := regexp.MustCompile(fmt.Sprintf("^(.*)-[%s]{5}$", utils.RandomSuffixChars))
+	namePrefixMatch := namePrefixRe.FindStringSubmatch(ng.Name)
+	if isImport && len(namePrefixMatch) > 1 {
+		data.NamePrefix = types.StringValue(namePrefixMatch[1])
+	}
+
 	data.NodeCount = types.Int64Value(int64(ng.Count))
 	data.Plan = types.StringValue(ng.Plan)
 

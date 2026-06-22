@@ -42,10 +42,10 @@ resource "upcloud_network" "main" {
   router = upcloud_router.main.id
 
   ip_network {
-    address = var.network_cidr
-    dhcp    = true
+    address            = var.network_cidr
+    dhcp               = true
     dhcp_default_route = var.private_node_groups
-    family  = "IPv4"
+    family             = "IPv4"
   }
 }
 
@@ -155,7 +155,7 @@ resource "kubernetes_service_v1" "hello" {
     }
 
     port {
-      port = var.private_node_groups ? 443 : 80
+      port        = var.private_node_groups ? 443 : 80
       target_port = 80
     }
 
@@ -168,7 +168,7 @@ locals {
   has_external_ip = var.enable_kubernetes_resources ? contains(local.addresses.*.type, "ExternalIP") : false
   external_ip     = local.has_external_ip ? local.addresses[index(local.addresses.*.type, "ExternalIP")].address : "localhost"
   port            = var.enable_kubernetes_resources ? kubernetes_service_v1.hello[0].spec[0].port[0].node_port : 8080
-  lb_url = var.enable_kubernetes_resources && var.private_node_groups ? "https://${kubernetes_service_v1.hello[0].status[0].load_balancer[0].ingress[0].hostname}" : "localhost:8080"
+  lb_url          = var.enable_kubernetes_resources && var.private_node_groups ? "https://${kubernetes_service_v1.hello[0].status[0].load_balancer[0].ingress[0].hostname}" : "localhost:8080"
   service_url     = var.private_node_groups ? local.lb_url : "http://${local.external_ip}:${local.port != null ? local.port : 8080}/"
 }
 

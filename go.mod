@@ -3,8 +3,6 @@ module github.com/UpCloudLtd/terraform-provider-upcloud
 go 1.25.3
 
 require (
-	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.2-0.20260218111517-78b5a1eb8206
-	github.com/UpCloudLtd/upcloud-go-api/v8 v8.37.0
 	github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260617185413-91e273556c74
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-cty v1.5.0
@@ -23,9 +21,13 @@ require (
 	golang.org/x/mod v0.33.0
 )
 
+require github.com/rogpeppe/go-internal v1.15.0 // indirect
+
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
+	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.2-0.20260218111517-78b5a1eb8206
+	github.com/UpCloudLtd/upcloud-go-api/v8 v8.38.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect

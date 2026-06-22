@@ -31,6 +31,9 @@ resource "upcloud_file_storage" "example" {
   zone              = "fi-hel2"
   configured_status = "stopped"
 
+  # Encryption is set at creation and cannot be changed.
+  encrypt = true
+
   labels = {
     environment = "staging"
     customer    = "example-customer"
@@ -71,6 +74,7 @@ resource "upcloud_file_storage_share_acl" "example" {
 
 ### Optional Attributes
 
+- `encrypt` (Boolean) Sets if the file storage is encrypted at rest. Encryption can only be enabled at creation time and cannot be changed later. Defaults to `false`.
 - `labels` (Map of String) User defined key-value pairs to classify the file storage.
 
 ### Blocks

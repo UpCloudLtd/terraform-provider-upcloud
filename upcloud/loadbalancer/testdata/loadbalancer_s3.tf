@@ -80,10 +80,10 @@ resource "upcloud_loadbalancer_backend" "lb_be_1" {
   resolver_name = resource.upcloud_loadbalancer_resolver.lb_dns_1.name
   name          = "lb-be-1-test-1"
   properties {
-    timeout_server          = 20
-    timeout_tunnel          = 4000
-    health_check_type       = "http"
-    outbound_proxy_protocol = "v2"
+    timeout_server             = 20
+    timeout_tunnel             = 4000
+    health_check_type          = "http"
+    outbound_proxy_protocol    = "v2"
     sticky_session_cookie_name = "Session"
   }
 }
