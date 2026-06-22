@@ -772,6 +772,9 @@ func (r *firewallRulesetResource) Delete(ctx context.Context, req resource.Delet
 		resp.Diagnostics.AddError("Unable to delete firewall ruleset", utils.ErrorDiagnosticDetail(err))
 		return
 	}
+	if apiResp.Body != nil {
+		defer apiResp.Body.Close()
+	}
 	if apiResp.StatusCode != http.StatusNoContent && apiResp.StatusCode != http.StatusNotFound {
 		resp.Diagnostics.AddError(
 			"Unable to delete firewall ruleset",
