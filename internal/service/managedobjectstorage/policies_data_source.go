@@ -2,11 +2,11 @@ package managedobjectstorage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,7 +22,7 @@ var (
 )
 
 type managedObjectStoragePoliciesDataSource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (d *managedObjectStoragePoliciesDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -30,7 +30,7 @@ func (d *managedObjectStoragePoliciesDataSource) Metadata(_ context.Context, req
 }
 
 func (d *managedObjectStoragePoliciesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	d.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type managedObjectStoragePoliciesModel struct {
@@ -124,9 +124,7 @@ func (d *managedObjectStoragePoliciesDataSource) Read(ctx context.Context, req d
 		return
 	}
 
-	policies, err := d.client.GetManagedObjectStoragePolicies(ctx, &request.GetManagedObjectStoragePoliciesRequest{
-		ServiceUUID: data.ServiceUUID.ValueString(),
-	})
+	svcUUID, err := uuid.Parse(data.ServiceUUID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read managed object-storage policies",
@@ -135,17 +133,41 @@ func (d *managedObjectStoragePoliciesDataSource) Read(ctx context.Context, req d
 		return
 	}
 
+	apiResp, err := d.client.ListObjectStoragePoliciesWithResponse(ctx, svcUUID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object-storage policies",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object-storage policies",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
+	}
+
+	policies := *apiResp.JSON200
 	data.Policies = make([]managedObjectStoragePolicyModel, len(policies))
 	for i, policy := range policies {
-		data.Policies[i].ARN = types.StringValue(policy.ARN)
-		data.Policies[i].AttachmentCount = types.Int64Value(int64(policy.AttachmentCount))
-		data.Policies[i].CreatedAt = types.StringValue(policy.CreatedAt.String())
-		data.Policies[i].DefaultVersionID = types.StringValue(policy.DefaultVersionID)
-		data.Policies[i].Description = types.StringValue(policy.Description)
-		data.Policies[i].Document = types.StringValue(policy.Document)
-		data.Policies[i].Name = types.StringValue(policy.Name)
-		data.Policies[i].System = types.BoolValue(policy.System)
-		data.Policies[i].UpdatedAt = types.StringValue(policy.UpdatedAt.String())
+		data.Policies[i].ServiceUUID = data.ServiceUUID
+		data.Policies[i].ARN = types.StringPointerValue(policy.Arn)
+		data.Policies[i].DefaultVersionID = types.StringPointerValue(policy.DefaultVersionId)
+		data.Policies[i].Description = types.StringPointerValue(policy.Description)
+		data.Policies[i].Document = types.StringPointerValue(policy.Document)
+		data.Policies[i].Name = types.StringPointerValue(policy.Name)
+		data.Policies[i].System = types.BoolPointerValue(policy.System)
+		if policy.AttachmentCount != nil {
+			data.Policies[i].AttachmentCount = types.Int64Value(int64(*policy.AttachmentCount))
+		}
+		if policy.CreatedAt != nil {
+			data.Policies[i].CreatedAt = types.StringValue(policy.CreatedAt.String())
+		}
+		if policy.UpdatedAt != nil {
+			data.Policies[i].UpdatedAt = types.StringValue(policy.UpdatedAt.String())
+		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

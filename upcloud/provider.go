@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/filestorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewallruleset"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
@@ -20,7 +21,9 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/server"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/servergroup"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/storage"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/credentials"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -152,9 +155,20 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	tflog.Info(ctx, "UpCloud service connection configured for plugin framework provider", map[string]interface{}{"http_client": fmt.Sprintf("%#v", httpClient), "request_timeout": requestTimeout})
 
-	resp.DataSourceData = service
-	resp.EphemeralResourceData = service
-	resp.ResourceData = service
+	v9client, err := v9.New("", v9.WithCredentials(creds))
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to create V9 client", err.Error())
+		return
+	}
+
+	withV9 := utils.ServiceWithV9Client{
+		Service:  service,
+		V9Client: v9client,
+	}
+
+	resp.DataSourceData = withV9
+	resp.EphemeralResourceData = withV9
+	resp.ResourceData = withV9
 }
 
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
@@ -165,6 +179,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		database.NewValkeyResource,
 		database.NewUserResource,
 		firewall.NewFirewallRulesResource,
+		firewallruleset.NewFirewallRulesetResource,
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
 		kubernetes.NewKubernetesNodeGroupResource,

@@ -5,6 +5,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_firewall_ruleset: new resource for managing SDN firewall rulesets
 ## [5.39.1] - 2026-06-15
 
 ### Fixed

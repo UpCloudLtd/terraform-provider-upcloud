@@ -2,11 +2,12 @@ package managedobjectstorage
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -29,7 +30,7 @@ func NewUserAccessKeyResource() resource.Resource {
 }
 
 type managedObjectStorageUserAccessKeyResource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (r *managedObjectStorageUserAccessKeyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -38,7 +39,7 @@ func (r *managedObjectStorageUserAccessKeyResource) Metadata(_ context.Context, 
 
 // Configure adds the provider configured client to the resource.
 func (r *managedObjectStorageUserAccessKeyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type userAccessKeyModel struct {
@@ -101,8 +102,8 @@ func (r *managedObjectStorageUserAccessKeyResource) Schema(_ context.Context, _ 
 				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
-						string(upcloud.ManagedObjectStorageUserAccessKeyStatusActive),
-						string(upcloud.ManagedObjectStorageUserAccessKeyStatusInactive),
+						string(v9.ObjectStorage2AccessKeyDetailResponseStatusActive),
+						string(v9.ObjectStorage2AccessKeyDetailResponseStatusInactive),
 					),
 				},
 			},
@@ -117,15 +118,20 @@ func (r *managedObjectStorageUserAccessKeyResource) Schema(_ context.Context, _ 
 	}
 }
 
-func setUserAccessKeyValues(_ context.Context, data *userAccessKeyModel, accessKey *upcloud.ManagedObjectStorageUserAccessKey) diag.Diagnostics {
+func setUserAccessKeyValues(data *userAccessKeyModel, accessKey *v9.ObjectStorage2AccessKeyDetailResponse) diag.Diagnostics {
 	var respDiagnostics diag.Diagnostics
 
-	data.AccessKeyID = types.StringValue(accessKey.AccessKeyID)
-	data.CreatedAt = types.StringValue(accessKey.CreatedAt.String())
-	data.LastUsedAt = types.StringValue(accessKey.LastUsedAt.String())
-
-	if accessKey.SecretAccessKey != nil {
-		data.SecretAccessKey = types.StringValue(*accessKey.SecretAccessKey)
+	if accessKey.AccessKeyId != nil {
+		data.AccessKeyID = types.StringValue(*accessKey.AccessKeyId)
+	}
+	if accessKey.CreatedAt != nil {
+		data.CreatedAt = types.StringValue(accessKey.CreatedAt.String())
+	}
+	if accessKey.LastUsedAt != nil {
+		data.LastUsedAt = types.StringValue(accessKey.LastUsedAt.String())
+	}
+	if accessKey.Status != nil {
+		data.Status = types.StringValue(string(*accessKey.Status))
 	}
 
 	return respDiagnostics
@@ -139,12 +145,13 @@ func (r *managedObjectStorageUserAccessKeyResource) Create(ctx context.Context, 
 		return
 	}
 
-	apiReq := &request.CreateManagedObjectStorageUserAccessKeyRequest{
-		Username:    data.Username.ValueString(),
-		ServiceUUID: data.ServiceUUID.ValueString(),
+	svcUUID, err := uuid.Parse(data.ServiceUUID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid service UUID", utils.ErrorDiagnosticDetail(err))
+		return
 	}
 
-	accessKey, err := r.client.CreateManagedObjectStorageUserAccessKey(ctx, apiReq)
+	apiResp, err := r.client.CreateObjectStorageAccessKeyWithResponse(ctx, svcUUID, data.Username.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage user access key",
@@ -152,14 +159,32 @@ func (r *managedObjectStorageUserAccessKeyResource) Create(ctx context.Context, 
 		)
 		return
 	}
+	if apiResp.StatusCode() != http.StatusCreated {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage user access key",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
+		return
+	}
+	if apiResp.JSON201 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage user access key",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
+	}
+
+	created := apiResp.JSON201
+	accessKeyID := ""
+	if created.AccessKeyId != nil {
+		accessKeyID = *created.AccessKeyId
+	}
 
 	// Status can be set only after creation
-	if data.Status.ValueString() != string(accessKey.Status) {
-		_, err = r.client.ModifyManagedObjectStorageUserAccessKey(ctx, &request.ModifyManagedObjectStorageUserAccessKeyRequest{
-			ServiceUUID: data.ServiceUUID.ValueString(),
-			Username:    data.Username.ValueString(),
-			AccessKeyID: accessKey.AccessKeyID,
-			Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(data.Status.ValueString()),
+	desiredStatus := v9.ObjectStorage2AccessKeyModifyStatus(data.Status.ValueString())
+	if created.Status == nil || string(*created.Status) != data.Status.ValueString() {
+		modResp, err := r.client.ModifyObjectStorageAccessKeyDetailsWithResponse(ctx, svcUUID, data.Username.ValueString(), accessKeyID, v9.ModifyObjectStorageAccessKeyDetailsJSONRequestBody{
+			Status: &desiredStatus,
 		})
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -168,11 +193,29 @@ func (r *managedObjectStorageUserAccessKeyResource) Create(ctx context.Context, 
 			)
 			return
 		}
+		if modResp.StatusCode() != http.StatusOK {
+			resp.Diagnostics.AddError(
+				"Unable to set managed object storage user access key status",
+				objectStorageAPIErrorDetail(modResp.ApplicationproblemJSONDefault, modResp.Body),
+			)
+			return
+		}
 	}
 
-	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.Username.ValueString(), accessKey.AccessKeyID))
+	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.Username.ValueString(), accessKeyID))
+	if created.SecretAccessKey != nil {
+		data.SecretAccessKey = types.StringValue(*created.SecretAccessKey)
+	}
+	if created.AccessKeyId != nil {
+		data.AccessKeyID = types.StringValue(*created.AccessKeyId)
+	}
+	if created.CreatedAt != nil {
+		data.CreatedAt = types.StringValue(created.CreatedAt.String())
+	}
+	if created.LastUsedAt != nil {
+		data.LastUsedAt = types.StringValue(created.LastUsedAt.String())
+	}
 
-	resp.Diagnostics.Append(setUserAccessKeyValues(ctx, &data, accessKey)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -200,26 +243,40 @@ func (r *managedObjectStorageUserAccessKeyResource) Read(ctx context.Context, re
 	data.Username = types.StringValue(username)
 	data.AccessKeyID = types.StringValue(accessKeyID)
 
-	accessKey, err := r.client.GetManagedObjectStorageUserAccessKey(ctx, &request.GetManagedObjectStorageUserAccessKeyRequest{
-		Username:    username,
-		ServiceUUID: serviceUUID,
-		AccessKeyID: accessKeyID,
-	})
+	svcUUID, err := uuid.Parse(serviceUUID)
 	if err != nil {
-		if utils.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-		} else {
-			resp.Diagnostics.AddError(
-				"Unable to read managed object storage user access key details",
-				utils.ErrorDiagnosticDetail(err),
-			)
-		}
+		resp.Diagnostics.AddError("Invalid service UUID", utils.ErrorDiagnosticDetail(err))
 		return
 	}
 
-	data.Status = types.StringValue(string(accessKey.Status))
+	apiResp, err := r.client.GetObjectStorageAccessKeyDetailsWithResponse(ctx, svcUUID, username, accessKeyID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user access key details",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+	if apiResp.StatusCode() == http.StatusNotFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if apiResp.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user access key details",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
+		return
+	}
+	if apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to read managed object storage user access key details",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
+	}
 
-	resp.Diagnostics.Append(setUserAccessKeyValues(ctx, &data, accessKey)...)
+	resp.Diagnostics.Append(setUserAccessKeyValues(&data, apiResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -231,11 +288,15 @@ func (r *managedObjectStorageUserAccessKeyResource) Update(ctx context.Context, 
 		return
 	}
 
-	accessKey, err := r.client.ModifyManagedObjectStorageUserAccessKey(ctx, &request.ModifyManagedObjectStorageUserAccessKeyRequest{
-		ServiceUUID: data.ServiceUUID.ValueString(),
-		Username:    data.Username.ValueString(),
-		AccessKeyID: data.AccessKeyID.ValueString(),
-		Status:      upcloud.ManagedObjectStorageUserAccessKeyStatus(data.Status.ValueString()),
+	svcUUID, err := uuid.Parse(data.ServiceUUID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid service UUID", utils.ErrorDiagnosticDetail(err))
+		return
+	}
+
+	desiredStatus := v9.ObjectStorage2AccessKeyModifyStatus(data.Status.ValueString())
+	apiResp, err := r.client.ModifyObjectStorageAccessKeyDetailsWithResponse(ctx, svcUUID, data.Username.ValueString(), data.AccessKeyID.ValueString(), v9.ModifyObjectStorageAccessKeyDetailsJSONRequestBody{
+		Status: &desiredStatus,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -244,8 +305,22 @@ func (r *managedObjectStorageUserAccessKeyResource) Update(ctx context.Context, 
 		)
 		return
 	}
+	if apiResp.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError(
+			"Unable to update managed object storage user access key",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
+		return
+	}
+	if apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to update managed object storage user access key",
+			utils.ErrorDiagnosticDetail(fmt.Errorf("unexpected response: %s", apiResp.HTTPResponse.Status)),
+		)
+		return
+	}
 
-	resp.Diagnostics.Append(setUserAccessKeyValues(ctx, &data, accessKey)...)
+	resp.Diagnostics.Append(setUserAccessKeyValues(&data, apiResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -260,16 +335,25 @@ func (r *managedObjectStorageUserAccessKeyResource) Delete(ctx context.Context, 
 		return
 	}
 
-	if err := r.client.DeleteManagedObjectStorageUserAccessKey(ctx, &request.DeleteManagedObjectStorageUserAccessKeyRequest{
-		ServiceUUID: serviceUUID,
-		Username:    username,
-		AccessKeyID: accessKeyID,
-	}); err != nil {
+	svcUUID, err := uuid.Parse(serviceUUID)
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid service UUID", utils.ErrorDiagnosticDetail(err))
+		return
+	}
+
+	apiResp, err := r.client.DeleteObjectStorageAccessKeyWithResponse(ctx, svcUUID, username, accessKeyID)
+	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage user access key",
 			utils.ErrorDiagnosticDetail(err),
 		)
 		return
+	}
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage user access key",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
 	}
 }
 

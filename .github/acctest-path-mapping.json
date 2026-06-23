@@ -20,7 +20,7 @@
     "cloud": ["internal/service/cloud/", "upcloud/cloud/"],
     "database": ["internal/service/database/", "upcloud/database/"],
     "filestorage": ["internal/service/filestorage/", "upcloud/filestorage/"],
-    "firewall": ["internal/service/firewall/", "upcloud/firewall/"],
+    "firewall": ["internal/service/firewall/", "internal/service/firewallruleset/", "upcloud/firewall/"],
     "gateway": ["internal/service/gateway/", "upcloud/gateway/"],
     "ip": ["internal/service/ip/", "upcloud/ip/"],
     "kubernetes": ["internal/service/kubernetes/", "upcloud/kubernetes/"],

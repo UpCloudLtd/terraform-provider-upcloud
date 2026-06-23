@@ -2,11 +2,12 @@ package managedobjectstorage
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -27,7 +28,7 @@ func NewBucketResource() resource.Resource {
 }
 
 type managedObjectStorageBucketResource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (r *managedObjectStorageBucketResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -36,7 +37,7 @@ func (r *managedObjectStorageBucketResource) Metadata(_ context.Context, req res
 
 // Configure adds the provider configured client to the resource.
 func (r *managedObjectStorageBucketResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type bucketModel struct {
@@ -83,10 +84,35 @@ func (r *managedObjectStorageBucketResource) Schema(_ context.Context, _ resourc
 	}
 }
 
-func setBucketValues(data *bucketModel, bucket *upcloud.ManagedObjectStorageBucketMetrics) {
-	data.Name = types.StringValue(bucket.Name)
-	data.TotalObjects = types.Int64Value(int64(bucket.TotalObjects))
-	data.TotalSizeBytes = types.Int64Value(int64(bucket.TotalSizeBytes))
+func setBucketValues(data *bucketModel, detail *v9.ObjectStorage2BucketDetailResponse, fallbackName string) {
+	if detail == nil {
+		return
+	}
+	if detail.Name != nil {
+		data.Name = types.StringValue(*detail.Name)
+	} else if fallbackName != "" {
+		data.Name = types.StringValue(fallbackName)
+	}
+	var totalObj int64
+	if detail.TotalObjects != nil {
+		totalObj = int64(*detail.TotalObjects)
+	}
+	data.TotalObjects = types.Int64Value(totalObj)
+	var totalSize int64
+	if detail.TotalSizeBytes != nil {
+		totalSize = *detail.TotalSizeBytes
+	}
+	data.TotalSizeBytes = types.Int64Value(totalSize)
+}
+
+func objectStorageAPIErrorDetail(prob *v9.ObjectStorage2ErrorResponse, body []byte) string {
+	if prob != nil {
+		return fmt.Sprintf("%s (HTTP %d, type=%s, correlation_id=%s)", prob.Title, prob.Status, prob.Type, prob.CorrelationId)
+	}
+	if len(body) > 0 {
+		return string(body)
+	}
+	return "unexpected API response"
 }
 
 func (r *managedObjectStorageBucketResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -99,12 +125,18 @@ func (r *managedObjectStorageBucketResource) Create(ctx context.Context, req res
 
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.Name.ValueString()))
 
-	apiReq := &request.CreateManagedObjectStorageBucketRequest{
-		Name:        data.Name.ValueString(),
-		ServiceUUID: data.ServiceUUID.ValueString(),
+	svcUUID, err := uuid.Parse(data.ServiceUUID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	bucket, err := r.client.CreateManagedObjectStorageBucket(ctx, apiReq)
+	apiResp, err := r.client.CreateObjectStorageBucketWithResponse(ctx, svcUUID, v9.CreateObjectStorageBucketJSONRequestBody{
+		Name: data.Name.ValueString(),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage bucket",
@@ -112,15 +144,31 @@ func (r *managedObjectStorageBucketResource) Create(ctx context.Context, req res
 		)
 		return
 	}
+	if apiResp.StatusCode() != http.StatusCreated || apiResp.JSON201 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to create managed object storage bucket",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
+		return
+	}
 
-	setBucketValues(&data, &bucket)
+	setBucketValues(&data, apiResp.JSON201, data.Name.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func getBucket(ctx context.Context, serviceUUID, name string, client *service.Service) (bucket *upcloud.ManagedObjectStorageBucketMetrics, diags diag.Diagnostics) {
-	buckets, err := client.GetManagedObjectStorageBucketMetrics(ctx, &request.GetManagedObjectStorageBucketMetricsRequest{
-		ServiceUUID: serviceUUID,
-	})
+func getBucket(ctx context.Context, serviceUUID, name string, client *v9.ClientWithResponses) (*v9.ObjectStorage2BucketDetailResponse, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	svcUUID, err := uuid.Parse(serviceUUID)
+	if err != nil {
+		diags.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, diags
+	}
+
+	apiResp, err := client.ListObjectStorageBucketMetricsWithResponse(ctx, svcUUID, nil)
 	if err != nil {
 		diags.AddError(
 			"Unable to read managed object storage buckets",
@@ -128,14 +176,31 @@ func getBucket(ctx context.Context, serviceUUID, name string, client *service.Se
 		)
 		return nil, diags
 	}
-
-	for _, b := range buckets {
-		if b.Name == name {
-			bucket = &b
-			break
+	if apiResp.StatusCode() == http.StatusNotFound {
+		diags.AddError(
+			"Unable to read managed object storage buckets",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
+		return nil, diags
+	}
+	if apiResp.StatusCode() != http.StatusOK {
+		diags.AddError(
+			"Unable to read managed object storage buckets",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
+		return nil, diags
+	}
+	if apiResp.JSON200 == nil {
+		return nil, diags
+	}
+	buckets := *apiResp.JSON200
+	for i := range buckets {
+		b := buckets[i]
+		if b.Name != nil && *b.Name == name {
+			return &b, diags
 		}
 	}
-	return bucket, diags
+	return nil, diags
 }
 
 func (r *managedObjectStorageBucketResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -162,12 +227,16 @@ func (r *managedObjectStorageBucketResource) Read(ctx context.Context, req resou
 	bucket, diags := getBucket(ctx, serviceUUID, name, r.client)
 	resp.Diagnostics.Append(diags...)
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	if bucket == nil {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	setBucketValues(&data, bucket)
+	setBucketValues(&data, bucket, name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -189,6 +258,9 @@ func (r *managedObjectStorageBucketResource) Update(ctx context.Context, req res
 
 	bucket, diags := getBucket(ctx, serviceUUID, name, r.client)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	if bucket == nil {
 		resp.Diagnostics.AddError(
 			"Bucket not found",
@@ -197,7 +269,7 @@ func (r *managedObjectStorageBucketResource) Update(ctx context.Context, req res
 		return
 	}
 
-	setBucketValues(&data, bucket)
+	setBucketValues(&data, bucket, name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -212,20 +284,29 @@ func (r *managedObjectStorageBucketResource) Delete(ctx context.Context, req res
 		return
 	}
 
-	if err := r.client.DeleteManagedObjectStorageBucket(ctx, &request.DeleteManagedObjectStorageBucketRequest{
-		ServiceUUID: serviceUUID,
-		Name:        name,
-	}); err != nil {
+	svcUUID, err := uuid.Parse(serviceUUID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	apiResp, err := r.client.DeleteObjectStorageBucketWithResponse(ctx, svcUUID, name)
+	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage bucket",
 			utils.ErrorDiagnosticDetail(err),
 		)
+	} else if apiResp.StatusCode() < 200 || apiResp.StatusCode() >= 300 {
+		resp.Diagnostics.AddError(
+			"Unable to delete managed object storage bucket",
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+		)
 	}
 
-	if err := r.client.WaitForManagedObjectStorageBucketDeletion(ctx, &request.WaitForManagedObjectStorageBucketDeletionRequest{
-		ServiceUUID: serviceUUID,
-		Name:        name,
-	}); err != nil {
+	if err := r.client.WaitForObjectStorageBucketDeletion(ctx, serviceUUID, name); err != nil {
 		resp.Diagnostics.AddError(
 			"The deleted bucket was not removed from the managed object storage service",
 			utils.ErrorDiagnosticDetail(err),

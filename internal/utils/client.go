@@ -4,21 +4,47 @@ import (
 	"fmt"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
-func GetClientFromProviderData(providerData any) (client *service.Service, diags diag.Diagnostics) {
+type ServiceWithV9Client struct {
+	Service  *service.Service
+	V9Client *v9.ClientWithResponses
+}
+
+func getServiceWithV9ClientFromProviderData(providerData any) (*ServiceWithV9Client, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	if providerData == nil {
 		return nil, diags
 	}
 
-	client, ok := providerData.(*service.Service)
+	withV9, ok := providerData.(ServiceWithV9Client)
 	if !ok {
 		diags.AddError(
-			"Unexpected resource Configure type",
-			fmt.Sprintf("Expected *service.Service, got: %T. Please report this issue to the provider developers.", providerData),
+			"Unexpected provider data type",
+			fmt.Sprintf("Expected ServiceWithV9Client, got: %T. Please report this issue to the provider developers.", providerData),
 		)
 	}
 
-	return client, diags
+	return &withV9, diags
+}
+
+func GetClientFromProviderData(providerData any) (client *service.Service, diags diag.Diagnostics) {
+	withV9, diags := getServiceWithV9ClientFromProviderData(providerData)
+	if diags.HasError() || withV9 == nil {
+		return nil, diags
+	}
+
+	return withV9.Service, diags
+}
+
+func GetV9ClientFromProviderData(providerData any) (*v9.ClientWithResponses, diag.Diagnostics) {
+	withV9, diags := getServiceWithV9ClientFromProviderData(providerData)
+	if diags.HasError() || withV9 == nil {
+		return nil, diags
+	}
+
+	return withV9.V9Client, diags
 }
