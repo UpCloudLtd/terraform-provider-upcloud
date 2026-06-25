@@ -163,11 +163,11 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	tflog.Info(ctx, "UpCloud service connection configured for plugin framework provider", map[string]interface{}{"http_client": fmt.Sprintf("%#v", httpClient), "request_timeout": requestTimeout})
 
-	v9client, err := v9.New(
-		"",
+	v9client, err := v9.New("",
 		v9.WithCredentials(creds),
 		withUserAgent(p.userAgent),
-		v9.WithLogger(config.LogDebug))
+		v9.WithLogger(config.LogDebug),
+	)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create V9 client", err.Error())
 		return
