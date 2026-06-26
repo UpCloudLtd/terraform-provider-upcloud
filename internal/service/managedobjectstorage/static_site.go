@@ -272,7 +272,7 @@ func (r *managedObjectStorageStaticSiteResource) Create(ctx context.Context, req
 		return
 	}
 
-	body := v9.CreateStaticWebsiteJSONRequestBody{
+	body := v9.CreateObjectStorageStaticWebsiteJSONRequestBody{
 		BucketName: data.BucketName.ValueString(),
 	}
 
@@ -295,7 +295,7 @@ func (r *managedObjectStorageStaticSiteResource) Create(ctx context.Context, req
 		body.ErrorPages = &errorPages
 	}
 
-	created, err := r.client.CreateStaticWebsiteWithResponse(ctx, svcUUID, body)
+	created, err := r.client.CreateObjectStorageStaticWebsiteWithResponse(ctx, svcUUID, body)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create managed object storage static site",
@@ -348,7 +348,7 @@ func (r *managedObjectStorageStaticSiteResource) Read(ctx context.Context, req r
 		return
 	}
 
-	site, err := r.client.GetStaticWebsiteWithResponse(ctx, svcUUID, domainName)
+	site, err := r.client.GetObjectStorageStaticWebsiteWithResponse(ctx, svcUUID, domainName)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read managed object storage static site details",
@@ -411,7 +411,7 @@ func (r *managedObjectStorageStaticSiteResource) Update(ctx context.Context, req
 		return
 	}
 
-	body := v9.ModifyStaticWebsiteJSONRequestBody{}
+	body := v9.ModifyObjectStorageStaticWebsiteJSONRequestBody{}
 	if !data.BucketName.IsNull() && !data.BucketName.IsUnknown() {
 		body.BucketName = data.BucketName.ValueStringPointer()
 	}
@@ -431,7 +431,7 @@ func (r *managedObjectStorageStaticSiteResource) Update(ctx context.Context, req
 		body.ErrorPages = &errorPages
 	}
 
-	updated, err := r.client.ModifyStaticWebsiteWithResponse(ctx, svcUUID, domainName, body)
+	updated, err := r.client.ModifyObjectStorageStaticWebsiteWithResponse(ctx, svcUUID, domainName, body)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify managed object storage static site",
@@ -475,7 +475,7 @@ func (r *managedObjectStorageStaticSiteResource) Delete(ctx context.Context, req
 		return
 	}
 
-	deleted, err := r.client.DeleteStaticWebsiteWithResponse(ctx, svcUUID, domainName)
+	deleted, err := r.client.DeleteObjectStorageStaticWebsiteWithResponse(ctx, svcUUID, domainName)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage static site",
