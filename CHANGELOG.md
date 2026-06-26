@@ -8,6 +8,39 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - upcloud_managed_object_storage_static_site: new resource for Managed Object Storage static website configuration
+- upcloud_firewall_ruleset: new resource for managing SDN firewall rulesets
+
+## [5.39.1] - 2026-06-15
+
+### Fixed
+
+- upcloud_managed_object_storage: fix 500 error when swapping a private networks
+
+## [5.39.0] - 2026-06-09
+
+### Added
+
+- upcloud_server: add `password` attribute to `login` block for retrieving system generated one-time password.
+
+### Changed
+
+- upcloud_server: change `login` block from set to list to avoid `password` attribute causing resource to be recreated. The maximum length for `login` block is one, so this is not a breaking change.
+
+## [5.38.0] - 2026-05-21
+
+### Added
+
+- upcloud_file_storage: add `encrypt` attribute.
+
+## [5.37.0] - 2026-05-12
+
+### Added
+
+- upcloud_kubernetes_node_group: `name_prefix` field to help generating a unique name for the node group. This enables using `create_before_destroy` lifecycle setting with the node-group resource.
+
+### Fixed
+
+- upcloud_server: use 64-bit integers when parsing server host value from JSON response. No changes to the resource schema.
 
 ## [5.36.3] - 2026-04-24
 
@@ -1216,7 +1249,11 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.3...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.39.1...HEAD
+[5.39.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.39.0...v5.39.1
+[5.39.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.38.0...v5.39.0
+[5.38.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.37.0...v5.38.0
+[5.37.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.3...v5.37.0
 [5.36.3]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.2...v5.36.3
 [5.36.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.1...v5.36.2
 [5.36.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.36.0...v5.36.1

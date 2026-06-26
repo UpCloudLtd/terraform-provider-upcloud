@@ -10,6 +10,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/filestorage"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewall"
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/firewallruleset"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/ip"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/kubernetes"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/loadbalancer"
@@ -178,6 +179,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		database.NewValkeyResource,
 		database.NewUserResource,
 		firewall.NewFirewallRulesResource,
+		firewallruleset.NewFirewallRulesetResource,
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
 		kubernetes.NewKubernetesNodeGroupResource,

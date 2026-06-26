@@ -27,6 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -94,7 +95,7 @@ type serverModel struct {
 	Plan              types.String `tfsdk:"plan"`
 	StorageDevices    types.Set    `tfsdk:"storage_devices"`
 	Template          types.List   `tfsdk:"template"`
-	Login             types.Set    `tfsdk:"login"`
+	Login             types.List   `tfsdk:"login"`
 	SimpleBackup      types.Set    `tfsdk:"simple_backup"`
 	BootOrder         types.String `tfsdk:"boot_order"`
 	HotResize         types.Bool   `tfsdk:"hot_resize"`
@@ -152,6 +153,7 @@ type loginModel struct {
 	User             types.String `tfsdk:"user"`
 	Keys             types.List   `tfsdk:"keys"`
 	CreatePassword   types.Bool   `tfsdk:"create_password"`
+	Password         types.String `tfsdk:"password"`
 	PasswordDelivery types.String `tfsdk:"password_delivery"`
 }
 
@@ -526,13 +528,13 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 					},
 				},
 			},
-			"login": schema.SetNestedBlock{
+			"login": schema.ListNestedBlock{
 				Description: "Configure access credentials to the server",
-				PlanModifiers: []planmodifier.Set{
-					setplanmodifier.RequiresReplace(),
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
 				},
-				Validators: []validator.Set{
-					setvalidator.SizeAtMost(1),
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
 				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
@@ -553,6 +555,12 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							PlanModifiers: []planmodifier.Bool{
 								boolplanmodifier.UseStateForUnknown(),
 							},
+						},
+						"password": schema.StringAttribute{
+							Description: "The generated one-time password for the server",
+							Computed:    true,
+							Sensitive:   true,
+							// PlanModifiers handled at the resource level because UseStateForUnknown here does not seem to work nicely with sensitive or null values.
 						},
 						"password_delivery": schema.StringAttribute{
 							Description: "The delivery method for the server's root password (one of `none`, `email` or `sms`)",
@@ -672,7 +680,7 @@ func (r *serverResource) UpgradeState(_ context.Context) map[int64]resource.Stat
 					if len(login) > 0 && login[0].User.ValueString() == "" {
 						login[0].User = types.StringNull()
 
-						data.Login, _ = types.SetValueFrom(ctx, data.Login.ElementType(ctx), login)
+						data.Login, _ = types.ListValueFrom(ctx, data.Login.ElementType(ctx), login)
 					}
 				}
 
@@ -796,6 +804,32 @@ func (r *serverResource) updateNetworkInterfacesPlan(ctx context.Context, server
 	resp.Diagnostics.Append(diags...)
 }
 
+// Similar to attribute level UseStateForUnknown, but also copies null value from state and seems to work nicely with sensitive values.
+func (r *serverResource) updateOTPasswordPlan(ctx context.Context, state, plan *serverModel, resp *resource.ModifyPlanResponse) {
+	isCreate := state.ID.IsUnknown()
+
+	if plan.Login.IsNull() || isCreate {
+		return
+	}
+
+	var login []loginModel
+	resp.Diagnostics.Append(state.Login.ElementsAs(ctx, &login, false)...)
+	if len(login) == 0 {
+		return
+	}
+	stateLogin := login[0]
+
+	resp.Diagnostics.Append(plan.Login.ElementsAs(ctx, &login, false)...)
+	if len(login) == 0 {
+		return
+	}
+	login[0].Password = stateLogin.Password
+
+	var diags diag.Diagnostics
+	plan.Login, diags = types.ListValueFrom(ctx, plan.Login.ElementType(ctx), login)
+	resp.Diagnostics.Append(diags...)
+}
+
 func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	var plan *serverModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -831,13 +865,14 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 
 	r.updateTagsPlan(server, plan)
 	r.updateNetworkInterfacesPlan(ctx, server, state, plan, resp)
+	r.updateOTPasswordPlan(ctx, state, plan, resp)
 
 	// Host might change if server is migrated to different host, so update host here instead of using state for unknown.
 	var stateDevices, planDevices []storageDeviceModel
 	resp.Diagnostics.Append(state.StorageDevices.ElementsAs(ctx, &stateDevices, false)...)
 	resp.Diagnostics.Append(plan.StorageDevices.ElementsAs(ctx, &planDevices, false)...)
 	if !changeRequiresServerStop(*state, *plan, stateDevices, planDevices) {
-		plan.Host = types.Int64Value(int64(server.Host))
+		plan.Host = types.Int64Value(server.HostID)
 	}
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, plan)...)
@@ -847,7 +882,7 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 	var respDiagnostics, diags diag.Diagnostics
 
 	data.ID = types.StringValue(server.UUID)
-	data.Host = types.Int64Value(int64(server.Host))
+	data.Host = types.Int64Value(server.HostID)
 	data.Hostname = types.StringValue(server.Hostname)
 	data.Title = types.StringValue(server.Title)
 	data.Zone = types.StringValue(server.Zone)
@@ -1009,7 +1044,7 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 	apiReq := &request.CreateServerRequest{
 		BootOrder:    data.BootOrder.ValueString(),
 		CoreNumber:   int(data.CPU.ValueInt64()),
-		Host:         int(data.Host.ValueInt64()),
+		HostID:       data.Host.ValueInt64(),
 		Hostname:     data.Hostname.ValueString(),
 		Labels:       &labelsSlice,
 		MemoryAmount: int(data.Mem.ValueInt64()),
@@ -1035,6 +1070,9 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 	if !data.Login.IsNull() {
 		var login []loginModel
 		resp.Diagnostics.Append(data.Login.ElementsAs(ctx, &login, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
 		loginOpts, deliveryMethod, diags := buildLoginOpts(ctx, login[0])
 		resp.Diagnostics.Append(diags...)
@@ -1145,6 +1183,20 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 		templates[0].ID = types.StringValue(server.StorageDevices[0].UUID)
 		data.Template, diags = types.ListValueFrom(ctx, data.Template.ElementType(ctx), templates)
+		resp.Diagnostics.Append(diags...)
+	}
+
+	if !data.Login.IsNull() {
+		var login []loginModel
+		resp.Diagnostics.Append(data.Login.ElementsAs(ctx, &login, false)...)
+		if len(login) > 0 {
+			if server.OneTimePassword != "" {
+				login[0].Password = types.StringValue(server.OneTimePassword)
+			} else {
+				login[0].Password = types.StringNull()
+			}
+		}
+		data.Login, diags = types.ListValueFrom(ctx, data.Login.ElementType(ctx), login)
 		resp.Diagnostics.Append(diags...)
 	}
 
@@ -1530,7 +1582,7 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}
 
-	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, Host: int(config.Host.ValueInt64())}, r.client)
+	server, err := utils.VerifyServerStarted(ctx, request.StartServerRequest{UUID: uuid, HostID: config.Host.ValueInt64()}, r.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to start server", utils.ErrorDiagnosticDetail(err))
 		return

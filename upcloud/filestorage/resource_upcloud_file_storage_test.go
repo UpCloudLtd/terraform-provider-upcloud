@@ -128,6 +128,36 @@ func TestAccUpCloudFileStorage_basicLifecycle(t *testing.T) {
 	})
 }
 
+func TestAccUpCloudFileStorage_encrypted(t *testing.T) {
+	configEncrypted := utils.ReadTestDataFile(t, "testdata/file_storage_encrypted.tf")
+
+	prefix := "tf-acc-test-file-storage-"
+	suffix := acctest.RandString(4)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: configEncrypted,
+				ConfigVariables: map[string]config.Variable{
+					"prefix": config.StringVariable(prefix),
+					"suffix": config.StringVariable(suffix),
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccFileStorageExists("upcloud_file_storage.encrypted"),
+					resource.TestCheckResourceAttr("upcloud_file_storage.encrypted", "encrypt", "true"),
+				),
+			},
+			{
+				ResourceName:      "upcloud_file_storage.encrypted",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccFileStorageExists(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		_, ok := s.RootModule().Resources[resourceName]

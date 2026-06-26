@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -113,4 +114,19 @@ func JoinSchemas(dst map[string]*schema.Schema, s ...map[string]*schema.Schema) 
 		}
 	}
 	return dst
+}
+
+// From Kubernetes random suffixes.
+const RandomSuffixChars = "bcdfghjklmnpqrstvwxz2456789"
+
+func randomSuffix(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = RandomSuffixChars[rand.Intn(len(RandomSuffixChars))]
+	}
+	return string(b)
+}
+
+func WithRandomSuffix(input string) string {
+	return input + "-" + randomSuffix(5)
 }
