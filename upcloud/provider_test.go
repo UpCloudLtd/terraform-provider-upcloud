@@ -2,6 +2,7 @@ package upcloud
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -32,6 +33,10 @@ func toTfTypesValue(t *testing.T, v attr.Value) tftypes.Value {
 }
 
 func TestProvider_LoggingAndUserAgent(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Skipping because TF_ACC is not set. This test sends requests to UpCloud API and requires valid credentials.")
+	}
+
 	t.Parallel()
 
 	tests := []struct {
