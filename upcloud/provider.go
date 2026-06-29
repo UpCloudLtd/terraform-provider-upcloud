@@ -123,7 +123,7 @@ func withInt64Default(val types.Int64, def int64) int64 {
 
 func withUserAgent(ua string) v9.ClientOption {
 	return v9.WithRequestEditorFn(func(_ context.Context, req *http.Request) error {
-		req.Header.Set("User-Agent", config.DefaultUserAgent())
+		req.Header.Set("User-Agent", ua)
 		return nil
 	})
 }
