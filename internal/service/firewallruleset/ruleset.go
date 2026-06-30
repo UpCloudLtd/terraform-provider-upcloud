@@ -517,7 +517,7 @@ func setRulesetValues(ctx context.Context, state *firewallRulesetModel, api *v9.
 	if api.Version == nil {
 		state.Version = types.Int64Null()
 	} else {
-		state.Version = types.Int64Value(int64(*api.Version))
+		state.Version = types.Int64Value(*api.Version)
 	}
 	if api.CreatedAt == nil {
 		state.CreatedAt = types.StringNull()

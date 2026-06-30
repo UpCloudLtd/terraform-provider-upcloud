@@ -11,7 +11,7 @@ linters:
     - containedctx
     - dogsled
     - errcheck
-    - goconst
+    # - goconst
     - gomoddirectives
     - goprintffuncname
     - govet

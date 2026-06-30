@@ -52,7 +52,7 @@ func (c Config) NewUpCloudServiceConnection(httpClient *http.Client, requestTime
 		"",
 		client.WithHTTPClient(httpClient),
 		client.WithTimeout(requestTimeout),
-		client.WithLogger(logDebugf),
+		client.WithLogger(LogDebug),
 		authFn,
 	)
 
@@ -69,8 +69,8 @@ func DefaultUserAgent() string {
 	return fmt.Sprintf("terraform-provider-upcloud/%s", Version)
 }
 
-// logDebug converts slog style key-value varargs to a map compatible with tflog methods and calls tflog.Debug.
-func logDebugf(ctx context.Context, format string, args ...any) {
+// LogDebug converts slog style key-value varargs to a map compatible with tflog methods and calls tflog.Debug.
+func LogDebug(ctx context.Context, msg string, args ...any) {
 	meta := make(map[string]interface{})
 	for i := 0; i < len(args); i += 2 {
 		key := fmt.Sprintf("%+v", args[i])
@@ -82,7 +82,7 @@ func logDebugf(ctx context.Context, format string, args ...any) {
 
 		meta[key] = value
 	}
-	tflog.Debug(ctx, format, meta)
+	tflog.Debug(ctx, msg, meta)
 }
 
 func checkLogin(svc *service.Service) error {

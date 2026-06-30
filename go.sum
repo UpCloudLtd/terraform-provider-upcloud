@@ -7,12 +7,14 @@ github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA
 github.com/ProtonMail/go-crypto v1.1.6 h1:ZcV+Ropw6Qn0AX9brlQLAUXfqLBc7Bl+f/DmNxpLfdw=
 github.com/ProtonMail/go-crypto v1.1.6/go.mod h1:rA3QumHc/FZ8pAHreoekgiAbzpNsfQAosU5td4SnOrE=
 github.com/RaveNoX/go-jsoncommentstrip v1.0.0/go.mod h1:78ihd09MekBnJnxpICcwzCMzGrKSKYe4AqU6PDYYpjk=
+github.com/UpCloudLtd/httplog v0.0.0-20260624214043-23b0cab8e085 h1:WKK9DZI0ZQikQjhHk+/X2HWKxFrENOvseaDysZE8nPs=
+github.com/UpCloudLtd/httplog v0.0.0-20260624214043-23b0cab8e085/go.mod h1:79ZjkJrYkl540hQ5Fy7XkRfR7109HGMTzHdVEkynTqw=
 github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.2-0.20260218111517-78b5a1eb8206 h1:r1Q2sxM6GkJiRrw14gFC9GHk49mh4ngpX+ihFNDZ4ro=
 github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.2-0.20260218111517-78b5a1eb8206/go.mod h1:aZoVN4egBMe11BuJWJywm2aF1rZipCQ69VhacEtYm/M=
 github.com/UpCloudLtd/upcloud-go-api/v8 v8.38.0 h1:iWgTz32bgXtX1ouFIA3JehBXOvUWnRJsH9CTaX5SzcY=
 github.com/UpCloudLtd/upcloud-go-api/v8 v8.38.0/go.mod h1:sxG94uNhC31OQH+zK0RhZjVj+PdkhObsNAt5bvq2J8c=
-github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260617185413-91e273556c74 h1:WgSdTibC8FaoTDxzN+UdPZGZN9i+4Hp75Do37IXXioo=
-github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260617185413-91e273556c74/go.mod h1:Sy9fWRwKJnUZlN9LwnEwCOG1pgkktR303kD88V38D6E=
+github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260625091310-c4bd0eb83f3c h1:206KfJ2u04jpApS8iXTjiXpyYNGcpMBsaJrM7CYOn44=
+github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260625091310-c4bd0eb83f3c/go.mod h1:rkrS0yzYdNFmebcYNIdQ7J8lALDNNBPv5u9W9m12pwA=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
 github.com/agext/levenshtein v1.2.3/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0 h1:axGnT1gRIfimI7gJifB699GoE/oq+F2MU7Dml6nw9rQ=
