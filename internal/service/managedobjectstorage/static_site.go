@@ -303,6 +303,10 @@ func (r *managedObjectStorageStaticSiteResource) Create(ctx context.Context, req
 		)
 		return
 	}
+	if created.StatusCode() != http.StatusCreated {
+		diagUnexpectedStatus(&resp.Diagnostics, "create", created.StatusCode(), created.Body)
+		return
+	}
 
 	if created.JSON201 == nil {
 		resp.Diagnostics.AddError(
