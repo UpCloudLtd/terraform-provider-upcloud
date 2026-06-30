@@ -48,7 +48,7 @@ func validateErrorPages(ctx context.Context, list types.List, basePath path.Path
 
 		diags.AddAttributeError(
 			basePath.AtListIndex(i),
-			"Invalid error_page status matcher",
+			"Invalid error_pages status matcher",
 			errorPageStatusMatcherValidationDetail,
 		)
 	}
@@ -84,7 +84,7 @@ func validateErrorPageStatusMatcherAtIndex(pages []errorPageModel) error {
 			continue
 		}
 
-		return fmt.Errorf("error_page[%d]: %s", i, errorPageStatusMatcherValidationDetail)
+		return fmt.Errorf("error_pages[%d]: %s", i, errorPageStatusMatcherValidationDetail)
 	}
 
 	return nil

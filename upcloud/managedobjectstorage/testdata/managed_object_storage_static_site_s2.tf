@@ -33,9 +33,9 @@ resource "upcloud_managed_object_storage_static_site" "this" {
   spa_mode       = true
   enabled        = true
 
-  error_page {
+  error_pages = [{
     status_code    = 404
     error_document = "errors/404.html"
-  }
+  }]
 }
 

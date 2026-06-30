@@ -6,6 +6,7 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 const (
@@ -49,14 +50,19 @@ func TestAccUpcloudManagedObjectStorageStaticSite(t *testing.T) {
 			},
 			{
 				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(staticSite, plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(staticSite, "bucket_prefix", "public/"),
 					resource.TestCheckResourceAttr(staticSite, "spa_mode", "true"),
 					resource.TestCheckResourceAttr(staticSite, "enabled", "true"),
 					upcloud.CheckStringDoesNotChange(staticSite, "domain_name", &staticSiteDomainName),
-					resource.TestCheckResourceAttr(staticSite, "error_page.#", "1"),
-					resource.TestCheckResourceAttr(staticSite, "error_page.0.error_document", "errors/404.html"),
-					resource.TestCheckResourceAttr(staticSite, "error_page.0.status_code", "404"),
+					resource.TestCheckResourceAttr(staticSite, "error_pages.#", "1"),
+					resource.TestCheckResourceAttr(staticSite, "error_pages.0.error_document", "errors/404.html"),
+					resource.TestCheckResourceAttr(staticSite, "error_pages.0.status_code", "404"),
 				),
 			},
 		},

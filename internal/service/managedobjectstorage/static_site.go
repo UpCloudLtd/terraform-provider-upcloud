@@ -52,7 +52,7 @@ type staticSiteModel struct {
 	IndexDocument types.String `tfsdk:"index_document"`
 	SpaMode       types.Bool   `tfsdk:"spa_mode"`
 	Enabled       types.Bool   `tfsdk:"enabled"`
-	ErrorPages    types.List   `tfsdk:"error_page"`
+	ErrorPages    types.List   `tfsdk:"error_pages"`
 }
 
 type errorPageModel struct {
@@ -71,12 +71,15 @@ func (r *managedObjectStorageStaticSiteResource) Schema(_ context.Context, _ res
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 			},
 			"id": schema.StringAttribute{
 				Description: "ID of the custom domain. ID is in {object storage UUID}/{domain name} format.",
 				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"service_uuid": schema.StringAttribute{
 				Description: "Managed Object Storage service UUID.",
@@ -109,11 +112,11 @@ func (r *managedObjectStorageStaticSiteResource) Schema(_ context.Context, _ res
 				Optional:    true,
 				Computed:    true,
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"error_page": schema.ListNestedBlock{
+			"error_pages": schema.ListNestedAttribute{
 				MarkdownDescription: "Custom error pages served when the storage backend returns an error status.",
-				NestedObject: schema.NestedBlockObject{
+				Optional:            true,
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"status_code": schema.Int64Attribute{
 							Description: "Exact HTTP status code to match. Mutually exclusive with status range.",
@@ -158,7 +161,7 @@ func parseErrorPages(ctx context.Context, list types.List) ([]v9.ObjectStorage2S
 
 	var pages []errorPageModel
 	if diags := list.ElementsAs(ctx, &pages, false); diags.HasError() {
-		return nil, fmt.Errorf("failed to decode error_page block")
+		return nil, fmt.Errorf("failed to decode error_pages block")
 	}
 
 	if err := validateErrorPageStatusMatcherAtIndex(pages); err != nil {
@@ -249,7 +252,7 @@ func (r *managedObjectStorageStaticSiteResource) Create(ctx context.Context, req
 		return
 	}
 
-	resp.Diagnostics.Append(validateErrorPages(ctx, data.ErrorPages, path.Root("error_page"))...)
+	resp.Diagnostics.Append(validateErrorPages(ctx, data.ErrorPages, path.Root("error_pages"))...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -385,7 +388,7 @@ func (r *managedObjectStorageStaticSiteResource) Update(ctx context.Context, req
 		return
 	}
 
-	resp.Diagnostics.Append(validateErrorPages(ctx, data.ErrorPages, path.Root("error_page"))...)
+	resp.Diagnostics.Append(validateErrorPages(ctx, data.ErrorPages, path.Root("error_pages"))...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
