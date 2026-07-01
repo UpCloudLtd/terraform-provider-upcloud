@@ -75,7 +75,7 @@ func (r *managedObjectStorageStaticSiteResource) Schema(_ context.Context, _ res
 				},
 			},
 			"id": schema.StringAttribute{
-				Description: "ID of the custom domain. ID is in {object storage UUID}/{domain name} format.",
+				Description: "ID of the static site. ID is in {object storage UUID}/{domain name} format.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
