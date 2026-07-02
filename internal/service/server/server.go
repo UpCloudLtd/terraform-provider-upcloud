@@ -114,6 +114,21 @@ type networkInterfaceModel struct {
 	Bootable              types.Bool   `tfsdk:"bootable"`
 }
 
+func (m networkInterfaceModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"index":                 types.Int64Type,
+		"ip_address_family":     types.StringType,
+		"ip_address":            types.StringType,
+		"ip_address_floating":   types.BoolType,
+		"additional_ip_address": types.SetType{ElemType: types.ObjectType{AttrTypes: additionalIPAddressModel{}.AttributeTypes()}},
+		"mac_address":           types.StringType,
+		"type":                  types.StringType,
+		"network":               types.StringType,
+		"source_ip_filtering":   types.BoolType,
+		"bootable":              types.BoolType,
+	}
+}
+
 type additionalIPAddressModel struct {
 	IPAddressFamily   types.String `tfsdk:"ip_address_family"`
 	IPAddress         types.String `tfsdk:"ip_address"`

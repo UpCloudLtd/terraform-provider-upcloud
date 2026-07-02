@@ -237,6 +237,7 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 		loadbalancer.NewDNSChallengeDomainDataSource,
 		managedobjectstorage.NewPoliciesDataSource,
 		managedobjectstorage.NewRegionsDataSource,
+		server.NewServerDataSource,
 		storage.NewStorageDataSource,
 	}
 }
