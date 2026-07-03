@@ -194,11 +194,9 @@ func labelsMapToV9Slice(m map[string]string) []v9.ObjectStorage2LabelCreate {
 	labels := make([]v9.ObjectStorage2LabelCreate, 0, len(m))
 
 	for k, v := range m {
-		key := v9.ObjectStorage2LabelKey(k)
-		value := v9.ObjectStorage2LabelValue(v)
 		labels = append(labels, v9.ObjectStorage2LabelCreate{
-			Key:   key,
-			Value: &value,
+			Key:   k,
+			Value: &v,
 		})
 	}
 
@@ -364,13 +362,12 @@ func buildNetworks(ctx context.Context, dataNetworks types.Set) ([]v9.ObjectStor
 				continue
 			}
 
-			uuidValue := openapi_types.UUID(u)
-			networkUUID = &uuidValue
+			networkUUID = &u
 		}
 
 		networks = append(networks, v9.ObjectStorage2NetworkCreate{
 			Family: v9.ObjectStorage2NetworkFamily(network.Family.ValueString()),
-			Name:   v9.ObjectStorage2Name(network.Name.ValueString()),
+			Name:   network.Name.ValueString(),
 			Type:   v9.ObjectStorage2NetworkType(network.Type.ValueString()),
 			Uuid:   networkUUID,
 		})
@@ -422,7 +419,7 @@ func (r *managedObjectStorageResource) Create(ctx context.Context, req resource.
 	apiReq := v9.CreateObjectStorageJSONRequestBody{
 		ConfiguredStatus: configuredStatus,
 		Name:             data.Name.ValueString(),
-		Region:           v9.ObjectStorage2Name(data.Region.ValueString()),
+		Region:           data.Region.ValueString(),
 	}
 	if len(networks) > 0 {
 		apiReq.Networks = &networks
@@ -488,7 +485,7 @@ func (r *managedObjectStorageResource) Read(ctx context.Context, req resource.Re
 		return
 	}
 
-	objstoResp, err := r.client.GetObjectStorageWithResponse(ctx, openapi_types.UUID(serviceUUID))
+	objstoResp, err := r.client.GetObjectStorageWithResponse(ctx, serviceUUID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read managed object storage details",
@@ -564,7 +561,7 @@ func (r *managedObjectStorageResource) Update(ctx context.Context, req resource.
 			Name:             data.Name.ValueStringPointer(),
 			Networks:         &intermediateNetworks,
 		}
-		intermResp, err := r.client.ModifyObjectStorageWithResponse(ctx, openapi_types.UUID(serviceUUID), intermReq)
+		intermResp, err := r.client.ModifyObjectStorageWithResponse(ctx, serviceUUID, intermReq)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Unable to modify managed object storage",
@@ -594,7 +591,7 @@ func (r *managedObjectStorageResource) Update(ctx context.Context, req resource.
 		Networks:         &networks,
 	}
 
-	objstoResp, err := r.client.ModifyObjectStorageWithResponse(ctx, openapi_types.UUID(serviceUUID), apiReq)
+	objstoResp, err := r.client.ModifyObjectStorageWithResponse(ctx, serviceUUID, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify managed object storage",
@@ -637,7 +634,7 @@ func (r *managedObjectStorageResource) Delete(ctx context.Context, req resource.
 	}
 
 	deleteParams := &v9.DeleteObjectStorageParams{}
-	deleteResp, err := r.client.DeleteObjectStorageWithResponse(ctx, openapi_types.UUID(serviceUUID), deleteParams)
+	deleteResp, err := r.client.DeleteObjectStorageWithResponse(ctx, serviceUUID, deleteParams)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage",
