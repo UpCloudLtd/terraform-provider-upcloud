@@ -47,6 +47,7 @@ resource "upcloud_managed_object_storage_custom_domain" "this" {
 
 ### Optional Attributes
 
+- `mode` (String) Routing mode for the domain. Defaults to `api`.
 - `type` (String) At the moment only `public` is accepted.
 
 ### Read-Only
