@@ -29,4 +29,5 @@ resource "upcloud_managed_object_storage" "this" {
 resource "upcloud_managed_object_storage_custom_domain" "this" {
   service_uuid = upcloud_managed_object_storage.this.id
   domain_name  = "obj.example.com"
+  mode         = "static-website"
 }
