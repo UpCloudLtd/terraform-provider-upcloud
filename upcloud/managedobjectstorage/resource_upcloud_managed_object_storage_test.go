@@ -135,6 +135,7 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(customDomain, "domain_name", "objects.example.com"),
+					resource.TestCheckResourceAttr(customDomain, "mode", "static-website"),
 				),
 			},
 			{
@@ -147,6 +148,7 @@ func TestAccUpcloudManagedObjectStorage_CustomDomain(t *testing.T) {
 				Config: testDataS2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(customDomain, "domain_name", "obj.example.com"),
+					resource.TestCheckResourceAttr(customDomain, "mode", "static-website"),
 				),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{

@@ -46,6 +46,7 @@ type customDomainModel struct {
 	DomainName  types.String `tfsdk:"domain_name"`
 	ID          types.String `tfsdk:"id"`
 	ServiceUUID types.String `tfsdk:"service_uuid"`
+	Mode        types.String `tfsdk:"mode"`
 	Type        types.String `tfsdk:"type"`
 }
 
@@ -77,6 +78,18 @@ func (r *managedObjectStorageCustomDomainResource) Schema(_ context.Context, _ r
 					stringvalidator.OneOf("public"),
 				},
 			},
+			"mode": schema.StringAttribute{
+				MarkdownDescription: "Routing mode for the domain. Defaults to `api`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("api"),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf("api", "static-website"),
+				},
+			},
 		},
 	}
 }
@@ -100,6 +113,7 @@ func (r *managedObjectStorageCustomDomainResource) Create(ctx context.Context, r
 	apiResp, err := r.client.AttachObjectStorageCustomDomainWithResponse(ctx, serviceUUID, v9.ObjectStorage2CustomDomainCreate{
 		DomainName: data.DomainName.ValueString(),
 		Type:       v9.ObjectStorage2CustomDomainCreateType(data.Type.ValueString()),
+		Mode:       (*v9.ObjectStorage2CustomDomainCreateMode)(data.Mode.ValueStringPointer()),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -167,12 +181,10 @@ func (r *managedObjectStorageCustomDomainResource) Read(ctx context.Context, req
 	}
 
 	customDomain := apiResp.JSON200
-	if customDomain.DomainName != nil {
-		data.DomainName = types.StringValue(*customDomain.DomainName)
-	}
-	if customDomain.Type != nil {
-		data.Type = types.StringValue(*customDomain.Type)
-	}
+	data.DomainName = types.StringPointerValue(customDomain.DomainName)
+	data.Type = types.StringPointerValue(customDomain.Type)
+	data.Mode = types.StringPointerValue((*string)(customDomain.Mode))
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -221,12 +233,10 @@ func (r *managedObjectStorageCustomDomainResource) Update(ctx context.Context, r
 
 	customDomain := apiResp.JSON200
 	data.ID = types.StringValue(utils.MarshalID(data.ServiceUUID.ValueString(), data.DomainName.ValueString()))
-	if customDomain.DomainName != nil {
-		data.DomainName = types.StringValue(*customDomain.DomainName)
-	}
-	if customDomain.Type != nil {
-		data.Type = types.StringValue(*customDomain.Type)
-	}
+	data.DomainName = types.StringPointerValue(customDomain.DomainName)
+	data.Type = types.StringPointerValue(customDomain.Type)
+	data.Mode = types.StringPointerValue((*string)(customDomain.Mode))
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
