@@ -42,6 +42,7 @@ resource "upcloud_gateway" "this" {
   name     = "gateway-example-gw"
   zone     = "pl-waw1"
   features = ["nat"]
+  plan     = "development"
 
   router {
     id = upcloud_router.this.id
@@ -66,7 +67,7 @@ resource "upcloud_gateway" "this" {
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
 - `labels` (Map of String) User defined key-value pairs to classify the network gateway.
-- `plan` (String) Gateway pricing plan.
+- `plan` (String) Gateway pricing plan. Required by the UpCloud API when creating a gateway. Valid values: essentials, development, standard, production, advanced.
 
 ### Blocks
 
