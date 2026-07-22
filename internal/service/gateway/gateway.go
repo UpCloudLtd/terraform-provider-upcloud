@@ -221,6 +221,8 @@ func (r *gatewayResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 func setGatewayValues(ctx context.Context, data *gatewayModel, gw *upcloud.Gateway) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
+	isImport := data.Name.ValueString() == ""
+
 	data.ID = types.StringValue(gw.UUID)
 	data.Name = types.StringValue(gw.Name)
 	data.Zone = types.StringValue(gw.Zone)
@@ -264,8 +266,10 @@ func setGatewayValues(ctx context.Context, data *gatewayModel, gw *upcloud.Gatew
 	data.Addresses, diags = types.SetValueFrom(ctx, data.Addresses.ElementType(ctx), addresses)
 	respDiagnostics.Append(diags...)
 
-	data.Address, diags = types.SetValueFrom(ctx, data.Address.ElementType(ctx), addresses)
-	respDiagnostics.Append(diags...)
+	if !data.Address.IsNull() || isImport {
+		data.Address, diags = types.SetValueFrom(ctx, data.Address.ElementType(ctx), addresses)
+		respDiagnostics.Append(diags...)
+	}
 
 	return respDiagnostics
 }
