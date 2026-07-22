@@ -67,7 +67,7 @@ resource "upcloud_gateway" "this" {
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
 - `labels` (Map of String) User defined key-value pairs to classify the network gateway.
-- `plan` (String) Gateway pricing plan. Required by the UpCloud API when creating a gateway. Valid values: essentials, development, standard, production, advanced.
+- `plan` (String) Gateway pricing plan, defaults to `development`. You can list available plans with `upctl gateway plans`.
 
 ### Blocks
 
@@ -77,7 +77,7 @@ resource "upcloud_gateway" "this" {
 ### Read-Only
 
 - `addresses` (Set of Object, Deprecated) IP addresses assigned to the gateway. (see [below for nested schema](#nestedatt--addresses))
-- `connections` (List of String) Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terrafrom refresh'.
+- `connections` (List of String) Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terraform refresh'.
 - `id` (String) The ID of this resource.
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 
