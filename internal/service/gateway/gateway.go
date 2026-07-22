@@ -97,8 +97,8 @@ func ResourceGateway() *schema.Resource {
 			},
 			"plan": {
 				Description: planDescription,
-				Computed:    true,
-				Optional:    true,
+				// Computed:    true,
+				Optional: true,
 				// Plan is now required by the API, so set the default value here to avoid breaking existing configurations.
 				Default: "development",
 				Type:    schema.TypeString,
