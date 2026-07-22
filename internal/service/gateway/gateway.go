@@ -26,8 +26,8 @@ const (
 	configuredStatusDescription = "The service configured status indicates the service's current intended status. Managed by the customer."
 	operationalStateDescription = "The service operational state indicates the service's current operational, effective state. Managed by the system."
 	addressesDescription        = "IP addresses assigned to the gateway."
-	planDescription             = "Gateway pricing plan."
-	connectionsDescription      = "Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terrafrom refresh'."
+	planDescription             = "Gateway pricing plan, defaults to `development`. You can list available plans with `upctl gateway plans`."
+	connectionsDescription      = "Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terraform refresh'."
 
 	cleanupWaitTimeSeconds = 15
 )
@@ -97,9 +97,11 @@ func ResourceGateway() *schema.Resource {
 			},
 			"plan": {
 				Description: planDescription,
-				Computed:    true,
-				Optional:    true,
-				Type:        schema.TypeString,
+				// Computed:    true,
+				Optional: true,
+				// Plan is now required by the API, so set the default value here to avoid breaking existing configurations.
+				Default: "development",
+				Type:    schema.TypeString,
 			},
 			"address": {
 				Description: addressesDescription,

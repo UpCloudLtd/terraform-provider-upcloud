@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_gateway: the API now requires a plan to be specified when creating a gateway, so set `development` as a default value for `plan` field to avoid breaking existing configurations.
+
 ## [5.41.0] - 2026-07-13
 
 ### Added
