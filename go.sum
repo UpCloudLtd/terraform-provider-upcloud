@@ -158,8 +158,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zxSIeXaQ=
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
-github.com/oapi-codegen/oapi-codegen/v2 v2.6.0 h1:4i+F2cvwBFZeplxCssNdLy3MhNzUD87mI3HnayHZkAU=
-github.com/oapi-codegen/oapi-codegen/v2 v2.6.0/go.mod h1:eWHeJSohQJIINJZzzQriVynfGsnlQVh0UkN2UYYcw4Q=
+github.com/oapi-codegen/oapi-codegen/v2 v2.7.1 h1:a7Ab7YlpqkVG5HKrTaeFstm32Z5QOnyjnbsCO0jiMYM=
+github.com/oapi-codegen/oapi-codegen/v2 v2.7.1/go.mod h1:qzFy6iuobJw/hD1aRILee4G87/ShmhR0xYCwcUtZMCw=
 github.com/oapi-codegen/runtime v1.3.0 h1:vyK1zc0gDWWXgk2xoQa4+X4RNNc5SL2RbTpJS/4vMYA=
 github.com/oapi-codegen/runtime v1.3.0/go.mod h1:kOdeacKy7t40Rclb1je37ZLFboFxh+YLy0zaPCMibPY=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
