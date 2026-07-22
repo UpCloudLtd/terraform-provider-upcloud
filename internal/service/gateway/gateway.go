@@ -7,17 +7,27 @@ import (
 	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
+	idDescription               = "Gateway UUID."
 	nameDescription             = "Gateway name. Needs to be unique within the account."
 	zoneDescription             = "Zone in which the gateway will be hosted, e.g. `de-fra1`."
 	featuresDescription         = "Features enabled for the gateway. Valid item values are `nat` and `vpn`. For more details, see documentation on [NAT](https://upcloud.com/docs/products/nat-gateway/) and [VPN](https://upcloud.com/docs/products/vpn-gateway/) gateways."
@@ -30,317 +40,418 @@ const (
 	connectionsDescription      = "Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terraform refresh'."
 
 	cleanupWaitTimeSeconds = 15
+	resourceNameRegexpStr  = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 )
 
-func ResourceGateway() *schema.Resource {
-	return &schema.Resource{
-		Description:   "Network gateways connect SDN Private Networks to external IP networks.",
-		CreateContext: resourceGatewayCreate,
-		ReadContext:   resourceGatewayRead,
-		UpdateContext: resourceGatewayUpdate,
-		DeleteContext: resourceGatewayDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+var resourceNameRegexp = regexp.MustCompile(resourceNameRegexpStr)
+
+var (
+	_ resource.Resource                = &gatewayResource{}
+	_ resource.ResourceWithConfigure   = &gatewayResource{}
+	_ resource.ResourceWithImportState = &gatewayResource{}
+)
+
+func NewGatewayResource() resource.Resource {
+	return &gatewayResource{}
+}
+
+type gatewayResource struct {
+	client *service.Service
+}
+
+func (r *gatewayResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_gateway"
+}
+
+// Configure adds the provider configured client to the resource.
+func (r *gatewayResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type addressModel struct {
+	Address types.String `tfsdk:"address"`
+	Name    types.String `tfsdk:"name"`
+}
+
+type routerModel struct {
+	ID types.String `tfsdk:"id"`
+}
+
+type gatewayModel struct {
+	ID               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	Zone             types.String `tfsdk:"zone"`
+	Features         types.Set    `tfsdk:"features"`
+	Labels           types.Map    `tfsdk:"labels"`
+	ConfiguredStatus types.String `tfsdk:"configured_status"`
+	OperationalState types.String `tfsdk:"operational_state"`
+	Plan             types.String `tfsdk:"plan"`
+	Connections      types.List   `tfsdk:"connections"`
+	Addresses        types.Set    `tfsdk:"addresses"`
+	Router           types.Set    `tfsdk:"router"`
+	Address          types.Set    `tfsdk:"address"`
+}
+
+func (r *gatewayResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "Network gateways connect SDN Private Networks to external IP networks.",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				MarkdownDescription: idDescription,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: nameDescription,
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 64),
+					stringvalidator.RegexMatches(resourceNameRegexp, fmt.Sprintf("must contain only alphanumeric characters, hyphens, and underscores (a-z, 0-9, -, _). Regular expresion used to check validation: %s", resourceNameRegexp)),
+				},
+			},
+			"zone": schema.StringAttribute{
+				MarkdownDescription: zoneDescription,
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"features": schema.SetAttribute{
+				MarkdownDescription: featuresDescription,
+				Required:            true,
+				ElementType:         types.StringType,
+				Validators: []validator.Set{
+					setvalidator.ValueStringsAre(
+						stringvalidator.OneOf(
+							string(upcloud.GatewayFeatureNAT),
+							string(upcloud.GatewayFeatureVPN),
+						),
+					),
+				},
+			},
+			"labels": utils.LabelsAttribute("gateway"),
+			"configured_status": schema.StringAttribute{
+				MarkdownDescription: configuredStatusDescription,
+				Computed:            true,
+				Optional:            true,
+				Default:             stringdefault.StaticString(string(upcloud.GatewayConfiguredStatusStarted)),
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(upcloud.GatewayConfiguredStatusStarted),
+						string(upcloud.GatewayConfiguredStatusStopped),
+					),
+				},
+			},
+			"operational_state": schema.StringAttribute{
+				MarkdownDescription: operationalStateDescription,
+				Computed:            true,
+			},
+			"plan": schema.StringAttribute{
+				MarkdownDescription: planDescription,
+				Computed:            true,
+				Optional:            true,
+				Default:             stringdefault.StaticString("development"),
+			},
+			"connections": schema.ListAttribute{
+				MarkdownDescription: connectionsDescription,
+				Computed:            true,
+				ElementType:         types.StringType,
+			},
+			"addresses": schema.SetNestedAttribute{
+				MarkdownDescription: "Use 'address' attribute instead. This attribute will be removed in the next major version of the provider.",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"address": schema.StringAttribute{
+							Description: "IP address.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "Name of the address.",
+							Computed:    true,
+						},
+					},
+				},
+			},
 		},
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description:      nameDescription,
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateName,
-			},
-			"zone": {
-				Description: zoneDescription,
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"features": {
-				Description: featuresDescription,
-				Type:        schema.TypeSet,
-				Required:    true,
-				ForceNew:    true,
-				Elem: &schema.Schema{
-					Type:             schema.TypeString,
-					ValidateDiagFunc: validateFeaturesElen,
-				},
-			},
-			"router": {
-				Description: routerDescription,
-				Type:        schema.TypeList,
-				Required:    true,
-				ForceNew:    true,
-				MaxItems:    1,
-				MinItems:    1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Description: routerIDDescription,
-							Type:        schema.TypeString,
-							Required:    true,
+		Blocks: map[string]schema.Block{
+			"router": schema.SetNestedBlock{
+				MarkdownDescription: routerDescription,
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							MarkdownDescription: routerIDDescription,
+							Required:            true,
 						},
 					},
 				},
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.SizeAtMost(1),
+				},
 			},
-			"labels": utils.LabelsSchema("network gateway"),
-			"configured_status": {
-				Description:      configuredStatusDescription,
-				Type:             schema.TypeString,
-				Optional:         true,
-				Default:          string(upcloud.GatewayConfiguredStatusStarted),
-				ValidateDiagFunc: validateConfiguredStatus,
-			},
-			"operational_state": {
-				Description: operationalStateDescription,
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"plan": {
-				Description: planDescription,
-				// Computed:    true,
-				Optional: true,
-				// Plan is now required by the API, so set the default value here to avoid breaking existing configurations.
-				Default: "development",
-				Type:    schema.TypeString,
-			},
-			"address": {
-				Description: addressesDescription,
-				Computed:    true,
-				Optional:    true,
-				Type:        schema.TypeSet,
-				MaxItems:    1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"address": {
-							Type:        schema.TypeString,
-							Description: "IP addresss",
+			"address": schema.SetNestedBlock{
+				MarkdownDescription: addressesDescription,
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"address": schema.StringAttribute{
+							Description: "IP address.",
 							Computed:    true,
-							Optional:    false,
-							Required:    false,
 						},
-						"name": {
-							Type:             schema.TypeString,
-							Description:      "Name of the IP address",
-							Computed:         true,
-							Optional:         true,
-							ValidateDiagFunc: validateName,
+						"name": schema.StringAttribute{
+							Description: "Name of the IP address.",
+							Computed:    true,
+							Optional:    true,
 						},
 					},
 				},
-			},
-			"connections": {
-				Description: connectionsDescription,
-				Computed:    true,
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"addresses": {
-				Deprecated:  "Use 'address' attribute instead. This attribute will be removed in the next major version of the provider",
-				Description: addressesDescription,
-				Computed:    true,
-				Type:        schema.TypeSet,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"address": {
-							Type:        schema.TypeString,
-							Description: "IP addresss",
-							Computed:    true,
-						},
-						"name": {
-							Type:        schema.TypeString,
-							Description: "Name of the IP address",
-							Computed:    true,
-						},
-					},
+				Validators: []validator.Set{
+					setvalidator.SizeAtMost(1),
 				},
 			},
 		},
 	}
 }
 
-func resourceGatewayCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
+func setGatewayValues(ctx context.Context, data *gatewayModel, gw *upcloud.Gateway) diag.Diagnostics {
+	var diags, respDiagnostics diag.Diagnostics
 
-	features := []upcloud.GatewayFeature{}
-	for _, i := range d.Get("features").(*schema.Set).List() {
-		features = append(features, upcloud.GatewayFeature(i.(string)))
+	data.ID = types.StringValue(gw.UUID)
+	data.Name = types.StringValue(gw.Name)
+	data.Zone = types.StringValue(gw.Zone)
+	data.Plan = types.StringValue(gw.Plan)
+	data.ConfiguredStatus = types.StringValue(string(gw.ConfiguredStatus))
+	data.OperationalState = types.StringValue(string(gw.OperationalState))
+
+	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(gw.Labels))
+	respDiagnostics.Append(diags...)
+
+	features := make([]string, len(gw.Features))
+	for i, feature := range gw.Features {
+		features[i] = string(feature)
 	}
 
-	req := &request.CreateGatewayRequest{
-		Name:     d.Get("name").(string),
-		Zone:     d.Get("zone").(string),
-		Plan:     d.Get("plan").(string),
+	data.Features, diags = types.SetValueFrom(ctx, data.Features.ElementType(ctx), features)
+	respDiagnostics.Append(diags...)
+
+	connections := make([]string, len(gw.Connections))
+	for i, connection := range gw.Connections {
+		connections[i] = connection.Name
+	}
+
+	data.Connections, diags = types.ListValueFrom(ctx, data.Connections.ElementType(ctx), connections)
+	respDiagnostics.Append(diags...)
+
+	routers := make([]routerModel, len(gw.Routers))
+	for i, router := range gw.Routers {
+		routers[i].ID = types.StringValue(router.UUID)
+	}
+
+	data.Router, diags = types.SetValueFrom(ctx, data.Router.ElementType(ctx), routers)
+	respDiagnostics.Append(diags...)
+
+	addresses := make([]addressModel, len(gw.Addresses))
+	for i, address := range gw.Addresses {
+		addresses[i].Address = types.StringValue(address.Address)
+		addresses[i].Name = types.StringValue(address.Name)
+	}
+
+	data.Addresses, diags = types.SetValueFrom(ctx, data.Addresses.ElementType(ctx), addresses)
+	respDiagnostics.Append(diags...)
+
+	data.Address, diags = types.SetValueFrom(ctx, data.Address.ElementType(ctx), addresses)
+	respDiagnostics.Append(diags...)
+
+	return respDiagnostics
+}
+
+func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data gatewayModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var labels map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+
+	var features []upcloud.GatewayFeature
+	resp.Diagnostics.Append(data.Features.ElementsAs(ctx, &features, false)...)
+
+	var routers []routerModel
+	resp.Diagnostics.Append(data.Router.ElementsAs(ctx, &routers, false)...)
+
+	apiReq := request.CreateGatewayRequest{
+		Name:     data.Name.ValueString(),
+		Zone:     data.Zone.ValueString(),
+		Plan:     data.Plan.ValueString(),
 		Features: features,
-		Routers: []request.GatewayRouter{
-			{UUID: d.Get("router.0.id").(string)},
-		},
-		Labels:           utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{})),
-		ConfiguredStatus: upcloud.GatewayConfiguredStatus(d.Get("configured_status").(string)),
+		Routers: []request.GatewayRouter{{
+			UUID: routers[0].ID.ValueString(),
+		}},
+		Labels:           utils.LabelsMapToSlice(labels),
+		ConfiguredStatus: upcloud.GatewayConfiguredStatus(data.ConfiguredStatus.ValueString()),
 	}
 
 	addresses := []upcloud.GatewayAddress{}
-	for i, val := range d.Get("address").(*schema.Set).List() {
-		addrMap := val.(map[string]interface{})
+	if !data.Address.IsNull() && !data.Address.IsUnknown() {
+		var addressesData []addressModel
+		resp.Diagnostics.Append(data.Address.ElementsAs(ctx, &addressesData, false)...)
 
-		addrName, ok := addrMap["name"]
-		if !ok || addrName == "" {
-			return append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       "Malformed resource data",
-				Detail:        "Gateway address does not have a required name.",
-				AttributePath: cty.GetAttrPath("address").IndexInt(i).GetAttr("name"),
+		for _, address := range addressesData {
+			if address.Address.ValueString() == "" {
+				resp.Diagnostics.AddError(
+					"Unable to build create gateway request",
+					"Gateway address name cannot be empty.",
+				)
+				return
+			}
+
+			addresses = append(addresses, upcloud.GatewayAddress{
+				Name: address.Name.ValueString(),
 			})
 		}
-
-		addresses = append(addresses, upcloud.GatewayAddress{
-			Name: addrName.(string),
-		})
 	}
 
 	if len(addresses) > 0 {
-		req.Addresses = addresses
+		apiReq.Addresses = addresses
 	}
 
-	gw, err := svc.CreateGateway(ctx, req)
+	gw, err := r.client.CreateGateway(ctx, &apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to create gateway",
+			utils.ErrorDiagnosticDetail(err),
+		)
+
+		return
 	}
 
-	d.SetId(gw.UUID)
+	data.ID = types.StringValue(gw.UUID)
 
-	gw, err = waitForGatewayToBeRunning(ctx, svc, gw.UUID)
+	gw, err = waitForGatewayToBeRunning(ctx, r.client, gw.UUID)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Error while waiting for gateway to be in running state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	diags = append(diags, setGatewayResourceData(d, gw)...)
-
-	// No error, log a success message
-	if len(diags) == 0 {
-		tflog.Info(ctx, "network gateway created", map[string]interface{}{"name": gw.Name, "uuid": gw.UUID})
-	}
-
-	return diags
+	resp.Diagnostics.Append(setGatewayValues(ctx, &data, gw)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceGatewayRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	svc := meta.(*service.Service)
-	gw, err := svc.GetGateway(ctx, &request.GetGatewayRequest{UUID: d.Id()})
-	if err != nil {
-		return utils.HandleResourceError(d.Get("name").(string), d, err)
+func (r *gatewayResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data gatewayModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	return setGatewayResourceData(d, gw)
+	if data.ID.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	gw, err := r.client.GetGateway(ctx, &request.GetGatewayRequest{
+		UUID: data.ID.ValueString(),
+	})
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Unable to read gateway details",
+				utils.ErrorDiagnosticDetail(err),
+			)
+		}
+		return
+	}
+
+	resp.Diagnostics.Append(setGatewayValues(ctx, &data, gw)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func resourceGatewayUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	req := request.ModifyGatewayRequest{
-		UUID: d.Id(),
+func (r *gatewayResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan gatewayModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	uuid := plan.ID.ValueString()
+
+	var labels map[string]string
+	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
+	}
+	labelsSlice := utils.NilAsEmptyList(utils.LabelsMapToSlice(labels))
+
+	apiReq := &request.ModifyGatewayRequest{
+		UUID:             uuid,
+		Name:             plan.Name.ValueString(),
+		Plan:             plan.Plan.ValueString(),
+		ConfiguredStatus: upcloud.GatewayConfiguredStatus(plan.ConfiguredStatus.ValueString()),
+		Labels:           labelsSlice,
 	}
 
-	if d.HasChange("name") {
-		req.Name = d.Get("name").(string)
-	}
-
-	if d.HasChange("plan") {
-		req.Plan = d.Get("plan").(string)
-	}
-
-	if d.HasChange("configured_status") {
-		req.ConfiguredStatus = upcloud.GatewayConfiguredStatus(d.Get("configured_status").(string))
-	}
-
-	if d.HasChange("labels") {
-		req.Labels = utils.LabelsMapToSlice(d.Get("labels").(map[string]interface{}))
-	}
-
-	svc := meta.(*service.Service)
-	gw, err := svc.ModifyGateway(ctx, &req)
+	_, err := r.client.ModifyGateway(ctx, apiReq)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError(
+			"Unable to modify gateway",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	return setGatewayResourceData(d, gw)
+	gw, err := waitForGatewayToBeRunning(ctx, r.client, uuid)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error while waiting for gateway to be in running state",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setGatewayValues(ctx, &plan, gw)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func resourceGatewayDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	svc := meta.(*service.Service)
-	if err := svc.DeleteGateway(ctx, &request.DeleteGatewayRequest{UUID: d.Id()}); err != nil {
-		return diag.FromErr(err)
-	}
-	tflog.Info(ctx, "Gateway delete started", map[string]interface{}{"name": d.Get("name").(string), "uuid": d.Id()})
+func (r *gatewayResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data gatewayModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	// wait before continuing so that router can be deleted if needed
-	diags := diag.FromErr(waitForGatewayToBeDeleted(ctx, svc, d.Id()))
+	if err := r.client.DeleteGateway(ctx, &request.DeleteGatewayRequest{
+		UUID: data.ID.ValueString(),
+	}); err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to delete gateway",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	err := waitForGatewayToBeDeleted(ctx, r.client, data.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error while waiting for gateway to be deleted",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
 
 	// Additionally wait some time so that all cleanup operations can finish
 	time.Sleep(time.Second * cleanupWaitTimeSeconds)
-
-	return diags
 }
 
-func setGatewayResourceData(d *schema.ResourceData, gw *upcloud.Gateway) (diags diag.Diagnostics) {
-	if err := d.Set("name", gw.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("zone", gw.Zone); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("plan", gw.Plan); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("features", gw.Features); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("router", []map[string]interface{}{{"id": gw.Routers[0].UUID}}); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("labels", utils.LabelsSliceToMap(gw.Labels)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("configured_status", gw.ConfiguredStatus); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set("operational_state", gw.OperationalState); err != nil {
-		return diag.FromErr(err)
-	}
-
-	var addresses []map[string]interface{}
-	for _, address := range gw.Addresses {
-		addresses = append(addresses, map[string]interface{}{
-			"address": address.Address,
-			"name":    address.Name,
-		})
-	}
-
-	if err := d.Set("address", addresses); err != nil {
-		return diag.FromErr(err)
-	}
-
-	var connections []string
-	for _, conn := range gw.Connections {
-		connections = append(connections, conn.Name)
-	}
-
-	if err := d.Set("connections", connections); err != nil {
-		return diag.FromErr(err)
-	}
-
-	// This one is deprecated, can be removed later
-	if err := d.Set("addresses", addresses); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return diags
+func (r *gatewayResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 func waitForGatewayToBeRunning(ctx context.Context, svc *service.Service, id string) (*upcloud.Gateway, error) {
@@ -376,15 +487,3 @@ func getGatewayDeleted(ctx context.Context, svc *service.Service, id ...string) 
 func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
 	return utils.WaitForResourceToBeDeleted(ctx, svc, getGatewayDeleted, id)
 }
-
-var validateName = validation.ToDiagFunc(validation.All(
-	validation.StringLenBetween(1, 64),
-	validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9_-]+$"), "must contain only alphanumeric characters, hyphens, and underscores"),
-))
-
-var validateFeaturesElen = validation.ToDiagFunc(validation.StringInSlice([]string{
-	string(upcloud.GatewayFeatureNAT),
-	string(upcloud.GatewayFeatureVPN),
-}, false))
-
-var validateConfiguredStatus = validation.ToDiagFunc(validation.StringInSlice([]string{string(upcloud.GatewayConfiguredStatusStarted), string(upcloud.GatewayConfiguredStatusStopped)}, false))
