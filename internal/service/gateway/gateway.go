@@ -407,19 +407,10 @@ func (r *gatewayResource) Update(ctx context.Context, req resource.UpdateRequest
 		Labels:           labelsSlice,
 	}
 
-	_, err := r.client.ModifyGateway(ctx, apiReq)
+	gw, err := r.client.ModifyGateway(ctx, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify gateway",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	gw, err := waitForGatewayToBeRunning(ctx, r.client, uuid)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error while waiting for gateway to be in running state",
 			utils.ErrorDiagnosticDetail(err),
 		)
 		return
@@ -440,6 +431,7 @@ func (r *gatewayResource) Delete(ctx context.Context, req resource.DeleteRequest
 			"Unable to delete gateway",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
 	}
 
 	err := waitForGatewayToBeDeleted(ctx, r.client, data.ID.ValueString())
