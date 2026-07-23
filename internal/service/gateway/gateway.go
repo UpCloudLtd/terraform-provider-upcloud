@@ -122,6 +122,9 @@ func (r *gatewayResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				MarkdownDescription: featuresDescription,
 				Required:            true,
 				ElementType:         types.StringType,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(
 						stringvalidator.OneOf(
