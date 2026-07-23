@@ -311,7 +311,7 @@ func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest
 		resp.Diagnostics.Append(data.Address.ElementsAs(ctx, &addressesData, false)...)
 
 		for _, address := range addressesData {
-			if address.Address.ValueString() == "" {
+			if address.Name.ValueString() == "" {
 				resp.Diagnostics.AddError(
 					"Unable to build create gateway request",
 					"Gateway address name cannot be empty.",
