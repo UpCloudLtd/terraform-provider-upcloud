@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const (
@@ -344,7 +343,10 @@ func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest
 
 	data.ID = types.StringValue(gw.UUID)
 
-	gw, err = waitForGatewayToBeRunning(ctx, r.client, gw.UUID)
+	gw, err = r.client.WaitForGatewayOperationalState(ctx, &request.WaitForGatewayOperationalStateRequest{
+		UUID:         gw.UUID,
+		DesiredState: upcloud.GatewayOperationalStateRunning,
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error while waiting for gateway to be in running state",
@@ -437,7 +439,9 @@ func (r *gatewayResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	err := waitForGatewayToBeDeleted(ctx, r.client, data.ID.ValueString())
+	err := r.client.WaitForGatewayDeletion(ctx, &request.WaitForGatewayDeletionRequest{
+		UUID: data.ID.ValueString(),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error while waiting for gateway to be deleted",
@@ -451,38 +455,4 @@ func (r *gatewayResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 func (r *gatewayResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-func waitForGatewayToBeRunning(ctx context.Context, svc *service.Service, id string) (*upcloud.Gateway, error) {
-	const maxRetries int = 500
-
-	for i := 0; i <= maxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			gw, err := svc.GetGateway(ctx, &request.GetGatewayRequest{UUID: id})
-			if err != nil {
-				return nil, err
-			}
-			if gw.OperationalState == upcloud.GatewayOperationalStateRunning {
-				return gw, nil
-			}
-
-			tflog.Info(ctx, "waiting for network gateway to be running", map[string]interface{}{"name": gw.Name, "state": gw.OperationalState})
-		}
-		time.Sleep(5 * time.Second)
-	}
-
-	return nil, fmt.Errorf("max retries (%d)reached while waiting for network gateway to be running", maxRetries)
-}
-
-func getGatewayDeleted(ctx context.Context, svc *service.Service, id ...string) (map[string]interface{}, error) {
-	gw, err := svc.GetGateway(ctx, &request.GetGatewayRequest{UUID: id[0]})
-
-	return map[string]interface{}{"resource": "gateway", "name": gw.Name, "state": gw.OperationalState}, err
-}
-
-func waitForGatewayToBeDeleted(ctx context.Context, svc *service.Service, id string) error {
-	return utils.WaitForResourceToBeDeleted(ctx, svc, getGatewayDeleted, id)
 }
