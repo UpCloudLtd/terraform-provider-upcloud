@@ -326,6 +326,13 @@ func resourceTunnelUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 			return diag.FromErr(err)
 		}
 
+		ipsecAuth, err := getIPSecAuthenticationFromSchema(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		ipsec.Authentication = ipsecAuth
+
 		req.Tunnel.IPSec = &ipsec
 	}
 

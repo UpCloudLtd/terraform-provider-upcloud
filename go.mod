@@ -30,7 +30,7 @@ require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/UpCloudLtd/upcloud-go-api/credentials v0.1.2-0.20260218111517-78b5a1eb8206
-	github.com/UpCloudLtd/upcloud-go-api/v8 v8.38.0
+	github.com/UpCloudLtd/upcloud-go-api/v8 v8.39.1-0.20260724114533-1193640850d2
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
