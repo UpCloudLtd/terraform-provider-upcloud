@@ -214,7 +214,8 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s2.tf")
-	nodeGroup := "upcloud_kubernetes_node_group.main"
+	nodeGroupDataAtRest := "upcloud_kubernetes_node_group.data-at-rest"
+	nodeGroupNone := "upcloud_kubernetes_node_group.none"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -223,28 +224,110 @@ func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
 			{
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(nodeGroup, "storage_encryption", "data-at-rest"),
+					resource.TestCheckResourceAttr(nodeGroupDataAtRest, "storage_encryption", "data-at-rest"),
+					resource.TestCheckResourceAttr(nodeGroupNone, "storage_encryption", "none"),
+				),
+			},
+			{
+				Config:             testDataS1,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(nodeGroupDataAtRest, "storage_encryption", "data-at-rest"),
+					resource.TestCheckResourceAttr(nodeGroupNone, "storage_encryption", "none"),
 				),
 			},
 			{
 				Config:            testDataS1,
-				ResourceName:      nodeGroup,
+				ResourceName:      nodeGroupDataAtRest,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config:            testDataS1,
+				ResourceName:      nodeGroupNone,
+				ImportState:       true,
+				ImportStateVerify: true,
+				// API omits node-group storage_encryption when it matches the cluster default/no explicit
+				// value is persisted, so import cannot distinguish explicit "none" from an unset value.
+				ImportStateVerifyIgnore: []string{"storage_encryption"},
+			},
+			{
+				Config: testDataS2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(nodeGroupDataAtRest, "storage_encryption", "data-at-rest"),
+					resource.TestCheckNoResourceAttr(nodeGroupNone, "storage_encryption"),
+				),
 			},
 			{
 				Config:             testDataS2,
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: false,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(nodeGroup, "storage_encryption", "data-at-rest"),
+					resource.TestCheckResourceAttr(nodeGroupDataAtRest, "storage_encryption", "data-at-rest"),
+					resource.TestCheckNoResourceAttr(nodeGroupNone, "storage_encryption"),
 				),
 			},
 			{
 				Config:            testDataS2,
-				ResourceName:      nodeGroup,
+				ResourceName:      nodeGroupDataAtRest,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config:            testDataS2,
+				ResourceName:      nodeGroupNone,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccUpcloudKubernetes_storageEncryption_UpgradeFromV5_41_0(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s2.tf")
+	nodeGroupDataAtRest := "upcloud_kubernetes_node_group.data-at-rest"
+	nodeGroupNone := "upcloud_kubernetes_node_group.none"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck: func() { upcloud.TestAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"upcloud": {
+						Source:            "upcloudltd/upcloud",
+						VersionConstraint: "= 5.41.0",
+					},
+				},
+				Config: testData,
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testData,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(nodeGroupDataAtRest, plancheck.ResourceActionNoop),
+						plancheck.ExpectResourceAction(nodeGroupNone, plancheck.ResourceActionNoop),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(nodeGroupDataAtRest, "storage_encryption", "data-at-rest"),
+					resource.TestCheckNoResourceAttr(nodeGroupNone, "storage_encryption"),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testData,
+				ResourceName:             nodeGroupDataAtRest,
+				ImportState:              true,
+				ImportStateVerify:        true,
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testData,
+				ResourceName:             nodeGroupNone,
+				ImportState:              true,
+				ImportStateVerify:        true,
 			},
 		},
 	})
