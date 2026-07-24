@@ -54,15 +54,22 @@ func TestBuildSimpleBackupOpts_withInvalidInput(t *testing.T) {
 	}
 }
 
-func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
-	// Define default values for fields not being tested to ensure they're equal
-	defaultTimezone := types.StringValue("UTC")
-	defaultVideoModel := types.StringValue("vga")
-	defaultNICModel := types.StringValue("virtio")
-	defaultTemplate := types.ListNull(types.ObjectType{})
-	defaultStorageDevices := types.SetNull(types.ObjectType{})
-	defaultNetworkInterfaces := types.ListNull(types.ObjectType{})
+func newServerModelForTest(mutate func(*serverModel)) serverModel {
+	m := serverModel{
+		serverCommonModel: serverCommonModel{
+			Timezone:          types.StringValue("UTC"),
+			VideoModel:        types.StringValue("vga"),
+			NICModel:          types.StringValue("virtio"),
+			NetworkInterfaces: types.ListNull(types.ObjectType{}),
+		},
+		Template:       types.ListNull(types.ObjectType{}),
+		StorageDevices: types.SetNull(types.ObjectType{}),
+	}
+	mutate(&m)
+	return m
+}
 
+func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 	tests := []struct {
 		name           string
 		state          serverModel
@@ -71,167 +78,90 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 	}{
 		{
 			name: "Only plan changing with hot_resize disabled",
-			state: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(false),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:              types.StringValue("2xCPU-2GB"),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(false)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("2xCPU-2GB")
+				m.HotResize = types.BoolValue(true)
+			}),
 			expectShutdown: true,
 		},
 		{
 			name: "Only plan changing with hot_resize enabled",
-			state: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:              types.StringValue("2xCPU-2GB"),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(true)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("2xCPU-2GB")
+				m.HotResize = types.BoolValue(true)
+			}),
 			expectShutdown: false,
 		},
 		{
 			name: "Custom plan with CPU changing and hot_resize enabled",
-			state: serverModel{
-				Plan:              types.StringValue(customPlanName),
-				CPU:               types.Int64Value(1),
-				Mem:               types.Int64Value(1024),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:              types.StringValue(customPlanName),
-				CPU:               types.Int64Value(2),
-				Mem:               types.Int64Value(1024),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue(customPlanName)
+				m.CPU = types.Int64Value(1)
+				m.Mem = types.Int64Value(1024)
+				m.HotResize = types.BoolValue(true)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue(customPlanName)
+				m.CPU = types.Int64Value(2)
+				m.Mem = types.Int64Value(1024)
+				m.HotResize = types.BoolValue(true)
+			}),
 			expectShutdown: true,
 		},
 		{
 			name: "Changing from standard plan to custom plan with different CPU/Mem and hot_resize enabled",
-			state: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				CPU:               types.Int64Value(1),
-				Mem:               types.Int64Value(1024),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:              types.StringValue(customPlanName),
-				CPU:               types.Int64Value(2),
-				Mem:               types.Int64Value(2048),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.CPU = types.Int64Value(1)
+				m.Mem = types.Int64Value(1024)
+				m.HotResize = types.BoolValue(true)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue(customPlanName)
+				m.CPU = types.Int64Value(2)
+				m.Mem = types.Int64Value(2048)
+				m.HotResize = types.BoolValue(true)
+			}),
 			expectShutdown: true,
 		},
 		{
 			name: "Only hot_resize changing from false to true",
-			state: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(false),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(false)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(true)
+			}),
 			expectShutdown: false,
 		},
 		{
 			name: "Only hot_resize changing from true to false",
-			state: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(false),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(true)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(false)
+			}),
 			expectShutdown: false,
 		},
 		{
 			name: "Hot resize with plan change and network change - should require shutdown",
-			state: serverModel{
-				Plan:           types.StringValue("1xCPU-1GB"),
-				HotResize:      types.BoolValue(true),
-				Timezone:       defaultTimezone,
-				VideoModel:     defaultVideoModel,
-				NICModel:       defaultNICModel,
-				Template:       defaultTemplate,
-				StorageDevices: defaultStorageDevices,
-				NetworkInterfaces: types.ListValueMust(
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(true)
+				m.NetworkInterfaces = types.ListValueMust(
 					types.ObjectType{
 						AttrTypes: map[string]attr.Type{},
 					},
@@ -241,17 +171,12 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 							map[string]attr.Value{},
 						),
 					},
-				),
-			},
-			plan: serverModel{
-				Plan:           types.StringValue("2xCPU-2GB"),
-				HotResize:      types.BoolValue(true),
-				Timezone:       defaultTimezone,
-				VideoModel:     defaultVideoModel,
-				NICModel:       defaultNICModel,
-				Template:       defaultTemplate,
-				StorageDevices: defaultStorageDevices,
-				NetworkInterfaces: types.ListValueMust(
+				)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("2xCPU-2GB")
+				m.HotResize = types.BoolValue(true)
+				m.NetworkInterfaces = types.ListValueMust(
 					types.ObjectType{
 						AttrTypes: map[string]attr.Type{},
 					},
@@ -265,29 +190,20 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 							map[string]attr.Value{},
 						),
 					},
-				),
-			},
+				)
+			}),
 			expectShutdown: true,
 		},
 		{
 			name: "Hot resize with plan change and storage change - should require shutdown",
-			state: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:       types.StringValue("2xCPU-2GB"),
-				HotResize:  types.BoolValue(true),
-				Timezone:   defaultTimezone,
-				VideoModel: defaultVideoModel,
-				NICModel:   defaultNICModel,
-				Template: types.ListValueMust(
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(true)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("2xCPU-2GB")
+				m.HotResize = types.BoolValue(true)
+				m.Template = types.ListValueMust(
 					types.ObjectType{
 						AttrTypes: map[string]attr.Type{
 							"size": types.Int64Type,
@@ -303,31 +219,20 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 							},
 						),
 					},
-				),
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+				)
+			}),
 			expectShutdown: true,
 		},
 		{
 			name: "Hot resize with plan change and template change - should require shutdown",
-			state: serverModel{
-				Plan:              types.StringValue("1xCPU-1GB"),
-				HotResize:         types.BoolValue(true),
-				Timezone:          defaultTimezone,
-				VideoModel:        defaultVideoModel,
-				NICModel:          defaultNICModel,
-				Template:          defaultTemplate,
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
-			plan: serverModel{
-				Plan:       types.StringValue("2xCPU-2GB"),
-				HotResize:  types.BoolValue(true),
-				Timezone:   defaultTimezone,
-				VideoModel: defaultVideoModel,
-				NICModel:   defaultNICModel,
-				Template: types.ListValueMust(
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("1xCPU-1GB")
+				m.HotResize = types.BoolValue(true)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue("2xCPU-2GB")
+				m.HotResize = types.BoolValue(true)
+				m.Template = types.ListValueMust(
 					types.ObjectType{
 						AttrTypes: map[string]attr.Type{},
 					},
@@ -337,10 +242,8 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 							map[string]attr.Value{},
 						),
 					},
-				),
-				StorageDevices:    defaultStorageDevices,
-				NetworkInterfaces: defaultNetworkInterfaces,
-			},
+				)
+			}),
 			expectShutdown: true,
 		},
 	}

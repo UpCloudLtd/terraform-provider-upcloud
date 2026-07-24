@@ -75,30 +75,14 @@ func (r *serverResource) Configure(_ context.Context, req resource.ConfigureRequ
 }
 
 type serverModel struct {
-	ID                types.String `tfsdk:"id"`
-	Hostname          types.String `tfsdk:"hostname"`
-	Title             types.String `tfsdk:"title"`
-	Zone              types.String `tfsdk:"zone"`
-	ServerGroup       types.String `tfsdk:"server_group"`
-	Firewall          types.Bool   `tfsdk:"firewall"`
-	Metadata          types.Bool   `tfsdk:"metadata"`
-	CPU               types.Int64  `tfsdk:"cpu"`
-	Mem               types.Int64  `tfsdk:"mem"`
-	Timezone          types.String `tfsdk:"timezone"`
-	VideoModel        types.String `tfsdk:"video_model"`
-	NICModel          types.String `tfsdk:"nic_model"`
-	Tags              types.Set    `tfsdk:"tags"`
-	Host              types.Int64  `tfsdk:"host"`
-	NetworkInterfaces types.List   `tfsdk:"network_interface"`
-	Labels            types.Map    `tfsdk:"labels"`
-	UserData          types.String `tfsdk:"user_data"`
-	Plan              types.String `tfsdk:"plan"`
-	StorageDevices    types.Set    `tfsdk:"storage_devices"`
-	Template          types.List   `tfsdk:"template"`
-	Login             types.List   `tfsdk:"login"`
-	SimpleBackup      types.Set    `tfsdk:"simple_backup"`
-	BootOrder         types.String `tfsdk:"boot_order"`
-	HotResize         types.Bool   `tfsdk:"hot_resize"`
+	serverCommonModel
+
+	UserData       types.String `tfsdk:"user_data"`
+	StorageDevices types.Set    `tfsdk:"storage_devices"`
+	Template       types.List   `tfsdk:"template"`
+	Login          types.List   `tfsdk:"login"`
+	SimpleBackup   types.Set    `tfsdk:"simple_backup"`
+	HotResize      types.Bool   `tfsdk:"hot_resize"`
 }
 
 type networkInterfaceModel struct {
