@@ -59,16 +59,16 @@ type serverDataSourceModel struct {
 func (d *serverDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	additionalIPAddressAttrs := map[string]schema.Attribute{
 		"ip_address": schema.StringAttribute{
-			Computed:    true,
-			Description: "An additional IP address for this interface.",
+			Computed:            true,
+			MarkdownDescription: "An additional IP address for this interface.",
 		},
 		"ip_address_family": schema.StringAttribute{
-			Computed:    true,
-			Description: "The type of the additional IP address (`IPv4` or `IPv6`).",
+			Computed:            true,
+			MarkdownDescription: "The type of the additional IP address (`IPv4` or `IPv6`).",
 		},
 		"ip_address_floating": schema.BoolAttribute{
-			Computed:    true,
-			Description: "`true` indicates that the additional IP address is a floating IP address.",
+			Computed:            true,
+			MarkdownDescription: "`true` indicates that the additional IP address is a floating IP address.",
 		},
 	}
 
@@ -76,129 +76,129 @@ func (d *serverDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 		MarkdownDescription: "Provides details about an existing [UpCloud cloud server](https://upcloud.com/products/cloud-servers) by UUID.",
 		Attributes: map[string]schema.Attribute{
 			"boot_order": schema.StringAttribute{
-				Computed:    true,
-				Description: "The boot device order, `cdrom`|`disk`|`network` or comma separated combination of those values.",
+				Computed:            true,
+				MarkdownDescription: "The boot device order, `cdrom`|`disk`|`network` or comma separated combination of those values.",
 			},
 			"cpu": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The number of CPU cores for the server.",
+				Computed:            true,
+				MarkdownDescription: "The number of CPU cores for the server.",
 			},
 			"firewall": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Are firewall rules active for the server.",
+				Computed:            true,
+				MarkdownDescription: "Are firewall rules active for the server.",
 			},
 			"host": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The host the server is running on. Only available for private cloud hosts.",
+				Computed:            true,
+				MarkdownDescription: "The host the server is running on. Only available for private cloud hosts.",
 			},
 			"hostname": schema.StringAttribute{
-				Computed:    true,
-				Description: "The hostname of the server.",
+				Computed:            true,
+				MarkdownDescription: "The hostname of the server.",
 			},
 			"id": schema.StringAttribute{
-				Required:    true,
-				Description: "UUID of the server.",
+				Required:            true,
+				MarkdownDescription: "UUID of the server.",
 			},
 			"labels": schema.MapAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
-				Description: "User defined key-value pairs to classify the server.",
+				Computed:            true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "User defined key-value pairs to classify the server.",
 			},
 			"mem": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The amount of memory for the server (in megabytes).",
+				Computed:            true,
+				MarkdownDescription: "The amount of memory for the server (in megabytes).",
 			},
 			"metadata": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Is the metadata service active for the server.",
+				Computed:            true,
+				MarkdownDescription: "Is the metadata service active for the server.",
 			},
 			"network_interface": schema.ListNestedAttribute{
-				Computed:    true,
-				Description: "The network interfaces attached to the server.",
+				Computed:            true,
+				MarkdownDescription: "The network interfaces attached to the server.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"additional_ip_address": schema.SetNestedAttribute{
-							Computed:    true,
-							Description: "Additional IP addresses for this interface. Only available for private network interfaces.",
+							Computed:            true,
+							MarkdownDescription: "Additional IP addresses for this interface. Only available for private network interfaces.",
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: additionalIPAddressAttrs,
 							},
 						},
 						"bootable": schema.BoolAttribute{
-							Computed:    true,
-							Description: "`true` indicates that the server can boot from this interface.",
+							Computed:            true,
+							MarkdownDescription: "`true` indicates that the server can boot from this interface.",
 						},
 						"index": schema.Int64Attribute{
-							Computed:    true,
-							Description: "The interface index.",
+							Computed:            true,
+							MarkdownDescription: "The interface index.",
 						},
 						"ip_address": schema.StringAttribute{
-							Computed:    true,
-							Description: "The primary IP address of this interface.",
+							Computed:            true,
+							MarkdownDescription: "The primary IP address of this interface.",
 						},
 						"ip_address_family": schema.StringAttribute{
-							Computed:    true,
-							Description: "The type of the primary IP address (`IPv4` or `IPv6`).",
+							Computed:            true,
+							MarkdownDescription: "The type of the primary IP address (`IPv4` or `IPv6`).",
 						},
 						"ip_address_floating": schema.BoolAttribute{
-							Computed:    true,
-							Description: "`true` indicates that the primary IP address is a floating IP address.",
+							Computed:            true,
+							MarkdownDescription: "`true` indicates that the primary IP address is a floating IP address.",
 						},
 						"mac_address": schema.StringAttribute{
-							Computed:    true,
-							Description: "The MAC address of the interface.",
+							Computed:            true,
+							MarkdownDescription: "The MAC address of the interface.",
 						},
 						"network": schema.StringAttribute{
-							Computed:    true,
-							Description: "The UUID of the network the interface is attached to.",
+							Computed:            true,
+							MarkdownDescription: "The UUID of the network the interface is attached to.",
 						},
 						"source_ip_filtering": schema.BoolAttribute{
-							Computed:    true,
-							Description: "`true` indicates that source IP filtering is enabled for this interface.",
+							Computed:            true,
+							MarkdownDescription: "`true` indicates that source IP filtering is enabled for this interface.",
 						},
 						"type": schema.StringAttribute{
-							Computed:    true,
-							Description: "The type of the network interface (`public`, `private`, or `utility`).",
+							Computed:            true,
+							MarkdownDescription: "The type of the network interface (`public`, `private`, or `utility`).",
 						},
 					},
 				},
 			},
 			"nic_model": schema.StringAttribute{
-				Computed:    true,
-				Description: "The model of the server's network interfaces.",
+				Computed:            true,
+				MarkdownDescription: "The model of the server's network interfaces.",
 			},
 			"plan": schema.StringAttribute{
-				Computed:    true,
-				Description: "The pricing plan used for the server.",
+				Computed:            true,
+				MarkdownDescription: "The pricing plan used for the server.",
 			},
 			"server_group": schema.StringAttribute{
-				Computed:    true,
-				Description: "The UUID of the server group the server belongs to.",
+				Computed:            true,
+				MarkdownDescription: "The UUID of the server group the server belongs to.",
 			},
 			"state": schema.StringAttribute{
-				Computed:    true,
-				Description: "The current state of the server (`started`, `stopped`, `maintenance`, `error`).",
+				Computed:            true,
+				MarkdownDescription: "The current state of the server (`started`, `stopped`, `maintenance`, `error`).",
 			},
 			"tags": schema.SetAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
-				Description: "Tags attached to the server.",
+				Computed:            true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "Tags attached to the server.",
 			},
 			"timezone": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timezone of the server.",
+				Computed:            true,
+				MarkdownDescription: "The timezone of the server.",
 			},
 			"title": schema.StringAttribute{
-				Computed:    true,
-				Description: "A short, informational description of the server.",
+				Computed:            true,
+				MarkdownDescription: "A short, informational description of the server.",
 			},
 			"video_model": schema.StringAttribute{
-				Computed:    true,
-				Description: "The model of the server's video interface.",
+				Computed:            true,
+				MarkdownDescription: "The model of the server's video interface.",
 			},
 			"zone": schema.StringAttribute{
-				Computed:    true,
-				Description: "The zone in which the server is hosted, e.g. `de-fra1`.",
+				Computed:            true,
+				MarkdownDescription: "The zone in which the server is hosted, e.g. `de-fra1`.",
 			},
 		},
 	}
@@ -215,10 +215,6 @@ func (d *serverDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		UUID: data.ID.ValueString(),
 	})
 	if err != nil {
-		if utils.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
 		resp.Diagnostics.AddError(
 			"Unable to read server details",
 			utils.ErrorDiagnosticDetail(err),
