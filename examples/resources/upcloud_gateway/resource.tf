@@ -27,6 +27,7 @@ resource "upcloud_gateway" "this" {
   name     = "gateway-example-gw"
   zone     = "pl-waw1"
   features = ["nat"]
+  plan     = "development"
 
   router {
     id = upcloud_router.this.id
