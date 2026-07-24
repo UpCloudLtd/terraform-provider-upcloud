@@ -753,7 +753,7 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 		respDiagnostics.Append(diags...)
 	}
 
-	data.StorageEncryption = types.StringValue(string(ng.StorageEncryption))
+	data.StorageEncryption = setNodeGroupStorageEncryption(data.StorageEncryption, ng.StorageEncryption)
 
 	if isImport || !data.Taint.IsNull() {
 		taints := make([]taintModel, 0)
@@ -772,6 +772,18 @@ func setNodeGroupValues(ctx context.Context, data *kubernetesNodeGroupModel, ng 
 	data.UtilityNetworkAccess = types.BoolValue(ng.UtilityNetworkAccess)
 
 	return respDiagnostics
+}
+
+func setNodeGroupStorageEncryption(current types.String, apiValue upcloud.StorageEncryption) types.String {
+	if apiValue != "" {
+		return types.StringValue(string(apiValue))
+	}
+
+	if current.IsUnknown() || current.IsNull() {
+		return types.StringNull()
+	}
+
+	return current
 }
 
 func buildCustomPlan(ctx context.Context, dataCustomPlans types.List) (*upcloud.KubernetesNodeGroupCustomPlan, diag.Diagnostics) {
