@@ -174,23 +174,23 @@ func TestAccUpcloudGateway_LabelsValidation(t *testing.T) {
 	}{
 		{
 			labels:  `t = "too-short-key"`,
-			errorRe: regexp.MustCompile(`Map key lengths should be in the range \(2 - 32\)`),
+			errorRe: upcloud.IgnoreWhitespaceDiff("string length must be between 2 and 32"),
 		},
 		{
 			labels:  `test-validation-fails-if-label-name-too-long = ""`,
-			errorRe: regexp.MustCompile(`Map key lengths should be in the range \(2 - 32\)`),
+			errorRe: upcloud.IgnoreWhitespaceDiff("string length must be between 2 and 32"),
 		},
 		{
 			labels:  `test-validation-fails-åäö = "invalid-characters-in-key"`,
-			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
+			errorRe: upcloud.IgnoreWhitespaceDiff("must only contain printable ASCII characters and must not start with an underscore"),
 		},
 		{
 			labels:  `_key = "starts-with-underscore"`,
-			errorRe: regexp.MustCompile(`must only contain printable ASCII characters and must not start with`),
+			errorRe: upcloud.IgnoreWhitespaceDiff("must only contain printable ASCII characters and must not start with an underscore"),
 		},
 		{
 			labels:  `test-validation-fails = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam egestas dolor vitae erat egestas, vel malesuada nisi ullamcorper. Aenean suscipit turpis quam, ut interdum lorem varius dignissim. Morbi eu erat bibendum, tincidunt turpis id, porta enim. Pellentesque..."`,
-			errorRe: regexp.MustCompile(`Map value lengths should be in the range \(0 - 255\)`),
+			errorRe: upcloud.IgnoreWhitespaceDiff("string length must be between 0 and 255"),
 		},
 	}
 	var steps []resource.TestStep
