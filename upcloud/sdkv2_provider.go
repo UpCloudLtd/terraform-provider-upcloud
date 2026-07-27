@@ -63,10 +63,9 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_tag":                               tag.ResourceTag(),
-			"upcloud_gateway_connection":                gateway.ResourceConnection(),
-			"upcloud_gateway_connection_tunnel":         gateway.ResourceTunnel(),
-			"upcloud_managed_database_logical_database": database.ResourceLogicalDatabase(),
+			"upcloud_tag":                       tag.ResourceTag(),
+			"upcloud_gateway_connection":        gateway.ResourceConnection(),
+			"upcloud_gateway_connection_tunnel": gateway.ResourceTunnel(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

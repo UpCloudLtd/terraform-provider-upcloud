@@ -187,6 +187,7 @@ func (p *upcloudProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		database.NewConnectionPoolResource,
+		database.NewLogicalDatabaseResource,
 		database.NewMySQLResource,
 		database.NewOpenSearchResource,
 		database.NewPostgresResource,
