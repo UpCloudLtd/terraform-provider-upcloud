@@ -66,19 +66,19 @@ resource "upcloud_gateway" "this" {
 ### Optional Attributes
 
 - `configured_status` (String) The service configured status indicates the service's current intended status. Managed by the customer.
-- `labels` (Map of String) User defined key-value pairs to classify the network gateway.
+- `labels` (Map of String) User defined key-value pairs to classify the gateway.
 - `plan` (String) Gateway pricing plan, defaults to `development`. You can list available plans with `upctl gateway plans`.
 
 ### Blocks
 
-- `address` (Block Set, Max: 1) IP addresses assigned to the gateway. (see [below for nested schema](#nestedblock--address))
-- `router` (Block List, Min: 1, Max: 1) Attached Router from where traffic is routed towards the network gateway service. (see [below for nested schema](#nestedblock--router))
+- `address` (Block Set) IP addresses assigned to the gateway. (see [below for nested schema](#nestedblock--address))
+- `router` (Block List) Attached Router from where traffic is routed towards the network gateway service. (see [below for nested schema](#nestedblock--router))
 
 ### Read-Only
 
-- `addresses` (Set of Object, Deprecated) IP addresses assigned to the gateway. (see [below for nested schema](#nestedatt--addresses))
+- `addresses` (Attributes Set) Use 'address' attribute instead. This attribute will be removed in the next major version of the provider. (see [below for nested schema](#nestedatt--addresses))
 - `connections` (List of String) Names of connections attached to the gateway. Note that this field can have outdated information as connections are created by a separate resource. To make sure that you have the most recent data run 'terraform refresh'.
-- `id` (String) The ID of this resource.
+- `id` (String) Gateway UUID.
 - `operational_state` (String) The service operational state indicates the service's current operational, effective state. Managed by the system.
 
 <a id="nestedblock--address"></a>
@@ -86,11 +86,11 @@ resource "upcloud_gateway" "this" {
 
 Optional Attributes:
 
-- `name` (String) Name of the IP address
+- `name` (String) Name of the IP address.
 
 Read-Only:
 
-- `address` (String) IP addresss
+- `address` (String) IP address.
 
 
 <a id="nestedblock--router"></a>
@@ -106,5 +106,5 @@ Required Attributes:
 
 Read-Only:
 
-- `address` (String)
-- `name` (String)
+- `address` (String) IP address.
+- `name` (String) Name of the address.
