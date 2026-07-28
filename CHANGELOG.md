@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_server (data source): data source for looking up an existing server by id
+
 ### Fixed
 
 - upcloud_gateway: the API now requires a plan to be specified when creating a gateway, so set `development` as a default value for `plan` field to avoid breaking existing configurations.

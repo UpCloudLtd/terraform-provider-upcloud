@@ -1,5 +1,6 @@
 {
   "data-sources": {
+    "server.md": "Servers",
     "storage.md": "Storage",
     "ip_addresses.md": "Network",
     "networks.md": "Network",

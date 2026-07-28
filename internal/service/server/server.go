@@ -75,30 +75,14 @@ func (r *serverResource) Configure(_ context.Context, req resource.ConfigureRequ
 }
 
 type serverModel struct {
-	ID                types.String `tfsdk:"id"`
-	Hostname          types.String `tfsdk:"hostname"`
-	Title             types.String `tfsdk:"title"`
-	Zone              types.String `tfsdk:"zone"`
-	ServerGroup       types.String `tfsdk:"server_group"`
-	Firewall          types.Bool   `tfsdk:"firewall"`
-	Metadata          types.Bool   `tfsdk:"metadata"`
-	CPU               types.Int64  `tfsdk:"cpu"`
-	Mem               types.Int64  `tfsdk:"mem"`
-	Timezone          types.String `tfsdk:"timezone"`
-	VideoModel        types.String `tfsdk:"video_model"`
-	NICModel          types.String `tfsdk:"nic_model"`
-	Tags              types.Set    `tfsdk:"tags"`
-	Host              types.Int64  `tfsdk:"host"`
-	NetworkInterfaces types.List   `tfsdk:"network_interface"`
-	Labels            types.Map    `tfsdk:"labels"`
-	UserData          types.String `tfsdk:"user_data"`
-	Plan              types.String `tfsdk:"plan"`
-	StorageDevices    types.Set    `tfsdk:"storage_devices"`
-	Template          types.List   `tfsdk:"template"`
-	Login             types.List   `tfsdk:"login"`
-	SimpleBackup      types.Set    `tfsdk:"simple_backup"`
-	BootOrder         types.String `tfsdk:"boot_order"`
-	HotResize         types.Bool   `tfsdk:"hot_resize"`
+	serverCommonModel
+
+	UserData       types.String `tfsdk:"user_data"`
+	StorageDevices types.Set    `tfsdk:"storage_devices"`
+	Template       types.List   `tfsdk:"template"`
+	Login          types.List   `tfsdk:"login"`
+	SimpleBackup   types.Set    `tfsdk:"simple_backup"`
+	HotResize      types.Bool   `tfsdk:"hot_resize"`
 }
 
 type networkInterfaceModel struct {
@@ -112,6 +96,21 @@ type networkInterfaceModel struct {
 	Network               types.String `tfsdk:"network"`
 	SourceIPFiltering     types.Bool   `tfsdk:"source_ip_filtering"`
 	Bootable              types.Bool   `tfsdk:"bootable"`
+}
+
+func (m networkInterfaceModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"index":                 types.Int64Type,
+		"ip_address_family":     types.StringType,
+		"ip_address":            types.StringType,
+		"ip_address_floating":   types.BoolType,
+		"additional_ip_address": types.SetType{ElemType: types.ObjectType{AttrTypes: additionalIPAddressModel{}.AttributeTypes()}},
+		"mac_address":           types.StringType,
+		"type":                  types.StringType,
+		"network":               types.StringType,
+		"source_ip_filtering":   types.BoolType,
+		"bootable":              types.BoolType,
+	}
 }
 
 type additionalIPAddressModel struct {
@@ -881,25 +880,9 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDetails) diag.Diagnostics {
 	var respDiagnostics, diags diag.Diagnostics
 
+	respDiagnostics.Append(setCommonValues(ctx, &data.serverCommonModel, server)...)
+
 	data.ID = types.StringValue(server.UUID)
-	data.Host = types.Int64Value(server.HostID)
-	data.Hostname = types.StringValue(server.Hostname)
-	data.Title = types.StringValue(server.Title)
-	data.Zone = types.StringValue(server.Zone)
-	data.CPU = types.Int64Value(int64(server.CoreNumber))
-	data.Mem = types.Int64Value(int64(server.MemoryAmount))
-
-	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(server.Labels))
-	respDiagnostics.Append(diags...)
-
-	data.NICModel = types.StringValue(server.NICModel)
-	data.Timezone = types.StringValue(server.Timezone)
-	data.VideoModel = types.StringValue(server.VideoModel)
-	if !data.Metadata.IsNull() {
-		data.Metadata = types.BoolValue(server.Metadata.Bool())
-	}
-	data.Plan = types.StringValue(server.Plan)
-	data.BootOrder = types.StringValue(server.BootOrder)
 
 	// Set hot_resize to false by default if not set
 	if data.HotResize.IsNull() {
@@ -911,17 +894,6 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 		respDiagnostics.Append(diags...)
 	} else {
 		data.Tags = types.SetNull(data.Tags.ElementType(ctx))
-	}
-
-	// Only track server_group when it has been configured to avoid changes when server is attached to group via upcloud_server_group.members.
-	if !data.ServerGroup.IsNull() {
-		data.ServerGroup = types.StringValue(server.ServerGroup)
-	}
-
-	if server.Firewall == "on" {
-		data.Firewall = types.BoolValue(true)
-	} else {
-		data.Firewall = types.BoolValue(false)
 	}
 
 	if server.SimpleBackup != "no" {
