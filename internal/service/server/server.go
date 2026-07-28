@@ -880,25 +880,9 @@ func (r *serverResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDetails) diag.Diagnostics {
 	var respDiagnostics, diags diag.Diagnostics
 
+	respDiagnostics.Append(setCommonValues(ctx, &data.serverCommonModel, server)...)
+
 	data.ID = types.StringValue(server.UUID)
-	data.Host = types.Int64Value(server.HostID)
-	data.Hostname = types.StringValue(server.Hostname)
-	data.Title = types.StringValue(server.Title)
-	data.Zone = types.StringValue(server.Zone)
-	data.CPU = types.Int64Value(int64(server.CoreNumber))
-	data.Mem = types.Int64Value(int64(server.MemoryAmount))
-
-	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(server.Labels))
-	respDiagnostics.Append(diags...)
-
-	data.NICModel = types.StringValue(server.NICModel)
-	data.Timezone = types.StringValue(server.Timezone)
-	data.VideoModel = types.StringValue(server.VideoModel)
-	if !data.Metadata.IsNull() {
-		data.Metadata = types.BoolValue(server.Metadata.Bool())
-	}
-	data.Plan = types.StringValue(server.Plan)
-	data.BootOrder = types.StringValue(server.BootOrder)
 
 	// Set hot_resize to false by default if not set
 	if data.HotResize.IsNull() {
@@ -910,17 +894,6 @@ func setValues(ctx context.Context, data *serverModel, server *upcloud.ServerDet
 		respDiagnostics.Append(diags...)
 	} else {
 		data.Tags = types.SetNull(data.Tags.ElementType(ctx))
-	}
-
-	// Only track server_group when it has been configured to avoid changes when server is attached to group via upcloud_server_group.members.
-	if !data.ServerGroup.IsNull() {
-		data.ServerGroup = types.StringValue(server.ServerGroup)
-	}
-
-	if server.Firewall == "on" {
-		data.Firewall = types.BoolValue(true)
-	} else {
-		data.Firewall = types.BoolValue(false)
 	}
 
 	if server.SimpleBackup != "no" {

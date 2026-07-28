@@ -206,26 +206,14 @@ func (d *serverDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	data.BootOrder = types.StringValue(details.BootOrder)
-	data.CPU = types.Int64Value(int64(details.CoreNumber))
-	data.Firewall = types.BoolValue(details.Firewall == "on")
-	data.Host = types.Int64Value(details.HostID)
-	data.Hostname = types.StringValue(details.Hostname)
-	data.Mem = types.Int64Value(int64(details.MemoryAmount))
-	data.Metadata = types.BoolValue(details.Metadata.Bool())
-	data.NICModel = types.StringValue(details.NICModel)
-	data.Plan = types.StringValue(details.Plan)
-	data.ServerGroup = types.StringValue(details.ServerGroup)
 	data.State = types.StringValue(details.State)
-	data.Timezone = types.StringValue(details.Timezone)
-	data.Title = types.StringValue(details.Title)
-	data.VideoModel = types.StringValue(details.VideoModel)
-	data.Zone = types.StringValue(details.Zone)
+
+	data.Metadata = types.BoolUnknown()
+	data.ServerGroup = types.StringUnknown()
+
+	resp.Diagnostics.Append(setCommonValues(ctx, &data.serverCommonModel, details)...)
 
 	var diags diag.Diagnostics
-
-	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, utils.LabelsSliceToMap(details.Labels))
-	resp.Diagnostics.Append(diags...)
 
 	data.Tags, diags = types.SetValueFrom(ctx, types.StringType, []string(details.Tags))
 	resp.Diagnostics.Append(diags...)
