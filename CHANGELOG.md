@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.42.0] - 2026-07-29
+
 ### Added
 
 - upcloud_server (data source): data source for looking up an existing server by id
@@ -1265,7 +1267,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.41.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.42.0...HEAD
+[5.42.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.41.0...v5.42.0
 [5.41.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.40.0...v5.41.0
 [5.40.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.39.1...v5.40.0
 [5.39.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.39.0...v5.39.1
