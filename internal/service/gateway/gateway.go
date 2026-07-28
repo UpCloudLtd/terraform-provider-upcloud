@@ -11,12 +11,14 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -87,7 +89,7 @@ type gatewayModel struct {
 	Plan             types.String `tfsdk:"plan"`
 	Connections      types.List   `tfsdk:"connections"`
 	Addresses        types.Set    `tfsdk:"addresses"`
-	Router           types.Set    `tfsdk:"router"`
+	Router           types.List   `tfsdk:"router"`
 	Address          types.Set    `tfsdk:"address"`
 }
 
@@ -179,7 +181,7 @@ func (r *gatewayResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"router": schema.SetNestedBlock{
+			"router": schema.ListNestedBlock{
 				MarkdownDescription: routerDescription,
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
@@ -189,12 +191,12 @@ func (r *gatewayResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						},
 					},
 				},
-				PlanModifiers: []planmodifier.Set{
-					setplanmodifier.RequiresReplace(),
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
 				},
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.SizeAtMost(1),
+				Validators: []validator.List{
+					listvalidator.SizeAtLeast(1),
+					listvalidator.SizeAtMost(1),
 				},
 			},
 			"address": schema.SetNestedBlock{
@@ -256,7 +258,7 @@ func setGatewayValues(ctx context.Context, data *gatewayModel, gw *upcloud.Gatew
 		routers[i].ID = types.StringValue(router.UUID)
 	}
 
-	data.Router, diags = types.SetValueFrom(ctx, data.Router.ElementType(ctx), routers)
+	data.Router, diags = types.ListValueFrom(ctx, data.Router.ElementType(ctx), routers)
 	respDiagnostics.Append(diags...)
 
 	addresses := make([]addressModel, len(gw.Addresses))
