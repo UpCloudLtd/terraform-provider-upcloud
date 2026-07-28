@@ -39,6 +39,7 @@ resource "upcloud_server" "test" {
   hostname = "tf-acc-test-server-datasource"
   zone     = "fi-hel1"
   plan     = "1xCPU-1GB"
+  metadata = true
 
   template {
     storage = "%s"
