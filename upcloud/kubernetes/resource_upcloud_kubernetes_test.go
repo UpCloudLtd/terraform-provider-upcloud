@@ -287,8 +287,6 @@ func testEndToEndKubernetes(t *testing.T, cidr string, privateNodeGroups bool) {
 					"private_node_groups": config.BoolVariable(privateNodeGroups),
 					"network_cidr":        config.StringVariable(cidr),
 				},
-				// OpenTofu adds open action for the ephemeral resource which causes the plan to be non-empty.
-				ExpectNonEmptyPlan: upcloud.UsingOpenTofu(),
 			},
 			{
 				Config: testdata,
@@ -306,8 +304,6 @@ func testEndToEndKubernetes(t *testing.T, cidr string, privateNodeGroups bool) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.http.hello.0", "status_code", "200"),
 				),
-				// OpenTofu adds open action for the ephemeral resource which causes the plan to be non-empty.
-				ExpectNonEmptyPlan: upcloud.UsingOpenTofu(),
 			},
 		},
 	})
