@@ -137,3 +137,19 @@ func TestUnmarshalID(t *testing.T) {
 		t.Fatal("utils.UnmarshalID failed expected 'not enough components' error got nil")
 	}
 }
+
+func TestValueOrEmpty(t *testing.T) {
+	var stringPtr *string
+	assert.Equal(t, "", ValueOrEmpty(stringPtr))
+
+	var stringVal = "test"
+	stringPtr = &stringVal
+	assert.Equal(t, "test", ValueOrEmpty(stringPtr))
+
+	var intPtr *int
+	assert.Equal(t, 0, ValueOrEmpty(intPtr))
+
+	var intVal = 42
+	intPtr = &intVal
+	assert.Equal(t, 42, ValueOrEmpty(intPtr))
+}

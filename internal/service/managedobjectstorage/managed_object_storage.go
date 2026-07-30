@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
@@ -191,33 +190,18 @@ func (r *managedObjectStorageResource) Schema(_ context.Context, _ resource.Sche
 }
 
 func labelsMapToV9Slice(m map[string]string) []v9.ObjectStorage2LabelCreate {
-	labels := make([]v9.ObjectStorage2LabelCreate, 0, len(m))
-
-	for k, v := range m {
-		labels = append(labels, v9.ObjectStorage2LabelCreate{
+	return utils.LabelsMapToSliceFn(m, func(k string, v string) v9.ObjectStorage2LabelCreate {
+		return v9.ObjectStorage2LabelCreate{
 			Key:   k,
 			Value: &v,
-		})
-	}
-
-	return labels
+		}
+	})
 }
 
 func labelsV9SliceToMap(labels []v9.ObjectStorage2LabelDetailResponse) map[string]string {
-	result := make(map[string]string)
-
-	for _, label := range labels {
-		if label.Key == nil || label.Value == nil {
-			continue
-		}
-		if strings.HasPrefix(*label.Key, "_") {
-			continue
-		}
-
-		result[*label.Key] = *label.Value
-	}
-
-	return result
+	return utils.LabelsSliceToMapFn(labels, func(label v9.ObjectStorage2LabelDetailResponse) (string, string) {
+		return utils.ValueOrEmpty(label.Key), utils.ValueOrEmpty(label.Value)
+	})
 }
 
 func setManagedObjectStorageValues(ctx context.Context, data *managedObjectStorageModel, objsto *v9.GetObjectStorage200) diag.Diagnostics {
