@@ -71,10 +71,6 @@ func CheckStringDoesNotChange(name, key string, expected *string) resource.TestC
 	}
 }
 
-func UsingOpenTofu() bool {
-	return strings.HasSuffix(os.Getenv("TF_ACC_TERRAFORM_PATH"), "tofu")
-}
-
 func GenerateSSHKeyPair(keyDir string) error {
 	privateKey, err := rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
