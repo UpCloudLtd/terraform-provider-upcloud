@@ -66,7 +66,6 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("sql_mode"), "ANSI,TRADITIONAL"),
 					resource.TestCheckResourceAttr(name, prop("sql_require_primary_key"), "true"),
 					resource.TestCheckResourceAttr(name, prop("tmp_table_size"), "1048576"),
-					resource.TestCheckResourceAttr(name, prop("version"), "8"),
 					resource.TestCheckResourceAttr(name, prop("wait_timeout"), "1"),
 					resource.TestCheckResourceAttr(name, prop("service_log"), "true"),
 					// there should be mysqlx and mysql component

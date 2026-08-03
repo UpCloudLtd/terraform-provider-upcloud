@@ -92,6 +92,14 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   }
 }
 
+resource "upcloud_managed_database_connection_pool" "pg1" {
+  service  = upcloud_managed_database_postgresql.pg1.id
+  database = "defaultdb"
+  mode     = "transaction"
+  name     = "pool-0"
+  size     = 20
+}
+
 resource "upcloud_managed_database_postgresql" "pg2" {
   additional_disk_space_gib = 20
   name                      = "${var.prefix}pg-2"

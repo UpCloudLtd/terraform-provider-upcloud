@@ -9,6 +9,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func withPrefixDB(text string) string {
@@ -29,6 +30,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	userName4 := "upcloud_managed_database_user.db_user_4"
 	userName5 := "upcloud_managed_database_user.db_user_5"
 	valkeyName := "upcloud_managed_database_valkey.v1"
+	connectionPoolName := "upcloud_managed_database_connection_pool.pg1"
 
 	verifyImportStep := func(name string, extraIgnore ...string) resource.TestStep {
 		return resource.TestStep{
@@ -124,6 +126,11 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			verifyImportStep(userName5),
 			{
 				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(connectionPoolName, plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(pg1Name, "additional_disk_space_gib", "40"),
 					resource.TestCheckResourceAttr(pg1Name, "title", withPrefixDB("pg-1-updated")),
@@ -171,6 +178,11 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			{
 				// Check that clearing user access control blocks works without data consistency errors
 				Config: testDataS3,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(connectionPoolName, plancheck.ResourceActionDestroyBeforeCreate),
+					},
+				},
 			},
 		},
 	})
