@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_connection_pool Resource - terraform-provider-upcloud"
 subcategory: Databases
 description: |-
-  This resource represents a connection pool in a managed database.
+  This resource represents a connection pool in a managed database (PostgreSQL).
 ---
 
 # upcloud_managed_database_connection_pool (Resource)
 
-This resource represents a connection pool in a managed database.
+This resource represents a connection pool in a managed database (PostgreSQL).
 
 ## Example Usage
 
@@ -37,10 +37,10 @@ resource "upcloud_managed_database_connection_pool" "example" {
 
 ### Required Attributes
 
-- `database` (String) Name of the database
+- `database` (String) Name of the database.
 - `mode` (String) Connection pool mode.
 - `name` (String) Connection pool name.
-- `service` (String) Service's UUID for which this logical database belongs to
+- `service` (String) UUID of the service to which this connection pool belongs.
 - `size` (Number) Connection pool size.
 
 ### Optional Attributes
@@ -50,4 +50,4 @@ resource "upcloud_managed_database_connection_pool" "example" {
 ### Read-Only
 
 - `connection_uri` (String) Connection URI for the connection pool.
-- `id` (String) ID of the logical database. ID is in {service UUID}/{connection pool name} format.
+- `id` (String) ID of the connection pool. ID is in {service UUID}/{connection pool name} format.
