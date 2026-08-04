@@ -25,13 +25,13 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
 	msql1Name := "upcloud_managed_database_mysql.msql1"
 	msql1LDBName := "upcloud_managed_database_logical_database.logical_db_msql1"
-	pg1LDBName := "upcloud_managed_database_logical_database.logical_db_pg1"
+	pg1LDBName := "upcloud_managed_database_logical_database.logical_db_pg2"
 	userName1 := "upcloud_managed_database_user.db_user_1"
 	userName2 := "upcloud_managed_database_user.db_user_2"
 	userName4 := "upcloud_managed_database_user.db_user_4"
 	userName5 := "upcloud_managed_database_user.db_user_5"
 	valkeyName := "upcloud_managed_database_valkey.v1"
-	connectionPoolName := "upcloud_managed_database_connection_pool.pg1"
+	connectionPoolName := "upcloud_managed_database_connection_pool.pg2"
 
 	verifyImportStep := func(name string, extraIgnore ...string) resource.TestStep {
 		return resource.TestStep{
