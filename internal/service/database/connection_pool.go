@@ -55,24 +55,24 @@ type connectionPoolModel struct {
 
 func (r *connectionPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `This resource represents a connection pool in a managed database.`,
+		MarkdownDescription: `This resource represents a connection pool in a managed database (PostgreSQL).`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "ID of the logical database. ID is in {service UUID}/{connection pool name} format.",
+				Description: "ID of the connection pool. ID is in {service UUID}/{connection pool name} format.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"service": schema.StringAttribute{
-				Description: "Service's UUID for which this logical database belongs to",
+				Description: "UUID of the service to which this connection pool belongs.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"database": schema.StringAttribute{
-				Description: "Name of the database",
+				Description: "Name of the database.",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
