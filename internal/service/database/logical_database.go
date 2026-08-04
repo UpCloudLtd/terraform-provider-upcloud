@@ -10,7 +10,6 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -108,14 +107,23 @@ func (r *logicalDatabaseResource) Schema(_ context.Context, _ resource.SchemaReq
 	}
 }
 
-func setLogicalDatabaseValues(ctx context.Context, data *logicalDatabaseModel, db *upcloud.ManagedDatabaseLogicalDatabase) diag.Diagnostics {
-	var respDiagnostics diag.Diagnostics
+func (r *logicalDatabaseResource) setLogicalDatabaseValues(ctx context.Context, data *logicalDatabaseModel, svcUUID, ldbName string) error {
+	ldbs, err := r.client.GetManagedDatabaseLogicalDatabases(ctx, &request.GetManagedDatabaseLogicalDatabasesRequest{
+		ServiceUUID: svcUUID,
+	})
+	if err != nil {
+		return err
+	}
 
-	data.Name = types.StringValue(db.Name)
-	data.CharacterSet = types.StringValue(db.LCCType)
-	data.Collation = types.StringValue(db.LCCollate)
-
-	return respDiagnostics
+	for _, ldb := range ldbs {
+		if ldb.Name == ldbName {
+			data.Name = types.StringValue(ldb.Name)
+			data.CharacterSet = types.StringValue(ldb.LCCType)
+			data.Collation = types.StringValue(ldb.LCCollate)
+			return nil
+		}
+	}
+	return fmt.Errorf("logical database %s not found", ldbName)
 }
 
 func (r *logicalDatabaseResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -154,14 +162,15 @@ func (r *logicalDatabaseResource) Create(ctx context.Context, req resource.Creat
 
 	data.ID = types.StringValue(utils.MarshalID(uuid, data.Name.ValueString()))
 
+	name := data.Name.ValueString()
 	apiReq := &request.CreateManagedDatabaseLogicalDatabaseRequest{
 		ServiceUUID: uuid,
-		Name:        data.Name.ValueString(),
+		Name:        name,
 		LCCollate:   data.Collation.ValueString(),
 		LCCType:     data.CharacterSet.ValueString(),
 	}
 
-	ldb, err := r.client.CreateManagedDatabaseLogicalDatabase(ctx, apiReq)
+	_, err = r.client.CreateManagedDatabaseLogicalDatabase(ctx, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create managed database logical database",
@@ -170,7 +179,15 @@ func (r *logicalDatabaseResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	setLogicalDatabaseValues(ctx, &data, ldb)
+	err = r.setLogicalDatabaseValues(ctx, &data, uuid, name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read logical database details after creation",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -196,27 +213,19 @@ func (r *logicalDatabaseResource) Read(ctx context.Context, req resource.ReadReq
 
 	data.Service = types.StringValue(uuid)
 
-	ldbs, err := r.client.GetManagedDatabaseLogicalDatabases(ctx, &request.GetManagedDatabaseLogicalDatabasesRequest{
-		ServiceUUID: uuid,
-	})
+	err := r.setLogicalDatabaseValues(ctx, &data, uuid, name)
 	if err != nil {
 		if utils.IsNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
-				"Unable to read managed database logical databases",
+				"Unable to read logical databases details",
 				utils.ErrorDiagnosticDetail(err),
 			)
 		}
 		return
 	}
 
-	for i, ldb := range ldbs {
-		if ldb.Name == name {
-			setLogicalDatabaseValues(ctx, &data, &ldbs[i])
-			break
-		}
-	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
