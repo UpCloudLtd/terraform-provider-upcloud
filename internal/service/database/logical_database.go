@@ -59,7 +59,7 @@ func (r *logicalDatabaseResource) Schema(_ context.Context, _ resource.SchemaReq
 		MarkdownDescription: `This resource represents a logical database in managed database.`,
 		Attributes: map[string]schema.Attribute{
 			"service": schema.StringAttribute{
-				Description: "Service's UUID for which this logical database belongs to",
+				Description: "UUID of the service to which this logical database belongs.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
