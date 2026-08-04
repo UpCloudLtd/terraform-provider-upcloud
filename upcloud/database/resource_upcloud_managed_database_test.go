@@ -90,6 +90,8 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(msql1Name, "network.#", "0"),
 
 					resource.TestCheckResourceAttr(lgDBName, "name", withPrefixDB("logical-db-1")),
+					resource.TestCheckResourceAttr(lgDBName, "character_set", "en_US.UTF-8"),
+					resource.TestCheckResourceAttr(lgDBName, "collation", "en_US.UTF-8"),
 					resource.TestCheckResourceAttrSet(lgDBName, "service"),
 
 					resource.TestCheckResourceAttr(userName1, "username", "somename"),
@@ -129,6 +131,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(connectionPoolName, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(lgDBName, plancheck.ResourceActionDestroyBeforeCreate),
 					},
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
