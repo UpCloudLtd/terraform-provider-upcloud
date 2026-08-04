@@ -80,7 +80,7 @@ func (r *logicalDatabaseResource) Schema(_ context.Context, _ resource.SchemaReq
 				},
 			},
 			"character_set": schema.StringAttribute{
-				Description: "Default character set for the database (LC_CTYPE)",
+				Description: "Default character set for the database (LC_CTYPE), PostgreSQL only.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -92,7 +92,7 @@ func (r *logicalDatabaseResource) Schema(_ context.Context, _ resource.SchemaReq
 				},
 			},
 			"collation": schema.StringAttribute{
-				Description: "Default collation for the database (LC_COLLATE)",
+				Description: "Default collation for the database (LC_COLLATE), PostgreSQL only.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

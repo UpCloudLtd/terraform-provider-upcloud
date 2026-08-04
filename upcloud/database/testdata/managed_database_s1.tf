@@ -125,9 +125,14 @@ resource "upcloud_managed_database_mysql" "msql1" {
   }
 }
 
-resource "upcloud_managed_database_logical_database" "logical_db_1" {
+resource "upcloud_managed_database_logical_database" "logical_db_msql1" {
   service = upcloud_managed_database_mysql.msql1.id
-  name    = "${var.prefix}logical-db-1"
+  name    = "logical-db-1"
+}
+
+resource "upcloud_managed_database_logical_database" "logical_db_pg1" {
+  service = upcloud_managed_database_postgresql.pg1.id
+  name    = "logical-db-1"
 }
 
 resource "upcloud_managed_database_valkey" "v1" {
