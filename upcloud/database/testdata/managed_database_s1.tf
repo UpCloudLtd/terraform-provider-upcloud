@@ -76,6 +76,14 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   }
 }
 
+resource "upcloud_managed_database_connection_pool" "pg1" {
+  service  = upcloud_managed_database_postgresql.pg1.id
+  database = "defaultdb"
+  mode     = "session"
+  name     = "pool-0"
+  size     = 10
+}
+
 resource "upcloud_managed_database_postgresql" "pg2" {
   name                    = "${var.prefix}pg-2"
   plan                    = "1x1xCPU-2GB-25GB"

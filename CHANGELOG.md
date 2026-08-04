@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_database_connection_pool: new resource for managing connection pools for managed databases (PostgreSQL)
+
 ## [5.42.0] - 2026-07-29
 
 ### Added

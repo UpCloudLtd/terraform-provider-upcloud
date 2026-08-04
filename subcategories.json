@@ -44,6 +44,7 @@
     "managed_object_storage_user_access_key.md": "Object Storage",
     "managed_object_storage_user_policy.md": "Object Storage",
     "managed_database_logical_database.md": "Databases",
+    "managed_database_connection_pool.md": "Databases",
     "managed_database_mysql.md": "Databases",
     "managed_database_opensearch.md": "Databases",
     "managed_database_postgresql.md": "Databases",
