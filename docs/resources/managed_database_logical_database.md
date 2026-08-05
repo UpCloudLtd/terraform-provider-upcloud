@@ -3,12 +3,12 @@
 page_title: "upcloud_managed_database_logical_database Resource - terraform-provider-upcloud"
 subcategory: Databases
 description: |-
-  This resource represents a logical database in managed database
+  This resource represents a logical database in managed database.
 ---
 
 # upcloud_managed_database_logical_database (Resource)
 
-This resource represents a logical database in managed database
+This resource represents a logical database in managed database.
 
 ## Example Usage
 
@@ -45,14 +45,14 @@ resource "upcloud_managed_database_logical_database" "example2_db" {
 
 ### Required Attributes
 
-- `name` (String) Name of the logical database
-- `service` (String) Service's UUID for which this user belongs to
+- `name` (String) Name of the logical database.
+- `service` (String) UUID of the service to which this logical database belongs.
 
 ### Optional Attributes
 
-- `character_set` (String) Default character set for the database (LC_CTYPE)
-- `collation` (String) Default collation for the database (LC_COLLATE)
+- `character_set` (String) Default character set for the database (LC_CTYPE), PostgreSQL only.
+- `collation` (String) Default collation for the database (LC_COLLATE), PostgreSQL only.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) ID of the logical database. ID is in {service UUID}/{database name} format.
