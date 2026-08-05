@@ -73,7 +73,7 @@ func (r *logicalDatabaseResource) Schema(_ context.Context, _ resource.SchemaReq
 				},
 			},
 			"name": schema.StringAttribute{
-				Description: "Name of the logical database",
+				Description: "Name of the logical database.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
