@@ -24,13 +24,14 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 	pg1Name := "upcloud_managed_database_postgresql.pg1"
 	pg2Name := "upcloud_managed_database_postgresql.pg2"
 	msql1Name := "upcloud_managed_database_mysql.msql1"
-	lgDBName := "upcloud_managed_database_logical_database.logical_db_1"
+	msql1LDBName := "upcloud_managed_database_logical_database.logical_db_msql1"
+	pg1LDBName := "upcloud_managed_database_logical_database.logical_db_pg2"
 	userName1 := "upcloud_managed_database_user.db_user_1"
 	userName2 := "upcloud_managed_database_user.db_user_2"
 	userName4 := "upcloud_managed_database_user.db_user_4"
 	userName5 := "upcloud_managed_database_user.db_user_5"
 	valkeyName := "upcloud_managed_database_valkey.v1"
-	connectionPoolName := "upcloud_managed_database_connection_pool.pg1"
+	connectionPoolName := "upcloud_managed_database_connection_pool.pg2"
 
 	verifyImportStep := func(name string, extraIgnore ...string) resource.TestStep {
 		return resource.TestStep{
@@ -89,8 +90,15 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(msql1Name, "powered", "true"),
 					resource.TestCheckResourceAttr(msql1Name, "network.#", "0"),
 
-					resource.TestCheckResourceAttr(lgDBName, "name", withPrefixDB("logical-db-1")),
-					resource.TestCheckResourceAttrSet(lgDBName, "service"),
+					resource.TestCheckResourceAttr(msql1LDBName, "name", "logical-db-1"),
+					resource.TestCheckResourceAttr(msql1LDBName, "character_set", ""),
+					resource.TestCheckResourceAttr(msql1LDBName, "collation", ""),
+					resource.TestCheckResourceAttrSet(msql1LDBName, "service"),
+
+					resource.TestCheckResourceAttr(pg1LDBName, "name", "logical-db-1"),
+					resource.TestCheckResourceAttr(pg1LDBName, "character_set", "en_US.UTF-8"),
+					resource.TestCheckResourceAttr(pg1LDBName, "collation", "en_US.UTF-8"),
+					resource.TestCheckResourceAttrSet(pg1LDBName, "service"),
 
 					resource.TestCheckResourceAttr(userName1, "username", "somename"),
 					resource.TestCheckResourceAttr(userName1, "password", "Superpass123"),
@@ -119,7 +127,8 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 			verifyImportStep(pg2Name, "properties.0.pglookout"), // pglookout is included in response even when it has not been configured by user
 			verifyImportStep(msql1Name, "properties"),           // properties are included in response even when none are configured by user
 			verifyImportStep(valkeyName, "properties"),          // properties are included in response even when none are configured by user
-			verifyImportStep(lgDBName),
+			verifyImportStep(msql1LDBName),
+			verifyImportStep(pg1LDBName),
 			verifyImportStep(userName1),
 			verifyImportStep(userName2),
 			verifyImportStep(userName4),
@@ -129,6 +138,8 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(connectionPoolName, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(msql1LDBName, plancheck.ResourceActionDestroyBeforeCreate),
+						plancheck.ExpectResourceAction(pg1LDBName, plancheck.ResourceActionDestroyBeforeCreate),
 					},
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -156,7 +167,9 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(msql1Name, "title", withPrefixDB("mysql-1-updated")),
 					resource.TestCheckResourceAttr(msql1Name, "network.#", "1"),
 
-					resource.TestCheckResourceAttr(lgDBName, "name", withPrefixDB("logical-db-1-updated")),
+					resource.TestCheckResourceAttr(msql1LDBName, "name", "logical-db-1-updated"),
+
+					resource.TestCheckResourceAttr(pg1LDBName, "name", "logical-db-1-updated"),
 
 					resource.TestCheckResourceAttr(userName1, "password", "Superpass890"),
 					resource.TestCheckResourceAttr(userName1, "authentication", "caching_sha2_password"),

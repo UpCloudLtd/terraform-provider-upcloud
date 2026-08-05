@@ -92,8 +92,8 @@ resource "upcloud_managed_database_postgresql" "pg1" {
   }
 }
 
-resource "upcloud_managed_database_connection_pool" "pg1" {
-  service  = upcloud_managed_database_postgresql.pg1.id
+resource "upcloud_managed_database_connection_pool" "pg2" {
+  service  = upcloud_managed_database_postgresql.pg2.id
   database = "defaultdb"
   mode     = "transaction"
   name     = "pool-0"
@@ -145,9 +145,14 @@ resource "upcloud_managed_database_mysql" "msql1" {
   }
 }
 
-resource "upcloud_managed_database_logical_database" "logical_db_1" {
+resource "upcloud_managed_database_logical_database" "logical_db_msql1" {
   service = upcloud_managed_database_mysql.msql1.id
-  name    = "${var.prefix}logical-db-1-updated"
+  name    = "logical-db-1-updated"
+}
+
+resource "upcloud_managed_database_logical_database" "logical_db_pg2" {
+  service = upcloud_managed_database_postgresql.pg2.id
+  name    = "logical-db-1-updated"
 }
 
 resource "upcloud_managed_database_valkey" "v1" {
