@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_database_*: avoid dirty plan on existing resources when new `properties` fields are introduced in new provider versions.
+
 ## [5.43.0] - 2026-08-04
 
 ### Added

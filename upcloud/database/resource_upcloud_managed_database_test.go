@@ -157,7 +157,7 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(pg2Name, "title", withPrefixDB("pg-2-updated")),
 					resource.TestCheckResourceAttr(pg2Name, "maintenance_window_time", "11:00:00"),
 					resource.TestCheckResourceAttr(pg2Name, "maintenance_window_dow", "thursday"),
-					resource.TestCheckResourceAttr(pg1Name, "properties.0.public_access", "false"),
+					resource.TestCheckNoResourceAttr(pg1Name, "properties.0.public_access"),
 					resource.TestCheckResourceAttr(pg1Name, "properties.0.ip_filter.#", "0"),
 					resource.TestCheckResourceAttr(pg2Name, "powered", "true"),
 					resource.TestCheckResourceAttr(pg2Name, "properties.0.version", "17"),

@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
@@ -92,14 +91,6 @@ func GetKey(props map[string]upcloud.ManagedDatabaseServiceProperty, field strin
 // SchemaKey converts key used in API to format supported in TF state. E.g., "pressure.enabled" -> "pressure_enabled"
 func SchemaKey(key string) string {
 	return strings.ReplaceAll(key, ".", "_")
-}
-
-func booleanDefault(val interface{}) (bool, bool) {
-	if b, ok := val.(bool); ok {
-		return b, true
-	}
-
-	return false, false
 }
 
 func stringSlice(val interface{}) ([]string, bool) {
@@ -226,10 +217,6 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, er
 				boolplanmodifier.RequiresReplaceIfConfigured(),
 				boolplanmodifier.UseStateForUnknown(),
 			)
-		}
-
-		if boolDefault, ok := booleanDefault(prop.Default); ok {
-			s.Default = booldefault.StaticBool(boolDefault)
 		}
 
 		return s, nil
