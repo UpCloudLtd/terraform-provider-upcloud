@@ -136,13 +136,13 @@ func (r *dynamicCertificateBundleResource) Create(ctx context.Context, req resou
 	var data dynamicCertificateBundleModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	if resp.Diagnostics.HasError() {
-		return
+	var hostnames []string
+	if !data.Hostnames.IsNull() && !data.Hostnames.IsUnknown() {
+		resp.Diagnostics.Append(data.Hostnames.ElementsAs(ctx, &hostnames, false)...)
 	}
 
-	var hostnames *[]string
-	if !data.Hostnames.IsNull() && !data.Hostnames.IsUnknown() {
-		resp.Diagnostics.Append(data.Hostnames.ElementsAs(ctx, hostnames, false)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	var labelsMap map[string]string
@@ -157,7 +157,7 @@ func (r *dynamicCertificateBundleResource) Create(ctx context.Context, req resou
 		Type:      v9.LoadBalancerCertificateBundleCreateTypeDynamic,
 		Name:      data.Name.ValueString(),
 		KeyType:   (*v9.LoadBalancerCertificateBundleCreateKeyType)(keyType),
-		Hostnames: hostnames,
+		Hostnames: &hostnames,
 		Labels:    &labels,
 	}
 
@@ -237,9 +237,9 @@ func (r *dynamicCertificateBundleResource) Update(ctx context.Context, req resou
 	var data dynamicCertificateBundleModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	var hostnames *[]string
+	var hostnames []string
 	if !data.Hostnames.IsNull() && !data.Hostnames.IsUnknown() {
-		resp.Diagnostics.Append(data.Hostnames.ElementsAs(ctx, hostnames, false)...)
+		resp.Diagnostics.Append(data.Hostnames.ElementsAs(ctx, &hostnames, false)...)
 	}
 
 	var labelsMap map[string]string
@@ -250,7 +250,7 @@ func (r *dynamicCertificateBundleResource) Update(ctx context.Context, req resou
 
 	modify := v9.LoadBalancerCertificateBundleDynamicModify{
 		Name:      utils.ValueStringOrNil(data.Name),
-		Hostnames: hostnames,
+		Hostnames: &hostnames,
 		Labels:    &labels,
 	}
 
@@ -324,6 +324,7 @@ func (r *dynamicCertificateBundleResource) Delete(ctx context.Context, req resou
 		return
 	}
 }
+
 func (r *dynamicCertificateBundleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

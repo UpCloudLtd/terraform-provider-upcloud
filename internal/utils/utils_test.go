@@ -142,14 +142,14 @@ func TestValueOrEmpty(t *testing.T) {
 	var stringPtr *string
 	assert.Equal(t, "", ValueOrEmpty(stringPtr))
 
-	var stringVal = "test"
+	stringVal := "test"
 	stringPtr = &stringVal
 	assert.Equal(t, "test", ValueOrEmpty(stringPtr))
 
 	var intPtr *int
 	assert.Equal(t, 0, ValueOrEmpty(intPtr))
 
-	var intVal = 42
+	intVal := 42
 	intPtr = &intVal
 	assert.Equal(t, 42, ValueOrEmpty(intPtr))
 }

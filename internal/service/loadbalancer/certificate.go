@@ -78,5 +78,6 @@ func parseCertificate(input *[]byte) string {
 		return ""
 	}
 
-	return string(*input)
+	// OpenAPI spec specifies contentEncoding for certificates → generated code decodes that into []byte → encode to string to have it in format expected by the provider.
+	return base64.StdEncoding.EncodeToString(*input)
 }

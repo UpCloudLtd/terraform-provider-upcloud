@@ -204,9 +204,15 @@ func (r *manualCertificateBundleResource) Create(ctx context.Context, req resour
 	}
 	labels := labelsMapToV9Slice(labelsMap)
 
+	// Omit empty intermediates value.
+	var intermediates *string
+	if v := data.Intermediates.ValueString(); v != "" {
+		intermediates = &v
+	}
+
 	apiReq := v9.CreateLoadBalancerCertificateBundleJSONRequestBody{
 		Certificate:   utils.ValueStringOrNil(data.Certificate),
-		Intermediates: utils.ValueStringOrNil(data.Intermediates),
+		Intermediates: intermediates,
 		Name:          data.Name.ValueString(),
 		PrivateKey:    utils.ValueStringOrNil(data.PrivateKey),
 		Type:          v9.LoadBalancerCertificateBundleCreateTypeManual,
