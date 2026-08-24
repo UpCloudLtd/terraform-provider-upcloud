@@ -2,43 +2,67 @@ package tag
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func DataSourceTags() *schema.Resource {
-	return &schema.Resource{
-		Description: `~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
+func NewTagsDataSource() datasource.DataSource {
+	return &tagsDataSource{}
+}
 
-Data-source is deprecated.`,
-		ReadContext: dataSourceTagsRead,
-		Schema: map[string]*schema.Schema{
-			"tags": {
-				Type:     schema.TypeSet,
+var (
+	_ datasource.DataSource              = &tagsDataSource{}
+	_ datasource.DataSourceWithConfigure = &tagsDataSource{}
+)
+
+type tagsDataSource struct {
+	client *service.Service
+}
+
+func (d *tagsDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_tags"
+}
+
+func (d *tagsDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+}
+
+type tagsModel struct {
+	ID   types.String `tfsdk:"id"`
+	Tags types.Set    `tfsdk:"tags"`
+}
+
+func (d *tagsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: `~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
+
+List tags configured in the current account.`, Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"description": {
-							Description: "Free form text representing the meaning of the tag",
-							Type:        schema.TypeString,
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"tags": schema.SetNestedBlock{
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							Description: nameDescription,
 							Computed:    true,
 						},
-						"name": {
-							Description: "The value representing the tag",
-							Type:        schema.TypeString,
+						"description": schema.StringAttribute{
+							Description: descriptionDescription,
 							Computed:    true,
 						},
-						"servers": {
-							Description: "A collection of servers that have been assigned the tag",
-							Type:        schema.TypeSet,
+						"servers": schema.SetAttribute{
+							Description: serversDescription,
 							Computed:    true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
+							ElementType: types.StringType,
 						},
 					},
 				},
@@ -47,38 +71,31 @@ Data-source is deprecated.`,
 	}
 }
 
-func dataSourceTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*service.Service)
+func (d *tagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data tagsModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	data.ID = types.StringValue(time.Now().UTC().String())
+
+	tags, err := d.client.GetTags(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read tags",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	tagsData := make([]tagCommonModel, 0, len(tags.Tags))
+	for _, tag := range tags.Tags {
+		t := tagCommonModel{}
+		t.Servers = types.SetUnknown(types.StringType)
+		resp.Diagnostics.Append(setValues(ctx, &t, &tag)...)
+		tagsData = append(tagsData, t)
+	}
 
 	var diags diag.Diagnostics
-
-	tags, err := client.GetTags(ctx)
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("error fetching tags: %s", err))
-	}
-
-	var values []map[string]interface{}
-
-	for _, tag := range tags.Tags {
-		servers := []string{}
-		for _, server := range tag.Servers {
-			servers = append(servers, server)
-		}
-
-		value := map[string]interface{}{
-			"name":        tag.Name,
-			"description": tag.Description,
-			"servers":     servers,
-		}
-
-		values = append(values, value)
-	}
-
-	if err := d.Set("tags", values); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(time.Now().UTC().String())
-
-	return diags
+	data.Tags, diags = types.SetValueFrom(ctx, data.Tags.ElementType(ctx), tagsData)
+	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

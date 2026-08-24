@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_server: accept reference to a `upcloud_tag` name in tags. This was previously failing, because the reference value is unknown during validation.
+- upcloud_tag: if `servers` field is not configured, do not untag servers. I.e., only clear servers when `servers` field is set to empty set.
+
 ## [5.43.1] - 2026-08-21
 
 ### Fixed

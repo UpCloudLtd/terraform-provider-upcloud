@@ -1226,6 +1226,46 @@ func TestAccUpCloudServer_oneTimePassword(t *testing.T) {
 	})
 }
 
+func TestAccUpCloudServer_tagsRef(t *testing.T) {
+	testdata := utils.ReadTestDataFile(t, "testdata/server_tags.tf")
+
+	serverName := "upcloud_server.this"
+	tagName := "upcloud_tag.this"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testdata,
+				ConfigVariables: map[string]config.Variable{
+					"tag_suffix": config.StringVariable("s1"),
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(serverName, "tags.#", "1"),
+					resource.TestCheckNoResourceAttr(tagName, "servers"),
+				),
+			},
+			{
+				Config: testdata,
+				ConfigVariables: map[string]config.Variable{
+					"tag_suffix": config.StringVariable("s2"),
+				},
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(serverName, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(tagName, plancheck.ResourceActionDestroyBeforeCreate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(serverName, "tags.#", "1"),
+					resource.TestCheckNoResourceAttr(tagName, "servers"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccUpCloudServer_storageDetachAttach(t *testing.T) {
 	// Step 1: shared storage attached to server_a
 	// Step 2: shared storage moved to server_b (detach from server_a, attach to server_b concurrently)

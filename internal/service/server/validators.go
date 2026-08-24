@@ -82,7 +82,17 @@ func getTags(ctx context.Context, value basetypes.SetValue) (tags []string, diag
 		tags = nil
 		return tags, diags
 	}
-	diags.Append(value.ElementsAs(ctx, &tags, false)...)
+
+	// Use type that supports unknown values to avoid errors when plan includes unknown values, such reference to a tag resource.
+	var rawTags []basetypes.StringValue
+	diags.Append(value.ElementsAs(ctx, &rawTags, false)...)
+
+	for _, tag := range rawTags {
+		val := tag.ValueString()
+		if val != "" {
+			tags = append(tags, val)
+		}
+	}
 	return tags, diags
 }
 

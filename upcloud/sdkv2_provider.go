@@ -8,7 +8,6 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/gateway"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/network"
-	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/tag"
 	"github.com/UpCloudLtd/upcloud-go-api/credentials"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -63,14 +62,12 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"upcloud_tag":                       tag.ResourceTag(),
 			"upcloud_gateway_connection":        gateway.ResourceConnection(),
 			"upcloud_gateway_connection_tunnel": gateway.ResourceTunnel(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"upcloud_networks": network.DataSourceNetworks(),
-			"upcloud_tags":     tag.DataSourceTags(),
 			"upcloud_managed_database_opensearch_indices":  database.DataSourceOpenSearchIndices(),
 			"upcloud_managed_database_mysql_sessions":      database.DataSourceSessionsMySQL(),
 			"upcloud_managed_database_postgresql_sessions": database.DataSourceSessionsPostgreSQL(),
