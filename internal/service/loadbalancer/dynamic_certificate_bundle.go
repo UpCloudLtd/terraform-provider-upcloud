@@ -154,7 +154,7 @@ func (r *dynamicCertificateBundleResource) Create(ctx context.Context, req resou
 	keyType := utils.ValueStringOrNil(data.KeyType)
 
 	apiReq := v9.CreateLoadBalancerCertificateBundleJSONRequestBody{
-		Type:      v9.Dynamic,
+		Type:      v9.LoadBalancerCertificateBundleCreateTypeDynamic,
 		Name:      data.Name.ValueString(),
 		KeyType:   (*v9.LoadBalancerCertificateBundleCreateKeyType)(keyType),
 		Hostnames: hostnames,

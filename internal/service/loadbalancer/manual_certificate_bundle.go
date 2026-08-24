@@ -154,7 +154,7 @@ func setManualCertificateBundleValues(_ context.Context, data *manualCertificate
 	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
 	data.OperationalState = types.StringValue(string(bundle.OperationalState))
 
-	apiCertificate, diags := normalizeCertificate(bundle.Certificate)
+	apiCertificate, diags := normalizeCertificate(parseCertificate(bundle.Certificate))
 	respDiagnostics.Append(diags...)
 	if isImport {
 		data.Certificate = types.StringValue(apiCertificate)
@@ -170,7 +170,7 @@ func setManualCertificateBundleValues(_ context.Context, data *manualCertificate
 		}
 	}
 
-	apiIntermediates, diags := normalizeCertificate(bundle.Intermediates)
+	apiIntermediates, diags := normalizeCertificate(parseCertificate(bundle.Intermediates))
 	respDiagnostics.Append(diags...)
 
 	if isImport {
@@ -209,14 +209,14 @@ func (r *manualCertificateBundleResource) Create(ctx context.Context, req resour
 		Intermediates: utils.ValueStringOrNil(data.Intermediates),
 		Name:          data.Name.ValueString(),
 		PrivateKey:    utils.ValueStringOrNil(data.PrivateKey),
-		Type:          v9.Manual,
+		Type:          v9.LoadBalancerCertificateBundleCreateTypeManual,
 		Labels:        &labels,
 	}
 
 	apiResp, err := r.client.CreateLoadBalancerCertificateBundleWithResponse(ctx, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to create loadbalancer dynamic certificate bundle",
+			"Unable to create loadbalancer manual certificate bundle",
 			utils.ErrorDiagnosticDetail(err),
 		)
 
@@ -224,7 +224,7 @@ func (r *manualCertificateBundleResource) Create(ctx context.Context, req resour
 	}
 	if apiResp.StatusCode() != http.StatusCreated || apiResp.JSON201 == nil {
 		resp.Diagnostics.AddError(
-			"Unable to create loadbalancer dynamic certificate bundle",
+			"Unable to create loadbalancer manual certificate bundle",
 			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
 		)
 		return

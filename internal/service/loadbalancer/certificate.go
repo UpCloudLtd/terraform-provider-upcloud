@@ -72,3 +72,11 @@ func normalizeCertificate(encoded string) (string, diag.Diagnostics) {
 	// Encode back to base64
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), respDiagnostics
 }
+
+func parseCertificate(input *[]byte) string {
+	if input == nil {
+		return ""
+	}
+
+	return string(*input)
+}
