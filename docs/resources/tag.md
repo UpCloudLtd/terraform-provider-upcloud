@@ -4,14 +4,14 @@ page_title: "upcloud_tag Resource - terraform-provider-upcloud"
 subcategory: Cloud
 description: |-
   ~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
-  This resource is deprecated, use tags schema in server resource
+  Resource for managing tags. When tagging multiple servers with the same tag, use this resource to create the tag and tags field of the server resource to tag the server.
 ---
 
 # upcloud_tag (Resource)
 
 ~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
 
-This resource is deprecated, use tags schema in server resource
+Resource for managing tags. When tagging multiple servers with the same tag, use this resource to create the tag and `tags` field of the server resource to tag the server.
 
 
 
@@ -20,13 +20,13 @@ This resource is deprecated, use tags schema in server resource
 
 ### Required Attributes
 
-- `name` (String) The value representing the tag
+- `name` (String) The name of the tag.
 
 ### Optional Attributes
 
-- `description` (String) Free form text representing the meaning of the tag
-- `servers` (Set of String) A collection of servers that have been assigned the tag
+- `description` (String) Free form text representing the meaning of the tag.
+- `servers` (Set of String) A collection of servers that have been assigned the tag.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the tag. Contains the same value as `name`.
