@@ -2,6 +2,7 @@ package loadbalancer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -291,16 +292,13 @@ func (r *manualCertificateBundleResource) Read(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *manualCertificateBundleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data manualCertificateBundleModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+func buildModifyReq(ctx context.Context, data manualCertificateBundleModel) (v9.ModifyLoadBalancerCertificateBundleJSONRequestBody, diag.Diagnostics) {
+	var apiReq v9.ModifyLoadBalancerCertificateBundleJSONRequestBody
+	var diags diag.Diagnostics
 
 	var labelsMap map[string]string
 	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
-		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+		diags.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
 	}
 	labels := labelsMapToV9Slice(labelsMap)
 
@@ -312,15 +310,59 @@ func (r *manualCertificateBundleResource) Update(ctx context.Context, req resour
 		PrivateKey:    utils.ValueStringOrNil(data.PrivateKey),
 	}
 
-	var apiReq v9.ModifyLoadBalancerCertificateBundleJSONRequestBody
-	err := apiReq.FromLoadBalancerCertificateBundleManualModify(modify)
+	b, err := json.Marshal(modify)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to create API request for loadbalancer manual certificate bundle modification",
+		diags.AddError(
+			"Unable to marshal loadbalancer manual certificate bundle modify request",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return apiReq, diags
+	}
+
+	var m map[string]interface{}
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		diags.AddError(
+			"Unable to unmarshal loadbalancer manual certificate bundle modify request",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return apiReq, diags
+	}
+
+	// Intermedites must be null in API request to clear the value, but struct uses *string with omitempty so we have to set the null value manually here.
+	if i := utils.ValueStringOrNil(data.Intermediates); i != nil && *i == "" {
+		m["intermediates"] = nil
+	}
+
+	b, err = json.Marshal(m)
+	if err != nil {
+		diags.AddError(
+			"Unable to marshal loadbalancer manual certificate bundle modify request",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return apiReq, diags
+	}
+
+	err = apiReq.UnmarshalJSON(b)
+	if err != nil {
+		diags.AddError(
+			"Unable to unmarshal loadbalancer manual certificate bundle modify request",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	return apiReq, diags
+}
+
+func (r *manualCertificateBundleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data manualCertificateBundleModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	apiReq, diags := buildModifyReq(ctx, data)
+	resp.Diagnostics.Append(diags...)
 
 	serviceUUID, err := uuid.Parse(data.ID.ValueString())
 	if err != nil {
