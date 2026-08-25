@@ -183,6 +183,11 @@ resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
     "example.com",
   ]
   key_type = "rsa"
+
+  labels = {
+    env = "test"
+    tool = "tf"
+  }
 }
 
 resource "upcloud_loadbalancer_manual_certificate_bundle" "lb_cb_m1" {

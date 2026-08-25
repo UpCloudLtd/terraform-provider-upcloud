@@ -102,4 +102,8 @@ resource "upcloud_loadbalancer_manual_certificate_bundle" "this" {
   certificate = local.certificate_clean
   # intermediates not configured
   private_key = local.private_key
+
+  labels = {
+    tool = "tf"
+  }
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/google/uuid"
@@ -46,14 +45,10 @@ func (r *dynamicCertificateBundleResource) Configure(_ context.Context, req reso
 }
 
 type dynamicCertificateBundleModel struct {
-	ID               types.String `tfsdk:"id"`
-	Hostnames        types.List   `tfsdk:"hostnames"`
-	KeyType          types.String `tfsdk:"key_type"`
-	Labels           types.Map    `tfsdk:"labels"`
-	Name             types.String `tfsdk:"name"`
-	NotAfter         types.String `tfsdk:"not_after"`
-	NotBefore        types.String `tfsdk:"not_before"`
-	OperationalState types.String `tfsdk:"operational_state"`
+	certificateBundleCommonModel
+
+	Hostnames types.List   `tfsdk:"hostnames"`
+	KeyType   types.String `tfsdk:"key_type"`
 }
 
 func (r *dynamicCertificateBundleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -112,22 +107,12 @@ func (r *dynamicCertificateBundleResource) Schema(_ context.Context, _ resource.
 func setDynamicCertificateBundleValues(ctx context.Context, data *dynamicCertificateBundleModel, bundle *v9.CreateLoadBalancerCertificateBundle201) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
 
+	respDiagnostics.Append(setCertificateBundleCommonValues(ctx, &data.certificateBundleCommonModel, bundle)...)
+
 	data.Hostnames, diags = types.ListValueFrom(ctx, data.Hostnames.ElementType(ctx), bundle.Hostnames)
 	respDiagnostics.Append(diags...)
 
 	data.KeyType = types.StringPointerValue((*string)(bundle.KeyType))
-	data.Name = types.StringValue(bundle.Name)
-	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
-	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
-	data.OperationalState = types.StringValue(string(bundle.OperationalState))
-
-	labelsMap := make(map[string]string)
-	if bundle.Labels != nil {
-		labelsMap = labelsV9SliceToMap(*bundle.Labels)
-	}
-
-	data.Labels, diags = types.MapValueFrom(ctx, types.StringType, labelsMap)
-	respDiagnostics.Append(diags...)
 
 	return respDiagnostics
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/google/uuid"
@@ -48,15 +47,11 @@ func (r *manualCertificateBundleResource) Configure(_ context.Context, req resou
 }
 
 type manualCertificateBundleModel struct {
-	Certificate      types.String `tfsdk:"certificate"`
-	ID               types.String `tfsdk:"id"`
-	Intermediates    types.String `tfsdk:"intermediates"`
-	Labels           types.Map    `tfsdk:"labels"`
-	Name             types.String `tfsdk:"name"`
-	NotAfter         types.String `tfsdk:"not_after"`
-	NotBefore        types.String `tfsdk:"not_before"`
-	OperationalState types.String `tfsdk:"operational_state"`
-	PrivateKey       types.String `tfsdk:"private_key"`
+	certificateBundleCommonModel
+
+	Certificate   types.String `tfsdk:"certificate"`
+	Intermediates types.String `tfsdk:"intermediates"`
+	PrivateKey    types.String `tfsdk:"private_key"`
 }
 
 func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -145,15 +140,12 @@ func (r *manualCertificateBundleResource) UpgradeState(_ context.Context) map[in
 	}
 }
 
-func setManualCertificateBundleValues(_ context.Context, data *manualCertificateBundleModel, bundle *v9.CreateLoadBalancerCertificateBundle201) diag.Diagnostics {
+func setManualCertificateBundleValues(ctx context.Context, data *manualCertificateBundleModel, bundle *v9.CreateLoadBalancerCertificateBundle201) diag.Diagnostics {
 	var respDiagnostics diag.Diagnostics
 
-	isImport := data.Certificate.IsNull()
+	respDiagnostics.Append(setCertificateBundleCommonValues(ctx, &data.certificateBundleCommonModel, bundle)...)
 
-	data.Name = types.StringValue(bundle.Name)
-	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
-	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
-	data.OperationalState = types.StringValue(string(bundle.OperationalState))
+	isImport := data.Certificate.IsNull()
 
 	apiCertificate, diags := normalizeCertificate(parseCertificate(bundle.Certificate))
 	respDiagnostics.Append(diags...)
