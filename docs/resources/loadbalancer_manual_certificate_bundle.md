@@ -40,6 +40,7 @@ resource "upcloud_loadbalancer_manual_certificate_bundle" "lb_cb_m1" {
 ### Optional Attributes
 
 - `intermediates` (String) Intermediate certificates as base64 encoded string. Must be in PEM format.
+- `labels` (Map of String) User defined key-value pairs to classify the manual certificate bundle.
 
 ### Read-Only
 
