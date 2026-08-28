@@ -149,3 +149,12 @@ func ValueStringOrNil(v types.String) *string {
 	s := v.ValueString()
 	return &s
 }
+
+func ValueOrEmpty[T any](p *T) T {
+	var v T
+	if p != nil {
+		v = *p
+	}
+
+	return v
+}

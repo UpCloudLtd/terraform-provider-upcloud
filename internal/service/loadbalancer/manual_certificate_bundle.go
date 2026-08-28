@@ -2,15 +2,15 @@ package loadbalancer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"time"
+	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -34,7 +34,7 @@ func NewManualCertificateBundleResource() resource.Resource {
 }
 
 type manualCertificateBundleResource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (r *manualCertificateBundleResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -43,18 +43,15 @@ func (r *manualCertificateBundleResource) Metadata(_ context.Context, req resour
 
 // Configure adds the provider configured client to the resource.
 func (r *manualCertificateBundleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type manualCertificateBundleModel struct {
-	Certificate      types.String `tfsdk:"certificate"`
-	ID               types.String `tfsdk:"id"`
-	Intermediates    types.String `tfsdk:"intermediates"`
-	Name             types.String `tfsdk:"name"`
-	NotAfter         types.String `tfsdk:"not_after"`
-	NotBefore        types.String `tfsdk:"not_before"`
-	OperationalState types.String `tfsdk:"operational_state"`
-	PrivateKey       types.String `tfsdk:"private_key"`
+	certificateBundleCommonModel
+
+	Certificate   types.String `tfsdk:"certificate"`
+	Intermediates types.String `tfsdk:"intermediates"`
+	PrivateKey    types.String `tfsdk:"private_key"`
 }
 
 func (r *manualCertificateBundleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -93,6 +90,7 @@ func manualCertificateBundleSchemaV0() schema.Schema {
 				Optional:            true,
 				Computed:            true,
 			},
+			"labels": utils.LabelsAttribute("manual certificate bundle"),
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the certificate bundle. Must be unique within customer account.",
 				Required:            true,
@@ -142,17 +140,14 @@ func (r *manualCertificateBundleResource) UpgradeState(_ context.Context) map[in
 	}
 }
 
-func setManualCertificateBundleValues(_ context.Context, data *manualCertificateBundleModel, bundle *upcloud.LoadBalancerCertificateBundle) diag.Diagnostics {
+func setManualCertificateBundleValues(ctx context.Context, data *manualCertificateBundleModel, bundle *v9.CreateLoadBalancerCertificateBundle201) diag.Diagnostics {
 	var respDiagnostics diag.Diagnostics
+
+	respDiagnostics.Append(setCertificateBundleCommonValues(ctx, &data.certificateBundleCommonModel, bundle)...)
 
 	isImport := data.Certificate.IsNull()
 
-	data.Name = types.StringValue(bundle.Name)
-	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
-	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
-	data.OperationalState = types.StringValue(string(bundle.OperationalState))
-
-	apiCertificate, diags := normalizeCertificate(bundle.Certificate)
+	apiCertificate, diags := normalizeCertificate(parseCertificate(bundle.Certificate))
 	respDiagnostics.Append(diags...)
 	if isImport {
 		data.Certificate = types.StringValue(apiCertificate)
@@ -168,7 +163,7 @@ func setManualCertificateBundleValues(_ context.Context, data *manualCertificate
 		}
 	}
 
-	apiIntermediates, diags := normalizeCertificate(bundle.Intermediates)
+	apiIntermediates, diags := normalizeCertificate(parseCertificate(bundle.Intermediates))
 	respDiagnostics.Append(diags...)
 
 	if isImport {
@@ -196,15 +191,28 @@ func (r *manualCertificateBundleResource) Create(ctx context.Context, req resour
 		return
 	}
 
-	apiReq := request.CreateLoadBalancerCertificateBundleRequest{
-		Certificate:   data.Certificate.ValueString(),
-		Intermediates: data.Intermediates.ValueString(),
-		Name:          data.Name.ValueString(),
-		PrivateKey:    data.PrivateKey.ValueString(),
-		Type:          upcloud.LoadBalancerCertificateBundleTypeManual,
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := labelsMapToV9Slice(labelsMap)
+
+	// Omit empty intermediates value.
+	var intermediates *string
+	if v := data.Intermediates.ValueString(); v != "" {
+		intermediates = &v
 	}
 
-	bundle, err := r.client.CreateLoadBalancerCertificateBundle(ctx, &apiReq)
+	apiReq := v9.CreateLoadBalancerCertificateBundleJSONRequestBody{
+		Certificate:   utils.ValueStringOrNil(data.Certificate),
+		Intermediates: intermediates,
+		Name:          data.Name.ValueString(),
+		PrivateKey:    utils.ValueStringOrNil(data.PrivateKey),
+		Type:          v9.LoadBalancerCertificateBundleCreateTypeManual,
+		Labels:        &labels,
+	}
+
+	apiResp, err := r.client.CreateLoadBalancerCertificateBundleWithResponse(ctx, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create loadbalancer manual certificate bundle",
@@ -213,10 +221,17 @@ func (r *manualCertificateBundleResource) Create(ctx context.Context, req resour
 
 		return
 	}
+	if apiResp.StatusCode() != http.StatusCreated || apiResp.JSON201 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer manual certificate bundle",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
+	}
 
-	data.ID = types.StringValue(bundle.UUID)
+	data.ID = types.StringValue(apiResp.JSON201.Uuid.String())
 
-	resp.Diagnostics.Append(setManualCertificateBundleValues(ctx, &data, bundle)...)
+	resp.Diagnostics.Append(setManualCertificateBundleValues(ctx, &data, apiResp.JSON201)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -234,23 +249,101 @@ func (r *manualCertificateBundleResource) Read(ctx context.Context, req resource
 		return
 	}
 
-	bundle, err := r.client.GetLoadBalancerCertificateBundle(ctx, &request.GetLoadBalancerCertificateBundleRequest{
-		UUID: data.ID.ValueString(),
-	})
+	serviceUUID, err := uuid.Parse(data.ID.ValueString())
 	if err != nil {
-		if utils.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-		} else {
-			resp.Diagnostics.AddError(
-				"Unable to read loadbalancer manual certificate bundle details",
-				utils.ErrorDiagnosticDetail(err),
-			)
-		}
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
 		return
 	}
 
-	resp.Diagnostics.Append(setManualCertificateBundleValues(ctx, &data, bundle)...)
+	apiResp, err := r.client.GetLoadBalancerCertificateBundleWithResponse(ctx, serviceUUID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read loadbalancer manual certificate bundle details",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	if apiResp.StatusCode() == http.StatusNotFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	if apiResp.StatusCode() != http.StatusOK || apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to read loadbalancer manual certificate bundle details",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setManualCertificateBundleValues(ctx, &data, apiResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func buildModifyReq(ctx context.Context, data manualCertificateBundleModel) (v9.ModifyLoadBalancerCertificateBundleJSONRequestBody, diag.Diagnostics) {
+	var apiReq v9.ModifyLoadBalancerCertificateBundleJSONRequestBody
+	var diags diag.Diagnostics
+
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		diags.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := labelsMapToV9Slice(labelsMap)
+
+	modify := v9.LoadBalancerCertificateBundleManualModify{
+		Certificate:   utils.ValueStringOrNil(data.Certificate),
+		Intermediates: utils.ValueStringOrNil(data.Intermediates),
+		Labels:        &labels,
+		Name:          utils.ValueStringOrNil(data.Name),
+		PrivateKey:    utils.ValueStringOrNil(data.PrivateKey),
+	}
+
+	b, err := json.Marshal(modify)
+	if err != nil {
+		diags.AddError(
+			"Unable to marshal loadbalancer manual certificate bundle modify request",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return apiReq, diags
+	}
+
+	var m map[string]interface{}
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		diags.AddError(
+			"Unable to unmarshal loadbalancer manual certificate bundle modify request",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return apiReq, diags
+	}
+
+	// Intermedites must be null in API request to clear the value, but struct uses *string with omitempty so we have to set the null value manually here.
+	if i := utils.ValueStringOrNil(data.Intermediates); i != nil && *i == "" {
+		m["intermediates"] = nil
+	}
+
+	b, err = json.Marshal(m)
+	if err != nil {
+		diags.AddError(
+			"Unable to marshal loadbalancer manual certificate bundle modify request",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return apiReq, diags
+	}
+
+	err = apiReq.UnmarshalJSON(b)
+	if err != nil {
+		diags.AddError(
+			"Unable to unmarshal loadbalancer manual certificate bundle modify request",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	return apiReq, diags
 }
 
 func (r *manualCertificateBundleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -260,16 +353,19 @@ func (r *manualCertificateBundleResource) Update(ctx context.Context, req resour
 		return
 	}
 
-	apiReq := &request.ModifyLoadBalancerCertificateBundleRequest{
-		UUID:        data.ID.ValueString(),
-		Name:        data.Name.ValueString(),
-		Certificate: data.Certificate.ValueString(),
-		// Use ValueString() to get empty string if not set, this will clear the intermediates
-		Intermediates: upcloud.StringPtr(data.Intermediates.ValueString()),
-		PrivateKey:    data.PrivateKey.ValueString(),
+	apiReq, diags := buildModifyReq(ctx, data)
+	resp.Diagnostics.Append(diags...)
+
+	serviceUUID, err := uuid.Parse(data.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
 	}
 
-	bundle, err := r.client.ModifyLoadBalancerCertificateBundle(ctx, apiReq)
+	apiResp, err := r.client.ModifyLoadBalancerCertificateBundleWithResponse(ctx, serviceUUID, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify loadbalancer manual certificate bundle",
@@ -278,7 +374,15 @@ func (r *manualCertificateBundleResource) Update(ctx context.Context, req resour
 		return
 	}
 
-	resp.Diagnostics.Append(setManualCertificateBundleValues(ctx, &data, bundle)...)
+	if apiResp.StatusCode() != http.StatusOK || apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer manual certificate bundle",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setManualCertificateBundleValues(ctx, &data, apiResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -286,13 +390,30 @@ func (r *manualCertificateBundleResource) Delete(ctx context.Context, req resour
 	var data manualCertificateBundleModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	if err := r.client.DeleteLoadBalancerCertificateBundle(ctx, &request.DeleteLoadBalancerCertificateBundleRequest{
-		UUID: data.ID.ValueString(),
-	}); err != nil {
+	serviceUUID, err := uuid.Parse(data.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	apiResp, err := r.client.DeleteLoadBalancerCertificateBundleWithResponse(ctx, serviceUUID)
+	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete loadbalancer manual certificate bundle",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
+	}
+
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusAccepted && apiResp.StatusCode() != http.StatusNotFound {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer manual certificate bundle",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
 	}
 }
 

@@ -72,3 +72,12 @@ func normalizeCertificate(encoded string) (string, diag.Diagnostics) {
 	// Encode back to base64
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), respDiagnostics
 }
+
+func parseCertificate(input *[]byte) string {
+	if input == nil {
+		return ""
+	}
+
+	// OpenAPI spec specifies contentEncoding for certificates → generated code decodes that into []byte → encode to string to have it in format expected by the provider.
+	return base64.StdEncoding.EncodeToString(*input)
+}

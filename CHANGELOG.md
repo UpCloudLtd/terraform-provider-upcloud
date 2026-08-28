@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_loadbalancer_\*_certificate_bundle: add `labels` field for managing certificate bundle labels.
+
 ### Fixed
 
 - upcloud_server: accept reference to a `upcloud_tag` name in tags. This was previously failing, because the reference value is unknown during validation.
@@ -14,7 +18,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_database_*: avoid dirty plan on existing resources when new `properties` fields are introduced in new provider versions.
+- upcloud_managed_database_\*: avoid dirty plan on existing resources when new `properties` fields are introduced in new provider versions.
 
 ## [5.43.0] - 2026-08-04
 
@@ -89,7 +93,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_file_storage_share: fix resource import by parsing the file storage service uuid and share name from id
 - upcloud_file_storage_share_acl: fix resource import by parsing the file storage service uuid, share name and acl name from id
-- upcloud_managed_database_*: do not plan replacement for unconfigured create-only properties, such as MySQL `properties.lower_case_table_names`
+- upcloud_managed_database_\*: do not plan replacement for unconfigured create-only properties, such as MySQL `properties.lower_case_table_names`
 
 ## [5.36.1] - 2026-03-26
 
@@ -121,7 +125,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_database_*: do not error during plan when the actual `ip_filter` contains entries not present in the configuration (e.g. added via the web UI). The provider now surfaces the real state so that updating the value can be planned.
+- upcloud_managed_database_\*: do not error during plan when the actual `ip_filter` contains entries not present in the configuration (e.g. added via the web UI). The provider now surfaces the real state so that updating the value can be planned.
 
 ## [5.34.0] - 2026-02-09
 

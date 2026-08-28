@@ -172,3 +172,31 @@ var ValidateLabelsDiagFunc = validation.AllDiag(
 	validation.MapKeyMatch(ValidLabelKeyRegExp, InvalidLabelKeyMessage),
 	validation.MapValueLenBetween(0, 255),
 )
+
+func LabelsMapToSliceFn[T any](m map[string]string, fn func(string, string) T) []T {
+	labels := make([]T, 0, len(m))
+
+	for k, v := range m {
+		labels = append(labels, fn(k, v))
+	}
+
+	return labels
+}
+
+func LabelsSliceToMapFn[T any](labels []T, fn func(T) (string, string)) map[string]string {
+	result := make(map[string]string)
+
+	for _, label := range labels {
+		key, value := fn(label)
+		if key == "" {
+			continue
+		}
+		if strings.HasPrefix(key, "_") {
+			continue
+		}
+
+		result[key] = value
+	}
+
+	return result
+}
