@@ -98,6 +98,7 @@ Optional Attributes:
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 - `valkey_acl_channels_default` (String) Default ACL for pub/sub channels used when a Valkey user is created. Determines default pub/sub channels' ACL for new users if ACL is not supplied. When this option is not defined, all_channels is assumed to keep backward compatibility. This option doesn't affect Valkey configuration acl-pubsub-default.
 - `valkey_active_expire_effort` (Number) Active expire effort. Valkey reclaims expired keys both when accessed and in the background. The background process scans for expired keys to free memory. Increasing the active-expire-effort setting (default 1, max 10) uses more CPU to reclaim expired keys faster, reducing memory usage but potentially increasing latency.
+- `valkey_activedefrag` (Boolean) Active memory defragmentation. Enable active memory defragmentation. When enabled, Valkey relocates objects off sparsely-used memory pages to reduce fragmentation and return memory to the operating system. Defragmentation runs on the main thread and consumes CPU, so it may increase latency under load.
 - `valkey_io_threads` (Number) Valkey IO thread count. Set Valkey IO thread count. Changing this will cause a restart of the Valkey service.
 - `valkey_lfu_decay_time` (Number) LFU maxmemory-policy counter decay time in minutes.
 - `valkey_lfu_log_factor` (Number) Counter logarithm factor for volatile-lfu and allkeys-lfu maxmemory-policies.
