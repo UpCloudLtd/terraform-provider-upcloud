@@ -2,13 +2,13 @@ package loadbalancer
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
+	"github.com/google/uuid"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -32,7 +32,7 @@ func NewDynamicCertificateBundleResource() resource.Resource {
 }
 
 type dynamicCertificateBundleResource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (r *dynamicCertificateBundleResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -41,17 +41,14 @@ func (r *dynamicCertificateBundleResource) Metadata(_ context.Context, req resou
 
 // Configure adds the provider configured client to the resource.
 func (r *dynamicCertificateBundleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
 type dynamicCertificateBundleModel struct {
-	ID               types.String `tfsdk:"id"`
-	Hostnames        types.List   `tfsdk:"hostnames"`
-	KeyType          types.String `tfsdk:"key_type"`
-	Name             types.String `tfsdk:"name"`
-	NotAfter         types.String `tfsdk:"not_after"`
-	NotBefore        types.String `tfsdk:"not_before"`
-	OperationalState types.String `tfsdk:"operational_state"`
+	certificateBundleCommonModel
+
+	Hostnames types.List   `tfsdk:"hostnames"`
+	KeyType   types.String `tfsdk:"key_type"`
 }
 
 func (r *dynamicCertificateBundleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -83,6 +80,7 @@ func (r *dynamicCertificateBundleResource) Schema(_ context.Context, _ resource.
 					stringvalidator.OneOf("rsa", "ecdsa"),
 				},
 			},
+			"labels": utils.LabelsAttribute("dynamic certificate bundle"),
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the certificate bundle. Must be unique within customer account.",
 				Required:            true,
@@ -106,17 +104,15 @@ func (r *dynamicCertificateBundleResource) Schema(_ context.Context, _ resource.
 	}
 }
 
-func setDynamicCertificateBundleValues(ctx context.Context, data *dynamicCertificateBundleModel, bundle *upcloud.LoadBalancerCertificateBundle) diag.Diagnostics {
+func setDynamicCertificateBundleValues(ctx context.Context, data *dynamicCertificateBundleModel, bundle *v9.CreateLoadBalancerCertificateBundle201) diag.Diagnostics {
 	var diags, respDiagnostics diag.Diagnostics
+
+	respDiagnostics.Append(setCertificateBundleCommonValues(ctx, &data.certificateBundleCommonModel, bundle)...)
 
 	data.Hostnames, diags = types.ListValueFrom(ctx, data.Hostnames.ElementType(ctx), bundle.Hostnames)
 	respDiagnostics.Append(diags...)
 
-	data.KeyType = types.StringValue(bundle.KeyType)
-	data.Name = types.StringValue(bundle.Name)
-	data.NotAfter = types.StringValue(bundle.NotAfter.Format(time.RFC3339))
-	data.NotBefore = types.StringValue(bundle.NotBefore.Format(time.RFC3339))
-	data.OperationalState = types.StringValue(string(bundle.OperationalState))
+	data.KeyType = types.StringPointerValue((*string)(bundle.KeyType))
 
 	return respDiagnostics
 }
@@ -125,23 +121,32 @@ func (r *dynamicCertificateBundleResource) Create(ctx context.Context, req resou
 	var data dynamicCertificateBundleModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	var hostnames []string
 	if !data.Hostnames.IsNull() && !data.Hostnames.IsUnknown() {
 		resp.Diagnostics.Append(data.Hostnames.ElementsAs(ctx, &hostnames, false)...)
 	}
 
-	apiReq := request.CreateLoadBalancerCertificateBundleRequest{
-		Type:      upcloud.LoadBalancerCertificateBundleTypeDynamic,
-		Name:      data.Name.ValueString(),
-		KeyType:   data.KeyType.ValueString(),
-		Hostnames: hostnames,
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	bundle, err := r.client.CreateLoadBalancerCertificateBundle(ctx, &apiReq)
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := labelsMapToV9Slice(labelsMap)
+
+	keyType := utils.ValueStringOrNil(data.KeyType)
+
+	apiReq := v9.CreateLoadBalancerCertificateBundleJSONRequestBody{
+		Type:      v9.LoadBalancerCertificateBundleCreateTypeDynamic,
+		Name:      data.Name.ValueString(),
+		KeyType:   (*v9.LoadBalancerCertificateBundleCreateKeyType)(keyType),
+		Hostnames: &hostnames,
+		Labels:    &labels,
+	}
+
+	apiResp, err := r.client.CreateLoadBalancerCertificateBundleWithResponse(ctx, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create loadbalancer dynamic certificate bundle",
@@ -150,10 +155,17 @@ func (r *dynamicCertificateBundleResource) Create(ctx context.Context, req resou
 
 		return
 	}
+	if apiResp.StatusCode() != http.StatusCreated || apiResp.JSON201 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to create loadbalancer dynamic certificate bundle",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
+	}
 
-	data.ID = types.StringValue(bundle.UUID)
+	data.ID = types.StringValue(apiResp.JSON201.Uuid.String())
 
-	resp.Diagnostics.Append(setDynamicCertificateBundleValues(ctx, &data, bundle)...)
+	resp.Diagnostics.Append(setDynamicCertificateBundleValues(ctx, &data, apiResp.JSON201)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -171,22 +183,38 @@ func (r *dynamicCertificateBundleResource) Read(ctx context.Context, req resourc
 		return
 	}
 
-	bundle, err := r.client.GetLoadBalancerCertificateBundle(ctx, &request.GetLoadBalancerCertificateBundleRequest{
-		UUID: data.ID.ValueString(),
-	})
+	serviceUUID, err := uuid.Parse(data.ID.ValueString())
 	if err != nil {
-		if utils.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-		} else {
-			resp.Diagnostics.AddError(
-				"Unable to read loadbalancer dynamic certificate bundle details",
-				utils.ErrorDiagnosticDetail(err),
-			)
-		}
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
 		return
 	}
 
-	resp.Diagnostics.Append(setDynamicCertificateBundleValues(ctx, &data, bundle)...)
+	apiResp, err := r.client.GetLoadBalancerCertificateBundleWithResponse(ctx, serviceUUID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read loadbalancer dynamic certificate bundle details",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	if apiResp.StatusCode() == http.StatusNotFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	if apiResp.StatusCode() != http.StatusOK || apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to read loadbalancer dynamic certificate bundle details",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setDynamicCertificateBundleValues(ctx, &data, apiResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -199,13 +227,38 @@ func (r *dynamicCertificateBundleResource) Update(ctx context.Context, req resou
 		resp.Diagnostics.Append(data.Hostnames.ElementsAs(ctx, &hostnames, false)...)
 	}
 
-	apiReq := &request.ModifyLoadBalancerCertificateBundleRequest{
-		UUID:      data.ID.ValueString(),
-		Name:      data.Name.ValueString(),
-		Hostnames: hostnames,
+	var labelsMap map[string]string
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		resp.Diagnostics.Append(data.Labels.ElementsAs(ctx, &labelsMap, false)...)
+	}
+	labels := labelsMapToV9Slice(labelsMap)
+
+	modify := v9.LoadBalancerCertificateBundleDynamicModify{
+		Name:      utils.ValueStringOrNil(data.Name),
+		Hostnames: &hostnames,
+		Labels:    &labels,
 	}
 
-	bundle, err := r.client.ModifyLoadBalancerCertificateBundle(ctx, apiReq)
+	var apiReq v9.ModifyLoadBalancerCertificateBundleJSONRequestBody
+	err := apiReq.FromLoadBalancerCertificateBundleDynamicModify(modify)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create API request for loadbalancer dynamic certificate bundle modification",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	serviceUUID, err := uuid.Parse(data.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	apiResp, err := r.client.ModifyLoadBalancerCertificateBundleWithResponse(ctx, serviceUUID, apiReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to modify loadbalancer dynamic certificate bundle",
@@ -214,7 +267,15 @@ func (r *dynamicCertificateBundleResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	resp.Diagnostics.Append(setDynamicCertificateBundleValues(ctx, &data, bundle)...)
+	if apiResp.StatusCode() != http.StatusOK || apiResp.JSON200 == nil {
+		resp.Diagnostics.AddError(
+			"Unable to modify loadbalancer dynamic certificate bundle",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(setDynamicCertificateBundleValues(ctx, &data, apiResp.JSON200)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -222,13 +283,30 @@ func (r *dynamicCertificateBundleResource) Delete(ctx context.Context, req resou
 	var data dynamicCertificateBundleModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	if err := r.client.DeleteLoadBalancerCertificateBundle(ctx, &request.DeleteLoadBalancerCertificateBundleRequest{
-		UUID: data.ID.ValueString(),
-	}); err != nil {
+	serviceUUID, err := uuid.Parse(data.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to parse service UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	apiResp, err := r.client.DeleteLoadBalancerCertificateBundleWithResponse(ctx, serviceUUID)
+	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete loadbalancer dynamic certificate bundle",
 			utils.ErrorDiagnosticDetail(err),
 		)
+		return
+	}
+
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusAccepted && apiResp.StatusCode() != http.StatusNotFound {
+		resp.Diagnostics.AddError(
+			"Unable to delete loadbalancer dynamic certificate bundle",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return
 	}
 }
 

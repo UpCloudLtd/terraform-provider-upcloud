@@ -32,6 +32,10 @@ resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
 - `key_type` (String) Private key type (`rsa` / `ecdsa`).
 - `name` (String) The name of the certificate bundle. Must be unique within customer account.
 
+### Optional Attributes
+
+- `labels` (Map of String) User defined key-value pairs to classify the dynamic certificate bundle.
+
 ### Read-Only
 
 - `id` (String) The UUID of the certificate bundle.

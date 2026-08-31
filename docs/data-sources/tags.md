@@ -4,14 +4,14 @@ page_title: "upcloud_tags Data Source - terraform-provider-upcloud"
 subcategory: Cloud
 description: |-
   ~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
-  Data-source is deprecated.
+  List tags configured in the current account.
 ---
 
 # upcloud_tags (Data Source)
 
 ~> Consider using labels instead of tags. Tags are an access control feature and only available for a limited set of resources. Use labels to describe and filter your resources.
 
-Data-source is deprecated.
+List tags configured in the current account.
 
 
 
@@ -21,13 +21,13 @@ Data-source is deprecated.
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `tags` (Set of Object) (see [below for nested schema](#nestedatt--tags))
+- `tags` (Block Set) (see [below for nested schema](#nestedblock--tags))
 
-<a id="nestedatt--tags"></a>
+<a id="nestedblock--tags"></a>
 ### Nested Schema for `tags`
 
 Read-Only:
 
-- `description` (String)
-- `name` (String)
-- `servers` (Set of String)
+- `description` (String) Free form text representing the meaning of the tag.
+- `name` (String) The name of the tag.
+- `servers` (Set of String) A collection of servers that have been assigned the tag.

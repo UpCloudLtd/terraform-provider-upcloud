@@ -95,7 +95,6 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 func TestAccUpcloudManagedDatabaseMySQLProperties_UpgradeFromV5_35_0(t *testing.T) {
 	testData := utils.ReadTestDataFile(t, "testdata/mysql_properties_s1.tf")
 
-	name := "upcloud_managed_database_mysql.mysql_properties"
 	prefix := fmt.Sprintf("tf-acc-test-mysql-%s-", acctest.RandString(4))
 	variables := map[string]config.Variable{
 		"prefix": config.StringVariable(prefix),
@@ -120,9 +119,7 @@ func TestAccUpcloudManagedDatabaseMySQLProperties_UpgradeFromV5_35_0(t *testing.
 				ConfigVariables:          variables,
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
-						// Update is expected as new unknown value properties are added
-						// create / delete is not expected
-						plancheck.ExpectResourceAction(name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectEmptyPlan(),
 					},
 				},
 			},

@@ -101,6 +101,7 @@ Optional Attributes:
 - `custom_domain` (String) Custom domain. Serve the web frontend using a custom CNAME pointing to the Aiven DNS name. When you set a custom domain for a service deployed in a VPC, the service certificate is only created for the public-* hostname and the custom domain.
 - `custom_keystores` (List of String) OpenSearch custom keystores. Allow to register custom keystores in OpenSearch.
 - `custom_repos` (List of String) OpenSearch custom repositories. Allow to register object storage repositories in OpenSearch.
+- `elasticsearch_version` (String) OpenSearch version.
 - `email_sender_name` (String) Sender name placeholder to be used in Opensearch Dashboards and Opensearch keystore. This should be identical to the Sender name defined in Opensearch dashboards.
 - `email_sender_password` (String, Sensitive) Sender password for Opensearch alerts to authenticate with SMTP server. Sender password for Opensearch alerts to authenticate with SMTP server.
 - `email_sender_username` (String) Sender username for Opensearch alerts.
@@ -130,9 +131,11 @@ Optional Attributes:
 - `keep_index_refresh_interval` (Boolean) Don't reset index.refresh_interval to the default value. Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
 - `knn_memory_circuit_breaker_enabled` (Boolean) Enable or disable KNN memory circuit breaker. Defaults to true.
 - `knn_memory_circuit_breaker_limit` (Number) Maximum amount of memory in percentage that can be used for the KNN index. Defaults to 50% of the JVM heap size. 0 is used to set it to null which can be used to invalidate caches.
+- `ml_commons_connector_access_control_enabled` (Boolean) plugins.ml_commons.connector_access_control_enabled. When set to true, the setting allows admins to control access and permissions to the connector API using backend_roles. Defaults to false.
 - `ml_commons_model_access_control_enabled` (Boolean) plugins.ml_commons.model_access_control.enabled. Enable or disable model access control for ML Commons. When enabled, access to ML models is controlled by security permissions. Defaults to false.
 - `ml_commons_native_memory_threshold` (Number) plugins.ml_commons.native_memory_threshold. Native memory threshold percentage for ML Commons. Controls the maximum percentage of native memory that can be used by ML Commons operations. Defaults to 90%.
 - `ml_commons_only_run_on_ml_node` (Boolean) plugins.ml_commons.only_run_on_ml_node. Enable or disable running ML Commons tasks only on ML nodes. When enabled, ML tasks will only execute on nodes designated as ML nodes. Defaults to true.
+- `ml_commons_trusted_connector_endpoints_regex` (List of String) plugins.ml_commons.trusted_connector_endpoints_regex. Adds the trusted endpoints to the cluster settings. Supports Java regex expressions.
 - `node_search_cache_size` (String) The limit of how much total remote data can be referenced. Defines a limit of how much total remote data can be referenced as a ratio of the size of the disk reserved for the file cache. This is designed to be a safeguard to prevent oversubscribing a cluster. Defaults to 5gb. Requires restarting all OpenSearch nodes.
 - `override_main_response_version` (Boolean) Compatibility mode sets OpenSearch to report its version as 7.10 so clients continue to work. Default is false. Deprecated and ignored for service version 3.3 and higher.
 - `plugins_alerting_filter_by_backend_roles` (Boolean) Enable or disable filtering of alerting by backend roles. Requires Security plugin. Defaults to false.

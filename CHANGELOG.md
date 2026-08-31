@@ -9,6 +9,23 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_managed_object_storage_bucket: look the bucket up across all pages of the bucket listing. The API returns 10 buckets by default, so on a service with more than 10 buckets the ones past the first page were read as deleted, removed from state, then failed to recreate with a 400 because the name was still in use. Import failed the same way.
 
+## [5.44.0] - 2026-08-31
+
+### Added
+
+- upcloud_loadbalancer_\*_certificate_bundle: add `labels` field for managing certificate bundle labels.
+
+### Fixed
+
+- upcloud_server: accept reference to a `upcloud_tag` name in tags. This was previously failing, because the reference value is unknown during validation.
+- upcloud_tag: if `servers` field is not configured, do not untag servers. I.e., only clear servers when `servers` field is set to empty set.
+
+## [5.43.1] - 2026-08-21
+
+### Fixed
+
+- upcloud_managed_database_\*: avoid dirty plan on existing resources when new `properties` fields are introduced in new provider versions.
+
 ## [5.43.0] - 2026-08-04
 
 ### Added
@@ -82,7 +99,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - upcloud_file_storage_share: fix resource import by parsing the file storage service uuid and share name from id
 - upcloud_file_storage_share_acl: fix resource import by parsing the file storage service uuid, share name and acl name from id
-- upcloud_managed_database_*: do not plan replacement for unconfigured create-only properties, such as MySQL `properties.lower_case_table_names`
+- upcloud_managed_database_\*: do not plan replacement for unconfigured create-only properties, such as MySQL `properties.lower_case_table_names`
 
 ## [5.36.1] - 2026-03-26
 
@@ -114,7 +131,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_database_*: do not error during plan when the actual `ip_filter` contains entries not present in the configuration (e.g. added via the web UI). The provider now surfaces the real state so that updating the value can be planned.
+- upcloud_managed_database_\*: do not error during plan when the actual `ip_filter` contains entries not present in the configuration (e.g. added via the web UI). The provider now surfaces the real state so that updating the value can be planned.
 
 ## [5.34.0] - 2026-02-09
 
@@ -1277,7 +1294,9 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.43.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.0...HEAD
+[5.44.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.43.1...v5.44.0
+[5.43.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.43.0...v5.43.1
 [5.43.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.42.0...v5.43.0
 [5.42.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.41.0...v5.42.0
 [5.41.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.40.0...v5.41.0

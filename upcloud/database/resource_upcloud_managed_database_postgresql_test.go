@@ -6,7 +6,10 @@ import (
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
+	"github.com/hashicorp/terraform-plugin-testing/config"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
@@ -123,6 +126,41 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("pg_stat_monitor_enable"), "true"),
 					resource.TestCheckResourceAttr(name, prop("version"), "17"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedDatabasePostgresSQLProperties_UpgradeFromV5_35_0(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/postgresql_properties_s1.tf")
+
+	prefix := fmt.Sprintf("tf-acc-test-postgres-props-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck: func() { upcloud.TestAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"upcloud": {
+						Source:            "upcloudltd/upcloud",
+						VersionConstraint: "= 5.35.0",
+					},
+				},
+				Config:          testData,
+				ConfigVariables: variables,
+			},
+			{
+				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+				Config:                   testData,
+				ConfigVariables:          variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})

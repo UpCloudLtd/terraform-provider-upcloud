@@ -33,19 +33,35 @@ func removeTags(ctx context.Context, service *service.Service, serverUUID string
 		return nil
 	}
 
-	if _, err := service.UntagServer(ctx, &request.UntagServerRequest{
-		UUID: serverUUID,
-		Tags: tags,
-	}); err != nil {
-		return err
-	}
-
 	currTags, err := getTagsAsMap(ctx, service)
 	if err != nil {
 		return err
 	}
 
-	for _, tagName := range tags {
+	// Create new list with tags deleted outside of this resource filtered out.
+	var filteredTags []string
+	for _, tag := range tags {
+		if _, ok := currTags[strings.ToLower(tag)]; ok {
+			filteredTags = append(filteredTags, tag)
+		}
+	}
+
+	if len(filteredTags) > 0 {
+		if _, err := service.UntagServer(ctx, &request.UntagServerRequest{
+			UUID: serverUUID,
+			Tags: filteredTags,
+		}); err != nil {
+			return err
+		}
+	}
+
+	// Refresh tags to have accurate servers values
+	currTags, err = getTagsAsMap(ctx, service)
+	if err != nil {
+		return err
+	}
+
+	for _, tagName := range filteredTags {
 		// Find tag to be removed
 		if tag, ok := currTags[strings.ToLower(tagName)]; ok {
 			// Delete tag if it is not used by any servers

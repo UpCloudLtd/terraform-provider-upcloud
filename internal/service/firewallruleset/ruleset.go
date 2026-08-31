@@ -289,12 +289,13 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 // omitted; the API assigns positions sequentially based on the order of rules in the array.
 func ruleToCreate(r ruleBlockModel) v9.FirewallRulesetFirewallRuleCreate {
 	rule := v9.FirewallRulesetFirewallRuleCreate{
-		Action:    r.Action.ValueString(),
-		Direction: r.Direction.ValueString(),
-		Family:    r.Family.ValueString(),
+		Action:    v9.FirewallRulesetRuleAction(r.Action.ValueString()),
+		Direction: v9.FirewallRulesetRuleDirection(r.Direction.ValueString()),
+		Family:    v9.FirewallRulesetRuleFamily(r.Family.ValueString()),
 	}
 	if !r.Protocol.IsNull() && !r.Protocol.IsUnknown() {
-		rule.Protocol = r.Protocol.ValueString()
+		p := v9.FirewallRulesetRuleProtocol(r.Protocol.ValueString())
+		rule.Protocol = &p
 	}
 	if !r.Enabled.IsNull() && !r.Enabled.IsUnknown() {
 		rule.Enabled = r.Enabled.ValueBoolPointer()

@@ -118,7 +118,7 @@ Optional Attributes:
 - `io_max_combine_limit` (Number) EXPERIMENTAL: Controls the largest I/O size in operations that combine I/O in 8kB units, and silently limits the user-settable parameter io_combine_limit. Version 18 and up only. Changing this parameter causes a service restart.
 - `io_max_concurrency` (Number) EXPERIMENTAL: Controls the maximum number of I/O operations that one process can execute simultaneously. Version 18 and up only. Changing this parameter causes a service restart.
 - `io_method` (String) EXPERIMENTAL: Controls the maximum number of I/O operations that one process can execute simultaneously. Version 18 and up only. Changing this parameter causes a service restart.
-- `io_workers` (Number) io_max_concurrency. EXPERIMENTAL: Number of IO worker processes, for io_method=worker. Version 18 and up only.
+- `io_workers` (Number) EXPERIMENTAL: Number of IO worker processes, for io_method=worker. Version 18 and up only.
 - `ip_filter` (List of String) IP filter. Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'.
 - `jit` (Boolean) Controls system-wide use of Just-in-Time Compilation (JIT).
 - `log_autovacuum_min_duration` (Number) Causes each action executed by autovacuum to be logged if it ran for at least the specified number of milliseconds. Setting this to zero logs all autovacuum actions. Minus-one disables logging autovacuum actions. The default is `1000`.
@@ -149,6 +149,8 @@ Optional Attributes:
 - `pg_stat_monitor_enable` (Boolean) Enable pg_stat_monitor extension if available for the current cluster. Enable the pg_stat_monitor extension. Changing this parameter causes a service restart. When this extension is enabled, pg_stat_statements results for utility commands are unreliable.
 - `pg_stat_monitor_pgsm_enable_query_plan` (Boolean) Enables or disables query plan monitoring. Only available for PostgreSQL 13+.
 - `pg_stat_monitor_pgsm_max_buckets` (Number) Sets the maximum number of buckets. Changing this parameter causes a service restart. Only available for PostgreSQL 13+.
+- `pg_stat_plans_enable` (Boolean) Enable pg_stat_plans extension if available for the current cluster. Enable the pg_stat_plans extension. Changing this parameter causes a service restart. Tracks execution plans for SQL queries.
+- `pg_stat_plans_track` (String) Controls which statements' plans are tracked. Specify top to track top-level statements (those issued directly by clients), all to also track nested statements (such as statements invoked within functions), or none to disable plan tracking. The default is `top`.
 - `pg_stat_statements_track` (String) Controls which statements are counted. Specify top to track top-level statements (those issued directly by clients), all to also track nested statements (such as statements invoked within functions), or none to disable statement statistics collection. The default is `top`.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
@@ -231,8 +233,10 @@ Optional Attributes:
 - `ignore_startup_parameters` (List of String) List of parameters to ignore when given in startup packet.
 - `max_prepared_statements` (Number) PgBouncer tracks protocol-level named prepared statements related commands sent by the client in transaction and statement pooling modes when max_prepared_statements is set to a non-zero value. Setting it to 0 disables prepared statements. max_prepared_statements defaults to 100, and its maximum is 3000.
 - `min_pool_size` (Number) Add more server connections to pool if below this number. Improves behavior when usual load comes suddenly back after period of total inactivity. The value is effectively capped at the pool size.
+- `server_connect_timeout` (Number) If connection and login don’t finish in this amount of time, the connection will be closed. [seconds].
 - `server_idle_timeout` (Number) If a server connection has been idle more than this many seconds it will be dropped. If 0 then timeout is disabled. [seconds].
 - `server_lifetime` (Number) The pooler will close an unused server connection that has been connected longer than this. [seconds].
+- `server_login_retry` (Number) If login to the server failed, because of failure to connect or from authentication, the pooler waits this much before retrying to connect. During the waiting interval, new clients trying to connect to the failing server will get an error immediately without another connection attempt. [seconds].
 - `server_reset_query_always` (Boolean) Run server_reset_query (DISCARD ALL) in all pooling modes.
 
 
