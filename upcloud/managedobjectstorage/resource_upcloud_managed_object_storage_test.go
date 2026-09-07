@@ -12,9 +12,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 const managedObjectStorageResource = "upcloud_managed_object_storage.this"
+
+func importIDFunc(name string) func(state *terraform.State) (string, error) {
+	return func(state *terraform.State) (string, error) {
+		resourceState := state.RootModule().Resources[name]
+		return resourceState.Primary.ID, nil
+	}
+}
 
 func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/managed_object_storage_s1.tf")
@@ -68,6 +76,49 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 					resource.TestCheckResourceAttr(this, "labels.owned-by", "team-devex"),
 					resource.TestCheckResourceAttr(this, "network.#", "1"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedObjectStorage_BucketPagination(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/managed_object_storage_bucket_pagination.tf")
+	prefix := fmt.Sprintf("tf-acc-test-objsto-buckets-%s", strings.ToLower(acctest.RandString(4)))
+	bucketName := fmt.Sprintf("%s-%02d", prefix, 11)
+	bucket := "upcloud_managed_object_storage_bucket.this.11"
+	bucketImport := "upcloud_managed_object_storage_bucket.this[11]"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testData,
+				ConfigVariables: map[string]config.Variable{
+					"prefix": config.StringVariable(prefix),
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(bucket, "name", bucketName),
+					resource.TestCheckResourceAttrSet(bucket, "id"),
+				),
+			},
+			{
+				Config: testData,
+				ConfigVariables: map[string]config.Variable{
+					"prefix": config.StringVariable(prefix),
+				},
+				ResourceName:      bucketImport,
+				ImportState:       true,
+				ImportStateIdFunc: importIDFunc(bucket),
+				ImportStateVerify: true,
+			},
+			{
+				Config: testData,
+				ConfigVariables: map[string]config.Variable{
+					"prefix": config.StringVariable(prefix),
+				},
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
 			},
 		},
 	})

@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_object_storage_bucket: paginate bucket lookups so buckets beyond the first API response remain managed and can be imported.
+
 ## [5.44.0] - 2026-08-31
 
 ### Added

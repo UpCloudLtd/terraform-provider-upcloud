@@ -156,6 +156,9 @@ func (r *managedObjectStorageBucketResource) Create(ctx context.Context, req res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
+// bucketListPageSize is the page size used when scanning for a bucket.
+const bucketListPageSize = 100
+
 func getBucket(ctx context.Context, serviceUUID, name string, client *v9.ClientWithResponses) (*v9.ObjectStorage2BucketDetailResponse, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -168,39 +171,57 @@ func getBucket(ctx context.Context, serviceUUID, name string, client *v9.ClientW
 		return nil, diags
 	}
 
-	apiResp, err := client.ListObjectStorageBucketMetricsWithResponse(ctx, svcUUID, nil)
-	if err != nil {
-		diags.AddError(
-			"Unable to read managed object storage buckets",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return nil, diags
-	}
-	if apiResp.StatusCode() == http.StatusNotFound {
-		diags.AddError(
-			"Unable to read managed object storage buckets",
-			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
-		)
-		return nil, diags
-	}
-	if apiResp.StatusCode() != http.StatusOK {
-		diags.AddError(
-			"Unable to read managed object storage buckets",
-			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
-		)
-		return nil, diags
-	}
-	if apiResp.JSON200 == nil {
-		return nil, diags
-	}
-	buckets := *apiResp.JSON200
-	for i := range buckets {
-		b := buckets[i]
-		if b.Name != nil && *b.Name == name {
-			return &b, diags
+	// Page until the bucket is found or the API returns a short page. Paging
+	// rather than one large limit: the page size is the API's to decide, and a
+	// service may hold more buckets than any single request returns.
+	for offset := 0; ; {
+		limit := bucketListPageSize
+		off := offset
+		params := &v9.ListObjectStorageBucketMetricsParams{
+			Limit:  &limit,
+			Offset: &off,
 		}
+
+		apiResp, err := client.ListObjectStorageBucketMetricsWithResponse(ctx, svcUUID, params)
+		if err != nil {
+			diags.AddError(
+				"Unable to read managed object storage buckets",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return nil, diags
+		}
+		if apiResp.StatusCode() == http.StatusNotFound {
+			diags.AddError(
+				"Unable to read managed object storage buckets",
+				objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+			)
+			return nil, diags
+		}
+		if apiResp.StatusCode() != http.StatusOK {
+			diags.AddError(
+				"Unable to read managed object storage buckets",
+				objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
+			)
+			return nil, diags
+		}
+		if apiResp.JSON200 == nil {
+			return nil, diags
+		}
+
+		buckets := *apiResp.JSON200
+		for i := range buckets {
+			b := buckets[i]
+			if b.Name != nil && *b.Name == name {
+				return &b, diags
+			}
+		}
+
+		// A short page is the last page.
+		if len(buckets) < limit {
+			return nil, diags
+		}
+		offset += len(buckets)
 	}
-	return nil, diags
 }
 
 func (r *managedObjectStorageBucketResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
