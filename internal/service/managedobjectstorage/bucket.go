@@ -157,14 +157,6 @@ func (r *managedObjectStorageBucketResource) Create(ctx context.Context, req res
 }
 
 // bucketListPageSize is the page size used when scanning for a bucket.
-//
-// The API defaults to returning 10 buckets when no limit is given. getBucket
-// previously passed nil params, so on a service with more than 10 buckets the
-// ones beyond the first page were invisible: Read treated them as deleted and
-// removed them from state, the following apply tried to recreate them, and the
-// API rejected that with 400 because the name was still taken. Import failed
-// the same way, since it shares this lookup. The resource became unmanageable
-// while the bucket itself was healthy and serving traffic.
 const bucketListPageSize = 100
 
 func getBucket(ctx context.Context, serviceUUID, name string, client *v9.ClientWithResponses) (*v9.ObjectStorage2BucketDetailResponse, diag.Diagnostics) {

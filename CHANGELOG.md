@@ -7,7 +7,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_object_storage_bucket: look the bucket up across all pages of the bucket listing. The API returns 10 buckets by default, so on a service with more than 10 buckets the ones past the first page were read as deleted, removed from state, then failed to recreate with a 400 because the name was still in use. Import failed the same way.
+- upcloud_managed_object_storage_bucket: paginate bucket lookups so buckets beyond the first API response remain managed and can be imported.
 
 ## [5.44.0] - 2026-08-31
 
