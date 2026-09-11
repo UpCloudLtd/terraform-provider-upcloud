@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.44.1] - 2026-09-07
+
 ### Fixed
 
 - upcloud_managed_object_storage_bucket: paginate bucket lookups so buckets beyond the first API response remain managed and can be imported.
@@ -1294,7 +1296,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.1...HEAD
+[5.44.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.0...v5.44.1
 [5.44.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.43.1...v5.44.0
 [5.43.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.43.0...v5.43.1
 [5.43.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.42.0...v5.43.0
