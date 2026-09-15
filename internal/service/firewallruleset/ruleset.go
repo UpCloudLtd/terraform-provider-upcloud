@@ -144,7 +144,7 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 				ElementType: types.StringType,
 			},
 			"server_uuid": schema.StringAttribute{
-				Description: "Optional server UUID to bind with this ruleset. Create-only in API.",
+				Description: "Optional server UUID to bind with this ruleset as the server's Public Firewall ruleset. Create-only in the API. A server can have only one Public Firewall ruleset, and setting this is mutually exclusive with configuring `upcloud_firewall_rules` on the same server.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

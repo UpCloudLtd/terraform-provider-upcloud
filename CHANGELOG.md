@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- `upcloud_server_firewall_ruleset`: new resource for attaching SDN private firewall rulesets to servers.
+
+### Fixed
+
+- `upcloud_firewall_ruleset`: documentation of `server_uuid`. Setting `server_uuid` binds the ruleset as the server's single Public Firewall ruleset.
+
 ## [5.44.1] - 2026-09-07
 
 ### Fixed

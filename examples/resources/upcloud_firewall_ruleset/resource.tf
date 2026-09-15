@@ -13,7 +13,10 @@ resource "upcloud_firewall_ruleset" "example" {
   }
 }
 
-# Create a firewall ruleset attached to a specific server
+# Create a firewall ruleset attached to a specific server as its Public Firewall ruleset.
+# Note: server_uuid binds the ruleset as the server's single Public Firewall ruleset.
+# This is mutually exclusive with defining upcloud_firewall_rules for the same server.
+# For attaching private SDN firewall rulesets to servers, use upcloud_server_firewall_ruleset.
 resource "upcloud_server" "example" {
   hostname = "terraform.example.tld"
   zone     = "de-fra1"
@@ -30,6 +33,6 @@ resource "upcloud_server" "example" {
 
 resource "upcloud_firewall_ruleset" "server_ruleset" {
   name        = "server-ruleset"
-  description = "Firewall rules for example server"
+  description = "Public firewall ruleset for example server"
   server_uuid = upcloud_server.example.id
 }
