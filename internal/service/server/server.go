@@ -212,6 +212,42 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"firewall_private": schema.BoolAttribute{
+				Description: "Is the private SDN firewall active for the server",
+				Computed:    true,
+				Optional:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"firewall_private_default_incoming_action": schema.StringAttribute{
+				Description: "The default action for incoming traffic on the private SDN firewall",
+				Optional:    true,
+				Computed:    true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						upcloud.FirewallRuleActionAccept,
+						upcloud.FirewallRuleActionDrop,
+					),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"firewall_private_default_outgoing_action": schema.StringAttribute{
+				Description: "The default action for outgoing traffic on the private SDN firewall",
+				Optional:    true,
+				Computed:    true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						upcloud.FirewallRuleActionAccept,
+						upcloud.FirewallRuleActionDrop,
+					),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"metadata": schema.BoolAttribute{
 				Description: "Is metadata service active for the server. The metadata service must be enabled when using recent cloud-init based templates.",
 				Optional:    true,
@@ -1198,6 +1234,35 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	// createServer has no private firewall fields; apply them via a follow-up modify.
+	privateFirewallModifyReq := &request.ModifyServerRequest{UUID: server.UUID}
+	needsPrivateFirewallModify := false
+
+	if !data.FirewallPrivate.IsNull() && !data.FirewallPrivate.IsUnknown() {
+		if data.FirewallPrivate.ValueBool() {
+			privateFirewallModifyReq.FirewallPrivate = "on"
+		} else {
+			privateFirewallModifyReq.FirewallPrivate = "off"
+		}
+		needsPrivateFirewallModify = true
+	}
+	if !data.FirewallPrivateDefaultIncomingAction.IsNull() && !data.FirewallPrivateDefaultIncomingAction.IsUnknown() {
+		privateFirewallModifyReq.FirewallPrivateDefaultIncomingAction = data.FirewallPrivateDefaultIncomingAction.ValueString()
+		needsPrivateFirewallModify = true
+	}
+	if !data.FirewallPrivateDefaultOutgoingAction.IsNull() && !data.FirewallPrivateDefaultOutgoingAction.IsUnknown() {
+		privateFirewallModifyReq.FirewallPrivateDefaultOutgoingAction = data.FirewallPrivateDefaultOutgoingAction.ValueString()
+		needsPrivateFirewallModify = true
+	}
+
+	if needsPrivateFirewallModify {
+		server, err = r.client.ModifyServer(ctx, privateFirewallModifyReq)
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to set private SDN firewall options", utils.ErrorDiagnosticDetail(err))
+			return
+		}
+	}
+
 	resp.Diagnostics.Append(setValues(ctx, &data, server)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -1307,6 +1372,15 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}
 
+	firewallPrivate := ""
+	if !plan.FirewallPrivate.IsNull() && !plan.FirewallPrivate.IsUnknown() {
+		if plan.FirewallPrivate.ValueBool() {
+			firewallPrivate = "on"
+		} else {
+			firewallPrivate = "off"
+		}
+	}
+
 	var labels map[string]string
 	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
 		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
@@ -1316,17 +1390,20 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 	apiReq := &request.ModifyServerRequest{
 		UUID: uuid,
 
-		CoreNumber:   int(plan.CPU.ValueInt64()),
-		Firewall:     firewall,
-		Hostname:     plan.Hostname.ValueString(),
-		Labels:       &labelsSlice,
-		MemoryAmount: int(plan.Mem.ValueInt64()),
-		Metadata:     utils.AsUpCloudBoolean(plan.Metadata),
-		NICModel:     plan.NICModel.ValueString(),
-		Plan:         plan.Plan.ValueString(),
-		TimeZone:     plan.Timezone.ValueString(),
-		Title:        plan.Title.ValueString(),
-		VideoModel:   plan.VideoModel.ValueString(),
+		CoreNumber:                           int(plan.CPU.ValueInt64()),
+		Firewall:                             firewall,
+		FirewallPrivate:                      firewallPrivate,
+		FirewallPrivateDefaultIncomingAction: plan.FirewallPrivateDefaultIncomingAction.ValueString(),
+		FirewallPrivateDefaultOutgoingAction: plan.FirewallPrivateDefaultOutgoingAction.ValueString(),
+		Hostname:                             plan.Hostname.ValueString(),
+		Labels:                               &labelsSlice,
+		MemoryAmount:                         int(plan.Mem.ValueInt64()),
+		Metadata:                             utils.AsUpCloudBoolean(plan.Metadata),
+		NICModel:                             plan.NICModel.ValueString(),
+		Plan:                                 plan.Plan.ValueString(),
+		TimeZone:                             plan.Timezone.ValueString(),
+		Title:                                plan.Title.ValueString(),
+		VideoModel:                           plan.VideoModel.ValueString(),
 	}
 
 	templateState, diags := getTemplate(ctx, state)
