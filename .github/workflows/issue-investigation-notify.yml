@@ -1,0 +1,173 @@
+name: Issue Investigation Notify
+
+on:
+  workflow_run:
+    workflows: ["Repo Assistant"]
+    types:
+      - completed
+
+permissions:
+  issues: read
+  actions: read
+
+jobs:
+  notify:
+    # Only notify when the repo-assistant run succeeded (i.e. it finished its tasks)
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse issue number from run name
+        id: parse
+        env:
+          RUN_DISPLAY_TITLE: ${{ github.event.workflow_run.display_title }}
+        run: |
+          ISSUE_NUMBER=$(echo "$RUN_DISPLAY_TITLE" | grep -oP '(?<=Issue #)\d+' || true)
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            echo "Could not parse issue number from run name: $RUN_DISPLAY_TITLE"
+            exit 1
+          fi
+          echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Download investigation report artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: investigation-report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/investigation
+        continue-on-error: true
+
+      - name: Fetch issue details
+        id: issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ steps.parse.outputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          ISSUE_DATA=$(gh api "repos/$REPO/issues/$ISSUE_NUMBER")
+
+          TITLE=$(echo "$ISSUE_DATA" | jq -r '.title')
+          URL=$(echo "$ISSUE_DATA" | jq -r '.html_url')
+          AUTHOR=$(echo "$ISSUE_DATA" | jq -r '.user.login')
+          LABELS=$(echo "$ISSUE_DATA" | jq -r '[.labels[].name] | join(", ")')
+          BODY=$(echo "$ISSUE_DATA" | jq -r '.body // "(no description)"')
+
+          # Fetch the repo-assistant public comment (if any)
+          COMMENTS=$(gh api "repos/$REPO/issues/$ISSUE_NUMBER/comments")
+          RA_COMMENT=$(echo "$COMMENTS" | jq -r \
+            '[.[] | select(.body | startswith("🤖 *This is an automated response from Repo Assistant"))] | last | .body // "(no public comment posted)"')
+
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+          echo "labels=$LABELS" >> "$GITHUB_OUTPUT"
+
+          # Write multiline values to files
+          printf '%s' "$BODY" > /tmp/issue_body.txt
+          printf '%s' "$RA_COMMENT" > /tmp/ra_comment.txt
+
+      - name: Compose email body
+        id: email
+        env:
+          ISSUE_NUMBER: ${{ steps.parse.outputs.issue_number }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
+          ISSUE_URL: ${{ steps.issue.outputs.url }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          LABELS: ${{ steps.issue.outputs.labels }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          BODY=$(cat /tmp/issue_body.txt)
+          RA_COMMENT=$(cat /tmp/ra_comment.txt)
+
+          # Use investigation report if downloaded, otherwise fall back to public comment
+          if [[ -f /tmp/investigation/investigation-report.md ]]; then
+            INVESTIGATION=$(cat /tmp/investigation/investigation-report.md)
+          else
+            INVESTIGATION="$RA_COMMENT"
+          fi
+
+          cat > /tmp/email_body.html <<EOF
+          <html><body>
+          <h2>New Issue Triaged — <a href="${ISSUE_URL}">#${ISSUE_NUMBER}: ${ISSUE_TITLE}</a></h2>
+          <table>
+            <tr><td><strong>Repository</strong></td><td>${REPO}</td></tr>
+            <tr><td><strong>Author</strong></td><td><a href="https://github.com/${ISSUE_AUTHOR}">@${ISSUE_AUTHOR}</a></td></tr>
+            <tr><td><strong>Labels applied</strong></td><td>${LABELS:-<em>none</em>}</td></tr>
+            <tr><td><strong>Repo Assistant run</strong></td><td><a href="${RUN_URL}">View run</a></td></tr>
+          </table>
+
+          <hr>
+          <h3>Issue Body</h3>
+          <pre style="white-space:pre-wrap;background:#f6f8fa;padding:12px;border-radius:4px">${BODY}</pre>
+
+          <hr>
+          <h3>🔍 Investigation Report</h3>
+          <pre style="white-space:pre-wrap;background:#f6f8fa;padding:12px;border-radius:4px">${INVESTIGATION}</pre>
+
+          <hr>
+          <h3>Public Comment Posted to Reporter</h3>
+          <pre style="white-space:pre-wrap;background:#f6f8fa;padding:12px;border-radius:4px">${RA_COMMENT}</pre>
+
+          <p><em>Sent by the Issue Investigation Notify workflow in ${REPO}.</em></p>
+          </body></html>
+          EOF
+
+      - name: Send email to support team
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.NOTIFY_SMTP_SERVER }}
+          server_port: ${{ secrets.NOTIFY_SMTP_PORT }}
+          username: ${{ secrets.NOTIFY_SMTP_USERNAME }}
+          password: ${{ secrets.NOTIFY_SMTP_PASSWORD }}
+          subject: "[Support] New Issue Triaged — #${{ steps.parse.outputs.issue_number }}: ${{ steps.issue.outputs.title }}"
+          to: ${{ vars.SUPPORT_EMAIL_LIST }}
+          from: "Repo Assistant <${{ secrets.NOTIFY_SMTP_USERNAME }}>"
+          html_body: file:///tmp/email_body.html
+
+      - name: Create Asana support task
+        env:
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          ASANA_PROJECT_ID: ${{ vars.ASANA_PROJECT_ID }}
+          ISSUE_NUMBER: ${{ steps.parse.outputs.issue_number }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
+          ISSUE_URL: ${{ steps.issue.outputs.url }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          LABELS: ${{ steps.issue.outputs.labels }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          if [[ -z "$ASANA_TOKEN" ]]; then
+            echo "ASANA_TOKEN is not set; skipping Asana ticket creation."
+            exit 0
+          fi
+
+          if [[ -z "$ASANA_PROJECT_ID" ]]; then
+            echo "ASANA_PROJECT_ID is not set; skipping Asana ticket creation."
+            exit 0
+          fi
+
+          NOTES=$(cat <<EOF
+          New issue triaged by Repo Assistant.
+
+          Repository: ${REPO}
+          Issue: #${ISSUE_NUMBER} - ${ISSUE_TITLE}
+          URL: ${ISSUE_URL}
+          Author: @${ISSUE_AUTHOR}
+          Labels: ${LABELS:-none}
+          Repo Assistant run: ${RUN_URL}
+          EOF
+          )
+
+          PAYLOAD=$(jq -n \
+            --arg name "[Support] #${ISSUE_NUMBER}: ${ISSUE_TITLE}" \
+            --arg notes "$NOTES" \
+            --arg project "$ASANA_PROJECT_ID" \
+            '{data: {name: $name, notes: $notes, projects: [$project]}}')
+
+          curl --fail --silent --show-error \
+            -X POST "https://app.asana.com/api/1.0/tasks" \
+            -H "Authorization: Bearer ${ASANA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$PAYLOAD"
