@@ -158,7 +158,7 @@ func testAccCheckPrivateFirewallRulesetDetached(serverID, rulesetID *string) res
 		}
 
 		for _, relationship := range apiResp.JSON200.FirewallRulesetRelationships.Private {
-			if relationship.FirewallRulesetUuid != nil && *relationship.FirewallRulesetUuid == rulesetUUID {
+			if relationship.FirewallRulesetUuid == rulesetUUID {
 				return fmt.Errorf("private firewall ruleset %s is still attached to server %s", rulesetUUID, serverUUID)
 			}
 		}

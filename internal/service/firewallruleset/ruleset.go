@@ -3,6 +3,7 @@ package firewallruleset
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
 	"sort"
 
@@ -22,10 +23,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &firewallRulesetResource{}
-	_ resource.ResourceWithConfigure   = &firewallRulesetResource{}
-	_ resource.ResourceWithImportState = &firewallRulesetResource{}
-	_ resource.ResourceWithModifyPlan  = &firewallRulesetResource{}
+	_ resource.Resource                 = &firewallRulesetResource{}
+	_ resource.ResourceWithConfigure    = &firewallRulesetResource{}
+	_ resource.ResourceWithImportState  = &firewallRulesetResource{}
+	_ resource.ResourceWithUpgradeState = &firewallRulesetResource{}
 )
 
 func NewFirewallRulesetResource() resource.Resource {
@@ -60,6 +61,19 @@ type ruleBlockModel struct {
 }
 
 type firewallRulesetModel struct {
+	ID                     types.String `tfsdk:"id"`
+	Name                   types.String `tfsdk:"name"`
+	Description            types.String `tfsdk:"description"`
+	Enabled                types.Bool   `tfsdk:"enabled"`
+	DefaultDNSRulesEnabled types.Bool   `tfsdk:"default_dns_rules_enabled"`
+	Labels                 types.Map    `tfsdk:"labels"`
+	Version                types.Int64  `tfsdk:"version"`
+	CreatedAt              types.String `tfsdk:"created_at"`
+	UpdatedAt              types.String `tfsdk:"updated_at"`
+	Rules                  types.List   `tfsdk:"rules"`
+}
+
+type firewallRulesetModelV0 struct {
 	ID                     types.String `tfsdk:"id"`
 	Name                   types.String `tfsdk:"name"`
 	Description            types.String `tfsdk:"description"`
@@ -109,34 +123,53 @@ func (r *firewallRulesetResource) Configure(_ context.Context, req resource.Conf
 	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
-func (r *firewallRulesetResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	if req.Plan.Raw.IsNull() {
-		return
-	}
+func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = firewallRulesetSchema()
+}
 
-	var plan firewallRulesetModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+func firewallRulesetSchema() schema.Schema {
+	s := firewallRulesetSchemaV0()
+	attrs := maps.Clone(s.Attributes)
+	delete(attrs, "server_uuid")
+	s.Attributes = attrs
+	s.Version = 1
+	return s
+}
 
-	creating := req.State.Raw.IsNull()
-	var state firewallRulesetModel
-	if !creating {
-		resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-	}
-
-	summary, detail := serverUUIDPlanDiagnostic(creating, state.ServerUUID, plan.ServerUUID)
-	if summary != "" {
-		resp.Diagnostics.AddAttributeError(path.Root("server_uuid"), summary, detail)
+func (r *firewallRulesetResource) UpgradeState(_ context.Context) map[int64]resource.StateUpgrader {
+	schemaV0 := firewallRulesetSchemaV0()
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &schemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var prior firewallRulesetModelV0
+				resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+				resp.Diagnostics.Append(resp.State.Set(ctx, firewallRulesetModelFromV0(prior))...)
+			},
+		},
 	}
 }
 
-func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+func firewallRulesetModelFromV0(prior firewallRulesetModelV0) firewallRulesetModel {
+	return firewallRulesetModel{
+		ID:                     prior.ID,
+		Name:                   prior.Name,
+		Description:            prior.Description,
+		Enabled:                prior.Enabled,
+		DefaultDNSRulesEnabled: prior.DefaultDNSRulesEnabled,
+		Labels:                 prior.Labels,
+		Version:                prior.Version,
+		CreatedAt:              prior.CreatedAt,
+		UpdatedAt:              prior.UpdatedAt,
+		Rules:                  prior.Rules,
+	}
+}
+
+func firewallRulesetSchemaV0() schema.Schema {
+	return schema.Schema{
 		Description: "This resource represents an UpCloud SDN firewall ruleset. Rules are managed as an ordered list; their position in the API is determined by their order in the `rules` list.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -171,13 +204,7 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 				ElementType: types.StringType,
 			},
 			"server_uuid": schema.StringAttribute{
-				Description:        "Legacy server UUID bound as this ruleset's Public Firewall ruleset. Reported from the API for existing bindings. Cannot be set when creating a new ruleset. For attaching private SDN firewall rulesets to servers, use `upcloud_server_private_firewall_ruleset`. For classic public firewall rules, use `upcloud_firewall_rules`.",
-				DeprecationMessage: serverUUIDDeprecationMessage,
-				Optional:           true,
-				Computed:           true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				Optional: true,
 			},
 			"version": schema.Int64Attribute{
 				Description: "Ruleset version.",
@@ -539,11 +566,6 @@ func setRulesetValues(ctx context.Context, state *firewallRulesetModel, api *v9.
 	state.Description = types.StringPointerValue(api.Description)
 	state.Enabled = types.BoolPointerValue(api.Enabled)
 	state.DefaultDNSRulesEnabled = types.BoolPointerValue(api.DefaultDnsRulesEnabled)
-	if api.ServerUuid == nil {
-		state.ServerUUID = types.StringNull()
-	} else {
-		state.ServerUUID = types.StringValue(api.ServerUuid.String())
-	}
 	if api.Version == nil {
 		state.Version = types.Int64Null()
 	} else {
@@ -604,10 +626,6 @@ func (r *firewallRulesetResource) Create(ctx context.Context, req resource.Creat
 	}
 	if labels != nil {
 		body.Labels = labels
-	}
-	if summary, detail := serverUUIDPlanDiagnostic(true, types.StringNull(), plan.ServerUUID); summary != "" {
-		resp.Diagnostics.AddAttributeError(path.Root("server_uuid"), summary, detail)
-		return
 	}
 
 	apiResp, err := r.client.CreateFirewallRulesetWithResponse(ctx, body)

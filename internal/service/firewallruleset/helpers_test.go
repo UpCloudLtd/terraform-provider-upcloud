@@ -1,94 +1,63 @@
 package firewallruleset
 
 import (
+	"context"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func TestServerUUIDPlanDiagnostic(t *testing.T) {
+func TestFirewallRulesetUpgradeStateV0DropsServerUUID(t *testing.T) {
 	t.Parallel()
 
-	serverA := types.StringValue("0077fa3d-32db-4b09-9f5f-30d9e9afb565")
-	serverB := types.StringValue("190f56d8-4b3f-4a89-9e5f-320fbc3d17c8")
-
-	tests := []struct {
-		name     string
-		creating bool
-		state    types.String
-		plan     types.String
-		summary  string
-	}{
-		{
-			name:     "create without server_uuid",
-			creating: true,
-			state:    types.StringNull(),
-			plan:     types.StringNull(),
-		},
-		{
-			name:     "create with unknown server_uuid",
-			creating: true,
-			state:    types.StringNull(),
-			plan:     types.StringUnknown(),
-		},
-		{
-			name:     "create with server_uuid",
-			creating: true,
-			state:    types.StringNull(),
-			plan:     serverA,
-			summary:  serverUUIDCreateSummary,
-		},
-		{
-			name:     "update matching existing server_uuid",
-			creating: false,
-			state:    serverA,
-			plan:     serverA,
-		},
-		{
-			name:     "update omit server_uuid",
-			creating: false,
-			state:    serverA,
-			plan:     types.StringNull(),
-		},
-		{
-			name:     "update unknown server_uuid",
-			creating: false,
-			state:    serverA,
-			plan:     types.StringUnknown(),
-		},
-		{
-			name:     "update change server_uuid",
-			creating: false,
-			state:    serverA,
-			plan:     serverB,
-			summary:  serverUUIDChangeSummary,
-		},
-		{
-			name:     "update add server_uuid",
-			creating: false,
-			state:    types.StringNull(),
-			plan:     serverA,
-			summary:  serverUUIDChangeSummary,
-		},
+	ctx := context.Background()
+	prior := firewallRulesetModelV0{
+		ID:         types.StringValue("1200ecde-db95-4d1c-9133-6508f3232567"),
+		Name:       types.StringValue("example"),
+		Labels:     types.MapNull(types.StringType),
+		Rules:      types.ListNull(ruleObjectType()),
+		ServerUUID: types.StringValue("0077fa3d-32db-4b09-9f5f-30d9e9afb565"),
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	priorState := tfsdk.State{Schema: firewallRulesetSchemaV0()}
+	diags := priorState.Set(ctx, prior)
+	if diags.HasError() {
+		t.Fatalf("set prior state: %v", diags)
+	}
 
-			summary, detail := serverUUIDPlanDiagnostic(tt.creating, tt.state, tt.plan)
-			if summary != tt.summary {
-				t.Fatalf("summary: got %q, want %q", summary, tt.summary)
-			}
-			if tt.summary == "" {
-				if detail != "" {
-					t.Fatalf("detail: got %q, want empty", detail)
-				}
-				return
-			}
-			if detail == "" {
-				t.Fatal("expected non-empty detail")
-			}
-		})
+	req := resource.UpgradeStateRequest{State: &priorState}
+	resp := resource.UpgradeStateResponse{
+		State: tfsdk.State{Schema: firewallRulesetSchema()},
+	}
+
+	upgraders := (&firewallRulesetResource{}).UpgradeState(ctx)
+	upgrader, ok := upgraders[0]
+	if !ok {
+		t.Fatal("missing state upgrader for schema version 0")
+	}
+	upgrader.StateUpgrader(ctx, req, &resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("upgrade state: %v", resp.Diagnostics)
+	}
+
+	var upgraded firewallRulesetModel
+	diags = resp.State.Get(ctx, &upgraded)
+	if diags.HasError() {
+		t.Fatalf("get upgraded state: %v", diags)
+	}
+	if upgraded.ID.ValueString() != prior.ID.ValueString() {
+		t.Fatalf("id: got %q, want %q", upgraded.ID.ValueString(), prior.ID.ValueString())
+	}
+	if upgraded.Name.ValueString() != prior.Name.ValueString() {
+		t.Fatalf("name: got %q, want %q", upgraded.Name.ValueString(), prior.Name.ValueString())
+	}
+
+	var leftover types.String
+	diags = resp.State.GetAttribute(ctx, path.Root("server_uuid"), &leftover)
+	if !diags.HasError() {
+		t.Fatal("expected server_uuid to be absent from upgraded state")
 	}
 }

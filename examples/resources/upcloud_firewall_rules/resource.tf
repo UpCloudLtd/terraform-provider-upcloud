@@ -1,7 +1,6 @@
 # The following example defines a server and then links the server to a single firewall rule. 
 # The list of firewall rules applied to the server can be expanded by providing additional server_firewall_rules blocks.
 # Note: upcloud_firewall_rules configures legacy public firewall rules directly on the server.
-# Binding a ruleset as a public firewall via upcloud_firewall_ruleset.server_uuid is deprecated and cannot be created.
 
 resource "upcloud_server" "example" {
   firewall = true
