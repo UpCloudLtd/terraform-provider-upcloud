@@ -25,6 +25,7 @@ var (
 	_ resource.Resource                = &firewallRulesetResource{}
 	_ resource.ResourceWithConfigure   = &firewallRulesetResource{}
 	_ resource.ResourceWithImportState = &firewallRulesetResource{}
+	_ resource.ResourceWithModifyPlan  = &firewallRulesetResource{}
 )
 
 func NewFirewallRulesetResource() resource.Resource {
@@ -108,6 +109,32 @@ func (r *firewallRulesetResource) Configure(_ context.Context, req resource.Conf
 	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
+func (r *firewallRulesetResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	var plan firewallRulesetModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	creating := req.State.Raw.IsNull()
+	var state firewallRulesetModel
+	if !creating {
+		resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	summary, detail := serverUUIDPlanDiagnostic(creating, state.ServerUUID, plan.ServerUUID)
+	if summary != "" {
+		resp.Diagnostics.AddAttributeError(path.Root("server_uuid"), summary, detail)
+	}
+}
+
 func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "This resource represents an UpCloud SDN firewall ruleset. Rules are managed as an ordered list; their position in the API is determined by their order in the `rules` list.",
@@ -144,10 +171,12 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 				ElementType: types.StringType,
 			},
 			"server_uuid": schema.StringAttribute{
-				Description: "Optional server UUID to bind with this ruleset as the server's Public Firewall ruleset. Create-only in the API. A server can have only one Public Firewall ruleset, and setting this is mutually exclusive with configuring `upcloud_firewall_rules` on the same server.",
-				Optional:    true,
+				Description:        "Legacy server UUID bound as this ruleset's Public Firewall ruleset. Reported from the API for existing bindings. Cannot be set when creating a new ruleset. For attaching private SDN firewall rulesets to servers, use `upcloud_server_firewall_ruleset`. For classic public firewall rules, use `upcloud_firewall_rules`.",
+				DeprecationMessage: serverUUIDDeprecationMessage,
+				Optional:           true,
+				Computed:           true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"version": schema.Int64Attribute{
@@ -576,13 +605,9 @@ func (r *firewallRulesetResource) Create(ctx context.Context, req resource.Creat
 	if labels != nil {
 		body.Labels = labels
 	}
-	if !plan.ServerUUID.IsNull() && !plan.ServerUUID.IsUnknown() && plan.ServerUUID.ValueString() != "" {
-		serverUUID, err := uuid.Parse(plan.ServerUUID.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("Invalid server UUID", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-		body.ServerUuid = &serverUUID
+	if summary, detail := serverUUIDPlanDiagnostic(true, types.StringNull(), plan.ServerUUID); summary != "" {
+		resp.Diagnostics.AddAttributeError(path.Root("server_uuid"), summary, detail)
+		return
 	}
 
 	apiResp, err := r.client.CreateFirewallRulesetWithResponse(ctx, body)

@@ -3,7 +3,7 @@ module github.com/UpCloudLtd/terraform-provider-upcloud
 go 1.25.3
 
 require (
-	github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260824133501-1ec026e3c7d0
+	github.com/UpCloudLtd/upcloud-go-api/v9 v9.0.0-20260917090650-3e1a69f90c36
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-uuid v1.0.3

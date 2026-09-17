@@ -9,9 +9,9 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - `upcloud_server_firewall_ruleset`: new resource for attaching SDN private firewall rulesets to servers.
 
-### Fixed
+### Deprecated
 
-- `upcloud_firewall_ruleset`: documentation of `server_uuid`. Setting `server_uuid` binds the ruleset as the server's single Public Firewall ruleset.
+- `upcloud_firewall_ruleset.server_uuid`: the API no longer accepts this field when creating a ruleset. Existing resources are unchanged and continue to report the bound server from the API. New creates or changes with `server_uuid` fail. For private SDN attachments, use `upcloud_server_firewall_ruleset`.
 
 ## [5.44.1] - 2026-09-07
 
