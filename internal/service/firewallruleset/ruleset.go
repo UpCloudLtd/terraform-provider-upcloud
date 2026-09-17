@@ -171,7 +171,7 @@ func (r *firewallRulesetResource) Schema(_ context.Context, _ resource.SchemaReq
 				ElementType: types.StringType,
 			},
 			"server_uuid": schema.StringAttribute{
-				Description:        "Legacy server UUID bound as this ruleset's Public Firewall ruleset. Reported from the API for existing bindings. Cannot be set when creating a new ruleset. For attaching private SDN firewall rulesets to servers, use `upcloud_server_firewall_ruleset`. For classic public firewall rules, use `upcloud_firewall_rules`.",
+				Description:        "Legacy server UUID bound as this ruleset's Public Firewall ruleset. Reported from the API for existing bindings. Cannot be set when creating a new ruleset. For attaching private SDN firewall rulesets to servers, use `upcloud_server_private_firewall_ruleset`. For classic public firewall rules, use `upcloud_firewall_rules`.",
 				DeprecationMessage: serverUUIDDeprecationMessage,
 				Optional:           true,
 				Computed:           true,

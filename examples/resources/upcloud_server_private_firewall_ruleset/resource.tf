@@ -42,7 +42,7 @@ resource "upcloud_firewall_ruleset" "example" {
   ]
 }
 
-resource "upcloud_server_firewall_ruleset" "example" {
+resource "upcloud_server_private_firewall_ruleset" "example" {
   server_id  = upcloud_server.example.id
   ruleset_id = upcloud_firewall_ruleset.example.id
 }

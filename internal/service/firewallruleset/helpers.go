@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	serverUUIDDeprecationMessage = "server_uuid is no longer accepted when creating a firewall ruleset. Existing bindings are unchanged and remain read from the API. Use upcloud_server_firewall_ruleset for private SDN attachments, or upcloud_firewall_rules for classic public firewall rules."
+	serverUUIDDeprecationMessage = "server_uuid is no longer accepted when creating a firewall ruleset. Existing bindings are unchanged and remain read from the API. Use upcloud_server_private_firewall_ruleset for private SDN attachments, or upcloud_firewall_rules for classic public firewall rules."
 
 	serverUUIDCreateSummary = "Cannot set server_uuid"
-	serverUUIDCreateDetail  = "The API no longer accepts server_uuid when creating a firewall ruleset. Existing rulesets that already have a bound server are unchanged. For private SDN attachments, use upcloud_server_firewall_ruleset. For classic public firewall rules, use upcloud_firewall_rules."
+	serverUUIDCreateDetail  = "The API no longer accepts server_uuid when creating a firewall ruleset. Existing rulesets that already have a bound server are unchanged. For private SDN attachments, use upcloud_server_private_firewall_ruleset. For classic public firewall rules, use upcloud_firewall_rules."
 
 	serverUUIDChangeSummary = "Cannot change server_uuid"
 	serverUUIDChangeDetail  = "The API no longer supports binding a public firewall ruleset this way. Existing bindings are unchanged."

@@ -15,15 +15,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccUpCloudServerFirewallRuleset_basic(t *testing.T) {
+func TestAccUpCloudServerPrivateFirewallRuleset_basic(t *testing.T) {
 	serverName := fmt.Sprintf("tf-acc-test-server-ruleset-%s", acctest.RandString(10))
 	networkName := fmt.Sprintf("tf-acc-test-server-ruleset-network-%s", acctest.RandString(10))
 	rulesetName := fmt.Sprintf("tf-acc-test-ruleset-%s", acctest.RandString(10))
-	resourceName := "upcloud_server_firewall_ruleset.test"
+	resourceName := "upcloud_server_private_firewall_ruleset.test"
 	var serverID, rulesetID string
 
-	config := testAccServerFirewallRulesetConfig(serverName, networkName, rulesetName, true)
-	configWithoutAttachment := testAccServerFirewallRulesetConfig(serverName, networkName, rulesetName, false)
+	config := testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName, true)
+	configWithoutAttachment := testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName, false)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -35,7 +35,7 @@ func TestAccUpCloudServerFirewallRuleset_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPair(resourceName, "server_id", "upcloud_server.test", "id"),
 					resource.TestCheckResourceAttrPair(resourceName, "ruleset_id", "upcloud_firewall_ruleset.test", "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					testAccCaptureServerFirewallRulesetIDs(resourceName, &serverID, &rulesetID),
+					testAccCaptureServerPrivateFirewallRulesetIDs(resourceName, &serverID, &rulesetID),
 				),
 			},
 			{
@@ -51,11 +51,11 @@ func TestAccUpCloudServerFirewallRuleset_basic(t *testing.T) {
 	})
 }
 
-func testAccServerFirewallRulesetConfig(serverName, networkName, rulesetName string, withAttachment bool) string {
+func testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName string, withAttachment bool) string {
 	attachment := ""
 	if withAttachment {
 		attachment = `
-		resource "upcloud_server_firewall_ruleset" "test" {
+		resource "upcloud_server_private_firewall_ruleset" "test" {
 			server_id  = upcloud_server.test.id
 			ruleset_id = upcloud_firewall_ruleset.test.id
 		}`
@@ -111,7 +111,7 @@ func testAccServerFirewallRulesetConfig(serverName, networkName, rulesetName str
 	`, networkName, serverName, upcloud.DebianTemplateUUID, rulesetName, attachment)
 }
 
-func testAccCaptureServerFirewallRulesetIDs(resourceName string, serverID, rulesetID *string) resource.TestCheckFunc {
+func testAccCaptureServerPrivateFirewallRulesetIDs(resourceName string, serverID, rulesetID *string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {

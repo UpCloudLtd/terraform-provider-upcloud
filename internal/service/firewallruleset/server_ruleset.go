@@ -45,34 +45,34 @@ func privateFirewallRulesetAttached(parsed privateFirewallRulesetRelationshipsRe
 }
 
 var (
-	_ resource.Resource                = &serverFirewallRulesetResource{}
-	_ resource.ResourceWithConfigure   = &serverFirewallRulesetResource{}
-	_ resource.ResourceWithImportState = &serverFirewallRulesetResource{}
+	_ resource.Resource                = &serverPrivateFirewallRulesetResource{}
+	_ resource.ResourceWithConfigure   = &serverPrivateFirewallRulesetResource{}
+	_ resource.ResourceWithImportState = &serverPrivateFirewallRulesetResource{}
 )
 
-func NewServerFirewallRulesetResource() resource.Resource {
-	return &serverFirewallRulesetResource{}
+func NewServerPrivateFirewallRulesetResource() resource.Resource {
+	return &serverPrivateFirewallRulesetResource{}
 }
 
-type serverFirewallRulesetResource struct {
+type serverPrivateFirewallRulesetResource struct {
 	client *v9.ClientWithResponses
 }
 
-type serverFirewallRulesetModel struct {
+type serverPrivateFirewallRulesetModel struct {
 	ID        types.String `tfsdk:"id"`
 	ServerID  types.String `tfsdk:"server_id"`
 	RulesetID types.String `tfsdk:"ruleset_id"`
 }
 
-func (r *serverFirewallRulesetResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_server_firewall_ruleset"
+func (r *serverPrivateFirewallRulesetResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_server_private_firewall_ruleset"
 }
 
-func (r *serverFirewallRulesetResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *serverPrivateFirewallRulesetResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	r.client, resp.Diagnostics = utils.GetV9ClientFromProviderData(req.ProviderData)
 }
 
-func (r *serverFirewallRulesetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *serverPrivateFirewallRulesetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "This resource represents an attachment of an UpCloud SDN private firewall ruleset to a server.",
 		Attributes: map[string]schema.Attribute{
@@ -101,8 +101,8 @@ func (r *serverFirewallRulesetResource) Schema(_ context.Context, _ resource.Sch
 	}
 }
 
-func (r *serverFirewallRulesetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan serverFirewallRulesetModel
+func (r *serverPrivateFirewallRulesetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan serverPrivateFirewallRulesetModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -141,8 +141,8 @@ func (r *serverFirewallRulesetResource) Create(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *serverFirewallRulesetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state serverFirewallRulesetModel
+func (r *serverPrivateFirewallRulesetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state serverPrivateFirewallRulesetModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -213,12 +213,12 @@ func (r *serverFirewallRulesetResource) Read(ctx context.Context, req resource.R
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *serverFirewallRulesetResource) Update(ctx context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError("Update not supported", "All attributes of server firewall ruleset require replacement")
+func (r *serverPrivateFirewallRulesetResource) Update(ctx context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	resp.Diagnostics.AddError("Update not supported", "All attributes of server private firewall ruleset require replacement")
 }
 
-func (r *serverFirewallRulesetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state serverFirewallRulesetModel
+func (r *serverPrivateFirewallRulesetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state serverPrivateFirewallRulesetModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -263,6 +263,6 @@ func (r *serverFirewallRulesetResource) Delete(ctx context.Context, req resource
 	}
 }
 
-func (r *serverFirewallRulesetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *serverPrivateFirewallRulesetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

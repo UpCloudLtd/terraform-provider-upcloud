@@ -196,7 +196,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		database.NewUserResource,
 		firewall.NewFirewallRulesResource,
 		firewallruleset.NewFirewallRulesetResource,
-		firewallruleset.NewServerFirewallRulesetResource,
+		firewallruleset.NewServerPrivateFirewallRulesetResource,
 		gateway.NewGatewayResource,
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
