@@ -8,6 +8,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -26,7 +27,8 @@ func NewOpenSearchResource() resource.Resource {
 }
 
 type opensearchResource struct {
-	client *service.Service
+	client   *service.Service
+	v9Client *v9.ClientWithResponses
 }
 
 func (r *opensearchResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -35,7 +37,11 @@ func (r *opensearchResource) Metadata(_ context.Context, req resource.MetadataRe
 
 // Configure adds the provider configured client to the resource.
 func (r *opensearchResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	var diags diag.Diagnostics
+	r.client, diags = utils.GetClientFromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
+	r.v9Client, diags = utils.GetV9ClientFromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
 }
 
 type opensearchModel struct {
@@ -118,7 +124,7 @@ func (r *opensearchResource) Create(ctx context.Context, req resource.CreateRequ
 
 	data.Type = types.StringValue(string(upcloud.ManagedDatabaseServiceTypeOpenSearch))
 
-	_, diags := createDatabase(ctx, &data.databaseCommonModel, r.client)
+	_, diags := createDatabase(ctx, &data.databaseCommonModel, nil, r.v9Client)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -136,7 +142,7 @@ func (r *opensearchResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	db, diags := readDatabase(ctx, &data.databaseCommonModel, r.client, resp.State.RemoveResource)
+	db, diags := readDatabase(ctx, &data.databaseCommonModel, nil, r.v9Client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() || db == nil {
 		return
@@ -147,9 +153,10 @@ func (r *opensearchResource) Read(ctx context.Context, req resource.ReadRequest,
 }
 
 func (r *opensearchResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state opensearchModel
+	var config, plan, state opensearchModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -157,14 +164,17 @@ func (r *opensearchResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	resp.Diagnostics.Append(updateAccessControlIfNeeded(ctx, r.client, &state, &plan)...)
 
-	_, _, d := updateDatabase(ctx, &state.databaseCommonModel, &plan.databaseCommonModel, r.client)
+	_, _, d := updateDatabase(ctx, &state.databaseCommonModel, &plan.databaseCommonModel, &config.databaseCommonModel, nil, nil, nil, r.v9Client)
 	resp.Diagnostics.Append(d...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, diags := readDatabase(ctx, &plan.databaseCommonModel, r.client, resp.State.RemoveResource)
+	db, diags := readDatabase(ctx, &plan.databaseCommonModel, nil, r.v9Client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || db == nil {
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -173,17 +183,7 @@ func (r *opensearchResource) Delete(ctx context.Context, req resource.DeleteRequ
 	var data opensearchModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	if err := r.client.DeleteManagedDatabase(ctx, &request.DeleteManagedDatabaseRequest{
-		UUID: data.ID.ValueString(),
-	}); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to delete managed database",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)
+	resp.Diagnostics.Append(deleteDatabase(ctx, r.v9Client, data.ID.ValueString())...)
 }
 
 func (r *opensearchResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

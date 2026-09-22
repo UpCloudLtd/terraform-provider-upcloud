@@ -8,6 +8,7 @@ import (
 	upc "github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/config"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -198,6 +199,92 @@ func TestAccUpcloudManagedDatabase(t *testing.T) {
 				},
 			},
 		},
+	})
+}
+
+func TestAccUpcloudManagedDatabaseComponentPlans(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/component_plans_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/component_plans_s2.tf")
+	testDataS3 := utils.ReadTestDataFile(t, "testdata/component_plans_s3.tf")
+
+	prefix := fmt.Sprintf("tf-acc-comp-%s", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
+	resources := []string{
+		"upcloud_managed_database_postgresql.component_plan",
+		"upcloud_managed_database_mysql.component_plan",
+	}
+	checkPlan := func(storage string) resource.TestCheckFunc {
+		checks := make([]resource.TestCheckFunc, 0, len(resources)*4)
+		for _, name := range resources {
+			checks = append(checks,
+				resource.TestCheckResourceAttr(name, "plan_compute", "rdb.standard.2CPU-8GB"),
+				resource.TestCheckResourceAttr(name, "plan_node_count", "2"),
+				resource.TestCheckResourceAttr(name, "plan_storage_gib", storage),
+				resource.TestCheckResourceAttr(name, "plan_backups", "regular"),
+			)
+		}
+		return resource.ComposeAggregateTestCheckFunc(checks...)
+	}
+
+	steps := []resource.TestStep{
+		{
+			Config:          testDataS1,
+			ConfigVariables: variables,
+			Check:           checkPlan("120"),
+		},
+	}
+	for _, name := range resources {
+		steps = append(steps, resource.TestStep{
+			Config:            testDataS1,
+			ConfigVariables:   variables,
+			ResourceName:      name,
+			ImportState:       true,
+			ImportStateVerify: true,
+			ImportStateVerifyIgnore: []string{
+				"properties",
+				"state",
+			},
+		})
+	}
+	steps = append(steps,
+		resource.TestStep{
+			Config:          testDataS2,
+			ConfigVariables: variables,
+			Check: resource.ComposeAggregateTestCheckFunc(
+				checkPlan("140"),
+				resource.TestCheckResourceAttr(resources[0], "title", prefix+"-pg-updated"),
+				resource.TestCheckResourceAttr(resources[1], "title", prefix+"-mysql-updated"),
+			),
+		},
+		resource.TestStep{
+			Config:          testDataS3,
+			ConfigVariables: variables,
+			Check: resource.ComposeAggregateTestCheckFunc(
+				checkPlan("140"),
+				resource.TestCheckResourceAttr(resources[0], "maintenance_window_dow", "monday"),
+				resource.TestCheckResourceAttr(resources[0], "maintenance_window_time", "06:00:00"),
+				resource.TestCheckResourceAttr(resources[1], "maintenance_window_dow", "monday"),
+				resource.TestCheckResourceAttr(resources[1], "maintenance_window_time", "06:00:00"),
+			),
+		},
+		resource.TestStep{
+			Config:          testDataS3,
+			ConfigVariables: variables,
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectResourceAction(resources[0], plancheck.ResourceActionNoop),
+					plancheck.ExpectResourceAction(resources[1], plancheck.ResourceActionNoop),
+				},
+			},
+		},
+	)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upc.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upc.TestAccProviderFactories,
+		Steps:                    steps,
 	})
 }
 

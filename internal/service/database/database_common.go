@@ -8,6 +8,9 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/service/database/properties"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -45,6 +48,13 @@ type databaseCommonModel struct {
 	Properties             types.List   `tfsdk:"properties"`
 }
 
+type databasePlanModel struct {
+	PlanBackups    types.String `tfsdk:"plan_backups"`
+	PlanCompute    types.String `tfsdk:"plan_compute"`
+	PlanNodeCount  types.Int64  `tfsdk:"plan_node_count"`
+	PlanStorageGiB types.Int64  `tfsdk:"plan_storage_gib"`
+}
+
 type databaseComponentModel struct {
 	Component types.String `tfsdk:"component"`
 	Host      types.String `tfsdk:"host"`
@@ -68,6 +78,7 @@ type databaseNodeStateModel struct {
 
 func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDatabaseServiceType) {
 	planDescription := fmt.Sprintf("Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans %s`.", dbType)
+	componentizedPlans := dbType == upcloud.ManagedDatabaseServiceTypePostgreSQL || dbType == upcloud.ManagedDatabaseServiceTypeMySQL
 	additionalDiskDescription := "Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed."
 	if dbType == upcloud.ManagedDatabaseServiceTypeValkey {
 		additionalDiskDescription = fmt.Sprintf("Not supported for `%s` databases. Should be left unconfigured.", dbType)
@@ -159,9 +170,66 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 			},
 		},
 	}
-	s.Attributes["plan"] = schema.StringAttribute{
+	planAttribute := schema.StringAttribute{
 		MarkdownDescription: planDescription,
 		Required:            true,
+	}
+	if componentizedPlans {
+		planAttribute.Required = false
+		planAttribute.Optional = true
+		planAttribute.Computed = true
+		planAttribute.DeprecationMessage = "The plan attribute is deprecated for PostgreSQL and MySQL. Use plan_compute, plan_node_count, plan_storage_gib, and plan_backups instead."
+		planAttribute.Validators = []validator.String{
+			stringvalidator.ExactlyOneOf(path.MatchRoot("plan_compute")),
+		}
+	}
+	s.Attributes["plan"] = planAttribute
+	if componentizedPlans {
+		componentPaths := []path.Expression{
+			path.MatchRoot("plan_compute"),
+			path.MatchRoot("plan_node_count"),
+			path.MatchRoot("plan_storage_gib"),
+			path.MatchRoot("plan_backups"),
+		}
+		s.Attributes["plan_compute"] = schema.StringAttribute{
+			MarkdownDescription: "Compute shape combining family, CPU, and memory, as listed in the database plan catalog.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.String{
+				stringvalidator.ExactlyOneOf(path.MatchRoot("plan")),
+				stringvalidator.AlsoRequires(componentPaths[1:]...),
+			},
+		}
+		s.Attributes["plan_node_count"] = schema.Int64Attribute{
+			MarkdownDescription: "Number of nodes in the database plan.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.Int64{
+				int64validator.AlsoRequires(componentPaths[0], componentPaths[2], componentPaths[3]),
+				int64validator.ConflictsWith(path.MatchRoot("plan")),
+				int64validator.AtLeast(1),
+			},
+		}
+		s.Attributes["plan_storage_gib"] = schema.Int64Attribute{
+			MarkdownDescription: "Total storage per node in GiB.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.Int64{
+				int64validator.AlsoRequires(componentPaths[0], componentPaths[1], componentPaths[3]),
+				int64validator.ConflictsWith(path.MatchRoot("plan"), path.MatchRoot("additional_disk_space_gib")),
+				int64validator.AtLeast(1),
+			},
+		}
+		s.Attributes["plan_backups"] = schema.StringAttribute{
+			MarkdownDescription: "Backup tier for the database plan.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.String{
+				stringvalidator.AlsoRequires(componentPaths[0], componentPaths[1], componentPaths[2]),
+				stringvalidator.ConflictsWith(path.MatchRoot("plan")),
+				stringvalidator.OneOf("mini", "regular", "extended"),
+			},
+		}
 	}
 	s.Attributes["powered"] = schema.BoolAttribute{
 		MarkdownDescription: "The administrative power state of the service",
@@ -224,11 +292,18 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 		MarkdownDescription: "Primary database name",
 		Computed:            true,
 	}
-	s.Attributes["additional_disk_space_gib"] = schema.Int64Attribute{
+	additionalDiskAttribute := schema.Int64Attribute{
 		MarkdownDescription: additionalDiskDescription,
 		Computed:            true,
 		Optional:            true,
 	}
+	if componentizedPlans {
+		additionalDiskAttribute.DeprecationMessage = "The additional_disk_space_gib attribute is deprecated for PostgreSQL and MySQL. Use plan_storage_gib to configure total storage per node."
+		additionalDiskAttribute.Validators = []validator.Int64{
+			int64validator.ConflictsWith(path.MatchRoot("plan_storage_gib")),
+		}
+	}
+	s.Attributes["additional_disk_space_gib"] = additionalDiskAttribute
 
 	s.Blocks["network"] = schema.SetNestedBlock{
 		MarkdownDescription: "Private networks attached to the managed database",
@@ -271,24 +346,34 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 	s.Blocks["properties"] = properties.GetBlock(dbType)
 }
 
-func networksFromPlan(ctx context.Context, data *databaseCommonModel) ([]upcloud.ManagedDatabaseNetwork, diag.Diagnostics) {
+func networksV9FromPlan(ctx context.Context, data *databaseCommonModel) (*[]v9.DatabaseNetworkCreate, diag.Diagnostics) {
 	var respDiagnostics diag.Diagnostics
 
 	var networks []databaseNetworkModel
 	respDiagnostics.Append(data.Network.ElementsAs(ctx, &networks, false)...)
 
-	req := make([]upcloud.ManagedDatabaseNetwork, 0)
+	req := make([]v9.DatabaseNetworkCreate, 0)
 	for _, network := range networks {
-		uuid := network.UUID.ValueString()
-		r := upcloud.ManagedDatabaseNetwork{
+		r := v9.DatabaseNetworkCreate{
 			Name:   network.Name.ValueString(),
-			Type:   network.Type.ValueString(),
-			Family: network.Family.ValueString(),
-			UUID:   &uuid,
+			Type:   v9.DatabaseNetworkType(network.Type.ValueString()),
+			Family: v9.DatabaseNetworkFamily(network.Family.ValueString()),
+		}
+
+		if s := network.UUID.ValueString(); s != "" {
+			id, err := uuid.Parse(s)
+			if err != nil {
+				respDiagnostics.AddError(
+					"Unable to parse network UUID",
+					utils.ErrorDiagnosticDetail(err),
+				)
+				continue
+			}
+			r.Uuid = &id
 		}
 
 		req = append(req, r)
 	}
 
-	return req, respDiagnostics
+	return &req, respDiagnostics
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -25,7 +25,7 @@ func NewValkeyResource() resource.Resource {
 }
 
 type valkeyResource struct {
-	client *service.Service
+	client *v9.ClientWithResponses
 }
 
 func (r *valkeyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -34,7 +34,9 @@ func (r *valkeyResource) Metadata(_ context.Context, req resource.MetadataReques
 
 // Configure adds the provider configured client to the resource.
 func (r *valkeyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
+	var diags diag.Diagnostics
+	r.client, diags = utils.GetV9ClientFromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r *valkeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -57,7 +59,7 @@ func (r *valkeyResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	data.Type = types.StringValue(string(upcloud.ManagedDatabaseServiceTypeValkey))
 
-	_, diags := createDatabase(ctx, &data, r.client)
+	_, diags := createDatabase(ctx, &data, nil, r.client)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -74,7 +76,7 @@ func (r *valkeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	db, diags := readDatabase(ctx, &data, r.client, resp.State.RemoveResource)
+	db, diags := readDatabase(ctx, &data, nil, r.client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() || db == nil {
 		return
@@ -84,22 +86,26 @@ func (r *valkeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 func (r *valkeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state databaseCommonModel
+	var config, plan, state databaseCommonModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, _, d := updateDatabase(ctx, &state, &plan, r.client)
+	_, _, d := updateDatabase(ctx, &state, &plan, &config, nil, nil, nil, r.client)
 	resp.Diagnostics.Append(d...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, diags := readDatabase(ctx, &plan, r.client, resp.State.RemoveResource)
+	db, diags := readDatabase(ctx, &plan, nil, r.client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || db == nil {
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -108,17 +114,7 @@ func (r *valkeyResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	var data databaseCommonModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	if err := r.client.DeleteManagedDatabase(ctx, &request.DeleteManagedDatabaseRequest{
-		UUID: data.ID.ValueString(),
-	}); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to delete managed database",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(waitForDatabaseToBeDeleted(ctx, r.client, data.ID.ValueString())...)
+	resp.Diagnostics.Append(deleteDatabase(ctx, r.client, data.ID.ValueString())...)
 }
 
 func (r *valkeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

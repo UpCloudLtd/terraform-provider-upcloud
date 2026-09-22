@@ -127,6 +127,14 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("version"), "17"),
 				),
 			},
+			{
+				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(name, plancheck.ResourceActionNoop),
+					},
+				},
+			},
 		},
 	})
 }
@@ -156,6 +164,13 @@ func TestAccUpcloudManagedDatabasePostgresSQLProperties_UpgradeFromV5_35_0(t *te
 				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 				Config:                   testData,
 				ConfigVariables:          variables,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan", "1x1xCPU-2GB-25GB"),
+					resource.TestCheckNoResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_compute"),
+					resource.TestCheckNoResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_node_count"),
+					resource.TestCheckNoResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_storage_gib"),
+					resource.TestCheckNoResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_backups"),
+				),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectEmptyPlan(),
