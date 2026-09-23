@@ -5,6 +5,14 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- `upcloud_server_private_firewall_ruleset`: new resource for attaching SDN private firewall rulesets to servers.
+
+### Removed
+
+- `upcloud_firewall_ruleset.server_uuid`: the API no longer accepts or returns this field. Remove it from configuration and existing Terraform state is upgraded automatically.
+
 ## [5.44.1] - 2026-09-07
 
 ### Fixed

@@ -23,6 +23,7 @@
   "resources": {
     "firewall_rules.md": "Servers",
     "firewall_ruleset.md": "Servers",
+    "server_private_firewall_ruleset.md": "Servers",
     "server.md": "Servers",
     "server_group.md": "Servers",
     "storage.md": "Storage",
