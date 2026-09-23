@@ -140,6 +140,7 @@ func (r *mysqlResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
+	resolveUnknownDatabasePlanComponents(&plan.databasePlanModel, &state.databasePlanModel)
 	db, diags := readDatabase(ctx, &plan.databaseCommonModel, &plan.databasePlanModel, r.client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() || db == nil {

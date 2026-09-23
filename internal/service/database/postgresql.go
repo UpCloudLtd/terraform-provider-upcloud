@@ -159,6 +159,7 @@ func (r *postgresResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
+	resolveUnknownDatabasePlanComponents(&plan.databasePlanModel, &state.databasePlanModel)
 	db, diags := readDatabase(ctx, &plan.databaseCommonModel, &plan.databasePlanModel, r.client, resp.State.RemoveResource)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() || db == nil {
