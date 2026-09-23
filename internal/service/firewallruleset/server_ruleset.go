@@ -2,9 +2,7 @@ package firewallruleset
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -17,32 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-// privateFirewallRulesetRelationshipsResponse is a minimal list-response shape used
-// instead of the generated v9 model. The model unmarshaling fails when the API returns
-// numbers. Omit those fields so encoding/json ignores them.
-type privateFirewallRulesetRelationshipsResponse struct {
-	FirewallRulesetRelationships struct {
-		Private []struct {
-			FirewallRulesetUUID *uuid.UUID `json:"firewall_ruleset_uuid"`
-		} `json:"private"`
-	} `json:"firewall_ruleset_relationships"`
-}
-
-func parsePrivateFirewallRulesetRelationships(body []byte) (privateFirewallRulesetRelationshipsResponse, error) {
-	var parsed privateFirewallRulesetRelationshipsResponse
-	err := json.Unmarshal(body, &parsed)
-	return parsed, err
-}
-
-func privateFirewallRulesetAttached(parsed privateFirewallRulesetRelationshipsResponse, rulesetUUID uuid.UUID) bool {
-	for _, rel := range parsed.FirewallRulesetRelationships.Private {
-		if rel.FirewallRulesetUUID != nil && *rel.FirewallRulesetUUID == rulesetUUID {
-			return true
-		}
-	}
-	return false
-}
 
 var (
 	_ resource.Resource                = &serverPrivateFirewallRulesetResource{}
@@ -171,39 +143,34 @@ func (r *serverPrivateFirewallRulesetResource) Read(ctx context.Context, req res
 		return
 	}
 
-	httpResp, err := r.client.ListPrivateFirewallRulesetRelationships(ctx, serverUUID)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to read private firewall ruleset relationships", utils.ErrorDiagnosticDetail(err))
-		return
-	}
-	defer func() { _ = httpResp.Body.Close() }()
-
-	body, err := io.ReadAll(httpResp.Body)
+	apiResp, err := r.client.ListPrivateFirewallRulesetRelationshipsWithResponse(ctx, serverUUID)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read private firewall ruleset relationships", utils.ErrorDiagnosticDetail(err))
 		return
 	}
 
-	if httpResp.StatusCode == http.StatusNotFound {
+	if apiResp.StatusCode() == http.StatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		detail := fmt.Sprintf("API returned unexpected status %s", httpResp.Status)
-		if len(body) > 0 {
-			detail = fmt.Sprintf("%s. Response: %s", detail, string(body))
+	if apiResp.StatusCode() != http.StatusOK || apiResp.JSON200 == nil {
+		detail := fmt.Sprintf("API returned unexpected status %s", apiResp.Status())
+		if len(apiResp.Body) > 0 {
+			detail = fmt.Sprintf("%s. Response: %s", detail, string(apiResp.Body))
 		}
 		resp.Diagnostics.AddError("Unable to read private firewall ruleset relationships", detail)
 		return
 	}
 
-	parsed, err := parsePrivateFirewallRulesetRelationships(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to read private firewall ruleset relationships", utils.ErrorDiagnosticDetail(err))
-		return
+	attached := false
+	for _, rel := range apiResp.JSON200.FirewallRulesetRelationships.Private {
+		if rel.FirewallRulesetUuid == rulesetUUID {
+			attached = true
+			break
+		}
 	}
 
-	if !privateFirewallRulesetAttached(parsed, rulesetUUID) {
+	if !attached {
 		resp.State.RemoveResource(ctx)
 		return
 	}
