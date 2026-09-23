@@ -1053,6 +1053,35 @@ func TestSetDatabasePlanComponentsPreservesMissingFields(t *testing.T) {
 	assert.Equal(t, types.StringValue("regular"), data.PlanBackups)
 }
 
+func TestResolveUnknownDatabasePlanComponents(t *testing.T) {
+	t.Parallel()
+
+	state := databasePlanModel{
+		PlanCompute:    types.StringValue("1CPU-2GB"),
+		PlanNodeCount:  types.Int64Value(1),
+		PlanStorageGiB: types.Int64Value(25),
+		PlanBackups:    types.StringNull(),
+	}
+	plan := databasePlanModel{
+		PlanCompute:    types.StringUnknown(),
+		PlanNodeCount:  types.Int64Unknown(),
+		PlanStorageGiB: types.Int64Value(50),
+		PlanBackups:    types.StringUnknown(),
+	}
+
+	resolveUnknownDatabasePlanComponents(&plan, &state)
+
+	assert.Equal(t, state.PlanCompute, plan.PlanCompute)
+	assert.Equal(t, state.PlanNodeCount, plan.PlanNodeCount)
+	assert.Equal(t, types.Int64Value(50), plan.PlanStorageGiB)
+	assert.Equal(t, types.StringNull(), plan.PlanBackups)
+
+	var components v9.DatabasePlanComponentsResponse
+	require.NoError(t, json.Unmarshal([]byte(`{"backups":{"name":"regular"}}`), &components))
+	setDatabasePlanComponents(&plan, &components)
+	assert.Equal(t, types.StringValue("regular"), plan.PlanBackups)
+}
+
 func TestDatabasePlanSchema(t *testing.T) {
 	t.Parallel()
 

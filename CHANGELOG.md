@@ -20,7 +20,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- upcloud_managed_database_mysql, upcloud_managed_database_postgresql, upcloud_managed_database_valkey, upcloud_managed_database_opensearch: apply updates that only change `maintenance_window_dow`/`maintenance_window_time`; previously such changes were silently skipped.
+- upcloud_managed_database_mysql, upcloud_managed_database_postgresql, upcloud_managed_database_valkey, upcloud_managed_database_opensearch: apply updates that only change `maintenance_window_dow`/`maintenance_window_time`.
 
 ## [5.44.1] - 2026-09-07
 

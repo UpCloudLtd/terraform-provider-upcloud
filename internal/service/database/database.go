@@ -550,6 +550,21 @@ func setDatabasePlanComponents(data *databasePlanModel, components *v9.DatabaseP
 	}
 }
 
+func resolveUnknownDatabasePlanComponents(plan, state *databasePlanModel) {
+	if plan.PlanCompute.IsUnknown() {
+		plan.PlanCompute = state.PlanCompute
+	}
+	if plan.PlanNodeCount.IsUnknown() {
+		plan.PlanNodeCount = state.PlanNodeCount
+	}
+	if plan.PlanStorageGiB.IsUnknown() {
+		plan.PlanStorageGiB = state.PlanStorageGiB
+	}
+	if plan.PlanBackups.IsUnknown() {
+		plan.PlanBackups = state.PlanBackups
+	}
+}
+
 func databaseComponentPlanChanged(state, plan *databasePlanModel) bool {
 	return !state.PlanCompute.Equal(plan.PlanCompute) ||
 		!state.PlanNodeCount.Equal(plan.PlanNodeCount) ||
