@@ -95,7 +95,9 @@ Optional Attributes:
 - `ip_filter` (List of String) IP filter. Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'.
 - `public_access` (Boolean) Public Access. Allow access to the service from the public Internet.
 - `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
+- `replicas` (Number) Number of replicas per shard. Number of replicas per shard in the Valkey cluster. Only applies to cluster plans.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
+- `shard_count` (Number) Number of shards. Number of shards (primaries) in the Valkey cluster. Required for cluster plans.
 - `valkey_acl_channels_default` (String) Default ACL for pub/sub channels used when a Valkey user is created. Determines default pub/sub channels' ACL for new users if ACL is not supplied. When this option is not defined, all_channels is assumed to keep backward compatibility. This option doesn't affect Valkey configuration acl-pubsub-default.
 - `valkey_active_defrag_ignore_bytes` (Number) Active defrag minimum fragmentation waste. Minimum amount of fragmentation waste, in bytes, before active defragmentation starts. Only takes effect when `valkey_activedefrag` is enabled.
 - `valkey_active_defrag_threshold_lower` (Number) Active defrag minimum fragmentation percentage. Minimum percentage of fragmentation before active defragmentation starts. Only takes effect when `valkey_activedefrag` is enabled.
@@ -107,7 +109,7 @@ Optional Attributes:
 - `valkey_maxmemory_policy` (String) Valkey maxmemory-policy.
 - `valkey_notify_keyspace_events` (String) Set notify-keyspace-events option.
 - `valkey_number_of_databases` (Number) Number of Valkey databases. Set number of Valkey databases. Changing this will cause a restart of the Valkey service.
-- `valkey_persistence` (String) Valkey persistence. When persistence is 'rdb', Valkey does RDB dumps each 10 minutes if any key is changed. Also RDB dumps are done according to backup schedule for backup purposes. When persistence is 'off', no RDB dumps and backups are done, so data can be lost at any moment if service is restarted for any reason, or if service is powered off. Also service can't be forked.
+- `valkey_persistence` (String) Valkey persistence. Controls whether Valkey writes RDB dumps to disk. With `rdb`, RDB dumps are written for backups on the backup schedule and, if `frequent_snapshots` is enabled, every 10 minutes so the service can recover recent data after a restart. With `off`, no RDB dumps are written at all: backups and forking are unavailable, `frequent_snapshots` and `backup_hour`/`backup_minute` have no effect, and all data is lost if the service restarts or is powered off.
 - `valkey_pubsub_client_output_buffer_limit` (Number) Pub/sub client output buffer hard limit in MB. Set output buffer limit for pub / sub clients in MB. The value is the hard limit, the soft limit is 1/4 of the hard limit. When setting the limit, be mindful of the available memory in the selected service plan.
 - `valkey_ssl` (Boolean) Require SSL to access Valkey.
 - `valkey_timeout` (Number) Valkey idle connection timeout in seconds.
