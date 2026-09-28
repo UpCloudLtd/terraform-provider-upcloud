@@ -1244,7 +1244,24 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	// createServer has no private firewall fields; apply them via a follow-up modify.
-	privateFirewallModifyReq := &request.ModifyServerRequest{UUID: server.UUID}
+	privateFirewallModifyReq, needsPrivateFirewallModify := buildPrivateFirewallModifyRequest(server.UUID, data)
+
+	if needsPrivateFirewallModify {
+		modifiedServer, err := r.client.ModifyServer(ctx, privateFirewallModifyReq)
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to set private SDN firewall options", utils.ErrorDiagnosticDetail(err))
+			return
+		}
+		server = modifiedServer
+	}
+
+	resp.Diagnostics.Append(setValues(ctx, &data, server)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+// buildPrivateFirewallModifyRequest includes only explicitly known private firewall settings.
+func buildPrivateFirewallModifyRequest(uuid string, data serverModel) (*request.ModifyServerRequest, bool) {
+	privateFirewallModifyReq := &request.ModifyServerRequest{UUID: uuid}
 	needsPrivateFirewallModify := false
 
 	if !data.FirewallPrivate.IsNull() && !data.FirewallPrivate.IsUnknown() {
@@ -1264,17 +1281,7 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 		needsPrivateFirewallModify = true
 	}
 
-	if needsPrivateFirewallModify {
-		modifiedServer, err := r.client.ModifyServer(ctx, privateFirewallModifyReq)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to set private SDN firewall options", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-		server = modifiedServer
-	}
-
-	resp.Diagnostics.Append(setValues(ctx, &data, server)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	return privateFirewallModifyReq, needsPrivateFirewallModify
 }
 
 func (r *serverResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {

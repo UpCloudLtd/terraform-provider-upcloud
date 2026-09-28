@@ -2,15 +2,11 @@ package server
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/client"
-	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
+	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
@@ -34,97 +30,97 @@ func TestServerDataSourceModelMatchesSchema(t *testing.T) {
 	}
 }
 
-func TestServerCreatePrivateFirewall(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		enabled  interface{}
-		incoming interface{}
-		outgoing interface{}
-		fail     bool
+func TestBuildPrivateFirewallModifyRequest(t *testing.T) {
+	const id = "00000000-0000-0000-0000-000000000001"
+	tests := []struct {
+		name       string
+		enabled    types.Bool
+		incoming   types.String
+		outgoing   types.String
+		want       request.ModifyServerRequest
+		wantModify bool
 	}{
-		{"enabled", true, "drop", "accept", false},
-		{"disabled", false, "accept", "drop", false},
-		{"omitted", nil, nil, nil, false},
-		{"unknown", tftypes.UnknownValue, tftypes.UnknownValue, tftypes.UnknownValue, false},
-		{"actions_only", nil, "drop", "accept", false},
-		{"modify_failure", true, "drop", "accept", true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			const id = "00000000-0000-0000-0000-000000000001"
-			details := map[string]interface{}{"uuid": id, "state": "started", "simple_backup": "no", "firewall": "on", "firewall_private": "off", "firewall_private_default_incoming_action": "accept", "firewall_private_default_outgoing_action": "accept"}
-			var modifications []map[string]interface{}
-			api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				if req.Method == http.MethodPut {
-					var body struct {
-						Server map[string]interface{} `json:"server"`
-					}
-					if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-						t.Error(err)
-						w.WriteHeader(400)
-						return
-					}
-					modifications = append(modifications, body.Server)
-					if tc.fail {
-						w.WriteHeader(http.StatusBadRequest)
-						_, _ = w.Write([]byte(`{"error":{"error_code":"INVALID_REQUEST","error_message":"injected modify failure"}}`))
-						return
-					}
-					for k, v := range body.Server {
-						details[k] = v
-					}
-				}
-				if err := json.NewEncoder(w).Encode(map[string]interface{}{"server": details}); err != nil {
-					t.Error(err)
-				}
-			}))
-			defer api.Close()
-			r := &serverResource{client: service.New(client.New("test", "test", client.WithBaseURL(api.URL)))}
-			schema := r.getSchema(2)
-			typ := schema.Type().TerraformType(ctx)
-			values := map[string]tftypes.Value{}
-			for name, attrType := range typ.(tftypes.Object).AttributeTypes {
-				values[name] = tftypes.NewValue(attrType, nil)
-			}
-			values["firewall"] = tftypes.NewValue(tftypes.Bool, true)
-			values["firewall_private"] = tftypes.NewValue(tftypes.Bool, tc.enabled)
-			values["firewall_private_default_incoming_action"] = tftypes.NewValue(tftypes.String, tc.incoming)
-			values["firewall_private_default_outgoing_action"] = tftypes.NewValue(tftypes.String, tc.outgoing)
-			plan := tfsdk.Plan{Schema: schema, Raw: tftypes.NewValue(typ, values)}
-			response := resource.CreateResponse{State: tfsdk.State{Schema: schema, Raw: tftypes.NewValue(typ, nil)}}
-			r.Create(ctx, resource.CreateRequest{Plan: plan}, &response)
-			require.Equal(t, tc.fail, response.Diagnostics.HasError(), "%v", response.Diagnostics)
-			var state serverModel
-			require.False(t, response.State.Get(ctx, &state).HasError())
-			require.Equal(t, id, state.ID.ValueString(), "created server must remain tracked even when modification fails")
-			require.Equal(t, types.BoolValue(true), state.Firewall)
-			if tc.name == "omitted" || tc.name == "unknown" {
-				require.Empty(t, modifications)
-				return
-			}
-			require.Len(t, modifications, 1)
-			require.NotContains(t, modifications[0], "firewall", "private modification must not change the public firewall")
-			if enabled, ok := tc.enabled.(bool); ok {
-				want := "off"
-				if enabled {
-					want = "on"
-				}
-				require.Equal(t, want, modifications[0]["firewall_private"])
-				if !tc.fail {
-					require.Equal(t, types.BoolValue(enabled), state.FirewallPrivate)
-				}
-			} else {
-				require.NotContains(t, modifications[0], "firewall_private")
-			}
-			require.Equal(t, tc.incoming, modifications[0]["firewall_private_default_incoming_action"])
-			require.Equal(t, tc.outgoing, modifications[0]["firewall_private_default_outgoing_action"])
-			if tc.fail {
-				require.Equal(t, types.BoolValue(false), state.FirewallPrivate)
-			} else {
-				require.Equal(t, tc.incoming, state.FirewallPrivateDefaultIncomingAction.ValueString())
-				require.Equal(t, tc.outgoing, state.FirewallPrivateDefaultOutgoingAction.ValueString())
-			}
+		{
+			name:    "enabled",
+			enabled: types.BoolValue(true), incoming: types.StringValue("drop"), outgoing: types.StringValue("accept"),
+			want:       request.ModifyServerRequest{UUID: id, FirewallPrivate: "on", FirewallPrivateDefaultIncomingAction: "drop", FirewallPrivateDefaultOutgoingAction: "accept"},
+			wantModify: true,
+		},
+		{
+			name:    "disabled",
+			enabled: types.BoolValue(false), incoming: types.StringValue("accept"), outgoing: types.StringValue("drop"),
+			want:       request.ModifyServerRequest{UUID: id, FirewallPrivate: "off", FirewallPrivateDefaultIncomingAction: "accept", FirewallPrivateDefaultOutgoingAction: "drop"},
+			wantModify: true,
+		},
+		{
+			name:    "omitted",
+			enabled: types.BoolNull(), incoming: types.StringNull(), outgoing: types.StringNull(),
+			want: request.ModifyServerRequest{UUID: id},
+		},
+		{
+			name:    "unknown",
+			enabled: types.BoolUnknown(), incoming: types.StringUnknown(), outgoing: types.StringUnknown(),
+			want: request.ModifyServerRequest{UUID: id},
+		},
+		{
+			name:    "actions only",
+			enabled: types.BoolNull(), incoming: types.StringValue("drop"), outgoing: types.StringValue("accept"),
+			want:       request.ModifyServerRequest{UUID: id, FirewallPrivateDefaultIncomingAction: "drop", FirewallPrivateDefaultOutgoingAction: "accept"},
+			wantModify: true,
+		},
+		{
+			name:    "incoming only with unknown enabled",
+			enabled: types.BoolUnknown(), incoming: types.StringValue("drop"), outgoing: types.StringNull(),
+			want:       request.ModifyServerRequest{UUID: id, FirewallPrivateDefaultIncomingAction: "drop"},
+			wantModify: true,
+		},
+		{
+			name:    "outgoing only with unknown incoming",
+			enabled: types.BoolNull(), incoming: types.StringUnknown(), outgoing: types.StringValue("drop"),
+			want:       request.ModifyServerRequest{UUID: id, FirewallPrivateDefaultOutgoingAction: "drop"},
+			wantModify: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data := serverModel{serverCommonModel: serverCommonModel{
+				Firewall:                             types.BoolValue(true),
+				FirewallPrivate:                      tt.enabled,
+				FirewallPrivateDefaultIncomingAction: tt.incoming,
+				FirewallPrivateDefaultOutgoingAction: tt.outgoing,
+			}}
+			got, modify := buildPrivateFirewallModifyRequest(id, data)
+			require.Equal(t, tt.wantModify, modify)
+			// Comparing the whole request also verifies that the public firewall is untouched.
+			require.Equal(t, &tt.want, got)
+		})
+	}
+}
+
+func TestSetCommonValuesPrivateFirewall(t *testing.T) {
+	tests := []struct {
+		name     string
+		enabled  string
+		incoming string
+		outgoing string
+	}{
+		{name: "enabled", enabled: "on", incoming: "drop", outgoing: "accept"},
+		{name: "disabled", enabled: "off", incoming: "accept", outgoing: "drop"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var data serverCommonModel
+			var details upcloud.ServerDetails
+			details.Firewall = "on"
+			details.FirewallPrivate = tt.enabled
+			details.FirewallPrivateDefaultIncomingAction = tt.incoming
+			details.FirewallPrivateDefaultOutgoingAction = tt.outgoing
+			diags := setCommonValues(context.Background(), &data, &details)
+			require.False(t, diags.HasError(), "%v", diags)
+			require.Equal(t, types.BoolValue(true), data.Firewall)
+			require.Equal(t, types.BoolValue(tt.enabled == "on"), data.FirewallPrivate)
+			require.Equal(t, types.StringValue(tt.incoming), data.FirewallPrivateDefaultIncomingAction)
+			require.Equal(t, types.StringValue(tt.outgoing), data.FirewallPrivateDefaultOutgoingAction)
 		})
 	}
 }
