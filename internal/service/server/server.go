@@ -205,7 +205,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				Optional:    true,
 			},
 			"firewall": schema.BoolAttribute{
-				Description: "Are firewall rules active for the server",
+				Description: "Whether the Public & Utility firewall is active for public and utility interfaces. Independent of firewall_private.",
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
@@ -213,7 +213,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				},
 			},
 			"firewall_private": schema.BoolAttribute{
-				Description: "Is the private SDN firewall active for the server",
+				Description: "Whether the private SDN firewall is active for private interfaces. Independent of firewall. Private firewall settings are applied after the server starts; attached rulesets are managed with upcloud_server_private_firewall_ruleset. Protection from the first boot is not guaranteed.",
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
@@ -221,7 +221,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				},
 			},
 			"firewall_private_default_incoming_action": schema.StringAttribute{
-				Description: "The default action for incoming traffic on the private SDN firewall",
+				Description: "Default action for unmatched incoming private SDN traffic (accept or drop).",
 				Optional:    true,
 				Computed:    true,
 				Validators: []validator.String{
@@ -235,7 +235,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 				},
 			},
 			"firewall_private_default_outgoing_action": schema.StringAttribute{
-				Description: "The default action for outgoing traffic on the private SDN firewall",
+				Description: "Default action for unmatched outgoing private SDN traffic (accept or drop).",
 				Optional:    true,
 				Computed:    true,
 				Validators: []validator.String{
@@ -1222,6 +1222,15 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 	}
 
+	// Retain the created server if waiting or applying private firewall settings fails.
+	// Reconcile a copy so API defaults do not overwrite the requested firewall settings.
+	createdData := data
+	resp.Diagnostics.Append(setValues(ctx, &createdData, server)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &createdData)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	server, err = r.client.WaitForServerState(ctx, &request.WaitForServerStateRequest{
 		UUID:         server.UUID,
 		DesiredState: upcloud.ServerStateStarted,
@@ -1256,11 +1265,12 @@ func (r *serverResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	if needsPrivateFirewallModify {
-		server, err = r.client.ModifyServer(ctx, privateFirewallModifyReq)
+		modifiedServer, err := r.client.ModifyServer(ctx, privateFirewallModifyReq)
 		if err != nil {
 			resp.Diagnostics.AddError("Unable to set private SDN firewall options", utils.ErrorDiagnosticDetail(err))
 			return
 		}
+		server = modifiedServer
 	}
 
 	resp.Diagnostics.Append(setValues(ctx, &data, server)...)
