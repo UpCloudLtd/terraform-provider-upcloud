@@ -9,6 +9,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
+- `upcloud_server`: configure the private SDN firewall switch and default incoming/outgoing actions independently of the Public & Utility firewall; expose these settings in the server data source.
+
 - `upcloud_server_private_firewall_ruleset`: new resource for attaching SDN private firewall rulesets to servers.
 
 ### Removed

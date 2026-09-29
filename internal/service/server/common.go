@@ -10,24 +10,27 @@ import (
 )
 
 type serverCommonModel struct {
-	BootOrder         types.String `tfsdk:"boot_order"`
-	CPU               types.Int64  `tfsdk:"cpu"`
-	Firewall          types.Bool   `tfsdk:"firewall"`
-	Host              types.Int64  `tfsdk:"host"`
-	Hostname          types.String `tfsdk:"hostname"`
-	ID                types.String `tfsdk:"id"`
-	Labels            types.Map    `tfsdk:"labels"`
-	Mem               types.Int64  `tfsdk:"mem"`
-	Metadata          types.Bool   `tfsdk:"metadata"`
-	NetworkInterfaces types.List   `tfsdk:"network_interface"`
-	NICModel          types.String `tfsdk:"nic_model"`
-	Plan              types.String `tfsdk:"plan"`
-	ServerGroup       types.String `tfsdk:"server_group"`
-	Tags              types.Set    `tfsdk:"tags"`
-	Timezone          types.String `tfsdk:"timezone"`
-	Title             types.String `tfsdk:"title"`
-	VideoModel        types.String `tfsdk:"video_model"`
-	Zone              types.String `tfsdk:"zone"`
+	BootOrder                            types.String `tfsdk:"boot_order"`
+	CPU                                  types.Int64  `tfsdk:"cpu"`
+	Firewall                             types.Bool   `tfsdk:"firewall"`
+	FirewallPrivate                      types.Bool   `tfsdk:"firewall_private"`
+	FirewallPrivateDefaultIncomingAction types.String `tfsdk:"firewall_private_default_incoming_action"`
+	FirewallPrivateDefaultOutgoingAction types.String `tfsdk:"firewall_private_default_outgoing_action"`
+	Host                                 types.Int64  `tfsdk:"host"`
+	Hostname                             types.String `tfsdk:"hostname"`
+	ID                                   types.String `tfsdk:"id"`
+	Labels                               types.Map    `tfsdk:"labels"`
+	Mem                                  types.Int64  `tfsdk:"mem"`
+	Metadata                             types.Bool   `tfsdk:"metadata"`
+	NetworkInterfaces                    types.List   `tfsdk:"network_interface"`
+	NICModel                             types.String `tfsdk:"nic_model"`
+	Plan                                 types.String `tfsdk:"plan"`
+	ServerGroup                          types.String `tfsdk:"server_group"`
+	Tags                                 types.Set    `tfsdk:"tags"`
+	Timezone                             types.String `tfsdk:"timezone"`
+	Title                                types.String `tfsdk:"title"`
+	VideoModel                           types.String `tfsdk:"video_model"`
+	Zone                                 types.String `tfsdk:"zone"`
 }
 
 func setCommonValues(ctx context.Context, data *serverCommonModel, details *upcloud.ServerDetails) diag.Diagnostics {
@@ -36,6 +39,9 @@ func setCommonValues(ctx context.Context, data *serverCommonModel, details *upcl
 	data.BootOrder = types.StringValue(details.BootOrder)
 	data.CPU = types.Int64Value(int64(details.CoreNumber))
 	data.Firewall = types.BoolValue(details.Firewall == "on")
+	data.FirewallPrivate = types.BoolValue(details.FirewallPrivate == "on")
+	data.FirewallPrivateDefaultIncomingAction = types.StringValue(details.FirewallPrivateDefaultIncomingAction)
+	data.FirewallPrivateDefaultOutgoingAction = types.StringValue(details.FirewallPrivateDefaultOutgoingAction)
 	data.Host = types.Int64Value(details.HostID)
 	data.Hostname = types.StringValue(details.Hostname)
 	data.Mem = types.Int64Value(int64(details.MemoryAmount))

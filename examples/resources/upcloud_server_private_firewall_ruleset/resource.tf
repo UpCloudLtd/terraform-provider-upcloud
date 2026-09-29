@@ -15,6 +15,12 @@ resource "upcloud_server" "example" {
   zone     = "de-fra1"
   plan     = "1xCPU-1GB"
 
+  # These settings affect private interfaces, independently of the public firewall.
+  # They are applied after startup, before this example's ruleset is attached.
+  firewall_private                         = true
+  firewall_private_default_incoming_action = "drop"
+  firewall_private_default_outgoing_action = "accept"
+
   template {
     storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
   }
@@ -28,6 +34,7 @@ resource "upcloud_server" "example" {
 resource "upcloud_firewall_ruleset" "example" {
   name        = "example-private-ruleset"
   description = "Private SDN ruleset"
+  enabled     = true
 
   rules = [
     {
