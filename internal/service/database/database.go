@@ -14,6 +14,7 @@ import (
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
@@ -229,13 +230,23 @@ func createDatabase(ctx context.Context, data *databaseCommonModel, client *serv
 		return nil, diags
 	}
 
-	db, err := client.CreateManagedDatabase(ctx, &req)
-	if err != nil {
-		diags.AddError(
-			"Unable to create database",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return nil, diags
+	var db *upcloud.ManagedDatabase
+	var err error
+	if !data.CloneFrom.IsNull() && !data.CloneFrom.IsUnknown() {
+		db, d = cloneDatabase(ctx, data, &req, client)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil, diags
+		}
+	} else {
+		db, err = client.CreateManagedDatabase(ctx, &req)
+		if err != nil {
+			diags.AddError(
+				"Unable to create database",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return nil, diags
+		}
 	}
 
 	data.ID = types.StringValue(db.UUID)
@@ -255,6 +266,48 @@ func createDatabase(ctx context.Context, data *databaseCommonModel, client *serv
 			"Database DNS name not yet available",
 			utils.ErrorDiagnosticDetail(err),
 		)
+	}
+
+	return db, diags
+}
+
+func cloneDatabase(ctx context.Context, data *databaseCommonModel, createReq *request.CreateManagedDatabaseRequest, client *service.Service) (*upcloud.ManagedDatabase, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	cloneReq := request.CloneManagedDatabaseRequest{
+		UUID:                   data.CloneFrom.ValueString(),
+		AdditionalDiskSpaceGiB: createReq.AdditionalDiskSpaceGiB,
+		HostNamePrefix:         createReq.HostNamePrefix,
+		Labels:                 createReq.Labels,
+		Maintenance:            createReq.Maintenance,
+		Networks:               createReq.Networks,
+		Plan:                   createReq.Plan,
+		Properties:             createReq.Properties,
+		TerminationProtection:  createReq.TerminationProtection,
+		Title:                  createReq.Title,
+		Zone:                   createReq.Zone,
+	}
+
+	if !data.CloneTime.IsNull() && !data.CloneTime.IsUnknown() {
+		cloneTime, err := time.Parse(time.RFC3339, data.CloneTime.ValueString())
+		if err != nil {
+			diags.AddAttributeError(
+				path.Root("clone_time"),
+				"Invalid clone time",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return nil, diags
+		}
+		cloneReq.CloneTime = cloneTime
+	}
+
+	db, err := client.CloneManagedDatabase(ctx, &cloneReq)
+	if err != nil {
+		diags.AddError(
+			"Unable to clone database",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, diags
 	}
 
 	return db, diags
