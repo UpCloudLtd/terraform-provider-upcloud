@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -21,6 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
@@ -332,6 +334,48 @@ func createDatabase(ctx context.Context, data *databaseCommonModel, componentPla
 		return nil, diags
 	}
 
+	var info *v9.DatabaseServiceInformationResponse
+	if !data.CloneFrom.IsNull() && !data.CloneFrom.IsUnknown() {
+		info, d = cloneDatabase(ctx, data, req, client)
+	} else {
+		info, d = createDatabaseFromRequest(ctx, req, client)
+	}
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	uuid := info.Uuid.String()
+	data.ID = types.StringValue(uuid)
+	if componentPlan != nil {
+		if componentPlan.PlanCompute.IsNull() || componentPlan.PlanCompute.IsUnknown() {
+			clearDatabasePlanComponents(componentPlan)
+		}
+		setDatabasePlanComponents(componentPlan, info.PlanComponents)
+	}
+
+	db, d := waitForDatabaseState(ctx, client, uuid, databaseStateRunning)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	diags.Append(setDatabaseValues(ctx, data, db, false)...)
+
+	host := serviceURIParamString(db.ServiceUriParams, "host")
+	if err := waitServiceNameToPropagate(ctx, host); err != nil {
+		diags.AddWarning(
+			"Database DNS name not yet available",
+			utils.ErrorDiagnosticDetail(err),
+		)
+	}
+
+	return db, diags
+}
+
+func createDatabaseFromRequest(ctx context.Context, req v9.CreateDatabaseJSONRequestBody, client *v9.ClientWithResponses) (*v9.DatabaseServiceInformationResponse, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	apiResp, err := client.CreateDatabaseWithResponse(ctx, req)
 	if err != nil {
 		diags.AddError(
@@ -348,32 +392,70 @@ func createDatabase(ctx context.Context, data *databaseCommonModel, componentPla
 		return nil, diags
 	}
 
-	uuid := apiResp.JSON201.Uuid.String()
-	data.ID = types.StringValue(uuid)
-	if componentPlan != nil {
-		if componentPlan.PlanCompute.IsNull() || componentPlan.PlanCompute.IsUnknown() {
-			clearDatabasePlanComponents(componentPlan)
-		}
-		setDatabasePlanComponents(componentPlan, apiResp.JSON201.PlanComponents)
-	}
+	return apiResp.JSON201, diags
+}
 
-	db, d := waitForDatabaseState(ctx, client, uuid, databaseStateRunning)
-	diags.Append(d...)
-	if diags.HasError() {
+func cloneDatabase(ctx context.Context, data *databaseCommonModel, createReq v9.CreateDatabaseJSONRequestBody, client *v9.ClientWithResponses) (*v9.DatabaseServiceInformationResponse, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	sourceUUID, err := uuid.Parse(data.CloneFrom.ValueString())
+	if err != nil {
+		diags.AddAttributeError(
+			path.Root("clone_from"),
+			"Invalid clone source UUID",
+			utils.ErrorDiagnosticDetail(err),
+		)
 		return nil, diags
 	}
 
-	diags.Append(setDatabaseValues(ctx, data, db, false)...)
+	// Clone request has the same fields as the create request, except for the type, which is defined by the source database.
+	body, err := json.Marshal(createReq)
+	var cloneReq map[string]any
+	if err == nil {
+		err = json.Unmarshal(body, &cloneReq)
+	}
+	if err != nil {
+		diags.AddError("Unable to build clone database request", utils.ErrorDiagnosticDetail(err))
+		return nil, diags
+	}
+	delete(cloneReq, "type")
 
-	host := serviceURIParamString(db.ServiceUriParams, "host")
-	if err = waitServiceNameToPropagate(ctx, host); err != nil {
-		diags.AddWarning(
-			"Database DNS name not yet available",
-			utils.ErrorDiagnosticDetail(err),
-		)
+	if !data.CloneTime.IsNull() && !data.CloneTime.IsUnknown() {
+		cloneTime, err := time.Parse(time.RFC3339, data.CloneTime.ValueString())
+		if err != nil {
+			diags.AddAttributeError(
+				path.Root("clone_time"),
+				"Invalid clone time",
+				utils.ErrorDiagnosticDetail(err),
+			)
+			return nil, diags
+		}
+		cloneReq["clone_time"] = cloneTime
 	}
 
-	return db, diags
+	body, err = json.Marshal(cloneReq)
+	if err != nil {
+		diags.AddError("Unable to build clone database request", utils.ErrorDiagnosticDetail(err))
+		return nil, diags
+	}
+
+	apiResp, err := client.CloneDatabaseWithBodyWithResponse(ctx, sourceUUID, "application/json", bytes.NewReader(body))
+	if err != nil {
+		diags.AddError(
+			"Unable to clone database",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return nil, diags
+	}
+	if apiResp.StatusCode() != http.StatusCreated || apiResp.JSON201 == nil || apiResp.JSON201.Uuid == nil {
+		diags.AddError(
+			"Unable to clone database",
+			fmt.Sprintf("Unexpected API status code %d: %s", apiResp.StatusCode(), string(apiResp.Body)),
+		)
+		return nil, diags
+	}
+
+	return apiResp.JSON201, diags
 }
 
 func buildManagedDatabaseRequestFromPlan(ctx context.Context, data *databaseCommonModel, componentPlan *databasePlanModel) (v9.CreateDatabaseJSONRequestBody, diag.Diagnostics) {

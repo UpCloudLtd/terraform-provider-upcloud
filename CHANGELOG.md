@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- upcloud_managed_database_\*: add `clone_from` and `clone_time` fields for creating a database as a clone of an existing database.
+
 ## [5.46.0] - 2026-10-08
 
 ### Added
