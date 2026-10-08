@@ -5,24 +5,29 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.46.0] - 2026-10-08
+
+### Added
+
+- `upcloud_managed_database_postgresql`, `upcloud_managed_database_mysql`: add `plan_compute`, `plan_node_count`, `plan_storage_gib`, and `plan_backups` for componentized database plans.
+
+### Deprecated
+
+- `upcloud_managed_database_postgresql`, `upcloud_managed_database_mysql`: deprecate `plan` and `additional_disk_space_gib` in favor of componentized plan fields. Existing legacy plan configurations remain supported.
+
+### Fixed
+
+- `upcloud_managed_database_mysql`, `upcloud_managed_database_postgresql`, `upcloud_managed_database_valkey`, `upcloud_managed_database_opensearch`: apply updates that only change `maintenance_window_dow`/`maintenance_window_time`.
+
 ## [5.45.0] - 2026-09-28
 
 ### Added
 
 - `upcloud_server_private_firewall_ruleset`: new resource for attaching SDN private firewall rulesets to servers.
-- upcloud_managed_database_postgresql, upcloud_managed_database_mysql: add `plan_compute`, `plan_node_count`, `plan_storage_gib`, and `plan_backups` for componentized database plans.
 
 ### Removed
 
 - `upcloud_firewall_ruleset.server_uuid`: the API no longer accepts or returns this field. Remove it from configuration and existing Terraform state is upgraded automatically.
-
-### Deprecated
-
-- upcloud_managed_database_postgresql, upcloud_managed_database_mysql: deprecate `plan` and `additional_disk_space_gib` in favor of componentized plan fields. Existing legacy plan configurations remain supported.
-
-### Fixed
-
-- upcloud_managed_database_mysql, upcloud_managed_database_postgresql, upcloud_managed_database_valkey, upcloud_managed_database_opensearch: apply updates that only change `maintenance_window_dow`/`maintenance_window_time`.
 
 ## [5.44.1] - 2026-09-07
 
@@ -1315,7 +1320,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.45.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.46.0...HEAD
+[5.46.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.45.0...v5.46.0
 [5.45.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.1...v5.45.0
 [5.44.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.0...v5.44.1
 [5.44.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.43.1...v5.44.0
