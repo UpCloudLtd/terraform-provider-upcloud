@@ -15,18 +15,24 @@ This resource represents PostgreSQL managed database. See UpCloud [Managed Datab
 ```terraform
 # Minimal config
 resource "upcloud_managed_database_postgresql" "example_1" {
-  name  = "postgres-1"
-  plan  = "1x1xCPU-2GB-25GB"
-  title = "postgres"
-  zone  = "fi-hel1"
+  name             = "postgres-1"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  title            = "postgres"
+  zone             = "fi-hel1"
 }
 
 # Service with custom properties
 resource "upcloud_managed_database_postgresql" "example_2" {
-  name  = "postgres-2"
-  plan  = "1x1xCPU-2GB-25GB"
-  title = "postgres"
-  zone  = "fi-hel1"
+  name             = "postgres-2"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  title            = "postgres"
+  zone             = "fi-hel1"
   properties {
     timezone       = "Europe/Helsinki"
     admin_username = "admin"
@@ -41,16 +47,20 @@ resource "upcloud_managed_database_postgresql" "example_2" {
 ### Required Attributes
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
-- `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans pg`.
 - `title` (String) Title of the managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
 
-- `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
+- `additional_disk_space_gib` (Number, Deprecated) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
 - `labels` (Map of String) User defined key-value pairs to classify the database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
+- `plan` (String, Deprecated) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans pg`.
+- `plan_backups` (String) Backup tier for the database plan.
+- `plan_compute` (String) Compute shape combining family, CPU, and memory, as listed in the database plan catalog.
+- `plan_node_count` (Number) Number of nodes in the database plan.
+- `plan_storage_gib` (Number) Total storage per node in GiB.
 - `powered` (Boolean) The administrative power state of the service
 - `termination_protection` (Boolean) If set to true, prevents the managed service from being powered off, or deleted.
 
