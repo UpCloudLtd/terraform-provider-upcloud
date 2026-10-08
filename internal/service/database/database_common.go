@@ -46,6 +46,8 @@ type databaseCommonModel struct {
 	Zone                   types.String `tfsdk:"zone"`
 	PrimaryDatabase        types.String `tfsdk:"primary_database"`
 	Properties             types.List   `tfsdk:"properties"`
+	CloneFrom              types.String `tfsdk:"clone_from"`
+	CloneTime              types.String `tfsdk:"clone_time"`
 }
 
 type databasePlanModel struct {
@@ -304,6 +306,27 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 		}
 	}
 	s.Attributes["additional_disk_space_gib"] = additionalDiskAttribute
+	s.Attributes["clone_from"] = schema.StringAttribute{
+		MarkdownDescription: "UUID of an existing managed database to clone the new database from. Changing this forces a new resource to be created. This value is only used on creation and is not read back from the API.",
+		Optional:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.RequiresReplace(),
+		},
+		Validators: []validator.String{
+			stringvalidator.LengthAtLeast(1),
+		},
+	}
+	s.Attributes["clone_time"] = schema.StringAttribute{
+		MarkdownDescription: "Point in time, in RFC 3339 format (e.g. `2026-01-02T15:04:05Z`), from which to clone the data. If not set, the most recent available data is used. Requires `clone_from`. Changing this forces a new resource to be created.",
+		Optional:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.RequiresReplace(),
+		},
+		Validators: []validator.String{
+			stringvalidator.AlsoRequires(path.MatchRoot("clone_from")),
+			rfc3339Validator{},
+		},
+	}
 
 	s.Blocks["network"] = schema.SetNestedBlock{
 		MarkdownDescription: "Private networks attached to the managed database",
