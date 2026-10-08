@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- `upcloud_kubernetes_cluster`: add opt-in `fetch_kubeconfig` field and `kubeconfig` attribute for storing cluster kubeconfig and connection details in the resource state.
+
 ## [5.46.0] - 2026-10-08
 
 ### Added

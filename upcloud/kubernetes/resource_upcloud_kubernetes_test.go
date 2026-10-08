@@ -53,6 +53,7 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_s2.tf")
 
 	cName := "upcloud_kubernetes_cluster.main"
+	dsName := "data.upcloud_kubernetes_cluster.main"
 	g1Name := "upcloud_kubernetes_node_group.g1"
 	g2Name := "upcloud_kubernetes_node_group.g2"
 	g3Name := "upcloud_kubernetes_node_group.g3"
@@ -89,6 +90,9 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
 					resource.TestCheckResourceAttr(cName, "version", s1Version),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
+					resource.TestCheckResourceAttr(cName, "fetch_kubeconfig", "false"),
+					resource.TestCheckNoResourceAttr(cName, "kubeconfig.%"),
+					resource.TestCheckNoResourceAttr(cName, "kubeconfig.host"),
 					resource.TestCheckResourceAttr(g1Name, "name_prefix", "small"),
 					resource.TestCheckResourceAttrWith(g1Name, "name", hasPrefix("small-")),
 					resource.TestCheckResourceAttr(g2Name, "name", "medium"),
@@ -151,6 +155,12 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(cName, "control_plane_ip_filter.#", "0"),
 					resource.TestCheckResourceAttr(cName, "version", s2Version),
+					resource.TestCheckResourceAttr(cName, "fetch_kubeconfig", "true"),
+					resource.TestCheckResourceAttrPair(cName, "kubeconfig.host", dsName, "host"),
+					resource.TestCheckResourceAttrPair(cName, "kubeconfig.kubeconfig", dsName, "kubeconfig"),
+					resource.TestCheckResourceAttrPair(cName, "kubeconfig.cluster_ca_certificate", dsName, "cluster_ca_certificate"),
+					resource.TestCheckResourceAttrPair(cName, "kubeconfig.client_certificate", dsName, "client_certificate"),
+					resource.TestCheckResourceAttrPair(cName, "kubeconfig.client_key", dsName, "client_key"),
 					resource.TestCheckResourceAttr(g1Name, "node_count", "1"),
 					resource.TestCheckResourceAttr(g2Name, "node_count", "2"),
 

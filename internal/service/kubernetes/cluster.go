@@ -27,6 +27,7 @@ var (
 	_ resource.Resource                = &kubernetesClusterResource{}
 	_ resource.ResourceWithConfigure   = &kubernetesClusterResource{}
 	_ resource.ResourceWithImportState = &kubernetesClusterResource{}
+	_ resource.ResourceWithModifyPlan  = &kubernetesClusterResource{}
 )
 
 func NewKubernetesClusterResource() resource.Resource {
@@ -48,7 +49,9 @@ func (r *kubernetesClusterResource) Configure(_ context.Context, req resource.Co
 
 type kubernetesClusterModel struct {
 	ControlPlaneIPFilter types.Set    `tfsdk:"control_plane_ip_filter"`
+	FetchKubeconfig      types.Bool   `tfsdk:"fetch_kubeconfig"`
 	ID                   types.String `tfsdk:"id"`
+	Kubeconfig           types.Object `tfsdk:"kubeconfig"`
 	Labels               types.Map    `tfsdk:"labels"`
 	Name                 types.String `tfsdk:"name"`
 	Network              types.String `tfsdk:"network"`
@@ -72,11 +75,45 @@ func (r *kubernetesClusterResource) Schema(_ context.Context, _ resource.SchemaR
 				Required:            true,
 				ElementType:         types.StringType,
 			},
+			"fetch_kubeconfig": schema.BoolAttribute{
+				MarkdownDescription: fetchKubeconfigDescription,
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+			},
 			"id": schema.StringAttribute{
 				MarkdownDescription: idDescription,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"kubeconfig": schema.SingleNestedAttribute{
+				MarkdownDescription: kubeconfigObjectDescription,
+				Computed:            true,
+				Attributes: map[string]schema.Attribute{
+					"client_certificate": schema.StringAttribute{
+						Description: clientCertificateDescription,
+						Computed:    true,
+					},
+					"client_key": schema.StringAttribute{
+						Description: clientKeyDescription,
+						Computed:    true,
+						Sensitive:   true,
+					},
+					"cluster_ca_certificate": schema.StringAttribute{
+						Description: clusterCACertificateDescription,
+						Computed:    true,
+					},
+					"host": schema.StringAttribute{
+						Description: hostDescription,
+						Computed:    true,
+					},
+					"kubeconfig": schema.StringAttribute{
+						Description: kubeconfigDescription,
+						Computed:    true,
+						Sensitive:   true,
+					},
 				},
 			},
 			"labels": utils.LabelsAttribute("cluster"),
@@ -206,10 +243,69 @@ func setClusterValues(ctx context.Context, data *kubernetesClusterModel, cluster
 		data.StorageEncryption = types.StringValue(string(cluster.StorageEncryption))
 	}
 
+	if data.FetchKubeconfig.IsNull() {
+		data.FetchKubeconfig = types.BoolValue(false)
+	}
+
 	data.Version = types.StringValue(cluster.Version)
 	data.Zone = types.StringValue(cluster.Zone)
 
 	return respDiagnostics
+}
+
+func (r *kubernetesClusterResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	var fetch types.Bool
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("fetch_kubeconfig"), &fetch)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !fetch.IsUnknown() && !fetch.ValueBool() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("kubeconfig"), types.ObjectNull(kubeconfigAttrTypes))...)
+	}
+}
+
+// setKubeconfig sets the kubeconfig object when `fetch_kubeconfig` is enabled. Existing value is kept if the cluster is not running.
+func (r *kubernetesClusterResource) setKubeconfig(ctx context.Context, data *kubernetesClusterModel, cluster *upcloud.KubernetesCluster) (diags diag.Diagnostics) {
+	nullKubeconfig := types.ObjectNull(kubeconfigAttrTypes)
+
+	if !data.FetchKubeconfig.ValueBool() {
+		data.Kubeconfig = nullKubeconfig
+		return diags
+	}
+
+	if cluster.State != upcloud.KubernetesClusterStateRunning {
+		if data.Kubeconfig.IsUnknown() {
+			data.Kubeconfig = nullKubeconfig
+		}
+		return diags
+	}
+
+	s, err := r.client.GetKubernetesKubeconfig(ctx, &request.GetKubernetesKubeconfigRequest{
+		UUID: cluster.UUID,
+	})
+	if err != nil {
+		diags.AddError(
+			"Unable to read cluster kubeconfig",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return diags
+	}
+
+	var model kubeconfigModel
+	_, d := model.parse(s)
+	diags.Append(d...)
+	if diags.HasError() {
+		return diags
+	}
+
+	data.Kubeconfig, d = types.ObjectValueFrom(ctx, kubeconfigAttrTypes, model)
+	diags.Append(d...)
+	return diags
 }
 
 func (r *kubernetesClusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -265,6 +361,7 @@ func (r *kubernetesClusterResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	resp.Diagnostics.Append(setClusterValues(ctx, &data, cluster)...)
+	resp.Diagnostics.Append(r.setKubeconfig(ctx, &data, cluster)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -298,6 +395,7 @@ func (r *kubernetesClusterResource) Read(ctx context.Context, req resource.ReadR
 	}
 
 	resp.Diagnostics.Append(setClusterValues(ctx, &data, cluster)...)
+	resp.Diagnostics.Append(r.setKubeconfig(ctx, &data, cluster)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -370,6 +468,7 @@ func (r *kubernetesClusterResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	resp.Diagnostics.Append(setClusterValues(ctx, &plan, cluster)...)
+	resp.Diagnostics.Append(r.setKubeconfig(ctx, &plan, cluster)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
