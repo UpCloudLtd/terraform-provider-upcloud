@@ -15,28 +15,37 @@ This resource represents MySQL managed database. See UpCloud [Managed Databases]
 ```terraform
 # Minimal config
 resource "upcloud_managed_database_mysql" "example_1" {
-  name  = "mysql-1"
-  title = "mysql-1-example-1"
-  plan  = "1x1xCPU-2GB-25GB"
-  zone  = "fi-hel1"
+  name             = "mysql-1"
+  title            = "mysql-1-example-1"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  zone             = "fi-hel1"
 }
 
 # Shutdown instance after creation
 resource "upcloud_managed_database_mysql" "example_2" {
-  name    = "mysql-2"
-  title   = "mysql-2-example-2"
-  plan    = "1x1xCPU-2GB-25GB"
-  zone    = "fi-hel1"
-  powered = false
+  name             = "mysql-2"
+  title            = "mysql-2-example-2"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  zone             = "fi-hel1"
+  powered          = false
 }
 
 # Service with custom properties
 # Note that this basically sets strict mode off which is not normally recommended
 resource "upcloud_managed_database_mysql" "example_3" {
-  name  = "mysql-3"
-  title = "mysql-3-example-3"
-  plan  = "1x1xCPU-2GB-25GB"
-  zone  = "fi-hel1"
+  name             = "mysql-3"
+  title            = "mysql-3-example-3"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  zone             = "fi-hel1"
   properties {
     sql_mode           = "NO_ENGINE_SUBSTITUTION"
     wait_timeout       = 300
@@ -54,16 +63,20 @@ resource "upcloud_managed_database_mysql" "example_3" {
 ### Required Attributes
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
-- `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans mysql`.
 - `title` (String) Title of the managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
 
-- `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
+- `additional_disk_space_gib` (Number, Deprecated) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
 - `labels` (Map of String) User defined key-value pairs to classify the database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
+- `plan` (String, Deprecated) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans mysql`.
+- `plan_backups` (String) Backup tier for the database plan.
+- `plan_compute` (String) Compute shape combining family, CPU, and memory, as listed in the database plan catalog.
+- `plan_node_count` (Number) Number of nodes in the database plan.
+- `plan_storage_gib` (Number) Total storage per node in GiB.
 - `powered` (Boolean) The administrative power state of the service
 - `termination_protection` (Boolean) If set to true, prevents the managed service from being powered off, or deleted.
 
