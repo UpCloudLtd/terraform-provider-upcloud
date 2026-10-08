@@ -17,6 +17,10 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/postgresql_properties_s2.tf")
 
 	name := "upcloud_managed_database_postgresql.postgresql_properties"
+	prefix := fmt.Sprintf("tf-acc-test-pg-props-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
 	prop := func(name string) string {
 		return fmt.Sprintf("properties.0.%s", name)
 	}
@@ -25,7 +29,8 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testDataS1,
+				Config:          testDataS1,
+				ConfigVariables: variables,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, "plan", "1x1xCPU-2GB-25GB"),
 					resource.TestCheckResourceAttr(name, "zone", "fi-hel1"),
@@ -103,6 +108,7 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 			},
 			{
 				Config:            testDataS1,
+				ConfigVariables:   variables,
 				ResourceName:      name,
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -116,7 +122,8 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 				},
 			},
 			{
-				Config: testDataS2,
+				Config:          testDataS2,
+				ConfigVariables: variables,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, prop("admin_username"), "demoadmin"),
 					resource.TestCheckResourceAttr(name, prop("admin_password"), "2VCNXEV6SVfpr3"),
@@ -127,6 +134,15 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("version"), "17"),
 				),
 			},
+			{
+				Config:          testDataS2,
+				ConfigVariables: variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(name, plancheck.ResourceActionNoop),
+					},
+				},
+			},
 		},
 	})
 }
@@ -134,7 +150,7 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 func TestAccUpcloudManagedDatabasePostgresSQLProperties_UpgradeFromV5_35_0(t *testing.T) {
 	testData := utils.ReadTestDataFile(t, "testdata/postgresql_properties_s1.tf")
 
-	prefix := fmt.Sprintf("tf-acc-test-postgres-props-%s-", acctest.RandString(4))
+	prefix := fmt.Sprintf("tf-acc-test-pg-props-%s-", acctest.RandString(4))
 	variables := map[string]config.Variable{
 		"prefix": config.StringVariable(prefix),
 	}
@@ -156,6 +172,13 @@ func TestAccUpcloudManagedDatabasePostgresSQLProperties_UpgradeFromV5_35_0(t *te
 				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 				Config:                   testData,
 				ConfigVariables:          variables,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan", "1x1xCPU-2GB-25GB"),
+					resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_compute", "1CPU-2GB"),
+					resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_node_count", "1"),
+					resource.TestCheckResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_storage_gib", "25"),
+					resource.TestCheckNoResourceAttr("upcloud_managed_database_postgresql.postgresql_properties", "plan_backups"),
+				),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectEmptyPlan(),

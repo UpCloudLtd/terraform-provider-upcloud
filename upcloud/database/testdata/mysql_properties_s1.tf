@@ -45,7 +45,7 @@ resource "upcloud_managed_database_mysql" "mysql_properties" {
     sql_mode                            = "ANSI,TRADITIONAL"
     sql_require_primary_key             = true
     tmp_table_size                      = 1048576
-    wait_timeout                        = 1
+    wait_timeout                        = 30
     service_log                         = true
   }
 }
