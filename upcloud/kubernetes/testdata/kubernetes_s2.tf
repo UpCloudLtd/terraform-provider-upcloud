@@ -29,6 +29,7 @@ resource "upcloud_network" "main" {
 
 resource "upcloud_kubernetes_cluster" "main" {
   control_plane_ip_filter = []
+  fetch_kubeconfig        = true
   name                    = "${var.basename}cluster"
   network                 = upcloud_network.main.id
   version                 = var.ver

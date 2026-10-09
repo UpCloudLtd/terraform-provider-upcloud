@@ -11,6 +11,7 @@ import (
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -39,17 +40,30 @@ func (d *kubernetesClusterDataSource) Configure(_ context.Context, req datasourc
 	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
-type kubernetesClusterDataModel struct {
+type kubeconfigModel struct {
 	ClientCertificate    types.String `tfsdk:"client_certificate"`
 	ClientKey            types.String `tfsdk:"client_key"`
 	ClusterCACertificate types.String `tfsdk:"cluster_ca_certificate"`
-	ID                   types.String `tfsdk:"id"`
 	Host                 types.String `tfsdk:"host"`
 	Kubeconfig           types.String `tfsdk:"kubeconfig"`
-	Name                 types.String `tfsdk:"name"`
 }
 
-func (m *kubernetesClusterDataModel) setB64Decoded(field string, encoded string) (diags diag.Diagnostics) {
+var kubeconfigAttrTypes = map[string]attr.Type{
+	"client_certificate":     types.StringType,
+	"client_key":             types.StringType,
+	"cluster_ca_certificate": types.StringType,
+	"host":                   types.StringType,
+	"kubeconfig":             types.StringType,
+}
+
+type kubernetesClusterDataModel struct {
+	kubeconfigModel
+
+	ID   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
+}
+
+func (m *kubeconfigModel) setB64Decoded(field string, encoded string) (diags diag.Diagnostics) {
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		diags.AddError(
@@ -64,7 +78,17 @@ func (m *kubernetesClusterDataModel) setB64Decoded(field string, encoded string)
 	return diags
 }
 
-func setClusterKubeconfigData(ctx context.Context, s string, data *kubernetesClusterDataModel) (diags diag.Diagnostics) {
+func (m *kubernetesClusterDataModel) setKubeconfigData(s string) (diags diag.Diagnostics) {
+	name, diags := m.parse(s)
+	if !name.IsNull() {
+		m.Name = name
+	}
+	return diags
+}
+
+// parse fills the model from the kubeconfig contents and returns the cluster name found from the kubeconfig.
+func (m *kubeconfigModel) parse(s string) (name types.String, diags diag.Diagnostics) {
+	name = types.StringNull()
 	if s == "" {
 		diags.AddError(
 			"Cluster kubeconfig is empty",
@@ -73,7 +97,7 @@ func setClusterKubeconfigData(ctx context.Context, s string, data *kubernetesClu
 		return
 	}
 
-	data.Kubeconfig = types.StringValue(s)
+	m.Kubeconfig = types.StringValue(s)
 
 	k := kubeconfig{}
 	err := yaml.Unmarshal([]byte(s), &k)
@@ -86,23 +110,23 @@ func setClusterKubeconfigData(ctx context.Context, s string, data *kubernetesClu
 	}
 
 	currentContext := strings.Split(k.CurrentContext, "@")
-	data.Name = types.StringValue(currentContext[1])
+	name = types.StringValue(currentContext[1])
 
 	for _, v := range k.Clusters {
 		if v.Name == currentContext[1] {
-			diags.Append(data.setB64Decoded("ClusterCACertificate", v.Cluster.CertificateAuthorityData)...)
-			data.Host = types.StringValue(v.Cluster.Server)
+			diags.Append(m.setB64Decoded("ClusterCACertificate", v.Cluster.CertificateAuthorityData)...)
+			m.Host = types.StringValue(v.Cluster.Server)
 		}
 	}
 
 	for _, v := range k.Users {
 		if v.Name == currentContext[0] {
-			diags.Append(data.setB64Decoded("ClientCertificate", v.User.ClientCertificateData)...)
-			diags.Append(data.setB64Decoded("ClientKey", v.User.ClientKeyData)...)
+			diags.Append(m.setB64Decoded("ClientCertificate", v.User.ClientCertificateData)...)
+			diags.Append(m.setB64Decoded("ClientKey", v.User.ClientKeyData)...)
 		}
 	}
 
-	return diags
+	return name, diags
 }
 
 func (d *kubernetesClusterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -164,6 +188,6 @@ func (d *kubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 
-	resp.Diagnostics.Append(setClusterKubeconfigData(ctx, s, &data)...)
+	resp.Diagnostics.Append(data.setKubeconfigData(s)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

@@ -89,6 +89,7 @@ resource "upcloud_kubernetes_cluster" "example2" {
 
 ### Optional Attributes
 
+- `fetch_kubeconfig` (Boolean) Fetch the cluster kubeconfig and connection details into the `kubeconfig` attribute. Note that this stores the cluster credentials in the Terraform state. Consider using the `upcloud_kubernetes_cluster` ephemeral resource instead to keep the credentials out of the state. Defaults to `false`.
 - `labels` (Map of String) User defined key-value pairs to classify the cluster.
 - `plan` (String) The pricing plan used for the cluster. You can list available plans with `upctl kubernetes plans`.
 - `private_node_groups` (Boolean) Enable private node groups. Private node groups requires a network that is routed through NAT gateway.
@@ -101,6 +102,18 @@ resource "upcloud_kubernetes_cluster" "example2" {
 ### Read-Only
 
 - `id` (String) UUID of the cluster.
+- `kubeconfig` (Attributes) Cluster kubeconfig and connection details. Set only when `fetch_kubeconfig` is `true`. (see [below for nested schema](#nestedatt--kubeconfig))
 - `network_cidr` (String) Network CIDR for the given network. Computed automatically.
 - `node_groups` (List of String) Names of the node groups configured to cluster
 - `state` (String) Operational state of the cluster.
+
+<a id="nestedatt--kubeconfig"></a>
+### Nested Schema for `kubeconfig`
+
+Read-Only:
+
+- `client_certificate` (String) TLS authentication client certificate, encoded (PEM).
+- `client_key` (String, Sensitive) Key to pair with `client_certificate`, encoded (PEM).
+- `cluster_ca_certificate` (String) TLS authentication root certificate bundle, encoded (PEM).
+- `host` (String) Hostname of the cluster API. Defined as URI.
+- `kubeconfig` (String, Sensitive) Kubernetes config file contents for the cluster.
