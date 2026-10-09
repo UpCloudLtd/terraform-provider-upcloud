@@ -129,6 +129,9 @@ Optional Attributes:
 - `ism_history_rollover_check_period` (Number) The time between rollover checks for the audit history index in hours.
 - `ism_history_rollover_retention_period` (Number) How long audit history indices are kept in days.
 - `keep_index_refresh_interval` (Boolean) Don't reset index.refresh_interval to the default value. Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
+- `knn_cache_item_expiry_enabled` (Boolean) Enable or disable removing KNN graphs from the cache when they are idle. Disabled by default.
+- `knn_cache_item_expiry_minutes` (Number) If enabled, the amount of time in minutes a KNN graph can be idle in the cache before being evicted.
+- `knn_circuit_breaker_unset_percentage` (Number) The native memory usage, as a percentage below the KNN memory circuit breaker limit, at which a tripped circuit breaker resets. Defaults to 5%.
 - `knn_memory_circuit_breaker_enabled` (Boolean) Enable or disable KNN memory circuit breaker. Defaults to true.
 - `knn_memory_circuit_breaker_limit` (Number) Maximum amount of memory in percentage that can be used for the KNN index. Defaults to 50% of the JVM heap size. 0 is used to set it to null which can be used to invalidate caches.
 - `ml_commons_connector_access_control_enabled` (Boolean) plugins.ml_commons.connector_access_control_enabled. When set to true, the setting allows admins to control access and permissions to the connector API using backend_roles. Defaults to false.
