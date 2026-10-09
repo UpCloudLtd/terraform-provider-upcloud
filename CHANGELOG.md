@@ -5,6 +5,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.47.0] - 2026-10-09
+
 ### Added
 
 - `upcloud_kubernetes_cluster`: add opt-in `fetch_kubeconfig` field and `kubeconfig` attribute for storing cluster kubeconfig and connection details in the resource state.
@@ -1324,7 +1326,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.46.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.47.0...HEAD
+[5.47.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.46.0...v5.47.0
 [5.46.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.45.0...v5.46.0
 [5.45.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.1...v5.45.0
 [5.44.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.44.0...v5.44.1
