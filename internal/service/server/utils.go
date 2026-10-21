@@ -74,33 +74,22 @@ func sliceToMap(input []string) map[string]bool {
 }
 
 func changeRequiresServerStop(state, plan serverModel, stateDevices, planDevices []storageDeviceModel) bool {
-	// Only allow hot resize if it's enabled in the plan and not changing (i.e., it was also enabled in the state)
-	if plan.HotResize.ValueBool() && state.HotResize.ValueBool() &&
-		!plan.Plan.Equal(state.Plan) &&
-		plan.Timezone.Equal(state.Timezone) &&
+	if plan.Timezone.Equal(state.Timezone) &&
 		plan.VideoModel.Equal(state.VideoModel) &&
 		plan.NICModel.Equal(state.NICModel) &&
 		plan.Template.Equal(state.Template) &&
 		plan.StorageDevices.Equal(state.StorageDevices) &&
 		plan.NetworkInterfaces.Equal(state.NetworkInterfaces) {
-		// For custom plans, we need to check if CPU and Mem are changing
-		if plan.Plan.ValueString() == customPlanName || state.Plan.ValueString() == customPlanName {
-			// If either plan is custom, we need to check if CPU or Mem are changing
-			if !plan.CPU.Equal(state.CPU) || !plan.Mem.Equal(state.Mem) {
-				return true
-			}
+		if plan.Plan.ValueString() == customPlanName && plan.CPU.Equal(state.CPU) && plan.Mem.Equal(state.Mem) {
+			return false
 		}
-		// For non-custom plans, we don't need to check CPU and Mem as they are determined by the plan
 
-		return false
-	}
-
-	// If hot_resize is not enabled in both state and plan, or other fields are changing, check if CPU and Mem are changing
-	// For custom plans, we need to check if CPU and Mem are changing
-	if plan.Plan.ValueString() == customPlanName || state.Plan.ValueString() == customPlanName {
-		if !plan.CPU.Equal(state.CPU) || !plan.Mem.Equal(state.Mem) {
-			return true
+		if plan.Plan.ValueString() != customPlanName && plan.Plan.Equal(state.Plan) {
+			return false
 		}
+
+		// Only allow hot resize if it's enabled in the plan and not changing (i.e., it was also enabled in the state)
+		return !plan.HotResize.ValueBool() || !state.HotResize.ValueBool()
 	}
 
 	// Decode storage devices from state and plan
