@@ -17,18 +17,6 @@ resource "upcloud_network" "test" {
   }
 }
 
-# Separate storage keeps import verification independent of template clone provenance.
-resource "upcloud_storage" "test" {
-  title = var.name
-  zone  = "fi-hel1"
-  size  = 10
-  tier  = "maxiops"
-
-  clone {
-    id = var.template
-  }
-}
-
 resource "upcloud_server" "test" {
   hostname                                 = var.name
   zone                                     = "fi-hel1"
@@ -39,8 +27,9 @@ resource "upcloud_server" "test" {
   firewall_private_default_incoming_action = "accept"
   firewall_private_default_outgoing_action = "drop"
 
-  storage_devices {
-    storage = upcloud_storage.test.id
+  template {
+    storage = var.template
+    size    = 10
   }
 
   network_interface {

@@ -11,6 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
+// Import cannot restore the template block (the OS disk is read into storage_devices instead),
+// and metadata is only read back when it is already present in state.
+var importStateVerifyIgnoreTemplate = []string{"template", "storage_devices", "metadata"}
+
 func TestAccUpCloudServer_privateFirewall(t *testing.T) {
 	name := "tf-acc-private-firewall-" + acctest.RandString(8)
 	enabled := utils.ReadTestDataFile(t, "testdata/server_private_firewall_enabled.tf")
@@ -50,9 +54,12 @@ func TestAccUpCloudServer_privateFirewall(t *testing.T) {
 				},
 			},
 			{
-				ResourceName:      "upcloud_server.test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "upcloud_server.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: importStateVerifyIgnoreTemplate,
+				Config:                  enabled,
+				ConfigVariables:         variables,
 			},
 			{
 				Config:          disabled,
@@ -141,9 +148,12 @@ func TestAccUpCloudServer_privateFirewallCreate(t *testing.T) {
 						},
 					},
 					{
-						ResourceName:      "upcloud_server.test",
-						ImportState:       true,
-						ImportStateVerify: true,
+						ResourceName:            "upcloud_server.test",
+						ImportState:             true,
+						ImportStateVerify:       true,
+						ImportStateVerifyIgnore: importStateVerifyIgnoreTemplate,
+						Config:                  testdata,
+						ConfigVariables:         variables,
 					},
 				},
 			})
