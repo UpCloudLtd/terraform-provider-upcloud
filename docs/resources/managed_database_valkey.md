@@ -47,6 +47,8 @@ resource "upcloud_managed_database_valkey" "example_2" {
 ### Optional Attributes
 
 - `additional_disk_space_gib` (Number) Not supported for `valkey` databases. Should be left unconfigured.
+- `clone_from` (String) UUID of an existing managed database to clone the new database from. Changing this forces a new resource to be created. This value is only used on creation and is not read back from the API.
+- `clone_time` (String) Point in time, in RFC 3339 format (e.g. `2026-01-02T15:04:05Z`), from which to clone the data. If not set, the most recent available data is used. Requires `clone_from`. Changing this forces a new resource to be created.
 - `labels` (Map of String) User defined key-value pairs to classify the database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
