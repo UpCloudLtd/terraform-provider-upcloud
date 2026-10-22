@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_server: when hot_resize is enabled, do not stop server when changing CPU or memory amount of a custom plan.
+
 ## [5.47.0] - 2026-10-12
 
 ### Added

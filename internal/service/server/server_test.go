@@ -114,9 +114,26 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 				m.Mem = types.Int64Value(1024)
 				m.HotResize = types.BoolValue(true)
 			}),
-			expectShutdown: true,
+			expectShutdown: false,
 		},
 		{
+			name: "Changing custom plan CPU/Mem and hot_resize enabled",
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue(customPlanName)
+				m.CPU = types.Int64Value(1)
+				m.Mem = types.Int64Value(1024)
+				m.HotResize = types.BoolValue(true)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue(customPlanName)
+				m.CPU = types.Int64Value(2)
+				m.Mem = types.Int64Value(2048)
+				m.HotResize = types.BoolValue(true)
+			}),
+			expectShutdown: false,
+		},
+		{
+			// Same as above, but with plan change. This would fail on server side, so more of a theoretical test for plan change checks.
 			name: "Changing from standard plan to custom plan with different CPU/Mem and hot_resize enabled",
 			state: newServerModelForTest(func(m *serverModel) {
 				m.Plan = types.StringValue("1xCPU-1GB")
@@ -129,6 +146,22 @@ func TestChangeRequiresServerStop_withHotResize(t *testing.T) {
 				m.CPU = types.Int64Value(2)
 				m.Mem = types.Int64Value(2048)
 				m.HotResize = types.BoolValue(true)
+			}),
+			expectShutdown: false,
+		},
+		{
+			name: "Changing custom plan CPU/Mem and hot_resize disabled",
+			state: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue(customPlanName)
+				m.CPU = types.Int64Value(1)
+				m.Mem = types.Int64Value(1024)
+				m.HotResize = types.BoolValue(false)
+			}),
+			plan: newServerModelForTest(func(m *serverModel) {
+				m.Plan = types.StringValue(customPlanName)
+				m.CPU = types.Int64Value(2)
+				m.Mem = types.Int64Value(2048)
+				m.HotResize = types.BoolValue(false)
 			}),
 			expectShutdown: true,
 		},
