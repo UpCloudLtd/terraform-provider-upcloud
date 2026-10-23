@@ -69,7 +69,19 @@ func (d *serverDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 			},
 			"firewall": schema.BoolAttribute{
 				Computed:            true,
-				MarkdownDescription: "Are firewall rules active for the server.",
+				MarkdownDescription: "Whether the Public & Utility firewall is active for public and utility interfaces. Independent of the private SDN firewall.",
+			},
+			"firewall_private": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "Whether the private SDN firewall is active for private interfaces. Independent of the Public & Utility firewall.",
+			},
+			"firewall_private_default_incoming_action": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "Default action for unmatched incoming private SDN traffic (`accept` or `drop`).",
+			},
+			"firewall_private_default_outgoing_action": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "Default action for unmatched outgoing private SDN traffic (`accept` or `drop`).",
 			},
 			"host": schema.Int64Attribute{
 				Computed:            true,

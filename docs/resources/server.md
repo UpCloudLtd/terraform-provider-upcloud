@@ -66,7 +66,10 @@ resource "upcloud_server" "example" {
 
 - `boot_order` (String) The boot device order, `cdrom`|`disk`|`network` or comma separated combination of those values. Defaults to `disk`
 - `cpu` (Number) The number of CPU cores for the server
-- `firewall` (Boolean) Are firewall rules active for the server
+- `firewall` (Boolean) Whether the Public & Utility firewall is active for public and utility interfaces. Independent of firewall_private.
+- `firewall_private` (Boolean) Whether the private SDN firewall is active for private interfaces. Independent of firewall. Private firewall settings are applied after the server starts; attached rulesets are managed with upcloud_server_private_firewall_ruleset. Protection from the first boot is not guaranteed.
+- `firewall_private_default_incoming_action` (String) Default action for unmatched incoming private SDN traffic (accept or drop).
+- `firewall_private_default_outgoing_action` (String) Default action for unmatched outgoing private SDN traffic (accept or drop).
 - `host` (Number) Use this to start the VM on a specific host. Refers to value from host -attribute. Only available for private cloud hosts
 - `hot_resize` (Boolean) If set to true, allows changing the server plan without requiring a reboot. This enables hot resizing of the server. If hot resizing fails, the apply operation will fail.
 - `labels` (Map of String) User defined key-value pairs to classify the server.
