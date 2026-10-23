@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- Read UPCLOUD_DEBUG_\* environment variables also in more recent resources that use v9 version of the UpCloud Go SDK.
+
 ## [5.48.0] - 2026-10-22
 
 ### Added
