@@ -66,7 +66,7 @@ func TestAccUpcloudManagedDatabaseMySQLProperties(t *testing.T) {
 					resource.TestCheckResourceAttr(name, prop("sql_mode"), "ANSI,TRADITIONAL"),
 					resource.TestCheckResourceAttr(name, prop("sql_require_primary_key"), "true"),
 					resource.TestCheckResourceAttr(name, prop("tmp_table_size"), "1048576"),
-					resource.TestCheckResourceAttr(name, prop("wait_timeout"), "1"),
+					resource.TestCheckResourceAttr(name, prop("wait_timeout"), "30"),
 					resource.TestCheckResourceAttr(name, prop("service_log"), "true"),
 					// there should be mysqlx and mysql component
 					resource.TestCheckResourceAttr(name, "components.#", "2"),
@@ -117,6 +117,13 @@ func TestAccUpcloudManagedDatabaseMySQLProperties_UpgradeFromV5_35_0(t *testing.
 				ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
 				Config:                   testData,
 				ConfigVariables:          variables,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("upcloud_managed_database_mysql.mysql_properties", "plan", "1x1xCPU-2GB-25GB"),
+					resource.TestCheckResourceAttr("upcloud_managed_database_mysql.mysql_properties", "plan_compute", "1CPU-2GB"),
+					resource.TestCheckResourceAttr("upcloud_managed_database_mysql.mysql_properties", "plan_node_count", "1"),
+					resource.TestCheckResourceAttr("upcloud_managed_database_mysql.mysql_properties", "plan_storage_gib", "25"),
+					resource.TestCheckNoResourceAttr("upcloud_managed_database_mysql.mysql_properties", "plan_backups"),
+				),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectEmptyPlan(),

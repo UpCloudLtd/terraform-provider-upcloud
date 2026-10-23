@@ -90,6 +90,6 @@ func (e *kubernetesClusterEphemeral) Open(ctx context.Context, req ephemeral.Ope
 		return
 	}
 
-	resp.Diagnostics.Append(setClusterKubeconfigData(ctx, s, &data)...)
+	resp.Diagnostics.Append(data.setKubeconfigData(s)...)
 	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)
 }

@@ -49,6 +49,8 @@ resource "upcloud_managed_database_opensearch" "example_2" {
 
 - `access_control` (Boolean) Enables users access control for OpenSearch service. User access control rules will only be enforced if this attribute is enabled.
 - `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
+- `clone_from` (String) UUID of an existing managed database to clone the new database from. Changing this forces a new resource to be created. This value is only used on creation and is not read back from the API.
+- `clone_time` (String) Point in time, in RFC 3339 format (e.g. `2026-01-02T15:04:05Z`), from which to clone the data. If not set, the most recent available data is used. Requires `clone_from`. Changing this forces a new resource to be created.
 - `extended_access_control` (Boolean) Grant access to top-level `_mget`, `_msearch` and `_bulk` APIs. Users are limited to perform operations on indices based on the user-specific access control rules.
 - `labels` (Map of String) User defined key-value pairs to classify the database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
@@ -129,6 +131,9 @@ Optional Attributes:
 - `ism_history_rollover_check_period` (Number) The time between rollover checks for the audit history index in hours.
 - `ism_history_rollover_retention_period` (Number) How long audit history indices are kept in days.
 - `keep_index_refresh_interval` (Boolean) Don't reset index.refresh_interval to the default value. Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
+- `knn_cache_item_expiry_enabled` (Boolean) Enable or disable removing KNN graphs from the cache when they are idle. Disabled by default.
+- `knn_cache_item_expiry_minutes` (Number) If enabled, the amount of time in minutes a KNN graph can be idle in the cache before being evicted.
+- `knn_circuit_breaker_unset_percentage` (Number) The native memory usage, as a percentage below the KNN memory circuit breaker limit, at which a tripped circuit breaker resets. Defaults to 5%.
 - `knn_memory_circuit_breaker_enabled` (Boolean) Enable or disable KNN memory circuit breaker. Defaults to true.
 - `knn_memory_circuit_breaker_limit` (Number) Maximum amount of memory in percentage that can be used for the KNN index. Defaults to 50% of the JVM heap size. 0 is used to set it to null which can be used to invalidate caches.
 - `ml_commons_connector_access_control_enabled` (Boolean) plugins.ml_commons.connector_access_control_enabled. When set to true, the setting allows admins to control access and permissions to the connector API using backend_roles. Defaults to false.

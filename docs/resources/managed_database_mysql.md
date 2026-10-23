@@ -15,28 +15,37 @@ This resource represents MySQL managed database. See UpCloud [Managed Databases]
 ```terraform
 # Minimal config
 resource "upcloud_managed_database_mysql" "example_1" {
-  name  = "mysql-1"
-  title = "mysql-1-example-1"
-  plan  = "1x1xCPU-2GB-25GB"
-  zone  = "fi-hel1"
+  name             = "mysql-1"
+  title            = "mysql-1-example-1"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  zone             = "fi-hel1"
 }
 
 # Shutdown instance after creation
 resource "upcloud_managed_database_mysql" "example_2" {
-  name    = "mysql-2"
-  title   = "mysql-2-example-2"
-  plan    = "1x1xCPU-2GB-25GB"
-  zone    = "fi-hel1"
-  powered = false
+  name             = "mysql-2"
+  title            = "mysql-2-example-2"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  zone             = "fi-hel1"
+  powered          = false
 }
 
 # Service with custom properties
 # Note that this basically sets strict mode off which is not normally recommended
 resource "upcloud_managed_database_mysql" "example_3" {
-  name  = "mysql-3"
-  title = "mysql-3-example-3"
-  plan  = "1x1xCPU-2GB-25GB"
-  zone  = "fi-hel1"
+  name             = "mysql-3"
+  title            = "mysql-3-example-3"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  zone             = "fi-hel1"
   properties {
     sql_mode           = "NO_ENGINE_SUBSTITUTION"
     wait_timeout       = 300
@@ -54,16 +63,22 @@ resource "upcloud_managed_database_mysql" "example_3" {
 ### Required Attributes
 
 - `name` (String) Name of the service. The name is used as a prefix for the logical hostname. Must be unique within an account
-- `plan` (String) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans mysql`.
 - `title` (String) Title of the managed database instance
 - `zone` (String) Zone where the instance resides, e.g. `de-fra1`. You can list available zones with `upctl zone list`.
 
 ### Optional Attributes
 
-- `additional_disk_space_gib` (Number) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
+- `additional_disk_space_gib` (Number, Deprecated) Additional disk space in GiB. Note that changes in additional disk space might require disk maintenance. This pending maintenance blocks some operations, such as version upgrades, until the maintenance is completed.
+- `clone_from` (String) UUID of an existing managed database to clone the new database from. Changing this forces a new resource to be created. This value is only used on creation and is not read back from the API.
+- `clone_time` (String) Point in time, in RFC 3339 format (e.g. `2026-01-02T15:04:05Z`), from which to clone the data. If not set, the most recent available data is used. Requires `clone_from`. Changing this forces a new resource to be created.
 - `labels` (Map of String) User defined key-value pairs to classify the database.
 - `maintenance_window_dow` (String) Maintenance window day of week. Lower case weekday name (monday, tuesday, ...)
 - `maintenance_window_time` (String) Maintenance window UTC time in hh:mm:ss format
+- `plan` (String, Deprecated) Service plan to use. This determines how much resources the instance will have. You can list available plans with `upctl database plans mysql`.
+- `plan_backups` (String) Backup tier for the database plan.
+- `plan_compute` (String) Compute shape combining family, CPU, and memory, as listed in the database plan catalog.
+- `plan_node_count` (Number) Number of nodes in the database plan.
+- `plan_storage_gib` (Number) Total storage per node in GiB.
 - `powered` (Boolean) The administrative power state of the service
 - `termination_protection` (Boolean) If set to true, prevents the managed service from being powered off, or deleted.
 
@@ -130,6 +145,10 @@ Optional Attributes:
 - `innodb_io_capacity_max` (Number) The maximum number of I/O operations per second (IOPS) that InnoDB background tasks may perform when flushing falls behind. Defaults to twice innodb_io_capacity (minimum 2000). This must be greater than or equal to innodb_io_capacity.
 - `innodb_lock_wait_timeout` (Number) The length of time in seconds an InnoDB transaction waits for a row lock before giving up. Default is 120.
 - `innodb_log_buffer_size` (Number) The size in bytes of the buffer that InnoDB uses to write to the log files on disk. Requests above 15% of the RAM provided by your service plan are rejected, because a larger buffer leaves less memory for the buffer pool and client connections.
+- `innodb_max_dirty_pages_pct` (Number) Percentage of dirty pages in the InnoDB buffer pool at which InnoDB starts flushing aggressively. Lowering it spreads write I/O more evenly and shortens crash recovery, at the cost of flushing pages that might have been modified again. Must stay at or above innodb_max_dirty_pages_pct_lwm. Default is 90.
+- `innodb_max_dirty_pages_pct_lwm` (Number) Percentage of dirty pages in the InnoDB buffer pool at which InnoDB starts pre-flushing, to keep the dirty page ratio from reaching innodb_max_dirty_pages_pct. 0 turns pre-flushing off. Cannot be set above innodb_max_dirty_pages_pct. Default is 10.
+- `innodb_max_purge_lag` (Number) Number of outstanding transactions the InnoDB purge operation may fall behind by before INSERT, UPDATE and DELETE are delayed to let it catch up. The delay applies per row and grows with the lag, and it is capped by innodb_max_purge_lag_delay, which has to be set as well for this option to have any effect. Default is 0, which never delays anything.
+- `innodb_max_purge_lag_delay` (Number) Cap in microseconds on the per-row delay innodb_max_purge_lag applies to INSERT, UPDATE and DELETE. MySQL clamps the delay to this value unconditionally, so while this is 0 no delay is ever applied and innodb_max_purge_lag on its own does nothing. Both options must be non-zero for either to take effect. Default is 0.
 - `innodb_online_alter_log_max_size` (Number) The upper limit in bytes on the size of the temporary log files used during online DDL operations for InnoDB tables.
 - `innodb_optimize_fulltext_only` (Boolean) When enabled, OPTIMIZE TABLE on InnoDB tables only updates the FULLTEXT index instead of rebuilding the table. Intended to be enabled temporarily during FULLTEXT index maintenance and disabled afterwards; while enabled, OPTIMIZE TABLE does not reclaim table space.
 - `innodb_print_all_deadlocks` (Boolean) When enabled, information about all deadlocks in InnoDB user transactions is recorded in the error log. Disabled by default.
