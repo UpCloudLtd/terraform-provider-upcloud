@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1106,6 +1107,42 @@ func TestDatabasePlanSchema(t *testing.T) {
 	assert.Empty(t, plan.DeprecationMessage)
 	for _, name := range []string{"plan_compute", "plan_node_count", "plan_storage_gib", "plan_backups"} {
 		assert.NotContains(t, valkeyResp.Schema.Attributes, name)
+	}
+}
+
+func TestDatabaseConnectionAttributesUseStateForUnknown(t *testing.T) {
+	t.Parallel()
+
+	// Connection details do not change when the service is updated in place (e.g. when
+	// `ip_filter` is edited). Without UseStateForUnknown the framework plans every
+	// computed attribute as unknown on update, which forces downstream resources that
+	// reference these attributes to be rewritten or replaced on every database change.
+	attributes := []string{
+		"service_uri",
+		"service_host",
+		"service_port",
+		"service_username",
+		"service_password",
+		"primary_database",
+	}
+
+	resources := map[string]resource.Resource{
+		"postgresql": &postgresResource{},
+		"mysql":      &mysqlResource{},
+		"opensearch": &opensearchResource{},
+		"valkey":     &valkeyResource{},
+	}
+
+	for dbType, r := range resources {
+		var resp resource.SchemaResponse
+		r.Schema(context.Background(), resource.SchemaRequest{}, &resp)
+		require.False(t, resp.Diagnostics.HasError(), dbType)
+
+		for _, name := range attributes {
+			attr, ok := resp.Schema.Attributes[name].(schema.StringAttribute)
+			require.True(t, ok, "%s: %s should be a string attribute", dbType, name)
+			assert.Contains(t, attr.PlanModifiers, stringplanmodifier.UseStateForUnknown(), "%s: %s should use state for unknown", dbType, name)
+		}
 	}
 }
 

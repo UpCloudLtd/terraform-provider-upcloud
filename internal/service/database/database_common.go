@@ -247,23 +247,38 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 		MarkdownDescription: "URI to the service instance",
 		Computed:            true,
 		Sensitive:           true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	}
 	s.Attributes["service_host"] = schema.StringAttribute{
 		MarkdownDescription: "Hostname to the service instance",
 		Computed:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	}
 	s.Attributes["service_port"] = schema.StringAttribute{
 		MarkdownDescription: "Port to the service instance",
 		Computed:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	}
 	s.Attributes["service_username"] = schema.StringAttribute{
 		MarkdownDescription: "Primary username to the service instance",
 		Computed:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	}
 	s.Attributes["service_password"] = schema.StringAttribute{
 		MarkdownDescription: "Primary password to the service instance",
 		Computed:            true,
 		Sensitive:           true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	}
 	s.Attributes["state"] = schema.StringAttribute{
 		MarkdownDescription: "The current state of the service",
@@ -293,6 +308,9 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 	s.Attributes["primary_database"] = schema.StringAttribute{
 		MarkdownDescription: "Primary database name",
 		Computed:            true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	}
 	additionalDiskAttribute := schema.Int64Attribute{
 		MarkdownDescription: additionalDiskDescription,
