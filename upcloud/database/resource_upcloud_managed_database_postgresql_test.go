@@ -203,3 +203,39 @@ func TestAccUpcloudManagedDatabasePostgresSQLProperties_UpgradeFromV5_35_0(t *te
 		},
 	})
 }
+
+func TestAccUpcloudManagedDatabasePostgreSQLIPFilterKeepsEndpointKnown(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/postgresql_ip_filter_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/postgresql_ip_filter_s2.tf")
+
+	name := "upcloud_managed_database_postgresql.ip_filter"
+	endpoint := "terraform_data.endpoint"
+	prefix := fmt.Sprintf("tf-acc-test-pg-ipf-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:          testDataS1,
+				ConfigVariables: variables,
+			},
+			{
+				Config:          testDataS2,
+				ConfigVariables: variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_host"), knownvalue.NotNull()),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_port"), knownvalue.NotNull()),
+						// The endpoint copy reads only the connection details, so an
+						// ip_filter edit must leave it untouched.
+						plancheck.ExpectResourceAction(endpoint, plancheck.ResourceActionNoop),
+					},
+				},
+			},
+		},
+	})
+}
