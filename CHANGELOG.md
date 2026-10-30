@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [5.49.0] - 2026-10-30
+
+### Added
+
+- `upcloud_server`: configure the private SDN firewall switch and default incoming/outgoing actions independently of the Public & Utility firewall; expose these settings in the server data source.
+
 ## [5.48.0] - 2026-10-22
 
 ### Added
@@ -1338,7 +1344,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.48.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.49.0...HEAD
+[5.49.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.48.0...v5.49.0
 [5.48.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.47.0...v5.48.0
 [5.47.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.46.0...v5.47.0
 [5.46.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.45.0...v5.46.0
