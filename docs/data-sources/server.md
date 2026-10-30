@@ -29,7 +29,10 @@ data "upcloud_server" "this" {
 
 - `boot_order` (String) The boot device order, `cdrom`|`disk`|`network` or comma separated combination of those values.
 - `cpu` (Number) The number of CPU cores for the server.
-- `firewall` (Boolean) Are firewall rules active for the server.
+- `firewall` (Boolean) Whether the Public & Utility firewall is active for public and utility interfaces. Independent of the private SDN firewall.
+- `firewall_private` (Boolean) Whether the private SDN firewall is active for private interfaces. Independent of the Public & Utility firewall.
+- `firewall_private_default_incoming_action` (String) Default action for unmatched incoming private SDN traffic (`accept` or `drop`).
+- `firewall_private_default_outgoing_action` (String) Default action for unmatched outgoing private SDN traffic (`accept` or `drop`).
 - `host` (Number) The host the server is running on. Only available for private cloud hosts.
 - `hostname` (String) The hostname of the server.
 - `labels` (Map of String) User defined key-value pairs to classify the server.

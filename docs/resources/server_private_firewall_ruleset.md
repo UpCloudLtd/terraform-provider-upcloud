@@ -3,12 +3,12 @@
 page_title: "upcloud_server_private_firewall_ruleset Resource - terraform-provider-upcloud"
 subcategory: Servers
 description: |-
-  This resource represents an attachment of an UpCloud SDN private firewall ruleset to a server.
+  This resource represents an attachment of an UpCloud SDN private firewall ruleset to a server. Enable private filtering with firewall_private on upcloud_server and enable the ruleset with enabled. The server defaults control unmatched private traffic. Attachment occurs after server creation, so the intended policy is not guaranteed from first boot; restrictive defaults can block traffic until the ruleset is attached.
 ---
 
 # upcloud_server_private_firewall_ruleset (Resource)
 
-This resource represents an attachment of an UpCloud SDN private firewall ruleset to a server.
+This resource represents an attachment of an UpCloud SDN private firewall ruleset to a server. Enable private filtering with `firewall_private` on `upcloud_server` and enable the ruleset with `enabled`. The server defaults control unmatched private traffic. Attachment occurs after server creation, so the intended policy is not guaranteed from first boot; restrictive defaults can block traffic until the ruleset is attached.
 
 ## Example Usage
 
@@ -30,6 +30,12 @@ resource "upcloud_server" "example" {
   zone     = "de-fra1"
   plan     = "1xCPU-1GB"
 
+  # These settings affect private interfaces, independently of the public firewall.
+  # They are applied after startup, before this example's ruleset is attached.
+  firewall_private                         = true
+  firewall_private_default_incoming_action = "drop"
+  firewall_private_default_outgoing_action = "accept"
+
   template {
     storage = "Ubuntu Server 24.04 LTS (Noble Numbat)"
   }
@@ -43,6 +49,7 @@ resource "upcloud_server" "example" {
 resource "upcloud_firewall_ruleset" "example" {
   name        = "example-private-ruleset"
   description = "Private SDN ruleset"
+  enabled     = true
 
   rules = [
     {

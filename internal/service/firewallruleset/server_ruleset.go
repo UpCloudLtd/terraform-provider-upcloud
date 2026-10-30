@@ -46,7 +46,7 @@ func (r *serverPrivateFirewallRulesetResource) Configure(_ context.Context, req 
 
 func (r *serverPrivateFirewallRulesetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This resource represents an attachment of an UpCloud SDN private firewall ruleset to a server.",
+		Description: "This resource represents an attachment of an UpCloud SDN private firewall ruleset to a server. Enable private filtering with `firewall_private` on `upcloud_server` and enable the ruleset with `enabled`. The server defaults control unmatched private traffic. Attachment occurs after server creation, so the intended policy is not guaranteed from first boot; restrictive defaults can block traffic until the ruleset is attached.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Composite identifier in format `{server_id}/{ruleset_id}`.",
