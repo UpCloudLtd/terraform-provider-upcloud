@@ -248,28 +248,28 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 		Computed:            true,
 		Sensitive:           true,
 		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+			connectionDetailsUseStateForUnknown{},
 		},
 	}
 	s.Attributes["service_host"] = schema.StringAttribute{
 		MarkdownDescription: "Hostname to the service instance",
 		Computed:            true,
 		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+			connectionDetailsUseStateForUnknown{},
 		},
 	}
 	s.Attributes["service_port"] = schema.StringAttribute{
 		MarkdownDescription: "Port to the service instance",
 		Computed:            true,
 		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+			connectionDetailsUseStateForUnknown{},
 		},
 	}
 	s.Attributes["service_username"] = schema.StringAttribute{
 		MarkdownDescription: "Primary username to the service instance",
 		Computed:            true,
 		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+			connectionDetailsUseStateForUnknown{},
 		},
 	}
 	s.Attributes["service_password"] = schema.StringAttribute{
@@ -277,7 +277,7 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 		Computed:            true,
 		Sensitive:           true,
 		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+			connectionDetailsUseStateForUnknown{},
 		},
 	}
 	s.Attributes["state"] = schema.StringAttribute{
@@ -309,7 +309,7 @@ func defineCommonAttributesAndBlocks(s *schema.Schema, dbType upcloud.ManagedDat
 		MarkdownDescription: "Primary database name",
 		Computed:            true,
 		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+			connectionDetailsUseStateForUnknown{},
 		},
 	}
 	additionalDiskAttribute := schema.Int64Attribute{
