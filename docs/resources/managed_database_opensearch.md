@@ -151,6 +151,8 @@ Optional Attributes:
 - `public_access_prometheus` (Boolean) Prometheus Public Access. Allow access to Prometheus metrics from the public Internet.
 - `reindex_remote_whitelist` (List of String) reindex_remote_allowlist. Whitelisted addresses for reindexing. Changing this value will cause all OpenSearch instances to restart.
 - `script_max_compilations_rate` (String) Script max compilation rate - circuit breaker to prevent/minimize OOMs. Script compilation circuit breaker limits the number of inline script compilations within a period of time. Default is use-context.
+- `search_cancel_after_time_interval` (String) Hard limit for search requests. When it is reached, the search task is cancelled and the request fails. OpenSearch default value is used when this is not defined.
+- `search_default_search_timeout` (String) Soft timeout for search requests that don't set their own timeout. When it is reached, the search returns partial results with `timed_out: true`, and the search task keeps running unless it is cancelled. OpenSearch default value is used when this is not defined.
 - `search_max_buckets` (Number) Maximum number of aggregation buckets allowed in a single response. OpenSearch default value is used when this is not defined.
 - `service_log` (Boolean) Service logging. Store logs for the service so that they are available in the HTTP API and console.
 - `thread_pool_analyze_queue_size` (Number) analyze thread pool queue size. Size for the thread pool queue. See documentation for exact details.
