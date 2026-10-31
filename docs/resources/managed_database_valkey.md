@@ -105,7 +105,7 @@ Optional Attributes:
 - `valkey_active_defrag_threshold_lower` (Number) Active defrag minimum fragmentation percentage. Minimum percentage of fragmentation before active defragmentation starts. Only takes effect when `valkey_activedefrag` is enabled.
 - `valkey_active_expire_effort` (Number) Active expire effort. Valkey reclaims expired keys both when accessed and in the background. The background process scans for expired keys to free memory. Increasing the active-expire-effort setting (default 1, max 10) uses more CPU to reclaim expired keys faster, reducing memory usage but potentially increasing latency.
 - `valkey_activedefrag` (Boolean) Active memory defragmentation. Enable active memory defragmentation. When enabled, Valkey relocates objects off sparsely-used memory pages to reduce fragmentation and return memory to the operating system. Defragmentation runs on the main thread and consumes CPU, so it may increase latency under load.
-- `valkey_io_threads` (Number) Valkey IO thread count. Set Valkey IO thread count. Changing this will cause a restart of the Valkey service.
+- `valkey_io_threads` (Number) Valkey IO thread count. Set Valkey IO thread count. On Valkey 9.0 and later, changes are applied without a restart. On Valkey 8.1, changing this replaces the service nodes.
 - `valkey_lfu_decay_time` (Number) LFU maxmemory-policy counter decay time in minutes.
 - `valkey_lfu_log_factor` (Number) Counter logarithm factor for volatile-lfu and allkeys-lfu maxmemory-policies.
 - `valkey_maxmemory_policy` (String) Valkey maxmemory-policy.
