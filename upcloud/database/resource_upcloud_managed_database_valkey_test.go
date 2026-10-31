@@ -7,6 +7,8 @@ import (
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccUpcloudManagedDatabaseValkeyProperties(t *testing.T) {
@@ -44,6 +46,13 @@ func TestAccUpcloudManagedDatabaseValkeyProperties(t *testing.T) {
 			},
 			{
 				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						// valkey_ssl changes the URI scheme, so the connection details must not be
+						// carried over from state in the plan.
+						plancheck.ExpectUnknownValue(name, tfjsonpath.New("service_uri")),
+					},
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, prop("public_access"), "true"),
 					resource.TestCheckResourceAttr(name, prop("valkey_lfu_decay_time"), "1"),

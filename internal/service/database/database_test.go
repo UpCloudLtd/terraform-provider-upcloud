@@ -1109,6 +1109,42 @@ func TestDatabasePlanSchema(t *testing.T) {
 	}
 }
 
+func TestDatabaseConnectionAttributesUseStateForUnknown(t *testing.T) {
+	t.Parallel()
+
+	// Connection details do not change when the service is updated in place (e.g. when
+	// `ip_filter` is edited). Without a plan modifier the framework plans every computed
+	// attribute as unknown on update, which forces downstream resources that reference
+	// these attributes to be rewritten or replaced on every database change.
+	attributes := []string{
+		"service_uri",
+		"service_host",
+		"service_port",
+		"service_username",
+		"service_password",
+		"primary_database",
+	}
+
+	resources := map[string]resource.Resource{
+		"postgresql": &postgresResource{},
+		"mysql":      &mysqlResource{},
+		"opensearch": &opensearchResource{},
+		"valkey":     &valkeyResource{},
+	}
+
+	for dbType, r := range resources {
+		var resp resource.SchemaResponse
+		r.Schema(context.Background(), resource.SchemaRequest{}, &resp)
+		require.False(t, resp.Diagnostics.HasError(), dbType)
+
+		for _, name := range attributes {
+			attr, ok := resp.Schema.Attributes[name].(schema.StringAttribute)
+			require.True(t, ok, "%s: %s should be a string attribute", dbType, name)
+			assert.Contains(t, attr.PlanModifiers, connectionDetailsUseStateForUnknown{}, "%s: %s should use state for unknown", dbType, name)
+		}
+	}
+}
+
 func TestDatabaseComponentPlanChanged(t *testing.T) {
 	t.Parallel()
 

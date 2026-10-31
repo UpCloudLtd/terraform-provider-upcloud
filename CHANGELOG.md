@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_database_\*: keep `service_uri`, `service_host`, `service_port`, `service_username`, `service_password` and `primary_database` known in the plan when the database is updated in place (e.g. when `ip_filter` changes). Previously these were planned as "known after apply", which forced resources referencing them to be rewritten or replaced on every update. The values are still planned as unknown when `powered` or a connection related property such as `valkey_ssl` changes.
+
 ## [5.48.0] - 2026-10-22
 
 ### Added

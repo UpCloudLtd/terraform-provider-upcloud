@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
@@ -124,6 +126,19 @@ func TestAccUpcloudManagedDatabasePostgreSQLProperties(t *testing.T) {
 			{
 				Config:          testDataS2,
 				ConfigVariables: variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						// Properties (including ip_filter) change in place; connection details must stay known
+						// so that resources referencing them are not rewritten or replaced.
+						plancheck.ExpectResourceAction(name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_uri"), knownvalue.NotNull()),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_host"), knownvalue.NotNull()),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_port"), knownvalue.NotNull()),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_username"), knownvalue.NotNull()),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_password"), knownvalue.NotNull()),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("primary_database"), knownvalue.NotNull()),
+					},
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(name, prop("admin_username"), "demoadmin"),
 					resource.TestCheckResourceAttr(name, prop("admin_password"), "2VCNXEV6SVfpr3"),
@@ -182,6 +197,42 @@ func TestAccUpcloudManagedDatabasePostgresSQLProperties_UpgradeFromV5_35_0(t *te
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccUpcloudManagedDatabasePostgreSQLIPFilterKeepsEndpointKnown(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/postgresql_ip_filter_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/postgresql_ip_filter_s2.tf")
+
+	name := "upcloud_managed_database_postgresql.ip_filter"
+	endpoint := "terraform_data.endpoint"
+	prefix := fmt.Sprintf("tf-acc-test-pg-ipf-%s-", acctest.RandString(4))
+	variables := map[string]config.Variable{
+		"prefix": config.StringVariable(prefix),
+	}
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:          testDataS1,
+				ConfigVariables: variables,
+			},
+			{
+				Config:          testDataS2,
+				ConfigVariables: variables,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(name, plancheck.ResourceActionUpdate),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_host"), knownvalue.NotNull()),
+						plancheck.ExpectKnownValue(name, tfjsonpath.New("service_port"), knownvalue.NotNull()),
+						// The endpoint copy reads only the connection details, so an
+						// ip_filter edit must leave it untouched.
+						plancheck.ExpectResourceAction(endpoint, plancheck.ResourceActionNoop),
 					},
 				},
 			},
