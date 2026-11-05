@@ -61,6 +61,7 @@ type managedObjectStorageModel struct {
 type endpointModel struct {
 	DomainName types.String `tfsdk:"domain_name"`
 	IAMURL     types.String `tfsdk:"iam_url"`
+	Mode       types.String `tfsdk:"mode"`
 	STSURL     types.String `tfsdk:"sts_url"`
 	Type       types.String `tfsdk:"type"`
 }
@@ -102,6 +103,10 @@ func (r *managedObjectStorageResource) Schema(_ context.Context, _ resource.Sche
 						},
 						"iam_url": schema.StringAttribute{
 							Description: "URL for IAM.",
+							Computed:    true,
+						},
+						"mode": schema.StringAttribute{
+							Description: "Mode of the endpoint (`api` / `static-website`). `api` endpoints provide S3, IAM and STS access, `static-website` endpoints serve static websites.",
 							Computed:    true,
 						},
 						"sts_url": schema.StringAttribute{
@@ -241,9 +246,15 @@ func setManagedObjectStorageValues(ctx context.Context, data *managedObjectStora
 				endpointType = types.StringValue(string(*endpoint.Type))
 			}
 
+			endpointMode := types.StringNull()
+			if endpoint.Mode != nil {
+				endpointMode = types.StringValue(string(*endpoint.Mode))
+			}
+
 			endpoints = append(endpoints, endpointModel{
 				DomainName: types.StringPointerValue(endpoint.DomainName),
 				IAMURL:     types.StringPointerValue(endpoint.IamUrl),
+				Mode:       endpointMode,
 				STSURL:     types.StringPointerValue(endpoint.StsUrl),
 				Type:       endpointType,
 			})

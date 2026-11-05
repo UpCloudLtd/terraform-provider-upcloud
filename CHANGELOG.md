@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- `upcloud_managed_object_storage`: add `mode` field to `endpoint` to distinguish S3 API endpoints (`api`) from static website endpoints (`static-website`).
+
 ## [5.49.0] - 2026-11-03
 
 ### Added

@@ -96,5 +96,6 @@ Read-Only:
 
 - `domain_name` (String) Domain name of the endpoint.
 - `iam_url` (String) URL for IAM.
+- `mode` (String) Mode of the endpoint (`api` / `static-website`). `api` endpoints provide S3, IAM and STS access, `static-website` endpoints serve static websites.
 - `sts_url` (String) URL for STS.
 - `type` (String) Type of the endpoint (`private` / `public`).
