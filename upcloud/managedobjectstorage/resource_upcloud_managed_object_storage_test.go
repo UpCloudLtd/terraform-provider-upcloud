@@ -46,6 +46,14 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 					resource.TestCheckResourceAttr(this, "labels.%", "2"),
 					resource.TestCheckResourceAttr(this, "labels.test", "objsto2-tf"),
 					resource.TestCheckResourceAttr(this, "network.#", "2"),
+					resource.TestCheckTypeSetElemNestedAttrs(this, "endpoint.*", map[string]string{
+						"type": "public",
+						"mode": "api",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs(this, "endpoint.*", map[string]string{
+						"type": "public",
+						"mode": "static-website",
+					}),
 				),
 			},
 			{
