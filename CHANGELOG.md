@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- upcloud_managed_object_storage_user_policy: remove user policy attachment from state if it does not exist anymore.
+
 ## [5.49.0] - 2026-11-03
 
 ### Added

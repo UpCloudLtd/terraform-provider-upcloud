@@ -188,6 +188,7 @@ func (r *managedObjectStorageUserPolicyResource) Read(ctx context.Context, req r
 
 	if !policyExists(*apiResp.JSON200, name) {
 		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
