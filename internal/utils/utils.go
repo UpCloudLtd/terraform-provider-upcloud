@@ -68,24 +68,34 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 	return nil, err
 }
 
-// serverStateIllegalRetryInterval is a variable so that tests can shorten it.
-var serverStateIllegalRetryInterval = 5 * time.Second
+// stateIllegalRetryInterval is a variable so that tests can shorten it.
+var stateIllegalRetryInterval = 5 * time.Second
 
 // RetryOnServerStateIllegal calls fn until it does not fail with SERVER_STATE_ILLEGAL error, ctx is done, or 10 minutes have passed.
 // The API returns this error, for example, when assigning an IP address to a server that is in maintenance state.
 func RetryOnServerStateIllegal[T any](ctx context.Context, fn func() (T, error)) (T, error) {
+	return retryOnErrorCode(ctx, upcloud.ErrCodeServerStateIllegal, fn)
+}
+
+// RetryOnStorageStateIllegal calls fn until it does not fail with STORAGE_STATE_ILLEGAL error, ctx is done, or 10 minutes have passed.
+// The API returns this error, for example, when attaching a storage that another server is still detaching.
+func RetryOnStorageStateIllegal[T any](ctx context.Context, fn func() (T, error)) (T, error) {
+	return retryOnErrorCode(ctx, upcloud.ErrCodeStorageStateIllegal, fn)
+}
+
+func retryOnErrorCode[T any](ctx context.Context, code string, fn func() (T, error)) (T, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute) // shortcut: fixed cap, add a timeouts block if users need longer
 	defer cancel()
 	for {
 		res, err := fn()
 		var p *upcloud.Problem
-		if !errors.As(err, &p) || p.ErrorCode() != upcloud.ErrCodeServerStateIllegal {
+		if !errors.As(err, &p) || p.ErrorCode() != code {
 			return res, err
 		}
 		select {
 		case <-ctx.Done():
 			return res, err
-		case <-time.After(serverStateIllegalRetryInterval):
+		case <-time.After(stateIllegalRetryInterval):
 		}
 	}
 }

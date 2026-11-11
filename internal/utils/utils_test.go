@@ -97,8 +97,8 @@ func TestWithRetry(t *testing.T) {
 }
 
 func TestRetryOnServerStateIllegal(t *testing.T) {
-	defer func(d time.Duration) { serverStateIllegalRetryInterval = d }(serverStateIllegalRetryInterval)
-	serverStateIllegalRetryInterval = 0
+	defer func(d time.Duration) { stateIllegalRetryInterval = d }(stateIllegalRetryInterval)
+	stateIllegalRetryInterval = 0
 	problem := func(code string) error {
 		return &upcloud.Problem{Type: code, Status: http.StatusConflict}
 	}
@@ -125,7 +125,7 @@ func TestRetryOnServerStateIllegal(t *testing.T) {
 	assert.Equal(t, 1, calls)
 
 	// Stops retrying when context is done and returns the last error.
-	serverStateIllegalRetryInterval = time.Hour
+	stateIllegalRetryInterval = time.Hour
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	calls = 0
@@ -136,6 +136,31 @@ func TestRetryOnServerStateIllegal(t *testing.T) {
 	var p *upcloud.Problem
 	assert.ErrorAs(t, err, &p)
 	assert.Equal(t, upcloud.ErrCodeServerStateIllegal, p.ErrorCode())
+	assert.Equal(t, 1, calls)
+}
+
+func TestRetryOnStorageStateIllegal(t *testing.T) {
+	defer func(d time.Duration) { stateIllegalRetryInterval = d }(stateIllegalRetryInterval)
+	stateIllegalRetryInterval = 0
+
+	calls := 0
+	_, err := RetryOnStorageStateIllegal(context.Background(), func() (int, error) {
+		calls++
+		if calls < 3 {
+			return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageStateIllegal, Status: http.StatusConflict}
+		}
+		return 0, nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, calls)
+
+	// SERVER_STATE_ILLEGAL is not retried here.
+	calls = 0
+	_, err = RetryOnStorageStateIllegal(context.Background(), func() (int, error) {
+		calls++
+		return 0, &upcloud.Problem{Type: upcloud.ErrCodeServerStateIllegal, Status: http.StatusConflict}
+	})
+	assert.Error(t, err)
 	assert.Equal(t, 1, calls)
 }
 
