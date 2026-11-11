@@ -386,14 +386,16 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 			}
 		}
 
-		iface, err := svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
-			ServerUUID:        uuid,
-			Index:             index,
-			Type:              t,
-			NetworkUUID:       network,
-			IPAddresses:       addresses,
-			SourceIPFiltering: upcloud.FromBool(val.SourceIPFiltering.ValueBool()),
-			Bootable:          upcloud.FromBool(val.Bootable.ValueBool()),
+		iface, err := utils.RetryOnServerStateIllegal(ctx, func() (*upcloud.Interface, error) {
+			return svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
+				ServerUUID:        uuid,
+				Index:             index,
+				Type:              t,
+				NetworkUUID:       network,
+				IPAddresses:       addresses,
+				SourceIPFiltering: upcloud.FromBool(val.SourceIPFiltering.ValueBool()),
+				Bootable:          upcloud.FromBool(val.Bootable.ValueBool()),
+			})
 		})
 		if err != nil {
 			diags.AddError("Unable to create network interface", utils.ErrorDiagnosticDetail(err))

@@ -20,6 +20,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - `upcloud_firewall_ruleset`: `enabled = false` on a new ruleset now creates it disabled. Before, apply failed.
 - `upcloud_firewall_ruleset`: removing an optional field from config now removes its value from the ruleset. Before, Terraform kept the old value. A left-out `enabled` or rule `enabled` is `true`, and a left-out `default_dns_rules_enabled` is `false`.
 - `upcloud_floating_ip_address`: retry assigning the address while the target server is in maintenance state, instead of failing with `SERVER_STATE_ILLEGAL` error.
+- `upcloud_server`: retry assigning private IP addresses and creating network interfaces while the server is in maintenance state, instead of failing with `SERVER_STATE_ILLEGAL` error.
 
 ## [5.49.1] - 2026-11-09
 
