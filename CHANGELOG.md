@@ -31,6 +31,17 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - upcloud_managed_object_storage_user_policy: remove user policy attachment from state if it does not exist anymore.
 - upcloud_managed_object_storage_user_policy: do not error if the policy does not exist when attempting to delete it.
 
+### Changed
+
+- `upcloud_firewall_ruleset`: if you leave out `rules`, Terraform deletes all rules in the ruleset, also rules added outside Terraform.
+- `upcloud_firewall_ruleset`: empty strings are no longer allowed in `description`, rule `comment` and the rule `address` fields. Leave the field out instead. Rule `protocol` no longer allows `""`. To match all protocols, leave `protocol` out or set `all`.
+- `upcloud_firewall_ruleset`: `labels` now uses the same key and value checks as labels on other resources.
+
+### Fixed
+
+- `upcloud_firewall_ruleset`: `enabled = false` on a new ruleset now creates it disabled. Before, apply failed.
+- `upcloud_firewall_ruleset`: removing an optional field from config now removes its value from the ruleset. Before, Terraform kept the old value. A left-out `enabled` or rule `enabled` is `true`, and a left-out `default_dns_rules_enabled` is `false`.
+
 ## [5.49.0] - 2026-11-03
 
 ### Added
