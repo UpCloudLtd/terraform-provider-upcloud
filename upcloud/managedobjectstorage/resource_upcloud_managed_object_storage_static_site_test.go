@@ -28,6 +28,10 @@ func TestAccUpcloudManagedObjectStorageStaticSite(t *testing.T) {
 				Config: testDataS1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(objsto, "configured_status", "started"),
+					resource.TestCheckTypeSetElemNestedAttrs(objsto, "endpoint.*", map[string]string{
+						"type": "public",
+						"mode": "static-website",
+					}),
 					resource.TestCheckResourceAttr(bucket, "name", "website"),
 					resource.TestCheckResourceAttr(staticSite, "bucket_name", "website"),
 					resource.TestCheckResourceAttr(staticSite, "bucket_prefix", ""),
