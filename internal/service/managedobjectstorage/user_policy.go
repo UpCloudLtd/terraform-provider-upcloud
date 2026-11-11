@@ -188,6 +188,7 @@ func (r *managedObjectStorageUserPolicyResource) Read(ctx context.Context, req r
 
 	if !policyExists(*apiResp.JSON200, name) {
 		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -225,10 +226,10 @@ func (r *managedObjectStorageUserPolicyResource) Delete(ctx context.Context, req
 		)
 		return
 	}
-	if apiResp.StatusCode() >= http.StatusBadRequest {
+	if apiResp.StatusCode() != http.StatusNoContent && apiResp.StatusCode() != http.StatusNotFound {
 		resp.Diagnostics.AddError(
 			"Unable to delete managed object storage user policy",
-			fmt.Sprintf("API returned status %s", apiResp.Status()),
+			objectStorageAPIErrorDetail(apiResp.ApplicationproblemJSONDefault, apiResp.Body),
 		)
 	}
 }

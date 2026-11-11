@@ -9,6 +9,13 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - `upcloud_managed_object_storage`: add `mode` field to `endpoint` to distinguish S3 API endpoints (`api`) from static website endpoints (`static-website`).
 
+## [5.49.1] - 2026-11-09
+
+### Fixed
+
+- upcloud_managed_object_storage_user_policy: remove user policy attachment from state if it does not exist anymore.
+- upcloud_managed_object_storage_user_policy: do not error if the policy does not exist when attempting to delete it.
+
 ## [5.49.0] - 2026-11-03
 
 ### Added
@@ -1348,7 +1355,8 @@ Updated upcloud-go-api, added build/CI scripts, and repackaged 0.1.0 as 1.0.0.
 - resource_upcloud_firewall_rule removed and replaced by resource_upcloud_firewall_rules
 - resource_upcloud_zone removed and replaced by zone and zones datasources
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.49.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.49.1...HEAD
+[5.49.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.49.0...v5.49.1
 [5.49.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.48.0...v5.49.0
 [5.48.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.47.0...v5.48.0
 [5.47.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v5.46.0...v5.47.0
