@@ -164,6 +164,31 @@ func TestRetryOnStorageStateIllegal(t *testing.T) {
 	assert.Equal(t, 1, calls)
 }
 
+func TestRetryOnStorageAttached(t *testing.T) {
+	defer func(d time.Duration) { stateIllegalRetryInterval = d }(stateIllegalRetryInterval)
+	stateIllegalRetryInterval = 0
+
+	calls := 0
+	_, err := RetryOnStorageAttached(context.Background(), func() (int, error) {
+		calls++
+		if calls < 3 {
+			return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageAttached, Status: http.StatusConflict}
+		}
+		return 0, nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, calls)
+
+	// STORAGE_STATE_ILLEGAL is returned, so that RetryOnStorageStateIllegal can handle it.
+	calls = 0
+	_, err = RetryOnStorageAttached(context.Background(), func() (int, error) {
+		calls++
+		return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageStateIllegal, Status: http.StatusConflict}
+	})
+	assert.Error(t, err)
+	assert.Equal(t, 1, calls)
+}
+
 func TestStorageAddressFormat(t *testing.T) {
 	storageAddressWithAddress := "virtio:1"
 	storageAddressWithoutAddress := "scsi"

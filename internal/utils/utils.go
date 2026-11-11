@@ -83,6 +83,15 @@ func RetryOnStorageStateIllegal[T any](ctx context.Context, fn func() (T, error)
 	return retryOnErrorCode(ctx, upcloud.ErrCodeStorageStateIllegal, fn)
 }
 
+// RetryOnStorageAttached calls fn until it does not fail with STORAGE_ATTACHED error, ctx is done, or 2 minutes have passed.
+// The API returns this error when attaching a storage that another server has not started to detach yet.
+// The cap is short because the error can also mean that a server outside the configuration uses the storage.
+func RetryOnStorageAttached[T any](ctx context.Context, fn func() (T, error)) (T, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	return retryOnErrorCode(ctx, upcloud.ErrCodeStorageAttached, fn)
+}
+
 func retryOnErrorCode[T any](ctx context.Context, code string, fn func() (T, error)) (T, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute) // shortcut: fixed cap, add a timeouts block if users need longer
 	defer cancel()

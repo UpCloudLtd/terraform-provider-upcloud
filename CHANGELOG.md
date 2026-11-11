@@ -22,6 +22,7 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 - `upcloud_floating_ip_address`: retry assigning the address while the target server is in maintenance state, instead of failing with `SERVER_STATE_ILLEGAL` error.
 - `upcloud_server`: retry assigning private IP addresses and creating, modifying and deleting network interfaces while the server is in maintenance state, instead of failing with `SERVER_STATE_ILLEGAL` error.
 - `upcloud_server`: retry attaching storage while another server is detaching it, instead of failing with `STORAGE_STATE_ILLEGAL` error.
+- `upcloud_server`: retry attaching storage for up to 2 minutes while another server still has it attached, instead of failing with `STORAGE_ATTACHED` error. This happens when servers in the same apply move a storage between them.
 
 ## [5.49.1] - 2026-11-09
 
