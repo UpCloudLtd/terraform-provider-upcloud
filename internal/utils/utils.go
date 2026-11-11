@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"context"
+	"errors"
 	"math/rand"
 	"os"
 	"strings"
@@ -64,6 +66,28 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 		continue
 	}
 	return nil, err
+}
+
+// serverStateIllegalRetryInterval is a variable so that tests can shorten it.
+var serverStateIllegalRetryInterval = 5 * time.Second
+
+// RetryOnServerStateIllegal calls fn until it does not fail with SERVER_STATE_ILLEGAL error, ctx is done, or 10 minutes have passed.
+// The API returns this error, for example, when assigning an IP address to a server that is in maintenance state.
+func RetryOnServerStateIllegal[T any](ctx context.Context, fn func() (T, error)) (T, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute) // shortcut: fixed cap, add a timeouts block if users need longer
+	defer cancel()
+	for {
+		res, err := fn()
+		var p *upcloud.Problem
+		if !errors.As(err, &p) || p.ErrorCode() != upcloud.ErrCodeServerStateIllegal {
+			return res, err
+		}
+		select {
+		case <-ctx.Done():
+			return res, err
+		case <-time.After(serverStateIllegalRetryInterval):
+		}
+	}
 }
 
 // ExpandStrings expands a terraform list to slice of str

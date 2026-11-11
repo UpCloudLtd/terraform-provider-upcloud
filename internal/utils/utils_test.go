@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 
@@ -91,6 +94,49 @@ func TestWithRetry(t *testing.T) {
 		t.Log("should fail")
 		t.Fail()
 	}
+}
+
+func TestRetryOnServerStateIllegal(t *testing.T) {
+	defer func(d time.Duration) { serverStateIllegalRetryInterval = d }(serverStateIllegalRetryInterval)
+	serverStateIllegalRetryInterval = 0
+	problem := func(code string) error {
+		return &upcloud.Problem{Type: code, Status: http.StatusConflict}
+	}
+
+	calls := 0
+	res, err := RetryOnServerStateIllegal(context.Background(), func() (int, error) {
+		calls++
+		if calls < 3 {
+			return 0, problem(upcloud.ErrCodeServerStateIllegal)
+		}
+		return 42, nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 42, res)
+	assert.Equal(t, 3, calls)
+
+	// Other errors are returned without retrying.
+	calls = 0
+	_, err = RetryOnServerStateIllegal(context.Background(), func() (int, error) {
+		calls++
+		return 0, problem(upcloud.ErrCodeResourceAlreadyExists)
+	})
+	assert.Error(t, err)
+	assert.Equal(t, 1, calls)
+
+	// Stops retrying when context is done and returns the last error.
+	serverStateIllegalRetryInterval = time.Hour
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	calls = 0
+	_, err = RetryOnServerStateIllegal(ctx, func() (int, error) {
+		calls++
+		return 0, problem(upcloud.ErrCodeServerStateIllegal)
+	})
+	var p *upcloud.Problem
+	assert.ErrorAs(t, err, &p)
+	assert.Equal(t, upcloud.ErrCodeServerStateIllegal, p.ErrorCode())
+	assert.Equal(t, 1, calls)
 }
 
 func TestStorageAddressFormat(t *testing.T) {
