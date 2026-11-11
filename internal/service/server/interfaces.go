@@ -248,11 +248,13 @@ plan_loop:
 				continue plan_loop
 			}
 		}
-		_, err := svc.AssignIPAddressToNetworkInterface(ctx, &request.AssignIPAddressToNetworkInterfaceRequest{
-			ServerUUID: serverUUID,
-			Index:      iface.Index,
-			Family:     j.Family,
-			Address:    j.Address,
+		_, err := utils.RetryOnServerStateIllegal(ctx, func() (*upcloud.IPAddress, error) {
+			return svc.AssignIPAddressToNetworkInterface(ctx, &request.AssignIPAddressToNetworkInterfaceRequest{
+				ServerUUID: serverUUID,
+				Index:      iface.Index,
+				Family:     j.Family,
+				Address:    j.Address,
+			})
 		})
 		if err != nil {
 			return err
