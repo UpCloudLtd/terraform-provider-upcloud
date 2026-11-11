@@ -311,6 +311,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
 				return diags
 			}
+			continue
 		}
 
 		if !canModifyInterface(stateVal, planVal, &iface) {
