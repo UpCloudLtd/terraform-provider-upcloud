@@ -264,6 +264,16 @@ plan_loop:
 	return nil
 }
 
+func deleteNetworkInterface(ctx context.Context, svc *service.Service, serverUUID string, index int) error {
+	_, err := utils.RetryOnServerStateIllegal(ctx, func() (struct{}, error) {
+		return struct{}{}, svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+			ServerUUID: serverUUID,
+			Index:      index,
+		})
+	})
+	return err
+}
+
 func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, state, plan *serverModel) (diags diag.Diagnostics) {
 	uuid := plan.ID.ValueString()
 	// Assert server is stopped
@@ -303,10 +313,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 
 		// Remove interface if it has been removed from configuration
 		if planVal == nil {
-			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: uuid,
-				Index:      iface.Index,
-			})
+			err = deleteNetworkInterface(ctx, svc, uuid, iface.Index)
 			if err != nil {
 				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
 				return diags
@@ -341,7 +348,9 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 					return diags
 				}
 			}
-			modified, err = svc.ModifyNetworkInterface(ctx, &req)
+			modified, err = utils.RetryOnServerStateIllegal(ctx, func() (*upcloud.Interface, error) {
+				return svc.ModifyNetworkInterface(ctx, &req)
+			})
 			if err != nil {
 				diags.AddError("Unable to modify network interface", utils.ErrorDiagnosticDetail(err))
 				return diags
@@ -376,10 +385,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 		}
 
 		if exists := indices[index]; exists {
-			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: uuid,
-				Index:      index,
-			})
+			err = deleteNetworkInterface(ctx, svc, uuid, index)
 			if err != nil {
 				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
 				return diags
