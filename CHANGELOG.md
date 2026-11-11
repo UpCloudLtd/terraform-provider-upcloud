@@ -9,13 +9,6 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - `upcloud_managed_object_storage`: add `mode` field to `endpoint` to distinguish S3 API endpoints (`api`) from static website endpoints (`static-website`).
 
-## [5.49.1] - 2026-11-09
-
-### Fixed
-
-- upcloud_managed_object_storage_user_policy: remove user policy attachment from state if it does not exist anymore.
-- upcloud_managed_object_storage_user_policy: do not error if the policy does not exist when attempting to delete it.
-
 ### Changed
 
 - `upcloud_firewall_ruleset`: if you leave out `rules`, Terraform deletes all rules in the ruleset, also rules added outside Terraform.
@@ -26,6 +19,13 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - `upcloud_firewall_ruleset`: `enabled = false` on a new ruleset now creates it disabled. Before, apply failed.
 - `upcloud_firewall_ruleset`: removing an optional field from config now removes its value from the ruleset. Before, Terraform kept the old value. A left-out `enabled` or rule `enabled` is `true`, and a left-out `default_dns_rules_enabled` is `false`.
+
+## [5.49.1] - 2026-11-09
+
+### Fixed
+
+- upcloud_managed_object_storage_user_policy: remove user policy attachment from state if it does not exist anymore.
+- upcloud_managed_object_storage_user_policy: do not error if the policy does not exist when attempting to delete it.
 
 ## [5.49.0] - 2026-11-03
 
