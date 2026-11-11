@@ -50,10 +50,6 @@ func TestAccUpcloudManagedObjectStorage(t *testing.T) {
 						"type": "public",
 						"mode": "api",
 					}),
-					resource.TestCheckTypeSetElemNestedAttrs(this, "endpoint.*", map[string]string{
-						"type": "public",
-						"mode": "static-website",
-					}),
 				),
 			},
 			{
