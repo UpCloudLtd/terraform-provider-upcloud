@@ -54,15 +54,14 @@ func TestAccUpCloudFirewallRuleset_update(t *testing.T) {
 				),
 			},
 			{
-				// Test removing optional description field - API doesn't clear it, field is sticky
+				// Removing description from config clears it
 				Config: testDataS3,
 				ConfigVariables: map[string]config.Variable{
 					"ruleset_name": config.StringVariable(rulesetNameUpdated),
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "name", rulesetNameUpdated),
-					// API keeps the previous value when description is removed from config
-					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "description", "Updated description"),
+					resource.TestCheckNoResourceAttr("upcloud_firewall_ruleset.test", "description"),
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "enabled", "false"),
 				),
 			},
@@ -159,7 +158,7 @@ func TestAccUpCloudFirewallRuleset_minimalToFull(t *testing.T) {
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "version"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "created_at"),
 					resource.TestCheckResourceAttrSet("upcloud_firewall_ruleset.test", "updated_at"),
-					// Description is Optional+Computed; when omitted it must be null in state.
+					// When description is omitted, it must be null in state.
 					resource.TestCheckNoResourceAttr("upcloud_firewall_ruleset.test", "description"),
 				),
 			},
@@ -180,6 +179,25 @@ func TestAccUpCloudFirewallRuleset_minimalToFull(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "enabled", "true"),
 					resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "default_dns_rules_enabled", "false"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccUpCloudFirewallRuleset_createDisabled creates a ruleset with enabled=false.
+// The create endpoint might ignore enabled=false, so the provider must disable the ruleset in the same apply.
+func TestAccUpCloudFirewallRuleset_createDisabled(t *testing.T) {
+	testData := utils.ReadTestDataFile(t, "testdata/upcloud_firewall_ruleset_s3.tf")
+	rulesetName := fmt.Sprintf("tf-acc-test-ruleset-disabled-%s", acctest.RandString(10))
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:          testData,
+				ConfigVariables: map[string]config.Variable{"ruleset_name": config.StringVariable(rulesetName)},
+				Check:           resource.TestCheckResourceAttr("upcloud_firewall_ruleset.test", "enabled", "false"),
 			},
 		},
 	})

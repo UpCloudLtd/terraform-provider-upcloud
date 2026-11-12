@@ -16,6 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -27,6 +29,7 @@ var (
 	_ resource.ResourceWithConfigure    = &firewallRulesetResource{}
 	_ resource.ResourceWithImportState  = &firewallRulesetResource{}
 	_ resource.ResourceWithUpgradeState = &firewallRulesetResource{}
+	_ resource.ResourceWithModifyPlan   = &firewallRulesetResource{}
 )
 
 func NewFirewallRulesetResource() resource.Resource {
@@ -186,23 +189,23 @@ func firewallRulesetSchemaV0() schema.Schema {
 			"description": schema.StringAttribute{
 				Description: "Description of the firewall ruleset.",
 				Optional:    true,
-				Computed:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the ruleset is enabled.",
+				Description: "Whether the ruleset is enabled. Defaults to `true`.",
 				Optional:    true,
 				Computed:    true,
+				Default:     booldefault.StaticBool(true),
 			},
 			"default_dns_rules_enabled": schema.BoolAttribute{
-				Description: "Whether default DNS rules are enabled.",
+				Description: "Whether default DNS rules are enabled. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
-			"labels": schema.MapAttribute{
-				Description: "Ruleset labels as key/value pairs.",
-				Optional:    true,
-				ElementType: types.StringType,
-			},
+			"labels": utils.LabelsAttribute("firewall ruleset"),
 			"server_uuid": schema.StringAttribute{
 				Optional: true,
 			},
@@ -219,9 +222,10 @@ func firewallRulesetSchemaV0() schema.Schema {
 				Computed:    true,
 			},
 			"rules": schema.ListNestedAttribute{
-				Description: "Ordered list of firewall rules. Rules are applied in list order; the position attribute reflects the 1-based index assigned by the API and cannot be configured.",
+				Description: "Ordered list of firewall rules. Rules are applied in list order; the position attribute reflects the 1-based index assigned by the API and cannot be configured. If you leave out `rules`, Terraform deletes all rules in the ruleset, also rules added outside Terraform.",
 				Optional:    true,
 				Computed:    true,
+				Default:     listdefault.StaticValue(types.ListValueMust(ruleObjectType(), []attr.Value{})),
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"action": schema.StringAttribute{
@@ -246,19 +250,25 @@ func firewallRulesetSchemaV0() schema.Schema {
 							},
 						},
 						"protocol": schema.StringAttribute{
-							Description: "IP protocol.",
+							Description: "IP protocol. Leave out or set `all` to match all protocols.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								// "" is not allowed
+								stringvalidator.OneOf("tcp", "udp", "icmp", "esp", "ah", "all"),
+							},
 						},
 						"enabled": schema.BoolAttribute{
-							Description: "Whether the rule is enabled.",
+							Description: "Whether the rule is enabled. Defaults to `true`.",
 							Optional:    true,
 							Computed:    true,
+							Default:     booldefault.StaticBool(true),
 						},
 						"comment": schema.StringAttribute{
 							Description: "Rule comment.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"position": schema.Int64Attribute{
 							Description: "Rule position (1-based). Computed from the rule's index in the list.",
@@ -267,7 +277,6 @@ func firewallRulesetSchemaV0() schema.Schema {
 						"icmp_type": schema.Int64Attribute{
 							Description: "ICMP type number.",
 							Optional:    true,
-							Computed:    true,
 							Validators: []validator.Int64{
 								int64validator.Between(0, 255),
 							},
@@ -275,22 +284,27 @@ func firewallRulesetSchemaV0() schema.Schema {
 						"source_address_cidr": schema.StringAttribute{
 							Description: "Source CIDR block.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"source_address_start": schema.StringAttribute{
 							Description: "Start of source IP address range.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"source_address_end": schema.StringAttribute{
 							Description: "End of source IP address range.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"source_port_start": schema.Int64Attribute{
 							Description: "Start of source port range.",
 							Optional:    true,
-							Computed:    true,
 							Validators: []validator.Int64{
 								int64validator.Between(1, 65535),
 							},
@@ -298,7 +312,6 @@ func firewallRulesetSchemaV0() schema.Schema {
 						"source_port_end": schema.Int64Attribute{
 							Description: "End of source port range.",
 							Optional:    true,
-							Computed:    true,
 							Validators: []validator.Int64{
 								int64validator.Between(1, 65535),
 							},
@@ -306,22 +319,27 @@ func firewallRulesetSchemaV0() schema.Schema {
 						"destination_address_cidr": schema.StringAttribute{
 							Description: "Destination CIDR block.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"destination_address_start": schema.StringAttribute{
 							Description: "Start of destination IP address range.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"destination_address_end": schema.StringAttribute{
 							Description: "End of destination IP address range.",
 							Optional:    true,
-							Computed:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"destination_port_start": schema.Int64Attribute{
 							Description: "Start of destination port range.",
 							Optional:    true,
-							Computed:    true,
 							Validators: []validator.Int64{
 								int64validator.Between(1, 65535),
 							},
@@ -329,7 +347,6 @@ func firewallRulesetSchemaV0() schema.Schema {
 						"destination_port_end": schema.Int64Attribute{
 							Description: "End of destination port range.",
 							Optional:    true,
-							Computed:    true,
 							Validators: []validator.Int64{
 								int64validator.Between(1, 65535),
 							},
@@ -348,51 +365,42 @@ func ruleToCreate(r ruleBlockModel) v9.FirewallRulesetFirewallRuleCreate {
 		Action:    v9.FirewallRulesetRuleAction(r.Action.ValueString()),
 		Direction: v9.FirewallRulesetRuleDirection(r.Direction.ValueString()),
 		Family:    v9.FirewallRulesetRuleFamily(r.Family.ValueString()),
+		Enabled:   r.Enabled.ValueBoolPointer(),
+		Comment:   r.Comment.ValueStringPointer(),
+		IcmpType:  r.ICMPType.ValueInt64Pointer(),
+
+		SourceAddressCidr:       r.SourceAddressCIDR.ValueStringPointer(),
+		SourceAddressStart:      r.SourceAddressStart.ValueStringPointer(),
+		SourceAddressEnd:        r.SourceAddressEnd.ValueStringPointer(),
+		SourcePortStart:         r.SourcePortStart.ValueInt64Pointer(),
+		SourcePortEnd:           r.SourcePortEnd.ValueInt64Pointer(),
+		DestinationAddressCidr:  r.DestinationAddressCIDR.ValueStringPointer(),
+		DestinationAddressStart: r.DestinationAddressStart.ValueStringPointer(),
+		DestinationAddressEnd:   r.DestinationAddressEnd.ValueStringPointer(),
+		DestinationPortStart:    r.DestinationPortStart.ValueInt64Pointer(),
+		DestinationPortEnd:      r.DestinationPortEnd.ValueInt64Pointer(),
 	}
-	if !r.Protocol.IsNull() && !r.Protocol.IsUnknown() {
+	if !r.Protocol.IsNull() {
 		p := v9.FirewallRulesetRuleProtocol(r.Protocol.ValueString())
 		rule.Protocol = &p
 	}
-	if !r.Enabled.IsNull() && !r.Enabled.IsUnknown() {
-		rule.Enabled = r.Enabled.ValueBoolPointer()
-	}
-	if !r.Comment.IsNull() && !r.Comment.IsUnknown() {
-		rule.Comment = r.Comment.ValueStringPointer()
-	}
-	if !r.ICMPType.IsNull() && !r.ICMPType.IsUnknown() {
-		rule.IcmpType = r.ICMPType.ValueInt64Pointer()
-	}
-	if !r.SourceAddressCIDR.IsNull() && !r.SourceAddressCIDR.IsUnknown() {
-		rule.SourceAddressCidr = r.SourceAddressCIDR.ValueStringPointer()
-	}
-	if !r.SourceAddressStart.IsNull() && !r.SourceAddressStart.IsUnknown() {
-		rule.SourceAddressStart = r.SourceAddressStart.ValueStringPointer()
-	}
-	if !r.SourceAddressEnd.IsNull() && !r.SourceAddressEnd.IsUnknown() {
-		rule.SourceAddressEnd = r.SourceAddressEnd.ValueStringPointer()
-	}
-	if !r.SourcePortStart.IsNull() && !r.SourcePortStart.IsUnknown() {
-		rule.SourcePortStart = r.SourcePortStart.ValueInt64Pointer()
-	}
-	if !r.SourcePortEnd.IsNull() && !r.SourcePortEnd.IsUnknown() {
-		rule.SourcePortEnd = r.SourcePortEnd.ValueInt64Pointer()
-	}
-	if !r.DestinationAddressCIDR.IsNull() && !r.DestinationAddressCIDR.IsUnknown() {
-		rule.DestinationAddressCidr = r.DestinationAddressCIDR.ValueStringPointer()
-	}
-	if !r.DestinationAddressStart.IsNull() && !r.DestinationAddressStart.IsUnknown() {
-		rule.DestinationAddressStart = r.DestinationAddressStart.ValueStringPointer()
-	}
-	if !r.DestinationAddressEnd.IsNull() && !r.DestinationAddressEnd.IsUnknown() {
-		rule.DestinationAddressEnd = r.DestinationAddressEnd.ValueStringPointer()
-	}
-	if !r.DestinationPortStart.IsNull() && !r.DestinationPortStart.IsUnknown() {
-		rule.DestinationPortStart = r.DestinationPortStart.ValueInt64Pointer()
-	}
-	if !r.DestinationPortEnd.IsNull() && !r.DestinationPortEnd.IsUnknown() {
-		rule.DestinationPortEnd = r.DestinationPortEnd.ValueInt64Pointer()
-	}
 	return rule
+}
+
+// unsetString maps an empty or missing API string to null.
+func unsetString(v *string) types.String {
+	if v == nil || *v == "" {
+		return types.StringNull()
+	}
+	return types.StringValue(*v)
+}
+
+// unsetInt64 maps the API's unset sentinel (-1 for icmp_type, 0 for ports) to null.
+func unsetInt64(v *int64, unset int64) types.Int64 {
+	if v == nil || *v == unset {
+		return types.Int64Null()
+	}
+	return types.Int64Value(*v)
 }
 
 // ruleFromAPI converts an API response rule into a ruleBlockModel.
@@ -402,49 +410,27 @@ func ruleFromAPI(api v9.FirewallRulesetRuleDetailResponse) ruleBlockModel {
 		Direction: types.StringValue(interfaceString(api.Direction)),
 		Family:    types.StringValue(interfaceString(api.Family)),
 		Enabled:   types.BoolPointerValue(api.Enabled),
-		Comment:   types.StringPointerValue(api.Comment),
+		Comment:   unsetString(api.Comment),
 		Position:  types.Int64PointerValue(api.Position),
-		ICMPType:  types.Int64PointerValue(api.IcmpType),
+		ICMPType:  unsetInt64(api.IcmpType, -1),
 
-		SourcePortStart:      types.Int64PointerValue(api.SourcePortStart),
-		SourcePortEnd:        types.Int64PointerValue(api.SourcePortEnd),
-		DestinationPortStart: types.Int64PointerValue(api.DestinationPortStart),
-		DestinationPortEnd:   types.Int64PointerValue(api.DestinationPortEnd),
+		SourceAddressCIDR:       unsetString(api.SourceAddressCidr),
+		SourceAddressStart:      unsetString(api.SourceAddressStart),
+		SourceAddressEnd:        unsetString(api.SourceAddressEnd),
+		DestinationAddressCIDR:  unsetString(api.DestinationAddressCidr),
+		DestinationAddressStart: unsetString(api.DestinationAddressStart),
+		DestinationAddressEnd:   unsetString(api.DestinationAddressEnd),
+
+		SourcePortStart:      unsetInt64(api.SourcePortStart, 0),
+		SourcePortEnd:        unsetInt64(api.SourcePortEnd, 0),
+		DestinationPortStart: unsetInt64(api.DestinationPortStart, 0),
+		DestinationPortEnd:   unsetInt64(api.DestinationPortEnd, 0),
 	}
-	if api.Protocol == nil {
+	// The API might return "all" or "" for a rule without a protocol.
+	if p := interfaceString(api.Protocol); p == "" || p == "all" {
 		r.Protocol = types.StringNull()
 	} else {
-		r.Protocol = types.StringValue(interfaceString(api.Protocol))
-	}
-	if api.SourceAddressCidr == nil || *api.SourceAddressCidr == "" {
-		r.SourceAddressCIDR = types.StringNull()
-	} else {
-		r.SourceAddressCIDR = types.StringValue(*api.SourceAddressCidr)
-	}
-	if api.SourceAddressStart == nil || *api.SourceAddressStart == "" {
-		r.SourceAddressStart = types.StringNull()
-	} else {
-		r.SourceAddressStart = types.StringValue(*api.SourceAddressStart)
-	}
-	if api.SourceAddressEnd == nil || *api.SourceAddressEnd == "" {
-		r.SourceAddressEnd = types.StringNull()
-	} else {
-		r.SourceAddressEnd = types.StringValue(*api.SourceAddressEnd)
-	}
-	if api.DestinationAddressCidr == nil || *api.DestinationAddressCidr == "" {
-		r.DestinationAddressCIDR = types.StringNull()
-	} else {
-		r.DestinationAddressCIDR = types.StringValue(*api.DestinationAddressCidr)
-	}
-	if api.DestinationAddressStart == nil || *api.DestinationAddressStart == "" {
-		r.DestinationAddressStart = types.StringNull()
-	} else {
-		r.DestinationAddressStart = types.StringValue(*api.DestinationAddressStart)
-	}
-	if api.DestinationAddressEnd == nil || *api.DestinationAddressEnd == "" {
-		r.DestinationAddressEnd = types.StringNull()
-	} else {
-		r.DestinationAddressEnd = types.StringValue(*api.DestinationAddressEnd)
+		r.Protocol = types.StringValue(p)
 	}
 	return r
 }
@@ -500,12 +486,8 @@ func readRules(ctx context.Context, client *v9.ClientWithResponses, rulesetUUID 
 	return result, nil
 }
 
-// rulesFromAPI fetches current rules and converts them to a types.List.
-func rulesFromAPI(ctx context.Context, client *v9.ClientWithResponses, rulesetUUID uuid.UUID) (types.List, error) {
-	rules, err := readRules(ctx, client, rulesetUUID)
-	if err != nil {
-		return types.ListNull(ruleObjectType()), err
-	}
+// rulesToList converts rules to a types.List. No rules give an empty list, never null.
+func rulesToList(ctx context.Context, rules []ruleBlockModel) (types.List, error) {
 	if len(rules) == 0 {
 		return types.ListValueMust(ruleObjectType(), []attr.Value{}), nil
 	}
@@ -516,20 +498,44 @@ func rulesFromAPI(ctx context.Context, client *v9.ClientWithResponses, rulesetUU
 	return list, nil
 }
 
-// rulesFromPUT sends a bulk PUT and returns the resulting rules as a types.List.
-func rulesFromPUT(ctx context.Context, client *v9.ClientWithResponses, rulesetUUID uuid.UUID, configRules []ruleBlockModel) (types.List, error) {
+// keepProtocolAll keeps protocol "all" from the prior rule at the same index.
+// The API might return a rule without a protocol and a rule with "all" the same way, so ruleFromAPI reads both as null.
+func keepProtocolAll(rules, prior []ruleBlockModel) {
+	for i := range rules {
+		if i < len(prior) && rules[i].Protocol.IsNull() && prior[i].Protocol.ValueString() == "all" {
+			rules[i].Protocol = prior[i].Protocol
+		}
+	}
+}
+
+// rulesFromAPI fetches current rules.
+func rulesFromAPI(ctx context.Context, client *v9.ClientWithResponses, rulesetUUID uuid.UUID, prior types.List) (types.List, error) {
+	rules, err := readRules(ctx, client, rulesetUUID)
+	if err != nil {
+		return types.ListNull(ruleObjectType()), err
+	}
+	var priorRules []ruleBlockModel
+	if !prior.IsNull() && !prior.IsUnknown() {
+		if diags := prior.ElementsAs(ctx, &priorRules, false); diags.HasError() {
+			return types.ListNull(ruleObjectType()), fmt.Errorf("reading prior rules")
+		}
+	}
+	keepProtocolAll(rules, priorRules)
+	return rulesToList(ctx, rules)
+}
+
+// putPlannedRules replaces all rules with the planned rules. An empty plan clears all rules.
+func putPlannedRules(ctx context.Context, client *v9.ClientWithResponses, rulesetUUID uuid.UUID, planned types.List) (types.List, error) {
+	var configRules []ruleBlockModel
+	if diags := planned.ElementsAs(ctx, &configRules, false); diags.HasError() {
+		return types.ListNull(ruleObjectType()), fmt.Errorf("reading planned rules")
+	}
 	rules, err := putRules(ctx, client, rulesetUUID, configRules)
 	if err != nil {
 		return types.ListNull(ruleObjectType()), err
 	}
-	if len(rules) == 0 {
-		return types.ListValueMust(ruleObjectType(), []attr.Value{}), nil
-	}
-	list, diags := types.ListValueFrom(ctx, ruleObjectType(), rules)
-	if diags.HasError() {
-		return types.ListNull(ruleObjectType()), fmt.Errorf("converting PUT response rules to list value")
-	}
-	return list, nil
+	keepProtocolAll(rules, configRules)
+	return rulesToList(ctx, rules)
 }
 
 func toAPILabels(ctx context.Context, labels types.Map) (*[]v9.FirewallRulesetCreateLabel, error) {
@@ -563,7 +569,7 @@ func setRulesetValues(ctx context.Context, state *firewallRulesetModel, api *v9.
 	if api.Name != nil {
 		state.Name = types.StringValue(*api.Name)
 	}
-	state.Description = types.StringPointerValue(api.Description)
+	state.Description = unsetString(api.Description)
 	state.Enabled = types.BoolPointerValue(api.Enabled)
 	state.DefaultDNSRulesEnabled = types.BoolPointerValue(api.DefaultDnsRulesEnabled)
 	if api.Version == nil {
@@ -581,20 +587,28 @@ func setRulesetValues(ctx context.Context, state *firewallRulesetModel, api *v9.
 	} else {
 		state.UpdatedAt = types.StringValue(api.UpdatedAt.String())
 	}
-	if api.Labels == nil || len(*api.Labels) == 0 {
-		state.Labels = types.MapNull(types.StringType)
-	} else {
-		labels := map[string]string{}
+	labels := map[string]string{}
+	if api.Labels != nil {
 		for _, l := range *api.Labels {
 			labels[l.Key] = l.Value
 		}
-		mapped, diags := types.MapValueFrom(ctx, types.StringType, labels)
-		if diags.HasError() {
-			return fmt.Errorf("unable to set labels")
-		}
-		state.Labels = mapped
 	}
+	mapped, diags := types.MapValueFrom(ctx, types.StringType, labels)
+	if diags.HasError() {
+		return fmt.Errorf("unable to set labels")
+	}
+	state.Labels = mapped
 	return nil
+}
+
+// ModifyPlan marks the fields that the API updates as unknown when the plan changes the ruleset.
+// The framework does this only for changes it sees before plan modifiers run. A change made by the labels plan modifier needs it here.
+func (r *firewallRulesetResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() || req.Plan.Raw.Equal(req.State.Raw) {
+		return
+	}
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("updated_at"), types.StringUnknown())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("version"), types.Int64Unknown())...)
 }
 
 func (r *firewallRulesetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -612,17 +626,11 @@ func (r *firewallRulesetResource) Create(ctx context.Context, req resource.Creat
 
 	stateful := true
 	body := v9.CreateFirewallRulesetJSONRequestBody{
-		Name:     plan.Name.ValueString(),
-		Stateful: &stateful,
-	}
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		body.Description = plan.Description.ValueStringPointer()
-	}
-	if !plan.Enabled.IsNull() && !plan.Enabled.IsUnknown() {
-		body.Enabled = plan.Enabled.ValueBoolPointer()
-	}
-	if !plan.DefaultDNSRulesEnabled.IsNull() && !plan.DefaultDNSRulesEnabled.IsUnknown() {
-		body.DefaultDnsRulesEnabled = plan.DefaultDNSRulesEnabled.ValueBoolPointer()
+		Name:                   plan.Name.ValueString(),
+		Stateful:               &stateful,
+		Enabled:                plan.Enabled.ValueBoolPointer(),
+		DefaultDnsRulesEnabled: plan.DefaultDNSRulesEnabled.ValueBoolPointer(),
+		Description:            plan.Description.ValueStringPointer(),
 	}
 	if labels != nil {
 		body.Labels = labels
@@ -642,7 +650,28 @@ func (r *firewallRulesetResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	if err := setRulesetValues(ctx, &plan, apiResp.JSON201); err != nil {
+	created := apiResp.JSON201
+	// The create endpoint might ignore enabled=false, so disable the ruleset with a PATCH.
+	if !plan.Enabled.ValueBool() && created != nil && created.Uuid != nil && created.Enabled != nil && *created.Enabled {
+		disabled := false
+		patchResp, err := r.client.ModifyFirewallRulesetWithResponse(ctx, *created.Uuid, v9.ModifyFirewallRulesetJSONRequestBody{Enabled: &disabled})
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to disable firewall ruleset after create", utils.ErrorDiagnosticDetail(err))
+			return
+		}
+		if patchResp.StatusCode() != http.StatusOK {
+			resp.Diagnostics.AddError("Unable to disable firewall ruleset after create", fmt.Sprintf("API returned unexpected status %s", patchResp.Status()))
+			return
+		}
+		created = patchResp.JSON200
+	}
+
+	if created == nil {
+		resp.Diagnostics.AddError("Unable to create firewall ruleset", "API returned no ruleset data")
+		return
+	}
+
+	if err := setRulesetValues(ctx, &plan, created); err != nil {
 		resp.Diagnostics.AddError("Unable to create firewall ruleset", utils.ErrorDiagnosticDetail(err))
 		return
 	}
@@ -653,23 +682,10 @@ func (r *firewallRulesetResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	if !plan.Rules.IsNull() && !plan.Rules.IsUnknown() {
-		var configRules []ruleBlockModel
-		resp.Diagnostics.Append(plan.Rules.ElementsAs(ctx, &configRules, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.Rules, err = rulesFromPUT(ctx, r.client, rulesetUUID, configRules)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to set firewall rules", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-	} else {
-		plan.Rules, err = rulesFromAPI(ctx, r.client, rulesetUUID)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to read firewall rules", utils.ErrorDiagnosticDetail(err))
-			return
-		}
+	plan.Rules, err = putPlannedRules(ctx, r.client, rulesetUUID, plan.Rules)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to set firewall rules", utils.ErrorDiagnosticDetail(err))
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -715,7 +731,7 @@ func (r *firewallRulesetResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	// Always refresh rules from API to keep state consistent.
-	state.Rules, err = rulesFromAPI(ctx, r.client, rulesetUUID)
+	state.Rules, err = rulesFromAPI(ctx, r.client, rulesetUUID, state.Rules)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read firewall rules", utils.ErrorDiagnosticDetail(err))
 		return
@@ -739,18 +755,14 @@ func (r *firewallRulesetResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	body := v9.ModifyFirewallRulesetJSONRequestBody{
-		Name:   plan.Name.ValueStringPointer(),
-		Labels: labels,
+		Name:                   plan.Name.ValueStringPointer(),
+		Labels:                 labels,
+		Enabled:                plan.Enabled.ValueBoolPointer(),
+		DefaultDnsRulesEnabled: plan.DefaultDNSRulesEnabled.ValueBoolPointer(),
 	}
-	if !plan.Description.IsNull() {
-		body.Description = plan.Description.ValueStringPointer()
-	}
-	if !plan.Enabled.IsNull() {
-		body.Enabled = plan.Enabled.ValueBoolPointer()
-	}
-	if !plan.DefaultDNSRulesEnabled.IsNull() {
-		body.DefaultDnsRulesEnabled = plan.DefaultDNSRulesEnabled.ValueBoolPointer()
-	}
+	// Send an empty string to clear the description. The API ignores a missing field.
+	description := plan.Description.ValueString()
+	body.Description = &description
 
 	rulesetUUID, err := uuid.Parse(state.ID.ValueString())
 	if err != nil {
@@ -776,23 +788,10 @@ func (r *firewallRulesetResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	if !plan.Rules.IsNull() && !plan.Rules.IsUnknown() {
-		var configRules []ruleBlockModel
-		resp.Diagnostics.Append(plan.Rules.ElementsAs(ctx, &configRules, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.Rules, err = rulesFromPUT(ctx, r.client, rulesetUUID, configRules)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to update firewall rules", utils.ErrorDiagnosticDetail(err))
-			return
-		}
-	} else {
-		plan.Rules, err = rulesFromAPI(ctx, r.client, rulesetUUID)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to read firewall rules", utils.ErrorDiagnosticDetail(err))
-			return
-		}
+	plan.Rules, err = putPlannedRules(ctx, r.client, rulesetUUID, plan.Rules)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to update firewall rules", utils.ErrorDiagnosticDetail(err))
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -817,7 +816,11 @@ func (r *firewallRulesetResource) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 	if apiResp.Body != nil {
-		defer apiResp.Body.Close()
+		defer func() {
+			if err := apiResp.Body.Close(); err != nil {
+				resp.Diagnostics.AddError("Unable to delete firewall ruleset", fmt.Sprintf("unable to close API response body: %s", err))
+			}
+		}()
 	}
 	if apiResp.StatusCode != http.StatusNoContent && apiResp.StatusCode != http.StatusNotFound {
 		resp.Diagnostics.AddError(

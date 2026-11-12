@@ -21,9 +21,10 @@ func TestAccUpCloudServerPrivateFirewallRuleset_basic(t *testing.T) {
 	rulesetName := fmt.Sprintf("tf-acc-test-ruleset-%s", acctest.RandString(10))
 	resourceName := "upcloud_server_private_firewall_ruleset.test"
 	var serverID, rulesetID string
+	cidr := fmt.Sprintf("10.0.%d.0/24", acctest.RandIntRange(0, 250))
 
-	config := testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName, true)
-	configWithoutAttachment := testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName, false)
+	config := testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName, cidr, true)
+	configWithoutAttachment := testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName, cidr, false)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -51,7 +52,7 @@ func TestAccUpCloudServerPrivateFirewallRuleset_basic(t *testing.T) {
 	})
 }
 
-func testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName string, withAttachment bool) string {
+func testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetName, cidr string, withAttachment bool) string {
 	attachment := ""
 	if withAttachment {
 		attachment = `
@@ -67,7 +68,7 @@ func testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetN
 			zone = "fi-hel1"
 
 			ip_network {
-				address = "172.24.1.0/24"
+				address = "%s"
 				dhcp    = true
 				family  = "IPv4"
 			}
@@ -108,7 +109,7 @@ func testAccServerPrivateFirewallRulesetConfig(serverName, networkName, rulesetN
 		}
 
 		%s
-	`, networkName, serverName, upcloud.DebianTemplateUUID, rulesetName, attachment)
+	`, networkName, cidr, serverName, upcloud.DebianTemplateUUID, rulesetName, attachment)
 }
 
 func testAccCaptureServerPrivateFirewallRulesetIDs(resourceName string, serverID, rulesetID *string) resource.TestCheckFunc {
