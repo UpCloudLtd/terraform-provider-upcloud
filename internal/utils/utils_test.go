@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"testing"
 	"time"
@@ -104,7 +105,7 @@ func TestRetryOnServerStateIllegal(t *testing.T) {
 	}
 
 	calls := 0
-	res, err := RetryOnServerStateIllegal(context.Background(), func() (int, error) {
+	res, err := RetryOnServerStateIllegal(context.Background(), func(context.Context) (int, error) {
 		calls++
 		if calls < 3 {
 			return 0, problem(upcloud.ErrCodeServerStateIllegal)
@@ -117,7 +118,7 @@ func TestRetryOnServerStateIllegal(t *testing.T) {
 
 	// Other errors are returned without retrying.
 	calls = 0
-	_, err = RetryOnServerStateIllegal(context.Background(), func() (int, error) {
+	_, err = RetryOnServerStateIllegal(context.Background(), func(context.Context) (int, error) {
 		calls++
 		return 0, problem(upcloud.ErrCodeResourceAlreadyExists)
 	})
@@ -129,7 +130,7 @@ func TestRetryOnServerStateIllegal(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	calls = 0
-	_, err = RetryOnServerStateIllegal(ctx, func() (int, error) {
+	_, err = RetryOnServerStateIllegal(ctx, func(context.Context) (int, error) {
 		calls++
 		return 0, problem(upcloud.ErrCodeServerStateIllegal)
 	})
@@ -139,12 +140,41 @@ func TestRetryOnServerStateIllegal(t *testing.T) {
 	assert.Equal(t, 1, calls)
 }
 
+func TestRetryOnServerStateIllegalCancelsInFlightRequest(t *testing.T) {
+	defer func(d time.Duration) { stateIllegalRetryTimeout = d }(stateIllegalRetryTimeout)
+	stateIllegalRetryTimeout = 50 * time.Millisecond
+
+	// The server answers after 2 seconds, or earlier if the request is cancelled.
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-time.After(2 * time.Second):
+		}
+	}))
+	defer srv.Close()
+
+	start := time.Now()
+	_, err := RetryOnServerStateIllegal(context.Background(), func(ctx context.Context) (int, error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
+		if err != nil {
+			return 0, err
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if resp != nil {
+			resp.Body.Close()
+		}
+		return 0, err
+	})
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Less(t, time.Since(start), time.Second)
+}
+
 func TestRetryOnStorageStateIllegal(t *testing.T) {
 	defer func(d time.Duration) { stateIllegalRetryInterval = d }(stateIllegalRetryInterval)
 	stateIllegalRetryInterval = 0
 
 	calls := 0
-	_, err := RetryOnStorageStateIllegal(context.Background(), func() (int, error) {
+	_, err := RetryOnStorageStateIllegal(context.Background(), func(context.Context) (int, error) {
 		calls++
 		if calls < 3 {
 			return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageStateIllegal, Status: http.StatusConflict}
@@ -156,7 +186,7 @@ func TestRetryOnStorageStateIllegal(t *testing.T) {
 
 	// SERVER_STATE_ILLEGAL is not retried here.
 	calls = 0
-	_, err = RetryOnStorageStateIllegal(context.Background(), func() (int, error) {
+	_, err = RetryOnStorageStateIllegal(context.Background(), func(context.Context) (int, error) {
 		calls++
 		return 0, &upcloud.Problem{Type: upcloud.ErrCodeServerStateIllegal, Status: http.StatusConflict}
 	})
@@ -169,7 +199,7 @@ func TestRetryOnStorageAttached(t *testing.T) {
 	stateIllegalRetryInterval = 0
 
 	calls := 0
-	_, err := RetryOnStorageAttached(context.Background(), func() (int, error) {
+	_, err := RetryOnStorageAttached(context.Background(), func(context.Context) (int, error) {
 		calls++
 		if calls < 3 {
 			return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageAttached, Status: http.StatusConflict}
@@ -181,7 +211,7 @@ func TestRetryOnStorageAttached(t *testing.T) {
 
 	// STORAGE_STATE_ILLEGAL is returned, so that RetryOnStorageStateIllegal can handle it.
 	calls = 0
-	_, err = RetryOnStorageAttached(context.Background(), func() (int, error) {
+	_, err = RetryOnStorageAttached(context.Background(), func(context.Context) (int, error) {
 		calls++
 		return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageStateIllegal, Status: http.StatusConflict}
 	})

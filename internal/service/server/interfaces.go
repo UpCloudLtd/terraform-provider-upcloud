@@ -248,7 +248,7 @@ plan_loop:
 				continue plan_loop
 			}
 		}
-		_, err := utils.RetryOnServerStateIllegal(ctx, func() (*upcloud.IPAddress, error) {
+		_, err := utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (*upcloud.IPAddress, error) {
 			return svc.AssignIPAddressToNetworkInterface(ctx, &request.AssignIPAddressToNetworkInterfaceRequest{
 				ServerUUID: serverUUID,
 				Index:      iface.Index,
@@ -265,7 +265,7 @@ plan_loop:
 }
 
 func deleteNetworkInterface(ctx context.Context, svc *service.Service, serverUUID string, index int) error {
-	_, err := utils.RetryOnServerStateIllegal(ctx, func() (struct{}, error) {
+	_, err := utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (struct{}, error) {
 		return struct{}{}, svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
 			ServerUUID: serverUUID,
 			Index:      index,
@@ -348,7 +348,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 					return diags
 				}
 			}
-			modified, err = utils.RetryOnServerStateIllegal(ctx, func() (*upcloud.Interface, error) {
+			modified, err = utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (*upcloud.Interface, error) {
 				return svc.ModifyNetworkInterface(ctx, &req)
 			})
 			if err != nil {
@@ -392,7 +392,7 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 			}
 		}
 
-		iface, err := utils.RetryOnServerStateIllegal(ctx, func() (*upcloud.Interface, error) {
+		iface, err := utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (*upcloud.Interface, error) {
 			return svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
 				ServerUUID:        uuid,
 				Index:             index,
