@@ -38,11 +38,11 @@ resource "upcloud_firewall_ruleset" "example" {
 
 ### Optional Attributes
 
-- `default_dns_rules_enabled` (Boolean) Whether default DNS rules are enabled.
+- `default_dns_rules_enabled` (Boolean) Whether default DNS rules are enabled. Defaults to `false`.
 - `description` (String) Description of the firewall ruleset.
-- `enabled` (Boolean) Whether the ruleset is enabled.
-- `labels` (Map of String) Ruleset labels as key/value pairs.
-- `rules` (Attributes List) Ordered list of firewall rules. Rules are applied in list order; the position attribute reflects the 1-based index assigned by the API and cannot be configured. (see [below for nested schema](#nestedatt--rules))
+- `enabled` (Boolean) Whether the ruleset is enabled. Defaults to `true`.
+- `labels` (Map of String) User defined key-value pairs to classify the firewall ruleset.
+- `rules` (Attributes List) Ordered list of firewall rules. Rules are applied in list order; the position attribute reflects the 1-based index assigned by the API and cannot be configured. If you leave out `rules`, Terraform deletes all rules in the ruleset, also rules added outside Terraform. (see [below for nested schema](#nestedatt--rules))
 
 ### Read-Only
 
@@ -68,9 +68,9 @@ Optional Attributes:
 - `destination_address_start` (String) Start of destination IP address range.
 - `destination_port_end` (Number) End of destination port range.
 - `destination_port_start` (Number) Start of destination port range.
-- `enabled` (Boolean) Whether the rule is enabled.
+- `enabled` (Boolean) Whether the rule is enabled. Defaults to `true`.
 - `icmp_type` (Number) ICMP type number.
-- `protocol` (String) IP protocol.
+- `protocol` (String) IP protocol. Leave out or set `all` to match all protocols.
 - `source_address_cidr` (String) Source CIDR block.
 - `source_address_end` (String) End of source IP address range.
 - `source_address_start` (String) Start of source IP address range.
