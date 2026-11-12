@@ -190,7 +190,8 @@ func readServerStartTime(s *tftest.State, resourceName, keyDir string) (string, 
 			continue
 		}
 
-		output, cmdErr := session.Output("uptime -s")
+		// boot_id changes only on reboot. `uptime -s` can shift by seconds when the guest clock is adjusted.
+		output, cmdErr := session.Output("cat /proc/sys/kernel/random/boot_id")
 		_ = session.Close()
 		_ = client.Close()
 		if cmdErr != nil {
