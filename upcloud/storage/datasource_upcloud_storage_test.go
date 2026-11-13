@@ -118,10 +118,10 @@ func dataSourceUpCloudStorageTestConfig() string {
 			upcloud_storage.hel2
 		]
 	}
-	# most recent private disk
+	# most recent private disk; the name filter skips storages of tests that run at the same time
 	data "upcloud_storage" "most_recent_private" {
 		type = "normal"
-		name_regex = ".*"
+		name_regex = "^tf-acc-test-storage-data-hel"
 		access_type = "private"
 		most_recent = true
 		depends_on = [

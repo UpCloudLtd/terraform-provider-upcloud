@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"context"
+	"errors"
 	"math/rand"
 	"os"
 	"strings"
@@ -64,6 +66,51 @@ func WithRetry(fn func() (interface{}, error), retries int, delay time.Duration)
 		continue
 	}
 	return nil, err
+}
+
+// stateIllegalRetryInterval is a variable so that tests can shorten it.
+var stateIllegalRetryInterval = 5 * time.Second
+
+// stateIllegalRetryTimeout is a variable so that tests can shorten it.
+var stateIllegalRetryTimeout = 10 * time.Minute // shortcut: fixed cap, add a timeouts block if users need longer
+
+// RetryOnServerStateIllegal calls fn until it does not fail with SERVER_STATE_ILLEGAL error, ctx is done, or 10 minutes have passed.
+// fn gets a context that ends with the retry, so that it also limits the API requests.
+// The API returns this error, for example, when assigning an IP address to a server that is in maintenance state.
+func RetryOnServerStateIllegal[T any](ctx context.Context, fn func(context.Context) (T, error)) (T, error) {
+	return retryOnErrorCode(ctx, upcloud.ErrCodeServerStateIllegal, fn)
+}
+
+// RetryOnStorageStateIllegal calls fn until it does not fail with STORAGE_STATE_ILLEGAL error, ctx is done, or 10 minutes have passed.
+// The API returns this error, for example, when attaching a storage that another server is still detaching.
+func RetryOnStorageStateIllegal[T any](ctx context.Context, fn func(context.Context) (T, error)) (T, error) {
+	return retryOnErrorCode(ctx, upcloud.ErrCodeStorageStateIllegal, fn)
+}
+
+// RetryOnStorageAttached calls fn until it does not fail with STORAGE_ATTACHED error, ctx is done, or 2 minutes have passed.
+// The API returns this error when attaching a storage that another server has not started to detach yet.
+// The cap is short because the error can also mean that a server outside the configuration uses the storage.
+func RetryOnStorageAttached[T any](ctx context.Context, fn func(context.Context) (T, error)) (T, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	return retryOnErrorCode(ctx, upcloud.ErrCodeStorageAttached, fn)
+}
+
+func retryOnErrorCode[T any](ctx context.Context, code string, fn func(context.Context) (T, error)) (T, error) {
+	ctx, cancel := context.WithTimeout(ctx, stateIllegalRetryTimeout)
+	defer cancel()
+	for {
+		res, err := fn(ctx)
+		var p *upcloud.Problem
+		if !errors.As(err, &p) || p.ErrorCode() != code {
+			return res, err
+		}
+		select {
+		case <-ctx.Done():
+			return res, err
+		case <-time.After(stateIllegalRetryInterval):
+		}
+	}
 }
 
 // ExpandStrings expands a terraform list to slice of str

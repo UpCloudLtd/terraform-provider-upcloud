@@ -1626,14 +1626,20 @@ func (r *serverResource) Update(ctx context.Context, req resource.UpdateRequest,
 				return
 			}
 
-			if _, err := r.client.AttachStorage(ctx, &request.AttachStorageRequest{
-				ServerUUID: uuid,
-				Address: buildStorageDeviceAddress(
-					storageDevice.Address.ValueString(),
-					storageDevice.AddressPosition.ValueString(),
-				),
-				StorageUUID: storageDevice.Storage.ValueString(),
-				Type:        storageDevice.Type.ValueString(),
+			// The online wait above can pass before another server in the same apply detaches this storage.
+			// The API then returns STORAGE_ATTACHED before the detach starts and STORAGE_STATE_ILLEGAL during it.
+			if _, err := utils.RetryOnStorageStateIllegal(ctx, func(ctx context.Context) (*upcloud.ServerDetails, error) {
+				return utils.RetryOnStorageAttached(ctx, func(ctx context.Context) (*upcloud.ServerDetails, error) {
+					return r.client.AttachStorage(ctx, &request.AttachStorageRequest{
+						ServerUUID: uuid,
+						Address: buildStorageDeviceAddress(
+							storageDevice.Address.ValueString(),
+							storageDevice.AddressPosition.ValueString(),
+						),
+						StorageUUID: storageDevice.Storage.ValueString(),
+						Type:        storageDevice.Type.ValueString(),
+					})
+				})
 			}); err != nil {
 				resp.Diagnostics.AddError("Unable to attach storage", utils.ErrorDiagnosticDetail(err))
 				return

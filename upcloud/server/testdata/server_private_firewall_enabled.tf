@@ -6,12 +6,16 @@ variable "template" {
   type = string
 }
 
+variable "cidr" {
+  type = string
+}
+
 resource "upcloud_network" "test" {
   name = var.name
   zone = "fi-hel1"
 
   ip_network {
-    address = "172.24.1.0/24"
+    address = var.cidr
     dhcp    = true
     family  = "IPv4"
   }

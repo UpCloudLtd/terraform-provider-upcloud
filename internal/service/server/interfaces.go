@@ -248,11 +248,13 @@ plan_loop:
 				continue plan_loop
 			}
 		}
-		_, err := svc.AssignIPAddressToNetworkInterface(ctx, &request.AssignIPAddressToNetworkInterfaceRequest{
-			ServerUUID: serverUUID,
-			Index:      iface.Index,
-			Family:     j.Family,
-			Address:    j.Address,
+		_, err := utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (*upcloud.IPAddress, error) {
+			return svc.AssignIPAddressToNetworkInterface(ctx, &request.AssignIPAddressToNetworkInterfaceRequest{
+				ServerUUID: serverUUID,
+				Index:      iface.Index,
+				Family:     j.Family,
+				Address:    j.Address,
+			})
 		})
 		if err != nil {
 			return err
@@ -260,6 +262,16 @@ plan_loop:
 	}
 
 	return nil
+}
+
+func deleteNetworkInterface(ctx context.Context, svc *service.Service, serverUUID string, index int) error {
+	_, err := utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (struct{}, error) {
+		return struct{}{}, svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
+			ServerUUID: serverUUID,
+			Index:      index,
+		})
+	})
+	return err
 }
 
 func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, state, plan *serverModel) (diags diag.Diagnostics) {
@@ -301,14 +313,12 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 
 		// Remove interface if it has been removed from configuration
 		if planVal == nil {
-			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: uuid,
-				Index:      iface.Index,
-			})
+			err = deleteNetworkInterface(ctx, svc, uuid, iface.Index)
 			if err != nil {
 				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
 				return diags
 			}
+			continue
 		}
 
 		if !canModifyInterface(stateVal, planVal, &iface) {
@@ -338,7 +348,9 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 					return diags
 				}
 			}
-			modified, err = svc.ModifyNetworkInterface(ctx, &req)
+			modified, err = utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (*upcloud.Interface, error) {
+				return svc.ModifyNetworkInterface(ctx, &req)
+			})
 			if err != nil {
 				diags.AddError("Unable to modify network interface", utils.ErrorDiagnosticDetail(err))
 				return diags
@@ -373,24 +385,23 @@ func updateServerNetworkInterfaces(ctx context.Context, svc *service.Service, st
 		}
 
 		if exists := indices[index]; exists {
-			err = svc.DeleteNetworkInterface(ctx, &request.DeleteNetworkInterfaceRequest{
-				ServerUUID: uuid,
-				Index:      index,
-			})
+			err = deleteNetworkInterface(ctx, svc, uuid, index)
 			if err != nil {
 				diags.AddError("Unable to delete network interface", utils.ErrorDiagnosticDetail(err))
 				return diags
 			}
 		}
 
-		iface, err := svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
-			ServerUUID:        uuid,
-			Index:             index,
-			Type:              t,
-			NetworkUUID:       network,
-			IPAddresses:       addresses,
-			SourceIPFiltering: upcloud.FromBool(val.SourceIPFiltering.ValueBool()),
-			Bootable:          upcloud.FromBool(val.Bootable.ValueBool()),
+		iface, err := utils.RetryOnServerStateIllegal(ctx, func(ctx context.Context) (*upcloud.Interface, error) {
+			return svc.CreateNetworkInterface(ctx, &request.CreateNetworkInterfaceRequest{
+				ServerUUID:        uuid,
+				Index:             index,
+				Type:              t,
+				NetworkUUID:       network,
+				IPAddresses:       addresses,
+				SourceIPFiltering: upcloud.FromBool(val.SourceIPFiltering.ValueBool()),
+				Bootable:          upcloud.FromBool(val.Bootable.ValueBool()),
+			})
 		})
 		if err != nil {
 			diags.AddError("Unable to create network interface", utils.ErrorDiagnosticDetail(err))

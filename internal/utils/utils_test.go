@@ -1,9 +1,13 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud"
 
@@ -91,6 +95,128 @@ func TestWithRetry(t *testing.T) {
 		t.Log("should fail")
 		t.Fail()
 	}
+}
+
+func TestRetryOnServerStateIllegal(t *testing.T) {
+	defer func(d time.Duration) { stateIllegalRetryInterval = d }(stateIllegalRetryInterval)
+	stateIllegalRetryInterval = 0
+	problem := func(code string) error {
+		return &upcloud.Problem{Type: code, Status: http.StatusConflict}
+	}
+
+	calls := 0
+	res, err := RetryOnServerStateIllegal(context.Background(), func(context.Context) (int, error) {
+		calls++
+		if calls < 3 {
+			return 0, problem(upcloud.ErrCodeServerStateIllegal)
+		}
+		return 42, nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 42, res)
+	assert.Equal(t, 3, calls)
+
+	// Other errors are returned without retrying.
+	calls = 0
+	_, err = RetryOnServerStateIllegal(context.Background(), func(context.Context) (int, error) {
+		calls++
+		return 0, problem(upcloud.ErrCodeResourceAlreadyExists)
+	})
+	assert.Error(t, err)
+	assert.Equal(t, 1, calls)
+
+	// Stops retrying when context is done and returns the last error.
+	stateIllegalRetryInterval = time.Hour
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	calls = 0
+	_, err = RetryOnServerStateIllegal(ctx, func(context.Context) (int, error) {
+		calls++
+		return 0, problem(upcloud.ErrCodeServerStateIllegal)
+	})
+	var p *upcloud.Problem
+	assert.ErrorAs(t, err, &p)
+	assert.Equal(t, upcloud.ErrCodeServerStateIllegal, p.ErrorCode())
+	assert.Equal(t, 1, calls)
+}
+
+func TestRetryOnServerStateIllegalCancelsInFlightRequest(t *testing.T) {
+	defer func(d time.Duration) { stateIllegalRetryTimeout = d }(stateIllegalRetryTimeout)
+	stateIllegalRetryTimeout = 50 * time.Millisecond
+
+	// The server answers after 2 seconds, or earlier if the request is cancelled.
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-time.After(2 * time.Second):
+		}
+	}))
+	defer srv.Close()
+
+	start := time.Now()
+	_, err := RetryOnServerStateIllegal(context.Background(), func(ctx context.Context) (int, error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
+		if err != nil {
+			return 0, err
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if resp != nil {
+			resp.Body.Close()
+		}
+		return 0, err
+	})
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Less(t, time.Since(start), time.Second)
+}
+
+func TestRetryOnStorageStateIllegal(t *testing.T) {
+	defer func(d time.Duration) { stateIllegalRetryInterval = d }(stateIllegalRetryInterval)
+	stateIllegalRetryInterval = 0
+
+	calls := 0
+	_, err := RetryOnStorageStateIllegal(context.Background(), func(context.Context) (int, error) {
+		calls++
+		if calls < 3 {
+			return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageStateIllegal, Status: http.StatusConflict}
+		}
+		return 0, nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, calls)
+
+	// SERVER_STATE_ILLEGAL is not retried here.
+	calls = 0
+	_, err = RetryOnStorageStateIllegal(context.Background(), func(context.Context) (int, error) {
+		calls++
+		return 0, &upcloud.Problem{Type: upcloud.ErrCodeServerStateIllegal, Status: http.StatusConflict}
+	})
+	assert.Error(t, err)
+	assert.Equal(t, 1, calls)
+}
+
+func TestRetryOnStorageAttached(t *testing.T) {
+	defer func(d time.Duration) { stateIllegalRetryInterval = d }(stateIllegalRetryInterval)
+	stateIllegalRetryInterval = 0
+
+	calls := 0
+	_, err := RetryOnStorageAttached(context.Background(), func(context.Context) (int, error) {
+		calls++
+		if calls < 3 {
+			return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageAttached, Status: http.StatusConflict}
+		}
+		return 0, nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, calls)
+
+	// STORAGE_STATE_ILLEGAL is returned, so that RetryOnStorageStateIllegal can handle it.
+	calls = 0
+	_, err = RetryOnStorageAttached(context.Background(), func(context.Context) (int, error) {
+		calls++
+		return 0, &upcloud.Problem{Type: upcloud.ErrCodeStorageStateIllegal, Status: http.StatusConflict}
+	})
+	assert.Error(t, err)
+	assert.Equal(t, 1, calls)
 }
 
 func TestStorageAddressFormat(t *testing.T) {

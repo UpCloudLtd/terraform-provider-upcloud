@@ -1,6 +1,7 @@
 package servertests
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
@@ -15,6 +16,11 @@ import (
 // and metadata is only read back when it is already present in state.
 var importStateVerifyIgnoreTemplate = []string{"template", "storage_devices", "metadata"}
 
+// Parallel tests in the same zone need different network addresses, because overlapping private networks are not allowed.
+func randomPrivateFirewallCIDR() string {
+	return fmt.Sprintf("172.24.%d.0/24", acctest.RandIntRange(0, 250))
+}
+
 func TestAccUpCloudServer_privateFirewall(t *testing.T) {
 	name := "tf-acc-private-firewall-" + acctest.RandString(8)
 	enabled := utils.ReadTestDataFile(t, "testdata/server_private_firewall_enabled.tf")
@@ -23,6 +29,7 @@ func TestAccUpCloudServer_privateFirewall(t *testing.T) {
 	variables := map[string]config.Variable{
 		"name":     config.StringVariable(name),
 		"template": config.StringVariable(upcloud.DebianTemplateUUID),
+		"cidr":     config.StringVariable(randomPrivateFirewallCIDR()),
 	}
 	check := func(enabled, incoming, outgoing string) resource.TestCheckFunc {
 		checks := []resource.TestCheckFunc{resource.TestCheckResourceAttr("upcloud_server.test", "firewall", "true")}
@@ -115,6 +122,7 @@ func TestAccUpCloudServer_privateFirewallCreate(t *testing.T) {
 			variables := map[string]config.Variable{
 				"name":     config.StringVariable(name),
 				"template": config.StringVariable(upcloud.DebianTemplateUUID),
+				"cidr":     config.StringVariable(randomPrivateFirewallCIDR()),
 			}
 			checks := []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr("upcloud_server.test", "firewall", "true"),
