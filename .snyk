@@ -1,0 +1,18 @@
+# Snyk (https://snyk.io) policy file.
+version: v1.25.0
+ignore:
+  SNYK-GOLANG-GITHUBCOMVMIHAILENCOMSGPACK-15702236:
+    - '*':
+        reason: >-
+          No upstream fix exists for github.com/vmihailenco/msgpack.
+          HashiCorp plugin libraries use msgpack only on the local trusted RPC channel.
+        created: 2026-11-12T12:06:05.000Z
+        disregardIfFixable: true
+  SNYK-GOLANG-GITHUBCOMVMIHAILENCOMSGPACKV5-15702238:
+    - '*':
+        reason: >-
+          No upstream fix exists for github.com/vmihailenco/msgpack/v5.
+          HashiCorp plugin libraries use msgpack only on the local trusted RPC channel.
+        created: 2026-11-12T12:06:05.000Z
+        disregardIfFixable: true
+patch: {}
