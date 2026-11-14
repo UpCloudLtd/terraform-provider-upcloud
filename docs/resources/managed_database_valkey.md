@@ -105,7 +105,10 @@ Optional Attributes:
 - `valkey_active_defrag_threshold_lower` (Number) Active defrag minimum fragmentation percentage. Minimum percentage of fragmentation before active defragmentation starts. Only takes effect when `valkey_activedefrag` is enabled.
 - `valkey_active_expire_effort` (Number) Active expire effort. Valkey reclaims expired keys both when accessed and in the background. The background process scans for expired keys to free memory. Increasing the active-expire-effort setting (default 1, max 10) uses more CPU to reclaim expired keys faster, reducing memory usage but potentially increasing latency.
 - `valkey_activedefrag` (Boolean) Active memory defragmentation. Enable active memory defragmentation. When enabled, Valkey relocates objects off sparsely-used memory pages to reduce fragmentation and return memory to the operating system. Defragmentation runs on the main thread and consumes CPU, so it may increase latency under load.
-- `valkey_io_threads` (Number) Valkey IO thread count. Set Valkey IO thread count. Changing this will cause a restart of the Valkey service.
+- `valkey_hotkeys_sampling_percentage` (Number) Hot key detection sampling percentage. Percentage of key accesses sampled for hot key detection. Lower values reduce overhead at the cost of accuracy. Only takes effect when `valkey_hotkeys_top_k` is above 0. Defaults to 1. Requires Valkey 9.2 or later.
+- `valkey_hotkeys_top_k` (Number) Hot key detection top-K. Number of hottest keys to track and report with the HOTKEYS GET command. 0 disables hot key detection. Requires Valkey 9.2 or later.
+- `valkey_hotkeys_window_seconds` (Number) Hot key detection window. Length of the hot key reporting window in seconds. HOTKEYS GET reports the last completed window. Only takes effect when `valkey_hotkeys_top_k` is above 0. Defaults to 1. Requires Valkey 9.2 or later.
+- `valkey_io_threads` (Number) Valkey IO thread count. Set Valkey IO thread count. On Valkey 9.0 and later, changes are applied without a restart. On Valkey 8.1, changing this replaces the service nodes.
 - `valkey_lfu_decay_time` (Number) LFU maxmemory-policy counter decay time in minutes.
 - `valkey_lfu_log_factor` (Number) Counter logarithm factor for volatile-lfu and allkeys-lfu maxmemory-policies.
 - `valkey_maxmemory_policy` (String) Valkey maxmemory-policy.
@@ -130,7 +133,7 @@ Optional Attributes:
 - `host` (String) Hostname or IP address of the server where to migrate data from.
 - `ignore_dbs` (String) Comma-separated list of databases, which should be ignored during migration (supported by MySQL and PostgreSQL only at the moment).
 - `ignore_roles` (String) Comma-separated list of database roles, which should be ignored during migration (supported by PostgreSQL only at the moment).
-- `method` (String) The migration method to be used (currently supported only by Redis, Dragonfly, MySQL and PostgreSQL service types).
+- `method` (String) The migration method to be used (currently supported only by Redis, MySQL and PostgreSQL service types).
 - `password` (String, Sensitive) Password for authentication with the server where to migrate data from.
 - `port` (Number) Port number of the server where to migrate data from.
 - `ssl` (Boolean) The server where to migrate data from is secured with SSL.
