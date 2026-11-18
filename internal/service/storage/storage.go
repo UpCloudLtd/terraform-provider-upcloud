@@ -205,14 +205,14 @@ func (r *storageResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							MarkdownDescription: "sha256 sum of the imported data",
 							Computed:            true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"written_bytes": schema.Int64Attribute{
 							MarkdownDescription: "Number of bytes imported",
 							Computed:            true,
 							PlanModifiers: []planmodifier.Int64{
-								int64planmodifier.UseStateForUnknown(),
+								int64planmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 					},
