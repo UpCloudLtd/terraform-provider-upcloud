@@ -585,6 +585,7 @@ func TestAccUpCloudStorageBackup_basic(t *testing.T) {
 				Config: testUpcloudStorageBackupConfig(updatedBackupTitle, nil),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "title", updatedBackupTitle),
+					resource.TestCheckResourceAttrSet(resourceName, "created_at"),
 				),
 			},
 		},
