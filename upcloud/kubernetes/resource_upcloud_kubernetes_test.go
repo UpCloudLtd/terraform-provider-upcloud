@@ -90,6 +90,8 @@ func TestAccUpcloudKubernetes(t *testing.T) {
 					resource.TestCheckResourceAttr(cName, "name", "tf-acc-test-k8s-cluster"),
 					resource.TestCheckResourceAttr(cName, "version", s1Version),
 					resource.TestCheckResourceAttr(cName, "zone", "fi-hel2"),
+					resource.TestCheckResourceAttrSet(cName, "network_cidr"),
+					resource.TestCheckResourceAttrSet(cName, "plan"),
 					resource.TestCheckResourceAttr(cName, "fetch_kubeconfig", "false"),
 					resource.TestCheckNoResourceAttr(cName, "kubeconfig.%"),
 					resource.TestCheckNoResourceAttr(cName, "kubeconfig.host"),
