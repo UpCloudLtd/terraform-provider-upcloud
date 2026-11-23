@@ -294,7 +294,7 @@ func TestEndToEndManagedDatabase_TerminationProtection(t *testing.T) {
 - Creates a managed database with termination protection enabled.
 - Tries to power off the service while termination protection is enabled and expects an error.
 - Tries to delete the service while termination protection is enabled and expects an error.
-- Disables termination protection and powers off the service.
+- Disables termination protection and keeps the service powered on.
 - Deletes the service.
 `)
 
@@ -333,19 +333,19 @@ func TestEndToEndManagedDatabase_TerminationProtection(t *testing.T) {
 				ConfigVariables: variables(0, true, true),
 				ExpectError:     upc.IgnoreWhitespaceDiff("Service cannot be deleted, termination protection is enabled."),
 			},
-			// Disable termination protection and power off the service
+			// Disable termination protection. Powering off fails without an initial backup, so keep the service powered on
 			{
 				Config:          testdata,
-				ConfigVariables: variables(1, false, false),
+				ConfigVariables: variables(1, true, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(db, "powered", "false"),
+					resource.TestCheckResourceAttr(db, "powered", "true"),
 					resource.TestCheckResourceAttr(db, "termination_protection", "false"),
 				),
 			},
 			// Deleting the service should succeed as termination protection is disabled
 			{
 				Config:          testdata,
-				ConfigVariables: variables(0, false, false),
+				ConfigVariables: variables(0, true, false),
 			},
 		},
 	})
