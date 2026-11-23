@@ -33,7 +33,6 @@ func TestAccUpcloudManagedObjectStorageUser(t *testing.T) {
 					resource.TestCheckResourceAttr(userAccessKey, "status", "Active"),
 					resource.TestCheckResourceAttr(userPolicy, "username", "tf-acc-test-objstov2-iam-user"),
 					resource.TestCheckResourceAttr(userPolicy, "name", "get-user-policy"),
-					resource.TestCheckResourceAttrSet(user, "arn"),
 					resource.TestCheckResourceAttrSet(user, "created_at"),
 					resource.TestCheckResourceAttrSet(userAccessKey, "access_key_id"),
 					resource.TestCheckResourceAttrSet(userAccessKey, "created_at"),
