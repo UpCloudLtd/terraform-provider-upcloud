@@ -131,7 +131,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, er
 			s.PlanModifiers = append(
 				s.PlanModifiers,
 				stringplanmodifier.RequiresReplaceIfConfigured(),
-				stringplanmodifier.UseStateForUnknown(),
+				stringplanmodifier.UseNonNullStateForUnknown(),
 			)
 		}
 
@@ -162,7 +162,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, er
 			s.PlanModifiers = append(
 				s.PlanModifiers,
 				int64planmodifier.RequiresReplaceIfConfigured(),
-				int64planmodifier.UseStateForUnknown(),
+				int64planmodifier.UseNonNullStateForUnknown(),
 			)
 		}
 
@@ -190,7 +190,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, er
 			s.PlanModifiers = append(
 				s.PlanModifiers,
 				float64planmodifier.RequiresReplaceIfConfigured(),
-				float64planmodifier.UseStateForUnknown(),
+				float64planmodifier.UseNonNullStateForUnknown(),
 			)
 		}
 
@@ -215,7 +215,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, er
 			s.PlanModifiers = append(
 				s.PlanModifiers,
 				boolplanmodifier.RequiresReplaceIfConfigured(),
-				boolplanmodifier.UseStateForUnknown(),
+				boolplanmodifier.UseNonNullStateForUnknown(),
 			)
 		}
 
@@ -234,7 +234,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, er
 			s.PlanModifiers = append(
 				s.PlanModifiers,
 				listplanmodifier.RequiresReplaceIfConfigured(),
-				listplanmodifier.UseStateForUnknown(),
+				listplanmodifier.UseNonNullStateForUnknown(),
 			)
 		}
 
@@ -258,7 +258,7 @@ func getSchema(key string, prop upcloud.ManagedDatabaseServiceProperty) (any, er
 			s.PlanModifiers = append(
 				s.PlanModifiers,
 				listplanmodifier.RequiresReplaceIfConfigured(),
-				listplanmodifier.UseStateForUnknown(),
+				listplanmodifier.UseNonNullStateForUnknown(),
 			)
 		}
 
