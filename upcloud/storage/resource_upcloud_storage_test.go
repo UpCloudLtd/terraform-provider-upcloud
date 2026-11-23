@@ -77,6 +77,7 @@ func TestAccUpCloudStorage_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("upcloud_storage.this", "tier"),
 					resource.TestCheckResourceAttrSet("upcloud_storage.this", "title"),
 					resource.TestCheckResourceAttrSet("upcloud_storage.this", "zone"),
+					resource.TestCheckResourceAttrSet("upcloud_storage.this", "system_labels.%"),
 					resource.TestCheckResourceAttr(
 						"upcloud_storage.this", "size", "10"),
 					resource.TestCheckResourceAttr(
