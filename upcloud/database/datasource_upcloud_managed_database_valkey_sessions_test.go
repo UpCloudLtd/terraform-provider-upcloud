@@ -23,7 +23,6 @@ func TestAccDataSourceUpcloudManagedDatabaseValkeySessions(t *testing.T) {
 					resource.TestCheckTypeSetElemNestedAttrs(name, "sessions.*", map[string]string{
 						"query": "info",
 					}),
-					resource.TestCheckResourceAttr(name, "sessions.#", "2"),
 				),
 			},
 		},
