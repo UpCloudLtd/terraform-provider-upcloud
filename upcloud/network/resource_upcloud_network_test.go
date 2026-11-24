@@ -43,6 +43,7 @@ func TestAccUpCloudNetwork_basic(t *testing.T) {
 					testAccNetworkExists("upcloud_network.test_network"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "name", netName),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "zone", "fi-hel1"),
+					resource.TestCheckResourceAttrSet("upcloud_network.test_network", "type"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp", "true"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.dhcp_default_route", "false"),
 					resource.TestCheckResourceAttr("upcloud_network.test_network", "ip_network.0.address", cidr),

@@ -76,6 +76,19 @@ func TestCreateOnlyInt64PropertyPlanModifiers(t *testing.T) {
 		assert.Equal(t, types.Int64Value(0), resp.PlanValue)
 	})
 
+	t.Run("null state stays unknown", func(t *testing.T) {
+		resp := applyInt64PlanModifiers(t, attrSchema.PlanModifiers, planmodifier.Int64Request{
+			ConfigValue: types.Int64Null(),
+			PlanValue:   types.Int64Unknown(),
+			StateValue:  types.Int64Null(),
+			Plan:        tfsdk.Plan{Raw: nonNullRaw},
+			State:       tfsdk.State{Raw: nonNullRaw},
+		})
+
+		assert.False(t, resp.RequiresReplace)
+		assert.True(t, resp.PlanValue.IsUnknown())
+	})
+
 	t.Run("configured change requires replace", func(t *testing.T) {
 		resp := applyInt64PlanModifiers(t, attrSchema.PlanModifiers, planmodifier.Int64Request{
 			ConfigValue: types.Int64Value(1),

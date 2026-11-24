@@ -197,7 +197,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.Bool{
-								boolplanmodifier.UseStateForUnknown(),
+								boolplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"dhcp_dns": schema.SetAttribute{
@@ -206,7 +206,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.Set{
-								setplanmodifier.UseStateForUnknown(),
+								setplanmodifier.UseNonNullStateForUnknown(),
 							},
 							Validators: []validator.Set{
 								setvalidator.ValueStringsAre(
@@ -223,7 +223,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.Set{
-								setplanmodifier.UseStateForUnknown(),
+								setplanmodifier.UseNonNullStateForUnknown(),
 							},
 							Validators: []validator.Set{
 								setvalidator.ValueStringsAre(
@@ -235,7 +235,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Description: "IP address family",
 							Required:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 							Validators: []validator.String{
 								stringvalidator.OneOf(upcloud.IPAddressFamilyIPv4, upcloud.IPAddressFamilyIPv6),
@@ -246,7 +246,7 @@ func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 

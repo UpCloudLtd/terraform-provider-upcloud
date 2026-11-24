@@ -370,7 +370,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Optional:    true,
 							Computed:    true,
 							PlanModifiers: []planmodifier.Int64{
-								int64planmodifier.UseStateForUnknown(),
+								int64planmodifier.UseNonNullStateForUnknown(),
 							},
 							Validators: []validator.Int64{
 								int64validator.AtLeast(1),
@@ -475,7 +475,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Description: "The unique identifier for the storage",
 							Computed:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"address": schema.StringAttribute{
@@ -483,7 +483,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"address_position": schema.StringAttribute{
@@ -491,7 +491,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"encrypt": schema.BoolAttribute{
@@ -499,7 +499,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.Bool{
-								boolplanmodifier.UseStateForUnknown(),
+								boolplanmodifier.UseNonNullStateForUnknown(),
 								boolplanmodifier.RequiresReplace(),
 							},
 						},
@@ -511,7 +511,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 								int64validator.Between(10, 2048),
 							},
 							PlanModifiers: []planmodifier.Int64{
-								int64planmodifier.UseStateForUnknown(),
+								int64planmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"tier": schema.StringAttribute{
@@ -519,7 +519,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Computed:    true,
 							Optional:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 								stringplanmodifier.RequiresReplace(),
 							},
 						},
@@ -528,7 +528,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Optional:    true,
 							Computed:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(1, 255),
@@ -588,7 +588,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Computed:    true,
 							Default:     booldefault.StaticBool(false),
 							PlanModifiers: []planmodifier.Bool{
-								boolplanmodifier.UseStateForUnknown(),
+								boolplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"password": schema.StringAttribute{
@@ -603,7 +603,7 @@ func (r *serverResource) getSchema(version int64) schema.Schema {
 							Computed:    true,
 							Default:     stringdefault.StaticString("none"),
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 							Validators: []validator.String{
 								stringvalidator.OneOf("none", "email", "sms"),

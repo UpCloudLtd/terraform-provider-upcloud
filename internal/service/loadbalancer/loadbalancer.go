@@ -290,7 +290,7 @@ func (r *loadBalancerResource) Schema(_ context.Context, _ resource.SchemaReques
 							MarkdownDescription: "DNS name of the load balancer network",
 							Computed:            true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 						"family": schema.StringAttribute{
