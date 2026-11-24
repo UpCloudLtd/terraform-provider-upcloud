@@ -30,6 +30,7 @@ func TestAccUpCloudRouter(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRouterExists("upcloud_router.this", &router),
 					testAccCheckUpCloudRouterAttributes(&router, name),
+					resource.TestCheckResourceAttrSet("upcloud_router.this", "type"),
 					resource.TestCheckTypeSetElemNestedAttrs("upcloud_router.this", "static_route.*", map[string]string{
 						"name":    "test-route",
 						"nexthop": "10.0.0.100",

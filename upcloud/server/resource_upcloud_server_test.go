@@ -104,6 +104,10 @@ func TestAccUpCloudServer_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("upcloud_server.this", "template.0.encrypt", "true"),
 					resource.TestCheckResourceAttrSet("upcloud_server.this", "zone"),
 					resource.TestCheckResourceAttrSet("upcloud_server.this", "hostname"),
+					resource.TestCheckResourceAttrSet("upcloud_server.this", "timezone"),
+					resource.TestCheckResourceAttrSet("upcloud_server.this", "video_model"),
+					resource.TestCheckResourceAttrSet("upcloud_server.this", "nic_model"),
+					resource.TestCheckResourceAttrSet("upcloud_server.this", "boot_order"),
 					resource.TestCheckResourceAttr(
 						"upcloud_server.this", "zone", "fi-hel1"),
 					resource.TestCheckResourceAttr(

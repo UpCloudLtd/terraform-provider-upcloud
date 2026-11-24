@@ -134,7 +134,7 @@ func (r *routerResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 							Description: "Type of the route.",
 							Computed:    true,
 							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.UseNonNullStateForUnknown(),
 							},
 						},
 					},
