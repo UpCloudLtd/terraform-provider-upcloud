@@ -46,8 +46,8 @@ provider "keycloak" {
 provider "kubernetes" {
   alias = "oidc"
 
-  cluster_ca_certificate = var.step >= 4 ? one(ephemeral.upcloud_kubernetes_kubeconfig.oidc).cluster_ca_certificate : ""
-  host                   = var.step >= 4 ? one(ephemeral.upcloud_kubernetes_kubeconfig.oidc).host : ""
+  cluster_ca_certificate = var.step >= 5 ? one(ephemeral.upcloud_kubernetes_kubeconfig.oidc).cluster_ca_certificate : ""
+  host                   = var.step >= 5 ? one(ephemeral.upcloud_kubernetes_kubeconfig.oidc).host : ""
   token                  = local.id_token
 
   ignore_annotations = [

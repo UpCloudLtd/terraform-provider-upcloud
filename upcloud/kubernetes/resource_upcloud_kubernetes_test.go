@@ -241,7 +241,9 @@ func TestAccUpcloudKubernetes_authentication(t *testing.T) {
 					resource.TestCheckResourceAttr(auth, "issuer_url", "https://accounts.example.com"),
 					resource.TestCheckResourceAttr(auth, "audiences.#", "1"),
 					resource.TestCheckResourceAttr(auth, "audiences.0", "client-id-123"),
-					resource.TestCheckNoResourceAttr(auth, "claim_mappings"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.claim", "email"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.prefix", "oidc:"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings.groups"),
 				),
 			},
 			{
@@ -274,7 +276,8 @@ func TestAccUpcloudKubernetes_authentication(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(auth, "audiences.#", "1"),
 					resource.TestCheckNoResourceAttr(auth, "audience_match_policy"),
-					resource.TestCheckNoResourceAttr(auth, "claim_mappings"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings.groups"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings.extra"),
 					resource.TestCheckNoResourceAttr(auth, "claim_validation_rules.#"),
 					resource.TestCheckNoResourceAttr(auth, "user_validation_rules.#"),
 				),

@@ -9,7 +9,6 @@ import (
 	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -157,21 +156,13 @@ func (r *kubernetesClusterAuthenticationResource) Schema(_ context.Context, _ re
 				Optional:            true,
 			},
 			"claim_mappings": schema.SingleNestedAttribute{
-				MarkdownDescription: "Rules for mapping token claims to Kubernetes user attributes.",
-				Optional:            true,
+				MarkdownDescription: "Rules for mapping token claims to Kubernetes user attributes. The API requires the `username` mapping.",
+				Required:            true,
 				Attributes: map[string]schema.Attribute{
 					"username": schema.SingleNestedAttribute{
 						MarkdownDescription: "Mapping for the Kubernetes username. Use either `claim` with `prefix` or `expression`.",
-						Optional:            true,
+						Required:            true,
 						Attributes:          prefixedClaimOrExpressionAttributes(),
-						// Validators of nested attributes run only when `claim_mappings` is set, so this checks that the object is not empty.
-						Validators: []validator.Object{
-							objectvalidator.AtLeastOneOf(
-								siblingPath("groups"),
-								siblingPath("uid"),
-								siblingPath("extra"),
-							),
-						},
 					},
 					"groups": schema.SingleNestedAttribute{
 						MarkdownDescription: "Mapping for the Kubernetes groups. Use either `claim` with `prefix` or `expression`.",

@@ -36,4 +36,11 @@ resource "upcloud_kubernetes_cluster_authentication" "main" {
   name       = "example"
   issuer_url = "https://accounts.example.com"
   audiences  = ["client-id-123"]
+
+  claim_mappings = {
+    username = {
+      claim  = "email"
+      prefix = "oidc:"
+    }
+  }
 }
