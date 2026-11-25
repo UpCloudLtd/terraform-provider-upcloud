@@ -110,6 +110,13 @@ func (m *kubeconfigModel) parse(s string) (name types.String, diags diag.Diagnos
 	}
 
 	currentContext := strings.Split(k.CurrentContext, "@")
+	if len(currentContext) != 2 {
+		diags.AddError(
+			"Unexpected kubeconfig current context",
+			fmt.Sprintf("Expected current context in the format `<user>@<cluster>`, got: %q.", k.CurrentContext),
+		)
+		return
+	}
 	name = types.StringValue(currentContext[1])
 
 	for _, v := range k.Clusters {

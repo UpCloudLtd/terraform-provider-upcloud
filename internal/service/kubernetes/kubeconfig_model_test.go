@@ -53,3 +53,10 @@ users:
 
 	assert.True(t, (&kubernetesKubeconfigModel{}).parseOIDC("").HasError())
 }
+
+func TestKubeconfigModel_parseInvalidCurrentContext(t *testing.T) {
+	for _, s := range []string{"apiVersion: v1\nkind: Config\n", "current-context: no-at-sign\n"} {
+		m := kubernetesKubeconfigModel{}
+		assert.True(t, m.parseCluster(s).HasError(), s)
+	}
+}

@@ -552,12 +552,19 @@ func flattenClusterAuthentication(m *clusterAuthenticationModel, api *v9.Kuberne
 
 	m.ClaimMappings = flattenClaimMappings(api.ClaimMappings)
 
+	prevRules := m.ClaimValidationRules
 	m.ClaimValidationRules = nil
 	if api.ClaimValidationRules != nil {
-		for _, rule := range *api.ClaimValidationRules {
+		for i, rule := range *api.ClaimValidationRules {
+			requiredValue := unsetString(rule.RequiredValue)
+			// An empty required value is valid configuration for requiring an empty claim, but the API does not distinguish it from a missing value. Keep the configured empty string to avoid a diff.
+			if requiredValue.IsNull() && i < len(prevRules) && !prevRules[i].RequiredValue.IsNull() && !prevRules[i].RequiredValue.IsUnknown() && prevRules[i].RequiredValue.ValueString() == "" {
+				requiredValue = prevRules[i].RequiredValue
+			}
+
 			m.ClaimValidationRules = append(m.ClaimValidationRules, claimValidationRuleModel{
 				Claim:         unsetString(rule.Claim),
-				RequiredValue: unsetString(rule.RequiredValue),
+				RequiredValue: requiredValue,
 				Expression:    unsetString(rule.Expression),
 				Message:       unsetString(rule.Message),
 			})
