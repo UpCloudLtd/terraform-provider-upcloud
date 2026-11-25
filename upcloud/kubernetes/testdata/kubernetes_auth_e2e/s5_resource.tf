@@ -17,6 +17,9 @@ resource "kubernetes_namespace_v1" "hello" {
   metadata {
     name = "hello"
   }
+
+  # Keep the node group until the workloads and resources that depend on them are destroyed.
+  depends_on = [upcloud_kubernetes_node_group.default]
 }
 
 resource "kubernetes_deployment_v1" "hello" {
