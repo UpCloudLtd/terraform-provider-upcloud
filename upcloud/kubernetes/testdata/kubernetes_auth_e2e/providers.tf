@@ -26,10 +26,10 @@ terraform {
 provider "kubernetes" {
   alias = "cluster"
 
-  client_certificate     = ephemeral.upcloud_kubernetes_cluster.main.client_certificate
-  client_key             = ephemeral.upcloud_kubernetes_cluster.main.client_key
-  cluster_ca_certificate = ephemeral.upcloud_kubernetes_cluster.main.cluster_ca_certificate
-  host                   = ephemeral.upcloud_kubernetes_cluster.main.host
+  client_certificate     = ephemeral.upcloud_kubernetes_kubeconfig.main.client_certificate
+  client_key             = ephemeral.upcloud_kubernetes_kubeconfig.main.client_key
+  cluster_ca_certificate = ephemeral.upcloud_kubernetes_kubeconfig.main.cluster_ca_certificate
+  host                   = ephemeral.upcloud_kubernetes_kubeconfig.main.host
 
   ignore_annotations = [
     "^service\\.beta\\.kubernetes\\.io\\/.*load.*balancer.*"
@@ -46,8 +46,8 @@ provider "keycloak" {
 provider "kubernetes" {
   alias = "oidc"
 
-  cluster_ca_certificate = ephemeral.upcloud_kubernetes_cluster.main.cluster_ca_certificate
-  host                   = ephemeral.upcloud_kubernetes_cluster.main.host
+  cluster_ca_certificate = var.step >= 4 ? one(ephemeral.upcloud_kubernetes_kubeconfig.oidc).cluster_ca_certificate : ""
+  host                   = var.step >= 4 ? one(ephemeral.upcloud_kubernetes_kubeconfig.oidc).host : ""
   token                  = local.id_token
 
   ignore_annotations = [

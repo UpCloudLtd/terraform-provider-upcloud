@@ -4,8 +4,9 @@ resource "upcloud_router" "example" {
 }
 
 resource "upcloud_network" "example" {
-  name = "example-network"
-  zone = "de-fra1"
+  name   = "example-network"
+  zone   = "de-fra1"
+  router = upcloud_router.example.id
 
   ip_network {
     address = "172.16.1.0/24"

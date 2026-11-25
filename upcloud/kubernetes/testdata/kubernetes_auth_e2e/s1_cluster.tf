@@ -34,6 +34,6 @@ resource "upcloud_kubernetes_node_group" "default" {
   plan          = "STARTER-2xCPU-4GB"
 }
 
-ephemeral "upcloud_kubernetes_cluster" "main" {
-  id = upcloud_kubernetes_cluster.main.id
+ephemeral "upcloud_kubernetes_kubeconfig" "main" {
+  cluster = upcloud_kubernetes_cluster.main.id
 }
