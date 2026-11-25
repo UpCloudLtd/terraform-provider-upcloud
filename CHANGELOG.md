@@ -7,6 +7,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
+- `upcloud_kubernetes_kubeconfig`: new data source and ephemeral resource for getting the cluster level kubeconfig or, when `authentication` (name of an authentication issuer configuration) is defined, the OIDC kubeconfig of a Managed Kubernetes cluster.
+- `upcloud_kubernetes_cluster_authentication`: new resource for managing OIDC authentication issuer configurations of Managed Kubernetes clusters.
 - `upcloud_managed_object_storage`: add `mode` field to `endpoint` to distinguish S3 API endpoints (`api`) from static website endpoints (`static-website`).
 
 ### Changed

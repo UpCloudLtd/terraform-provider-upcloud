@@ -223,6 +223,66 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 	})
 }
 
+func TestAccUpcloudKubernetes_authentication(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_authentication_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_authentication_s2.tf")
+
+	auth := "upcloud_kubernetes_cluster_authentication.main"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(auth, "cluster", "upcloud_kubernetes_cluster.main", "id"),
+					resource.TestCheckResourceAttr(auth, "name", "example"),
+					resource.TestCheckResourceAttr(auth, "issuer_url", "https://accounts.example.com"),
+					resource.TestCheckResourceAttr(auth, "audiences.#", "1"),
+					resource.TestCheckResourceAttr(auth, "audiences.0", "client-id-123"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings"),
+				),
+			},
+			{
+				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(auth, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(auth, "audiences.#", "2"),
+					resource.TestCheckResourceAttr(auth, "audience_match_policy", "MatchAny"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.claim", "email"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.prefix", "oidc:"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.groups.prefix", ""),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.extra.#", "1"),
+					resource.TestCheckResourceAttr(auth, "claim_validation_rules.#", "2"),
+					resource.TestCheckResourceAttr(auth, "user_validation_rules.#", "1"),
+				),
+			},
+			{
+				Config:            testDataS2,
+				ResourceName:      auth,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				// Removing the optional fields clears them
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(auth, "audiences.#", "1"),
+					resource.TestCheckNoResourceAttr(auth, "audience_match_policy"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings"),
+					resource.TestCheckNoResourceAttr(auth, "claim_validation_rules.#"),
+					resource.TestCheckNoResourceAttr(auth, "user_validation_rules.#"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s2.tf")
