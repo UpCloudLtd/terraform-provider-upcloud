@@ -2,14 +2,12 @@ package kubernetestests
 
 import (
 	"testing"
-	"time"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	"github.com/UpCloudLtd/terraform-provider-upcloud/upcloud"
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func testEndToEndKubernetes(t *testing.T, cidr string, privateNodeGroups bool) {
@@ -89,7 +87,7 @@ func TestEndToEndKubernetes_Authentication(t *testing.T) {
 5. Uses the ID token to deploy a resource to the cluster as the OIDC user.
 `)
 
-	step := func(n int, check resource.TestCheckFunc) resource.TestStep {
+	step := func(n int, check ...resource.TestCheckFunc) resource.TestStep {
 		return resource.TestStep{
 			// The configuration directory has provider blocks, so the provider factories need to be defined at the step level instead of the test case level.
 			ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
@@ -97,21 +95,18 @@ func TestEndToEndKubernetes_Authentication(t *testing.T) {
 			ConfigVariables: map[string]config.Variable{
 				"step": config.IntegerVariable(n),
 			},
-			Check: check,
+			Check: resource.ComposeTestCheckFunc(check...),
 		}
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck: func() { upcloud.TestAccPreCheck(t) },
 		Steps: []resource.TestStep{
-			step(1, nil),
-			step(2, nil),
-			step(3, nil),
+			step(1),
+			step(2),
+			step(3),
 			// Wait for the authentication configuration to take effect in the cluster before using it in the next step.
-			step(4, func(*terraform.State) error {
-				time.Sleep(90 * time.Second)
-				return nil
-			}),
+			step(4),
 			step(5, resource.TestCheckResourceAttr("kubernetes_deployment_v1.hello.0", "metadata.0.name", "hello")),
 		},
 	})
