@@ -9,6 +9,12 @@ resource "upcloud_network" "example" {
     dhcp    = true
     family  = "IPv4"
   }
+
+  # UpCloud Kubernetes Service will add a router to this network to ensure cluster networking is working as intended.
+  # You need to ignore changes to it, otherwise TF will attempt to detach the router on subsequent applies
+  lifecycle {
+    ignore_changes = [router]
+  }
 }
 
 # Create a Kubernetes cluster
@@ -33,7 +39,7 @@ provider "kubernetes" {
 }
 
 # Use the Kubernetes provider resources to interact with the cluster
-resource "kubernetes_namespace" "example" {
+resource "kubernetes_namespace_v1" "example" {
   metadata {
     name = "example-namespace"
   }

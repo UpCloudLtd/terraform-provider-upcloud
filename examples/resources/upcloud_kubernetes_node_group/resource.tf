@@ -1,7 +1,7 @@
 # Create a network for the Kubernetes cluster
 resource "upcloud_network" "example" {
   name = "example-network"
-  zone = "de-fra1"
+  zone = "fi-hel2"
   ip_network {
     address = "172.16.1.0/24"
     dhcp    = true
@@ -21,7 +21,7 @@ resource "upcloud_kubernetes_cluster" "example" {
   control_plane_ip_filter = ["0.0.0.0/0"]
   name                    = "exampleapp"
   network                 = upcloud_network.example.id
-  zone                    = "de-fra1"
+  zone                    = "fi-hel2"
 }
 
 # Create a Kubernetes cluster node group
@@ -29,7 +29,7 @@ resource "upcloud_kubernetes_node_group" "group" {
   cluster    = resource.upcloud_kubernetes_cluster.example.id
   node_count = 2
   name       = "medium"
-  plan       = "2xCPU-4GB"
+  plan       = "PREMIUM-2xCPU-4GB"
 
   labels = {
     managedBy = "terraform"

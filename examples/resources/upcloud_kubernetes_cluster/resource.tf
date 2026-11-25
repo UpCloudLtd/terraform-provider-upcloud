@@ -57,6 +57,6 @@ resource "upcloud_kubernetes_cluster" "example2" {
   name                    = "example2-cluster"
   network                 = upcloud_network.example2.id
   zone                    = "de-fra1"
-  plan                    = "prod-md"
+  plan                    = "prod-md-ha"
   private_node_groups     = true
 }
