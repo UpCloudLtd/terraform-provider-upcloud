@@ -17,13 +17,6 @@ resource "keycloak_openid_client" "client" {
   direct_access_grants_enabled = true
 }
 
-resource "keycloak_client_scope_assignments" "client" {
-  realm_id = one(keycloak_realm.realm).id
-
-  default_scopes  = ["profile", "roles", "web-origins", "acr", "basic"]
-  optional_scopes = ["address", "email"]
-}
-
 resource "keycloak_user" "user" {
   count = var.step >= 3 ? 1 : 0
 
@@ -40,6 +33,11 @@ resource "keycloak_user" "user" {
     value     = random_password.oidc_user_password.result
     temporary = false
   }
+
+  # Do not delete the role binding before the user.
+  depends_on = [
+    kubernetes_cluster_role_binding_v1.oidc
+  ]
 }
 
 resource "kubernetes_cluster_role_binding_v1" "oidc" {

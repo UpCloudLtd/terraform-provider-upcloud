@@ -16,11 +16,6 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.9"
     }
-    upcloud = {
-      # source  = "UpCloudLtd/upcloud"
-      source  = "registry.upcloud.com/upcloud/upcloud"
-      version = "~> 5.49"
-    }
   }
 }
 
@@ -41,6 +36,7 @@ provider "keycloak" {
   client_id     = "admin"
   client_secret = random_password.keycloak_admin_client_secret.result
   url           = local.keycloak_url
+  initial_login = false
 }
 
 provider "kubernetes" {

@@ -13,7 +13,7 @@ resource "kubernetes_deployment_v1" "hello" {
 
   metadata {
     name      = "hello"
-    namespace = "hello"
+    namespace = one(kubernetes_namespace_v1.hello).metadata[0].name
     labels = {
       app = "hello"
     }

@@ -13,7 +13,7 @@ resource "kubernetes_deployment_v1" "keycloak" {
 
   metadata {
     name      = "keycloak"
-    namespace = "keycloak"
+    namespace = one(kubernetes_namespace_v1.keycloak).metadata[0].name
     labels = {
       app = "keycloak"
     }
@@ -80,7 +80,7 @@ resource "kubernetes_service_v1" "keycloak" {
 
   metadata {
     name      = "keycloak"
-    namespace = "keycloak"
+    namespace = one(kubernetes_namespace_v1.keycloak).metadata[0].name
     annotations = {
       "service.beta.kubernetes.io/upcloud-load-balancer-config" = jsonencode({
         name = "${local.name_prefix}lb"
@@ -113,5 +113,29 @@ resource "kubernetes_service_v1" "keycloak" {
     }
 
     type = "LoadBalancer"
+  }
+}
+
+data "http" "keycloak" {
+  count = var.step >= 2 ? 1 : 0
+
+  url = "${local.keycloak_url}/realms/master"
+
+  depends_on = [
+    kubernetes_deployment_v1.keycloak,
+    kubernetes_service_v1.keycloak,
+  ]
+
+  # Wait for the load balancer and Keycloak to be ready before proceeding to the next step. Max 15 minutes.
+  retry {
+    attempts     = 90
+    min_delay_ms = 10e3
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = self.status_code == 200
+      error_message = "Keycloak is not ready, status code: ${self.status_code}."
+    }
   }
 }
