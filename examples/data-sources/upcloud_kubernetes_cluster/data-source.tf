@@ -1,9 +1,15 @@
 # Use Kubernetes provider to access your Kubernetes cluster
 
-# Create a network for the Kubernetes cluster
+# Create a network and a router for the Kubernetes cluster
+resource "upcloud_router" "example" {
+  name = "example-router"
+}
+
 resource "upcloud_network" "example" {
-  name = "example-network"
-  zone = "de-fra1"
+  name   = "example-network"
+  zone   = "de-fra1"
+  router = upcloud_router.example.id
+
   ip_network {
     address = "172.16.1.0/24"
     dhcp    = true
@@ -33,7 +39,7 @@ provider "kubernetes" {
 }
 
 # Use the Kubernetes provider resources to interact with the cluster
-resource "kubernetes_namespace" "example" {
+resource "kubernetes_namespace_v1" "example" {
   metadata {
     name = "example-namespace"
   }
