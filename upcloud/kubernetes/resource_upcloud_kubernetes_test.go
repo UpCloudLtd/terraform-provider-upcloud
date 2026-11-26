@@ -39,6 +39,24 @@ func getLatestVersions(t *testing.T) (string, string) {
 	return v[n-2], v[n-1]
 }
 
+func hasSuffix(suffix string) resource.CheckResourceAttrWithFunc {
+	return func(value string) error {
+		if strings.HasSuffix(value, suffix) {
+			return nil
+		}
+		return fmt.Errorf("expected value to have suffix %q, got: %s", suffix, value)
+	}
+}
+
+func contains(substr string) resource.CheckResourceAttrWithFunc {
+	return func(value string) error {
+		if strings.Contains(value, substr) {
+			return nil
+		}
+		return fmt.Errorf("expected value to contain %q", substr)
+	}
+}
+
 func hasPrefix(prefix string) resource.CheckResourceAttrWithFunc {
 	return func(value string) error {
 		if strings.HasPrefix(value, prefix) {
@@ -228,6 +246,27 @@ func TestAccUpcloudKubernetes_authentication(t *testing.T) {
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_authentication_s2.tf")
 
 	auth := "upcloud_kubernetes_cluster_authentication.main"
+	clusterKubeconfig := "data.upcloud_kubernetes_kubeconfig.cluster"
+	oidcKubeconfig := "data.upcloud_kubernetes_kubeconfig.oidc"
+
+	// Cluster level kubeconfig contains client credentials, OIDC kubeconfig does not.
+	kubeconfigChecks := func(audience string, oidcID resource.CheckResourceAttrWithFunc) resource.TestCheckFunc {
+		return resource.ComposeTestCheckFunc(
+			resource.TestCheckResourceAttrPair(clusterKubeconfig, "id", "upcloud_kubernetes_cluster.main", "id"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "kubeconfig"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "host"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "cluster_ca_certificate"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "client_certificate"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "client_key"),
+
+			resource.TestCheckResourceAttrWith(oidcKubeconfig, "id", oidcID),
+			resource.TestCheckResourceAttrWith(oidcKubeconfig, "kubeconfig", contains(audience)),
+			resource.TestCheckResourceAttrPair(oidcKubeconfig, "host", clusterKubeconfig, "host"),
+			resource.TestCheckResourceAttrPair(oidcKubeconfig, "cluster_ca_certificate", clusterKubeconfig, "cluster_ca_certificate"),
+			resource.TestCheckNoResourceAttr(oidcKubeconfig, "client_certificate"),
+			resource.TestCheckNoResourceAttr(oidcKubeconfig, "client_key"),
+		)
+	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
@@ -244,6 +283,8 @@ func TestAccUpcloudKubernetes_authentication(t *testing.T) {
 					resource.TestCheckResourceAttr(auth, "claim_mappings.username.claim", "email"),
 					resource.TestCheckResourceAttr(auth, "claim_mappings.username.prefix", "oidc:"),
 					resource.TestCheckNoResourceAttr(auth, "claim_mappings.groups"),
+					// Without audience, the first audience of the issuer is used.
+					kubeconfigChecks("client-id-123", hasSuffix("/example")),
 				),
 			},
 			{
@@ -262,6 +303,7 @@ func TestAccUpcloudKubernetes_authentication(t *testing.T) {
 					resource.TestCheckResourceAttr(auth, "claim_mappings.extra.#", "1"),
 					resource.TestCheckResourceAttr(auth, "claim_validation_rules.#", "2"),
 					resource.TestCheckResourceAttr(auth, "user_validation_rules.#", "1"),
+					kubeconfigChecks("client-id-456", hasSuffix("/example/client-id-456")),
 				),
 			},
 			{
@@ -280,6 +322,7 @@ func TestAccUpcloudKubernetes_authentication(t *testing.T) {
 					resource.TestCheckNoResourceAttr(auth, "claim_mappings.extra"),
 					resource.TestCheckNoResourceAttr(auth, "claim_validation_rules.#"),
 					resource.TestCheckNoResourceAttr(auth, "user_validation_rules.#"),
+					kubeconfigChecks("client-id-123", hasSuffix("/example")),
 				),
 			},
 		},

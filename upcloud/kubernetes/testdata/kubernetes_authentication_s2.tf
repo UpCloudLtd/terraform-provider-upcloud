@@ -74,3 +74,13 @@ resource "upcloud_kubernetes_cluster_authentication" "main" {
     }
   ]
 }
+
+data "upcloud_kubernetes_kubeconfig" "cluster" {
+  cluster = upcloud_kubernetes_cluster.main.id
+}
+
+data "upcloud_kubernetes_kubeconfig" "oidc" {
+  cluster        = upcloud_kubernetes_cluster.main.id
+  authentication = upcloud_kubernetes_cluster_authentication.main.name
+  audience       = "client-id-456"
+}
