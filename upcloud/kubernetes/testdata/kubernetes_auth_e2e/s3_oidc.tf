@@ -4,6 +4,12 @@ resource "keycloak_realm" "realm" {
   realm        = "cloud"
   enabled      = true
   ssl_required = "external"
+
+  # Keycloak needs to be running when the realm is created or destroyed. Without this, Terraform could destroy the deployment before the realm.
+  depends_on = [
+    kubernetes_deployment_v1.keycloak,
+    kubernetes_service_v1.keycloak,
+  ]
 }
 
 resource "keycloak_openid_client" "client" {
