@@ -185,7 +185,7 @@ resource "upcloud_loadbalancer_dynamic_certificate_bundle" "lb_cb_d1" {
   key_type = "rsa"
 
   labels = {
-    env = "test"
+    env  = "test"
     tool = "tf"
   }
 }

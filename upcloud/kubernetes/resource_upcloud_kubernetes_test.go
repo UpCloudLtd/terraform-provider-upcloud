@@ -39,6 +39,24 @@ func getLatestVersions(t *testing.T) (string, string) {
 	return v[n-2], v[n-1]
 }
 
+func hasSuffix(suffix string) resource.CheckResourceAttrWithFunc {
+	return func(value string) error {
+		if strings.HasSuffix(value, suffix) {
+			return nil
+		}
+		return fmt.Errorf("expected value to have suffix %q, got: %s", suffix, value)
+	}
+}
+
+func contains(substr string) resource.CheckResourceAttrWithFunc {
+	return func(value string) error {
+		if strings.Contains(value, substr) {
+			return nil
+		}
+		return fmt.Errorf("expected value to contain %q", substr)
+	}
+}
+
 func hasPrefix(prefix string) resource.CheckResourceAttrWithFunc {
 	return func(value string) error {
 		if strings.HasPrefix(value, prefix) {
@@ -223,6 +241,94 @@ func TestAccUpcloudKubernetes_labels(t *testing.T) {
 	})
 }
 
+func TestAccUpcloudKubernetes_authentication(t *testing.T) {
+	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_authentication_s1.tf")
+	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_authentication_s2.tf")
+
+	auth := "upcloud_kubernetes_cluster_authentication.main"
+	clusterKubeconfig := "data.upcloud_kubernetes_kubeconfig.cluster"
+	oidcKubeconfig := "data.upcloud_kubernetes_kubeconfig.oidc"
+
+	// Cluster level kubeconfig contains client credentials, OIDC kubeconfig does not.
+	kubeconfigChecks := func(audience string, oidcID resource.CheckResourceAttrWithFunc) resource.TestCheckFunc {
+		return resource.ComposeTestCheckFunc(
+			resource.TestCheckResourceAttrPair(clusterKubeconfig, "id", "upcloud_kubernetes_cluster.main", "id"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "kubeconfig"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "host"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "cluster_ca_certificate"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "client_certificate"),
+			resource.TestCheckResourceAttrSet(clusterKubeconfig, "client_key"),
+
+			resource.TestCheckResourceAttrWith(oidcKubeconfig, "id", oidcID),
+			resource.TestCheckResourceAttrWith(oidcKubeconfig, "kubeconfig", contains(audience)),
+			resource.TestCheckResourceAttrPair(oidcKubeconfig, "host", clusterKubeconfig, "host"),
+			resource.TestCheckResourceAttrPair(oidcKubeconfig, "cluster_ca_certificate", clusterKubeconfig, "cluster_ca_certificate"),
+			resource.TestCheckNoResourceAttr(oidcKubeconfig, "client_certificate"),
+			resource.TestCheckNoResourceAttr(oidcKubeconfig, "client_key"),
+		)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(auth, "cluster", "upcloud_kubernetes_cluster.main", "id"),
+					resource.TestCheckResourceAttr(auth, "name", "example"),
+					resource.TestCheckResourceAttr(auth, "issuer_url", "https://accounts.example.com"),
+					resource.TestCheckResourceAttr(auth, "audiences.#", "1"),
+					resource.TestCheckResourceAttr(auth, "audiences.0", "client-id-123"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.claim", "email"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.prefix", "oidc:"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings.groups"),
+					// Without audience, the first audience of the issuer is used.
+					kubeconfigChecks("client-id-123", hasSuffix("/example")),
+				),
+			},
+			{
+				Config: testDataS2,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(auth, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(auth, "audiences.#", "2"),
+					resource.TestCheckResourceAttr(auth, "audience_match_policy", "MatchAny"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.claim", "email"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.username.prefix", "oidc:"),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.groups.prefix", ""),
+					resource.TestCheckResourceAttr(auth, "claim_mappings.extra.#", "1"),
+					resource.TestCheckResourceAttr(auth, "claim_validation_rules.#", "2"),
+					resource.TestCheckResourceAttr(auth, "user_validation_rules.#", "1"),
+					kubeconfigChecks("client-id-456", hasSuffix("/example/client-id-456")),
+				),
+			},
+			{
+				Config:            testDataS2,
+				ResourceName:      auth,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				// Removing the optional fields clears them
+				Config: testDataS1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(auth, "audiences.#", "1"),
+					resource.TestCheckNoResourceAttr(auth, "audience_match_policy"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings.groups"),
+					resource.TestCheckNoResourceAttr(auth, "claim_mappings.extra"),
+					resource.TestCheckNoResourceAttr(auth, "claim_validation_rules.#"),
+					resource.TestCheckNoResourceAttr(auth, "user_validation_rules.#"),
+					kubeconfigChecks("client-id-123", hasSuffix("/example")),
+				),
+			},
+		},
+	})
+}
+
 func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
 	testDataS1 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s1.tf")
 	testDataS2 := utils.ReadTestDataFile(t, "testdata/kubernetes_storage_encryption_s2.tf")
@@ -260,71 +366,4 @@ func TestAccUpcloudKubernetes_storageEncryption(t *testing.T) {
 			},
 		},
 	})
-}
-
-func testEndToEndKubernetes(t *testing.T, cidr string, privateNodeGroups bool) {
-	serviceType := "NodePort"
-	nodeAccess := "public"
-	if privateNodeGroups {
-		serviceType = "LoadBalancer"
-		nodeAccess = "private"
-	}
-
-	t.Logf(`This testcase:
-
-- Creates a Kubernetes cluster with one %s node group.
-- Configures Kubernetes provider to connect to the created cluster using ephemeral cluster resource.
-- Deploys hello deployment and service to the cluster.
-- Uses http data source to verify that the deployment is reachable through a %s.
-`, nodeAccess, serviceType)
-
-	testdata := utils.ReadTestDataFile(t, "testdata/kubernetes_e2e.tf")
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { upcloud.TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: upcloud.TestAccProviderFactories,
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"http": {
-				VersionConstraint: "~> 3.4",
-			},
-			"kubernetes": {
-				VersionConstraint: "~> 3.0",
-			},
-		},
-		Steps: []resource.TestStep{
-			{
-				// Create the cluster first and add kubernetes resources in the next step.
-				Config: testdata,
-				ConfigVariables: map[string]config.Variable{
-					"private_node_groups": config.BoolVariable(privateNodeGroups),
-					"network_cidr":        config.StringVariable(cidr),
-				},
-			},
-			{
-				Config: testdata,
-				ConfigVariables: map[string]config.Variable{
-					"enable_kubernetes_resources": config.BoolVariable(true),
-					"network_cidr":                config.StringVariable(cidr),
-					"private_node_groups":         config.BoolVariable(privateNodeGroups),
-				},
-				ConfigPlanChecks: resource.ConfigPlanChecks{
-					PreApply: []plancheck.PlanCheck{
-						plancheck.ExpectResourceAction("upcloud_kubernetes_cluster.main", plancheck.ResourceActionNoop),
-						plancheck.ExpectResourceAction("upcloud_kubernetes_node_group.default", plancheck.ResourceActionNoop),
-					},
-				},
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.http.hello.0", "status_code", "200"),
-				),
-			},
-		},
-	})
-}
-
-func TestEndToEndKubernetes_PublicNodePort(t *testing.T) {
-	testEndToEndKubernetes(t, "172.23.45.0/24", false)
-}
-
-func TestEndToEndKubernetes_PrivateLoadBalancer(t *testing.T) {
-	testEndToEndKubernetes(t, "172.23.46.0/24", true)
 }

@@ -200,6 +200,7 @@ func (p *upcloudProvider) Resources(_ context.Context) []func() resource.Resourc
 		gateway.NewGatewayResource,
 		ip.NewFloatingIPAddressResource,
 		kubernetes.NewKubernetesClusterResource,
+		kubernetes.NewKubernetesClusterAuthenticationResource,
 		kubernetes.NewKubernetesNodeGroupResource,
 		loadbalancer.NewBackendTLSConfigResource,
 		loadbalancer.NewBackendDynamicMemberResource,
@@ -242,6 +243,7 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 		cloud.NewZonesDataSource,
 		ip.NewIPAddressesDataSource,
 		kubernetes.NewKubernetesClusterDataSource,
+		kubernetes.NewKubernetesKubeconfigDataSource,
 		loadbalancer.NewDNSChallengeDomainDataSource,
 		managedobjectstorage.NewPoliciesDataSource,
 		managedobjectstorage.NewRegionsDataSource,
@@ -254,5 +256,6 @@ func (p *upcloudProvider) DataSources(_ context.Context) []func() datasource.Dat
 func (p *upcloudProvider) EphemeralResources(_ context.Context) []func() ephemeral.EphemeralResource {
 	return []func() ephemeral.EphemeralResource{
 		kubernetes.NewKubernetesClusterEphemeral,
+		kubernetes.NewKubernetesKubeconfigEphemeral,
 	}
 }
