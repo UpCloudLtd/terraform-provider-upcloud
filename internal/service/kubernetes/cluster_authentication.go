@@ -289,9 +289,7 @@ func (r *kubernetesClusterAuthenticationResource) Schema(_ context.Context, _ re
 						"claim": schema.StringAttribute{
 							MarkdownDescription: "Name of the claim to validate. Mutually exclusive with `expression`.",
 							Optional:            true,
-							Validators: []validator.String{
-								stringvalidator.ConflictsWith(siblingPath("expression")),
-							},
+							Validators:          claimOrExpressionValidators(),
 						},
 						"required_value": schema.StringAttribute{
 							MarkdownDescription: "Value that the claim must have, e.g. `upcloud.com`. Mutually exclusive with `expression`.",
@@ -547,9 +545,9 @@ func buildClusterAuthenticationRequest(ctx context.Context, m clusterAuthenticat
 	config = v9.KubernetesAuthenticationIssuerConfig{
 		Name:                 m.Name.ValueString(),
 		IssuerUrl:            m.IssuerURL.ValueString(),
-		DiscoveryUrl:         m.DiscoveryURL.ValueStringPointer(),
+		DiscoveryUrl:         utils.ValueStringOrNil(m.DiscoveryURL),
 		Audiences:            audiences,
-		CertificateAuthority: m.CertificateAuthority.ValueStringPointer(),
+		CertificateAuthority: utils.ValueStringOrNil(m.CertificateAuthority),
 	}
 
 	if !m.AudienceMatchPolicy.IsNull() {
@@ -570,10 +568,10 @@ func buildClusterAuthenticationRequest(ctx context.Context, m clusterAuthenticat
 		rules := make([]v9.KubernetesClaimValidationRule, 0, len(claimValidationRules))
 		for _, rule := range claimValidationRules {
 			rules = append(rules, v9.KubernetesClaimValidationRule{
-				Claim:         rule.Claim.ValueStringPointer(),
-				RequiredValue: rule.RequiredValue.ValueStringPointer(),
-				Expression:    rule.Expression.ValueStringPointer(),
-				Message:       rule.Message.ValueStringPointer(),
+				Claim:         utils.ValueStringOrNil(rule.Claim),
+				RequiredValue: utils.ValueStringOrNil(rule.RequiredValue),
+				Expression:    utils.ValueStringOrNil(rule.Expression),
+				Message:       utils.ValueStringOrNil(rule.Message),
 			})
 		}
 		config.ClaimValidationRules = &rules
@@ -586,7 +584,7 @@ func buildClusterAuthenticationRequest(ctx context.Context, m clusterAuthenticat
 		for _, rule := range userValidationRules {
 			rules = append(rules, v9.KubernetesUserValidationRule{
 				Expression: rule.Expression.ValueString(),
-				Message:    rule.Message.ValueStringPointer(),
+				Message:    utils.ValueStringOrNil(rule.Message),
 			})
 		}
 		config.UserValidationRules = &rules
@@ -611,8 +609,8 @@ func buildClaimMappingsRequest(ctx context.Context, m *claimMappingsModel) (*v9.
 	diags.Append(d...)
 	if uid != nil {
 		mappings.Uid = &v9.KubernetesClaimOrExpression{
-			Claim:      uid.Claim.ValueStringPointer(),
-			Expression: uid.Expression.ValueStringPointer(),
+			Claim:      utils.ValueStringOrNil(uid.Claim),
+			Expression: utils.ValueStringOrNil(uid.Expression),
 		}
 	}
 
@@ -638,18 +636,10 @@ func buildPrefixedClaimOrExpressionRequest(m *prefixedClaimOrExpressionModel) *v
 	}
 
 	return &v9.KubernetesPrefixedClaimOrExpression{
-		Claim:      m.Claim.ValueStringPointer(),
-		Prefix:     m.Prefix.ValueStringPointer(),
-		Expression: m.Expression.ValueStringPointer(),
+		Claim:      utils.ValueStringOrNil(m.Claim),
+		Prefix:     utils.ValueStringOrNil(m.Prefix),
+		Expression: utils.ValueStringOrNil(m.Expression),
 	}
-}
-
-// unsetString maps an empty or missing API string to null.
-func unsetString(v *string) types.String {
-	if v == nil || *v == "" {
-		return types.StringNull()
-	}
-	return types.StringValue(*v)
 }
 
 func setClusterAuthenticationValues(ctx context.Context, m *clusterAuthenticationModel, api *v9.KubernetesAuthenticationIssuerConfig) (diags diag.Diagnostics) {
@@ -658,8 +648,8 @@ func setClusterAuthenticationValues(ctx context.Context, m *clusterAuthenticatio
 	m.ID = types.StringValue(utils.MarshalID(m.Cluster.ValueString(), api.Name))
 	m.Name = types.StringValue(api.Name)
 	m.IssuerURL = types.StringValue(api.IssuerUrl)
-	m.DiscoveryURL = unsetString(api.DiscoveryUrl)
-	m.CertificateAuthority = unsetString(api.CertificateAuthority)
+	m.DiscoveryURL = types.StringPointerValue(api.DiscoveryUrl)
+	m.CertificateAuthority = types.StringPointerValue(api.CertificateAuthority)
 
 	m.Audiences, d = types.ListValueFrom(ctx, types.StringType, api.Audiences)
 	diags.Append(d...)
@@ -674,23 +664,14 @@ func setClusterAuthenticationValues(ctx context.Context, m *clusterAuthenticatio
 	m.ClaimMappings, d = objectFrom(ctx, claimMappingsAttrTypes, claimMappings)
 	diags.Append(d...)
 
-	prevRules, d := listAs[claimValidationRuleModel](ctx, m.ClaimValidationRules)
-	diags.Append(d...)
-
 	var claimValidationRules []claimValidationRuleModel
 	if api.ClaimValidationRules != nil {
-		for i, rule := range *api.ClaimValidationRules {
-			requiredValue := unsetString(rule.RequiredValue)
-			// An empty required value is valid configuration for requiring an empty claim, but the API does not distinguish it from a missing value. Keep the configured empty string to avoid a diff.
-			if requiredValue.IsNull() && i < len(prevRules) && !prevRules[i].RequiredValue.IsNull() && !prevRules[i].RequiredValue.IsUnknown() && prevRules[i].RequiredValue.ValueString() == "" {
-				requiredValue = prevRules[i].RequiredValue
-			}
-
+		for _, rule := range *api.ClaimValidationRules {
 			claimValidationRules = append(claimValidationRules, claimValidationRuleModel{
-				Claim:         unsetString(rule.Claim),
-				RequiredValue: requiredValue,
-				Expression:    unsetString(rule.Expression),
-				Message:       unsetString(rule.Message),
+				Claim:         types.StringPointerValue(rule.Claim),
+				RequiredValue: types.StringPointerValue(rule.RequiredValue),
+				Expression:    types.StringPointerValue(rule.Expression),
+				Message:       types.StringPointerValue(rule.Message),
 			})
 		}
 	}
@@ -702,7 +683,7 @@ func setClusterAuthenticationValues(ctx context.Context, m *clusterAuthenticatio
 		for _, rule := range *api.UserValidationRules {
 			userValidationRules = append(userValidationRules, userValidationRuleModel{
 				Expression: types.StringValue(rule.Expression),
-				Message:    unsetString(rule.Message),
+				Message:    types.StringPointerValue(rule.Message),
 			})
 		}
 	}
@@ -728,8 +709,8 @@ func setClaimMappingsValues(ctx context.Context, api *v9.KubernetesClaimMappings
 	var uid *claimOrExpressionModel
 	if api.Uid != nil && (api.Uid.Claim != nil || api.Uid.Expression != nil) {
 		uid = &claimOrExpressionModel{
-			Claim:      unsetString(api.Uid.Claim),
-			Expression: unsetString(api.Uid.Expression),
+			Claim:      types.StringPointerValue(api.Uid.Claim),
+			Expression: types.StringPointerValue(api.Uid.Expression),
 		}
 	}
 	m.UID, d = objectFrom(ctx, claimOrExpressionAttrTypes, uid)
@@ -754,13 +735,13 @@ func setClaimMappingsValues(ctx context.Context, api *v9.KubernetesClaimMappings
 }
 
 func setPrefixedClaimOrExpressionValues(api *v9.KubernetesPrefixedClaimOrExpression) *prefixedClaimOrExpressionModel {
-	if api == nil || (unsetString(api.Claim).IsNull() && unsetString(api.Expression).IsNull()) {
+	if api == nil || (api.Claim == nil && api.Expression == nil) {
 		return nil
 	}
 
 	m := &prefixedClaimOrExpressionModel{
-		Claim:      unsetString(api.Claim),
-		Expression: unsetString(api.Expression),
+		Claim:      types.StringPointerValue(api.Claim),
+		Expression: types.StringPointerValue(api.Expression),
 		Prefix:     types.StringPointerValue(api.Prefix),
 	}
 	// Prefix is required, but can be empty, when claim is used.

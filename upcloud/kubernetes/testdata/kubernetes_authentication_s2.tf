@@ -59,6 +59,7 @@ resource "upcloud_kubernetes_cluster_authentication" "main" {
     {
       claim          = "hd"
       required_value = "example.com"
+      message        = ""
     },
     {
       expression = "claims.email_verified == true"
