@@ -8,8 +8,10 @@ terraform {
 }
 
 provider "upcloud" {
-  # username and password configuration arguments can be omitted  
-  # if environment variables UPCLOUD_USERNAME and UPCLOUD_PASSWORD are set
-  # username = ""
-  # password = ""
+  # If the UPCLOUD_TOKEN environment variable is set,
+  # you can omit the token argument.
+  # token = ""
+  #
+  # To use a subaccount's username and password instead,
+  # set the UPCLOUD_USERNAME and UPCLOUD_PASSWORD environment variables.
 }

@@ -25,7 +25,7 @@ resource "upcloud_gateway" "this" {
   name = "gateway-example-gw"
   zone = "pl-waw1"
 
-  # For more info see https://upcloud.com/resources/docs/networking#nat-and-vpn-gateways
+  # For more info see https://upcloud.com/docs/products/vpn-gateway/configurations/
   features = ["vpn"]
   plan     = "advanced"
 
