@@ -7,7 +7,7 @@ resource "upcloud_floating_ip_address" "my_floating_address" {
 resource "upcloud_server" "example" {
   hostname = "terraform.example.tld"
   zone     = "de-fra1"
-  plan     = "1xCPU-1GB"
+  plan     = "PREMIUM-1xCPU-1GB"
   metadata = true
 
   login {

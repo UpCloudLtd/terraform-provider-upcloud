@@ -45,7 +45,7 @@ resource "upcloud_server" "this" {
   hostname = "${var.prefix}vm"
   title    = "${var.prefix}vm"
   zone     = var.zone
-  plan     = "2xCPU-4GB"
+  plan     = "PREMIUM-2xCPU-4GB"
   metadata = true
   user_data = templatefile("${path.module}/user_data.sh", {
     token = random_password.token.result
