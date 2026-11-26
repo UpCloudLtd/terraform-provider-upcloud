@@ -309,6 +309,23 @@ func parseClusterUUID(value string) (uuid.UUID, diag.Diagnostics) {
 	return id, diags
 }
 
+// parseClusterAuthenticationID unmarshals the resource ID into the cluster UUID and the name of the authentication issuer configuration.
+func parseClusterAuthenticationID(id string) (clusterUUID uuid.UUID, name string, diags diag.Diagnostics) {
+	var cluster string
+	diags.Append(utils.UnmarshalIDDiag(id, &cluster, &name)...)
+	if diags.HasError() {
+		return
+	}
+
+	parsed, err := uuid.Parse(cluster)
+	if err != nil || name == "" {
+		diags.AddError("Invalid Kubernetes cluster authentication ID", fmt.Sprintf("Expected ID in the format `<cluster UUID>/<name>`, got: %s", id))
+		return
+	}
+
+	return parsed, name, diags
+}
+
 func (r *kubernetesClusterAuthenticationResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan clusterAuthenticationModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -343,15 +360,9 @@ func (r *kubernetesClusterAuthenticationResource) Read(ctx context.Context, req 
 		return
 	}
 
-	var cluster, name string
-	resp.Diagnostics.Append(utils.UnmarshalIDDiag(state.ID.ValueString(), &cluster, &name)...)
+	clusterUUID, name, diags := parseClusterAuthenticationID(state.ID.ValueString())
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	clusterUUID, diags := parseClusterUUID(cluster)
-	if diags.HasError() {
-		resp.Diagnostics.AddError("Invalid Kubernetes cluster authentication ID", fmt.Sprintf("Expected ID in the format `<cluster UUID>/<name>`, got: %s", state.ID.ValueString()))
 		return
 	}
 
@@ -369,7 +380,7 @@ func (r *kubernetesClusterAuthenticationResource) Read(ctx context.Context, req 
 		return
 	}
 
-	state.Cluster = types.StringValue(cluster)
+	state.Cluster = types.StringValue(clusterUUID.String())
 	flattenClusterAuthentication(&state, apiResp.JSON200)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -382,13 +393,13 @@ func (r *kubernetesClusterAuthenticationResource) Update(ctx context.Context, re
 		return
 	}
 
-	clusterUUID, diags := parseClusterUUID(plan.Cluster.ValueString())
+	clusterUUID, name, diags := parseClusterAuthenticationID(state.ID.ValueString())
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	apiResp, err := r.client.UpdateClusterAuthenticationWithResponse(ctx, clusterUUID, plan.Name.ValueString(), expandClusterAuthentication(plan))
+	apiResp, err := r.client.UpdateClusterAuthenticationWithResponse(ctx, clusterUUID, name, expandClusterAuthentication(plan))
 	if err != nil {
 		resp.Diagnostics.Append(clusterAuthenticationError("Unable to update Kubernetes cluster authentication", err)...)
 		return
@@ -409,13 +420,13 @@ func (r *kubernetesClusterAuthenticationResource) Delete(ctx context.Context, re
 		return
 	}
 
-	clusterUUID, diags := parseClusterUUID(state.Cluster.ValueString())
+	clusterUUID, name, diags := parseClusterAuthenticationID(state.ID.ValueString())
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	apiResp, err := r.client.DeleteClusterAuthenticationWithResponse(ctx, clusterUUID, state.Name.ValueString())
+	apiResp, err := r.client.DeleteClusterAuthenticationWithResponse(ctx, clusterUUID, name)
 	if err != nil {
 		resp.Diagnostics.Append(clusterAuthenticationError("Unable to delete Kubernetes cluster authentication", err)...)
 		return
