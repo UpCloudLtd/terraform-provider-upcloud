@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"encoding/base64"
+	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,41 +23,71 @@ func TestKubernetesKubeconfigModel_marshalID(t *testing.T) {
 	assert.Equal(t, "0a1b2c3d-0000-0000-0000-000000000000/issuer/client-id", m.marshalID())
 }
 
-func TestKubernetesKubeconfigModel_parseOIDC(t *testing.T) {
-	ca := base64.StdEncoding.EncodeToString([]byte("CA"))
-	s := `apiVersion: v1
+const testKubeconfigTemplate = `apiVersion: v1
 kind: Config
 clusters:
 - name: example
   cluster:
-    certificate-authority-data: ` + ca + `
+    certificate-authority-data: %s
     server: https://example.upcloudk8s.com:443
 contexts:
-- name: oidc@example
+- name: %s@example
   context:
     cluster: example
-    user: oidc
-current-context: oidc@example
+    user: %s
+current-context: %s@example
 users:
-- name: oidc
+- name: %s
   user:
-    exec:
-      command: kubectl
+%s
 `
 
-	m := kubernetesKubeconfigModel{}
-	diags := m.parseOIDC(s)
-	require.False(t, diags.HasError(), diags)
-	assert.Equal(t, s, m.Kubeconfig.ValueString())
-	assert.Equal(t, "https://example.upcloudk8s.com:443", m.Host.ValueString())
-	assert.Equal(t, "CA", m.ClusterCACertificate.ValueString())
+func TestKubeconfigModel_parse(t *testing.T) {
+	b64 := func(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
 
-	assert.True(t, (&kubernetesKubeconfigModel{}).parseOIDC("").HasError())
-}
+	t.Run("cluster level", func(t *testing.T) {
+		s := fmt.Sprintf(testKubeconfigTemplate, b64("CA"), "admin", "admin", "admin", "admin",
+			"    client-certificate-data: "+b64("CERT")+"\n    client-key-data: "+b64("KEY"))
 
-func TestKubeconfigModel_parseInvalidCurrentContext(t *testing.T) {
-	for _, s := range []string{"apiVersion: v1\nkind: Config\n", "current-context: no-at-sign\n"} {
-		m := kubernetesKubeconfigModel{}
-		assert.True(t, m.parseCluster(s).HasError(), s)
-	}
+		m := kubeconfigModel{}
+		name, diags := m.parse(s)
+		require.False(t, diags.HasError(), diags)
+		assert.Equal(t, "example", name.ValueString())
+		assert.Equal(t, s, m.Kubeconfig.ValueString())
+		assert.Equal(t, "https://example.upcloudk8s.com:443", m.Host.ValueString())
+		assert.Equal(t, "CA", m.ClusterCACertificate.ValueString())
+		assert.Equal(t, "CERT", m.ClientCertificate.ValueString())
+		assert.Equal(t, "KEY", m.ClientKey.ValueString())
+	})
+
+	t.Run("OIDC", func(t *testing.T) {
+		s := fmt.Sprintf(testKubeconfigTemplate, b64("CA"), "oidc", "oidc", "oidc", "oidc", "    exec:\n      command: kubectl")
+
+		m := kubeconfigModel{}
+		_, diags := m.parse(s)
+		require.False(t, diags.HasError(), diags)
+		assert.Equal(t, "https://example.upcloudk8s.com:443", m.Host.ValueString())
+		assert.Equal(t, "CA", m.ClusterCACertificate.ValueString())
+		assert.True(t, m.ClientCertificate.IsNull())
+		assert.True(t, m.ClientKey.IsNull())
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		valid := fmt.Sprintf(testKubeconfigTemplate, b64("CA"), "oidc", "oidc", "oidc", "oidc", "    exec:\n      command: kubectl")
+		for name, s := range map[string]string{
+			"empty":              "",
+			"no current context": "apiVersion: v1\nkind: Config\n",
+			"unknown context":    "current-context: no-at-sign\n",
+			"unknown user":       fmt.Sprintf(testKubeconfigTemplate, b64("CA"), "oidc", "other", "oidc", "oidc", "    exec:\n      command: kubectl"),
+			"invalid CA":         fmt.Sprintf(testKubeconfigTemplate, "***", "oidc", "oidc", "oidc", "oidc", "    exec:\n      command: kubectl"),
+		} {
+			m := kubeconfigModel{}
+			_, diags := m.parse(s)
+			assert.True(t, diags.HasError(), name)
+		}
+
+		m := kubeconfigModel{}
+		_, diags := m.parse(valid)
+		assert.False(t, diags.HasError())
+	})
 }

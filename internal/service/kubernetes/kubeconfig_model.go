@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 	v9 "github.com/UpCloudLtd/upcloud-go-api/v9/pkg/upcloud"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -23,16 +25,127 @@ const (
 	kubeconfigSummary                   = "Kubeconfig of a [Managed Kubernetes](https://upcloud.com/products/managed-kubernetes) cluster. Returns the cluster level kubeconfig, or if `authentication` is defined, a kubeconfig for users authenticating through the OIDC authentication issuer configuration of that name. The OIDC kubeconfigs use the `kubelogin` (`kubectl oidc-login`) plugin, which needs to be installed on the client, and do not include any long-lived credentials. "
 )
 
-type kubernetesKubeconfigModel struct {
-	ID                   types.String `tfsdk:"id"`
-	Cluster              types.String `tfsdk:"cluster"`
-	Authentication       types.String `tfsdk:"authentication"`
-	Audience             types.String `tfsdk:"audience"`
+type kubeconfigModel struct {
 	ClientCertificate    types.String `tfsdk:"client_certificate"`
 	ClientKey            types.String `tfsdk:"client_key"`
 	ClusterCACertificate types.String `tfsdk:"cluster_ca_certificate"`
 	Host                 types.String `tfsdk:"host"`
 	Kubeconfig           types.String `tfsdk:"kubeconfig"`
+}
+
+var kubeconfigAttrTypes = map[string]attr.Type{
+	"client_certificate":     types.StringType,
+	"client_key":             types.StringType,
+	"cluster_ca_certificate": types.StringType,
+	"host":                   types.StringType,
+	"kubeconfig":             types.StringType,
+}
+
+// setB64Decoded sets the field to the decoded value. Empty values are left unset, as for example OIDC kubeconfigs do not include client certificate.
+func (m *kubeconfigModel) setB64Decoded(field string, encoded string) (diags diag.Diagnostics) {
+	if encoded == "" {
+		return diags
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("Unable to decode base64 encoded value of %s", field),
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return diags
+	}
+
+	value := types.StringValue(string(decoded))
+	reflect.ValueOf(m).Elem().FieldByName(field).Set(reflect.ValueOf(value))
+	return diags
+}
+
+// parse fills the model from the cluster level or OIDC kubeconfig contents and returns the cluster name found from the kubeconfig.
+func (m *kubeconfigModel) parse(s string) (name types.String, diags diag.Diagnostics) {
+	name = types.StringNull()
+	if s == "" {
+		diags.AddError(
+			"Cluster kubeconfig is empty",
+			"API returned an empty kubeconfig for the cluster.",
+		)
+		return
+	}
+
+	m.Kubeconfig = types.StringValue(s)
+	m.ClientCertificate = types.StringNull()
+	m.ClientKey = types.StringNull()
+	m.ClusterCACertificate = types.StringNull()
+	m.Host = types.StringNull()
+
+	k := kubeconfig{}
+	err := yaml.Unmarshal([]byte(s), &k)
+	if err != nil {
+		diags.AddError(
+			"Kubeconfig YAML unmarshal failed",
+			utils.ErrorDiagnosticDetail(err),
+		)
+		return
+	}
+
+	// Resolve the cluster and user of the current context.
+	var contextData *kubeconfigContextData
+	for _, v := range k.Contexts {
+		if v.Name == k.CurrentContext {
+			contextData = &v.Context
+			break
+		}
+	}
+	if contextData == nil {
+		diags.AddError(
+			"Unexpected kubeconfig current context",
+			fmt.Sprintf("Unable to find the current context %q from the kubeconfig contexts.", k.CurrentContext),
+		)
+		return
+	}
+
+	foundCluster := false
+	for _, v := range k.Clusters {
+		if v.Name == contextData.Cluster {
+			foundCluster = true
+			diags.Append(m.setB64Decoded("ClusterCACertificate", v.Cluster.CertificateAuthorityData)...)
+			m.Host = types.StringValue(v.Cluster.Server)
+		}
+	}
+	if !foundCluster {
+		diags.AddError(
+			"Unexpected kubeconfig contents",
+			fmt.Sprintf("Unable to find the cluster %q of the current context from the kubeconfig clusters.", contextData.Cluster),
+		)
+		return
+	}
+
+	foundUser := false
+	for _, v := range k.Users {
+		if v.Name == contextData.User {
+			foundUser = true
+			diags.Append(m.setB64Decoded("ClientCertificate", v.User.ClientCertificateData)...)
+			diags.Append(m.setB64Decoded("ClientKey", v.User.ClientKeyData)...)
+		}
+	}
+	if !foundUser {
+		diags.AddError(
+			"Unexpected kubeconfig contents",
+			fmt.Sprintf("Unable to find the user %q of the current context from the kubeconfig users.", contextData.User),
+		)
+		return
+	}
+
+	return types.StringValue(contextData.Cluster), diags
+}
+
+type kubernetesKubeconfigModel struct {
+	ID             types.String `tfsdk:"id"`
+	Cluster        types.String `tfsdk:"cluster"`
+	Authentication types.String `tfsdk:"authentication"`
+	Audience       types.String `tfsdk:"audience"`
+
+	kubeconfigModel
 }
 
 func (m *kubernetesKubeconfigModel) marshalID() string {
@@ -53,76 +166,6 @@ func nameValidators() []validator.String {
 	}
 }
 
-// parseOIDC fills the model from the OIDC kubeconfig contents. Unlike the cluster level kubeconfig, the OIDC kubeconfig does not include client certificate.
-func (m *kubernetesKubeconfigModel) parseOIDC(s string) (diags diag.Diagnostics) {
-	if s == "" {
-		diags.AddError(
-			"Cluster kubeconfig is empty",
-			"API returned an empty kubeconfig for the cluster.",
-		)
-		return
-	}
-
-	m.Kubeconfig = types.StringValue(s)
-	m.ClientCertificate = types.StringNull()
-	m.ClientKey = types.StringNull()
-	m.Host = types.StringNull()
-	m.ClusterCACertificate = types.StringNull()
-
-	k := kubeconfig{}
-	if err := yaml.Unmarshal([]byte(s), &k); err != nil {
-		diags.AddError(
-			"Kubeconfig YAML unmarshal failed",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	clusterName := ""
-	for _, c := range k.Contexts {
-		if c.Name == k.CurrentContext {
-			clusterName = c.Context.Cluster
-		}
-	}
-
-	for _, c := range k.Clusters {
-		if c.Name != clusterName {
-			continue
-		}
-
-		m.Host = types.StringValue(c.Cluster.Server)
-		if c.Cluster.CertificateAuthorityData != "" {
-			decoded, err := base64.StdEncoding.DecodeString(c.Cluster.CertificateAuthorityData)
-			if err != nil {
-				diags.AddError(
-					"Unable to decode base64 encoded value of cluster CA certificate",
-					utils.ErrorDiagnosticDetail(err),
-				)
-				return
-			}
-			m.ClusterCACertificate = types.StringValue(string(decoded))
-		}
-	}
-
-	return
-}
-
-// parseCluster fills the model from the cluster level kubeconfig contents.
-func (m *kubernetesKubeconfigModel) parseCluster(s string) diag.Diagnostics {
-	var parsed kubeconfigModel
-	_, diags := parsed.parse(s)
-	if diags.HasError() {
-		return diags
-	}
-
-	m.ClientCertificate = parsed.ClientCertificate
-	m.ClientKey = parsed.ClientKey
-	m.ClusterCACertificate = parsed.ClusterCACertificate
-	m.Host = parsed.Host
-	m.Kubeconfig = parsed.Kubeconfig
-	return diags
-}
-
 // fetch gets the kubeconfig from the API and sets the kubeconfig data and ID to the model.
 func (m *kubernetesKubeconfigModel) fetch(ctx context.Context, client *v9.ClientWithResponses) (diags diag.Diagnostics) {
 	clusterUUID, d := parseClusterUUID(m.Cluster.ValueString())
@@ -134,19 +177,16 @@ func (m *kubernetesKubeconfigModel) fetch(ctx context.Context, client *v9.Client
 	var s string
 	if m.Authentication.IsNull() {
 		s, d = fetchClusterKubeconfig(ctx, client, clusterUUID)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
-		}
-		diags.Append(m.parseCluster(s)...)
 	} else {
 		s, d = m.fetchOIDCKubeconfig(ctx, client, clusterUUID)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
-		}
-		diags.Append(m.parseOIDC(s)...)
 	}
+	diags.Append(d...)
+	if diags.HasError() {
+		return diags
+	}
+
+	_, d = m.parse(s)
+	diags.Append(d...)
 
 	if !diags.HasError() {
 		m.ID = types.StringValue(m.marshalID())

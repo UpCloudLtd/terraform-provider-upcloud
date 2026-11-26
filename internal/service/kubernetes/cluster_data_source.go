@@ -2,21 +2,15 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
-	"reflect"
-	"strings"
 
 	"github.com/UpCloudLtd/terraform-provider-upcloud/internal/utils"
 
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/request"
 	"github.com/UpCloudLtd/upcloud-go-api/v8/upcloud/service"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"go.yaml.in/yaml/v3"
 )
 
 func NewKubernetesClusterDataSource() datasource.DataSource {
@@ -40,42 +34,11 @@ func (d *kubernetesClusterDataSource) Configure(_ context.Context, req datasourc
 	d.client, resp.Diagnostics = utils.GetClientFromProviderData(req.ProviderData)
 }
 
-type kubeconfigModel struct {
-	ClientCertificate    types.String `tfsdk:"client_certificate"`
-	ClientKey            types.String `tfsdk:"client_key"`
-	ClusterCACertificate types.String `tfsdk:"cluster_ca_certificate"`
-	Host                 types.String `tfsdk:"host"`
-	Kubeconfig           types.String `tfsdk:"kubeconfig"`
-}
-
-var kubeconfigAttrTypes = map[string]attr.Type{
-	"client_certificate":     types.StringType,
-	"client_key":             types.StringType,
-	"cluster_ca_certificate": types.StringType,
-	"host":                   types.StringType,
-	"kubeconfig":             types.StringType,
-}
-
 type kubernetesClusterDataModel struct {
 	kubeconfigModel
 
 	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
-}
-
-func (m *kubeconfigModel) setB64Decoded(field string, encoded string) (diags diag.Diagnostics) {
-	decoded, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		diags.AddError(
-			fmt.Sprintf("Unable to decode base64 encoded value of %s", field),
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return diags
-	}
-
-	value := types.StringValue(string(decoded))
-	reflect.ValueOf(m).Elem().FieldByName(field).Set(reflect.ValueOf(value))
-	return diags
 }
 
 func (m *kubernetesClusterDataModel) setKubeconfigData(s string) (diags diag.Diagnostics) {
@@ -84,56 +47,6 @@ func (m *kubernetesClusterDataModel) setKubeconfigData(s string) (diags diag.Dia
 		m.Name = name
 	}
 	return diags
-}
-
-// parse fills the model from the kubeconfig contents and returns the cluster name found from the kubeconfig.
-func (m *kubeconfigModel) parse(s string) (name types.String, diags diag.Diagnostics) {
-	name = types.StringNull()
-	if s == "" {
-		diags.AddError(
-			"Cluster kubeconfig is empty",
-			"API returned an empty kubeconfig for the cluster.",
-		)
-		return
-	}
-
-	m.Kubeconfig = types.StringValue(s)
-
-	k := kubeconfig{}
-	err := yaml.Unmarshal([]byte(s), &k)
-	if err != nil {
-		diags.AddError(
-			"Kubeconfig YAML unmarshal failed",
-			utils.ErrorDiagnosticDetail(err),
-		)
-		return
-	}
-
-	currentContext := strings.Split(k.CurrentContext, "@")
-	if len(currentContext) != 2 {
-		diags.AddError(
-			"Unexpected kubeconfig current context",
-			fmt.Sprintf("Expected current context in the format `<user>@<cluster>`, got: %q.", k.CurrentContext),
-		)
-		return
-	}
-	name = types.StringValue(currentContext[1])
-
-	for _, v := range k.Clusters {
-		if v.Name == currentContext[1] {
-			diags.Append(m.setB64Decoded("ClusterCACertificate", v.Cluster.CertificateAuthorityData)...)
-			m.Host = types.StringValue(v.Cluster.Server)
-		}
-	}
-
-	for _, v := range k.Users {
-		if v.Name == currentContext[0] {
-			diags.Append(m.setB64Decoded("ClientCertificate", v.User.ClientCertificateData)...)
-			diags.Append(m.setB64Decoded("ClientKey", v.User.ClientKeyData)...)
-		}
-	}
-
-	return name, diags
 }
 
 func (d *kubernetesClusterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
