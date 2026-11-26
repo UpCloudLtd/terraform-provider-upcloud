@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -18,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var (
@@ -43,24 +45,24 @@ func (r *kubernetesClusterAuthenticationResource) Configure(_ context.Context, r
 }
 
 type clusterAuthenticationModel struct {
-	ID                   types.String               `tfsdk:"id"`
-	Cluster              types.String               `tfsdk:"cluster"`
-	Name                 types.String               `tfsdk:"name"`
-	IssuerURL            types.String               `tfsdk:"issuer_url"`
-	DiscoveryURL         types.String               `tfsdk:"discovery_url"`
-	Audiences            []types.String             `tfsdk:"audiences"`
-	AudienceMatchPolicy  types.String               `tfsdk:"audience_match_policy"`
-	CertificateAuthority types.String               `tfsdk:"certificate_authority"`
-	ClaimMappings        *claimMappingsModel        `tfsdk:"claim_mappings"`
-	ClaimValidationRules []claimValidationRuleModel `tfsdk:"claim_validation_rules"`
-	UserValidationRules  []userValidationRuleModel  `tfsdk:"user_validation_rules"`
+	ID                   types.String `tfsdk:"id"`
+	Cluster              types.String `tfsdk:"cluster"`
+	Name                 types.String `tfsdk:"name"`
+	IssuerURL            types.String `tfsdk:"issuer_url"`
+	DiscoveryURL         types.String `tfsdk:"discovery_url"`
+	Audiences            types.List   `tfsdk:"audiences"`
+	AudienceMatchPolicy  types.String `tfsdk:"audience_match_policy"`
+	CertificateAuthority types.String `tfsdk:"certificate_authority"`
+	ClaimMappings        types.Object `tfsdk:"claim_mappings"`
+	ClaimValidationRules types.List   `tfsdk:"claim_validation_rules"`
+	UserValidationRules  types.List   `tfsdk:"user_validation_rules"`
 }
 
 type claimMappingsModel struct {
-	Username *prefixedClaimOrExpressionModel `tfsdk:"username"`
-	Groups   *prefixedClaimOrExpressionModel `tfsdk:"groups"`
-	UID      *claimOrExpressionModel         `tfsdk:"uid"`
-	Extra    []extraMappingModel             `tfsdk:"extra"`
+	Username types.Object `tfsdk:"username"`
+	Groups   types.Object `tfsdk:"groups"`
+	UID      types.Object `tfsdk:"uid"`
+	Extra    types.List   `tfsdk:"extra"`
 }
 
 type prefixedClaimOrExpressionModel struct {
@@ -89,6 +91,77 @@ type claimValidationRuleModel struct {
 type userValidationRuleModel struct {
 	Expression types.String `tfsdk:"expression"`
 	Message    types.String `tfsdk:"message"`
+}
+
+var (
+	prefixedClaimOrExpressionAttrTypes = map[string]attr.Type{
+		"claim":      types.StringType,
+		"prefix":     types.StringType,
+		"expression": types.StringType,
+	}
+	claimOrExpressionAttrTypes = map[string]attr.Type{
+		"claim":      types.StringType,
+		"expression": types.StringType,
+	}
+	extraMappingAttrTypes = map[string]attr.Type{
+		"key":              types.StringType,
+		"value_expression": types.StringType,
+	}
+	claimMappingsAttrTypes = map[string]attr.Type{
+		"username": types.ObjectType{AttrTypes: prefixedClaimOrExpressionAttrTypes},
+		"groups":   types.ObjectType{AttrTypes: prefixedClaimOrExpressionAttrTypes},
+		"uid":      types.ObjectType{AttrTypes: claimOrExpressionAttrTypes},
+		"extra":    types.ListType{ElemType: types.ObjectType{AttrTypes: extraMappingAttrTypes}},
+	}
+	claimValidationRuleAttrTypes = map[string]attr.Type{
+		"claim":          types.StringType,
+		"required_value": types.StringType,
+		"expression":     types.StringType,
+		"message":        types.StringType,
+	}
+	userValidationRuleAttrTypes = map[string]attr.Type{
+		"expression": types.StringType,
+		"message":    types.StringType,
+	}
+)
+
+// objectAs converts the object to the model. Returns nil if the object is null or unknown.
+func objectAs[T any](ctx context.Context, o types.Object) (*T, diag.Diagnostics) {
+	if o.IsNull() || o.IsUnknown() {
+		return nil, nil
+	}
+
+	var m T
+	diags := o.As(ctx, &m, basetypes.ObjectAsOptions{})
+	return &m, diags
+}
+
+// listAs converts the elements of the list to models. Returns nil if the list is null or unknown.
+func listAs[T any](ctx context.Context, l types.List) ([]T, diag.Diagnostics) {
+	if l.IsNull() || l.IsUnknown() {
+		return nil, nil
+	}
+
+	var m []T
+	diags := l.ElementsAs(ctx, &m, false)
+	return m, diags
+}
+
+// objectFrom converts the model to an object. Nil model is converted to null.
+func objectFrom[T any](ctx context.Context, attrTypes map[string]attr.Type, m *T) (types.Object, diag.Diagnostics) {
+	if m == nil {
+		return types.ObjectNull(attrTypes), nil
+	}
+	return types.ObjectValueFrom(ctx, attrTypes, m)
+}
+
+// listFrom converts the models to a list. Empty slice is converted to null.
+func listFrom[T any](ctx context.Context, attrTypes map[string]attr.Type, m []T) (types.List, diag.Diagnostics) {
+	elemType := types.ObjectType{AttrTypes: attrTypes}
+	if len(m) == 0 {
+		return types.ListNull(elemType), nil
+	}
+	return types.ListValueFrom(ctx, elemType, m)
 }
 
 func siblingPath(name string) path.Expression {
@@ -339,7 +412,13 @@ func (r *kubernetesClusterAuthenticationResource) Create(ctx context.Context, re
 		return
 	}
 
-	apiResp, err := r.client.CreateClusterAuthenticationWithResponse(ctx, clusterUUID, expandClusterAuthentication(plan))
+	config, diags := buildClusterAuthenticationRequest(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiResp, err := r.client.CreateClusterAuthenticationWithResponse(ctx, clusterUUID, config)
 	if err != nil {
 		resp.Diagnostics.Append(clusterAuthenticationError("Unable to create Kubernetes cluster authentication", err)...)
 		return
@@ -350,6 +429,12 @@ func (r *kubernetesClusterAuthenticationResource) Create(ctx context.Context, re
 	}
 
 	plan.ID = types.StringValue(utils.MarshalID(plan.Cluster.ValueString(), plan.Name.ValueString()))
+	if apiResp.JSON201 != nil {
+		resp.Diagnostics.Append(setClusterAuthenticationValues(ctx, &plan, apiResp.JSON201)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -381,7 +466,10 @@ func (r *kubernetesClusterAuthenticationResource) Read(ctx context.Context, req 
 	}
 
 	state.Cluster = types.StringValue(clusterUUID.String())
-	flattenClusterAuthentication(&state, apiResp.JSON200)
+	resp.Diagnostics.Append(setClusterAuthenticationValues(ctx, &state, apiResp.JSON200)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -399,7 +487,13 @@ func (r *kubernetesClusterAuthenticationResource) Update(ctx context.Context, re
 		return
 	}
 
-	apiResp, err := r.client.UpdateClusterAuthenticationWithResponse(ctx, clusterUUID, name, expandClusterAuthentication(plan))
+	config, diags := buildClusterAuthenticationRequest(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiResp, err := r.client.UpdateClusterAuthenticationWithResponse(ctx, clusterUUID, name, config)
 	if err != nil {
 		resp.Diagnostics.Append(clusterAuthenticationError("Unable to update Kubernetes cluster authentication", err)...)
 		return
@@ -410,6 +504,12 @@ func (r *kubernetesClusterAuthenticationResource) Update(ctx context.Context, re
 	}
 
 	plan.ID = state.ID
+	if apiResp.JSON200 != nil {
+		resp.Diagnostics.Append(setClusterAuthenticationValues(ctx, &plan, apiResp.JSON200)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -440,13 +540,11 @@ func (r *kubernetesClusterAuthenticationResource) ImportState(ctx context.Contex
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func expandClusterAuthentication(m clusterAuthenticationModel) v9.KubernetesAuthenticationIssuerConfig {
-	audiences := make([]string, 0, len(m.Audiences))
-	for _, a := range m.Audiences {
-		audiences = append(audiences, a.ValueString())
-	}
+func buildClusterAuthenticationRequest(ctx context.Context, m clusterAuthenticationModel) (config v9.KubernetesAuthenticationIssuerConfig, diags diag.Diagnostics) {
+	audiences := make([]string, 0, len(m.Audiences.Elements()))
+	diags.Append(m.Audiences.ElementsAs(ctx, &audiences, false)...)
 
-	config := v9.KubernetesAuthenticationIssuerConfig{
+	config = v9.KubernetesAuthenticationIssuerConfig{
 		Name:                 m.Name.ValueString(),
 		IssuerUrl:            m.IssuerURL.ValueString(),
 		DiscoveryUrl:         m.DiscoveryURL.ValueStringPointer(),
@@ -459,13 +557,18 @@ func expandClusterAuthentication(m clusterAuthenticationModel) v9.KubernetesAuth
 		config.AudienceMatchPolicy = &policy
 	}
 
-	if m.ClaimMappings != nil {
-		config.ClaimMappings = expandClaimMappings(m.ClaimMappings)
+	claimMappings, d := objectAs[claimMappingsModel](ctx, m.ClaimMappings)
+	diags.Append(d...)
+	if claimMappings != nil {
+		config.ClaimMappings, d = buildClaimMappingsRequest(ctx, claimMappings)
+		diags.Append(d...)
 	}
 
-	if len(m.ClaimValidationRules) > 0 {
-		rules := make([]v9.KubernetesClaimValidationRule, 0, len(m.ClaimValidationRules))
-		for _, rule := range m.ClaimValidationRules {
+	claimValidationRules, d := listAs[claimValidationRuleModel](ctx, m.ClaimValidationRules)
+	diags.Append(d...)
+	if len(claimValidationRules) > 0 {
+		rules := make([]v9.KubernetesClaimValidationRule, 0, len(claimValidationRules))
+		for _, rule := range claimValidationRules {
 			rules = append(rules, v9.KubernetesClaimValidationRule{
 				Claim:         rule.Claim.ValueStringPointer(),
 				RequiredValue: rule.RequiredValue.ValueStringPointer(),
@@ -476,9 +579,11 @@ func expandClusterAuthentication(m clusterAuthenticationModel) v9.KubernetesAuth
 		config.ClaimValidationRules = &rules
 	}
 
-	if len(m.UserValidationRules) > 0 {
-		rules := make([]v9.KubernetesUserValidationRule, 0, len(m.UserValidationRules))
-		for _, rule := range m.UserValidationRules {
+	userValidationRules, d := listAs[userValidationRuleModel](ctx, m.UserValidationRules)
+	diags.Append(d...)
+	if len(userValidationRules) > 0 {
+		rules := make([]v9.KubernetesUserValidationRule, 0, len(userValidationRules))
+		for _, rule := range userValidationRules {
 			rules = append(rules, v9.KubernetesUserValidationRule{
 				Expression: rule.Expression.ValueString(),
 				Message:    rule.Message.ValueStringPointer(),
@@ -487,39 +592,51 @@ func expandClusterAuthentication(m clusterAuthenticationModel) v9.KubernetesAuth
 		config.UserValidationRules = &rules
 	}
 
-	return config
+	return config, diags
 }
 
-func expandClaimMappings(m *claimMappingsModel) *v9.KubernetesClaimMappings {
+func buildClaimMappingsRequest(ctx context.Context, m *claimMappingsModel) (*v9.KubernetesClaimMappings, diag.Diagnostics) {
+	var diags diag.Diagnostics
 	mappings := &v9.KubernetesClaimMappings{}
 
-	if m.Username != nil {
-		mappings.Username = expandPrefixedClaimOrExpression(m.Username)
-	}
-	if m.Groups != nil {
-		mappings.Groups = expandPrefixedClaimOrExpression(m.Groups)
-	}
-	if m.UID != nil {
+	username, d := objectAs[prefixedClaimOrExpressionModel](ctx, m.Username)
+	diags.Append(d...)
+	mappings.Username = buildPrefixedClaimOrExpressionRequest(username)
+
+	groups, d := objectAs[prefixedClaimOrExpressionModel](ctx, m.Groups)
+	diags.Append(d...)
+	mappings.Groups = buildPrefixedClaimOrExpressionRequest(groups)
+
+	uid, d := objectAs[claimOrExpressionModel](ctx, m.UID)
+	diags.Append(d...)
+	if uid != nil {
 		mappings.Uid = &v9.KubernetesClaimOrExpression{
-			Claim:      m.UID.Claim.ValueStringPointer(),
-			Expression: m.UID.Expression.ValueStringPointer(),
+			Claim:      uid.Claim.ValueStringPointer(),
+			Expression: uid.Expression.ValueStringPointer(),
 		}
 	}
-	if len(m.Extra) > 0 {
-		extra := make([]v9.KubernetesExtraMapping, 0, len(m.Extra))
-		for _, e := range m.Extra {
-			extra = append(extra, v9.KubernetesExtraMapping{
+
+	extra, d := listAs[extraMappingModel](ctx, m.Extra)
+	diags.Append(d...)
+	if len(extra) > 0 {
+		extraMappings := make([]v9.KubernetesExtraMapping, 0, len(extra))
+		for _, e := range extra {
+			extraMappings = append(extraMappings, v9.KubernetesExtraMapping{
 				Key:             e.Key.ValueString(),
 				ValueExpression: e.ValueExpression.ValueString(),
 			})
 		}
-		mappings.Extra = &extra
+		mappings.Extra = &extraMappings
 	}
 
-	return mappings
+	return mappings, diags
 }
 
-func expandPrefixedClaimOrExpression(m *prefixedClaimOrExpressionModel) *v9.KubernetesPrefixedClaimOrExpression {
+func buildPrefixedClaimOrExpressionRequest(m *prefixedClaimOrExpressionModel) *v9.KubernetesPrefixedClaimOrExpression {
+	if m == nil {
+		return nil
+	}
+
 	return &v9.KubernetesPrefixedClaimOrExpression{
 		Claim:      m.Claim.ValueStringPointer(),
 		Prefix:     m.Prefix.ValueStringPointer(),
@@ -535,27 +652,32 @@ func unsetString(v *string) types.String {
 	return types.StringValue(*v)
 }
 
-func flattenClusterAuthentication(m *clusterAuthenticationModel, api *v9.KubernetesAuthenticationIssuerConfig) {
+func setClusterAuthenticationValues(ctx context.Context, m *clusterAuthenticationModel, api *v9.KubernetesAuthenticationIssuerConfig) (diags diag.Diagnostics) {
+	var d diag.Diagnostics
+
 	m.ID = types.StringValue(utils.MarshalID(m.Cluster.ValueString(), api.Name))
 	m.Name = types.StringValue(api.Name)
 	m.IssuerURL = types.StringValue(api.IssuerUrl)
 	m.DiscoveryURL = unsetString(api.DiscoveryUrl)
 	m.CertificateAuthority = unsetString(api.CertificateAuthority)
 
-	m.Audiences = make([]types.String, 0, len(api.Audiences))
-	for _, a := range api.Audiences {
-		m.Audiences = append(m.Audiences, types.StringValue(a))
-	}
+	m.Audiences, d = types.ListValueFrom(ctx, types.StringType, api.Audiences)
+	diags.Append(d...)
 
 	m.AudienceMatchPolicy = types.StringNull()
 	if api.AudienceMatchPolicy != nil && *api.AudienceMatchPolicy != v9.KubernetesAuthenticationIssuerConfigAudienceMatchPolicyEmpty {
 		m.AudienceMatchPolicy = types.StringValue(string(*api.AudienceMatchPolicy))
 	}
 
-	m.ClaimMappings = flattenClaimMappings(api.ClaimMappings)
+	claimMappings, d := setClaimMappingsValues(ctx, api.ClaimMappings)
+	diags.Append(d...)
+	m.ClaimMappings, d = objectFrom(ctx, claimMappingsAttrTypes, claimMappings)
+	diags.Append(d...)
 
-	prevRules := m.ClaimValidationRules
-	m.ClaimValidationRules = nil
+	prevRules, d := listAs[claimValidationRuleModel](ctx, m.ClaimValidationRules)
+	diags.Append(d...)
+
+	var claimValidationRules []claimValidationRuleModel
 	if api.ClaimValidationRules != nil {
 		for i, rule := range *api.ClaimValidationRules {
 			requiredValue := unsetString(rule.RequiredValue)
@@ -564,7 +686,7 @@ func flattenClusterAuthentication(m *clusterAuthenticationModel, api *v9.Kuberne
 				requiredValue = prevRules[i].RequiredValue
 			}
 
-			m.ClaimValidationRules = append(m.ClaimValidationRules, claimValidationRuleModel{
+			claimValidationRules = append(claimValidationRules, claimValidationRuleModel{
 				Claim:         unsetString(rule.Claim),
 				RequiredValue: requiredValue,
 				Expression:    unsetString(rule.Expression),
@@ -572,51 +694,66 @@ func flattenClusterAuthentication(m *clusterAuthenticationModel, api *v9.Kuberne
 			})
 		}
 	}
+	m.ClaimValidationRules, d = listFrom(ctx, claimValidationRuleAttrTypes, claimValidationRules)
+	diags.Append(d...)
 
-	m.UserValidationRules = nil
+	var userValidationRules []userValidationRuleModel
 	if api.UserValidationRules != nil {
 		for _, rule := range *api.UserValidationRules {
-			m.UserValidationRules = append(m.UserValidationRules, userValidationRuleModel{
+			userValidationRules = append(userValidationRules, userValidationRuleModel{
 				Expression: types.StringValue(rule.Expression),
 				Message:    unsetString(rule.Message),
 			})
 		}
 	}
+	m.UserValidationRules, d = listFrom(ctx, userValidationRuleAttrTypes, userValidationRules)
+	diags.Append(d...)
+
+	return diags
 }
 
-func flattenClaimMappings(api *v9.KubernetesClaimMappings) *claimMappingsModel {
+func setClaimMappingsValues(ctx context.Context, api *v9.KubernetesClaimMappings) (*claimMappingsModel, diag.Diagnostics) {
 	if api == nil {
-		return nil
+		return nil, nil
 	}
 
-	m := &claimMappingsModel{
-		Username: flattenPrefixedClaimOrExpression(api.Username),
-		Groups:   flattenPrefixedClaimOrExpression(api.Groups),
-	}
+	var diags, d diag.Diagnostics
+	m := &claimMappingsModel{}
 
+	m.Username, d = objectFrom(ctx, prefixedClaimOrExpressionAttrTypes, setPrefixedClaimOrExpressionValues(api.Username))
+	diags.Append(d...)
+	m.Groups, d = objectFrom(ctx, prefixedClaimOrExpressionAttrTypes, setPrefixedClaimOrExpressionValues(api.Groups))
+	diags.Append(d...)
+
+	var uid *claimOrExpressionModel
 	if api.Uid != nil && (api.Uid.Claim != nil || api.Uid.Expression != nil) {
-		m.UID = &claimOrExpressionModel{
+		uid = &claimOrExpressionModel{
 			Claim:      unsetString(api.Uid.Claim),
 			Expression: unsetString(api.Uid.Expression),
 		}
 	}
+	m.UID, d = objectFrom(ctx, claimOrExpressionAttrTypes, uid)
+	diags.Append(d...)
 
+	var extra []extraMappingModel
 	if api.Extra != nil {
 		for _, e := range *api.Extra {
-			m.Extra = append(m.Extra, extraMappingModel{
+			extra = append(extra, extraMappingModel{
 				Key:             types.StringValue(e.Key),
 				ValueExpression: types.StringValue(e.ValueExpression),
 			})
 		}
 	}
+	m.Extra, d = listFrom(ctx, extraMappingAttrTypes, extra)
+	diags.Append(d...)
 
-	if m.Username == nil && m.Groups == nil && m.UID == nil && m.Extra == nil {
-		return nil
+	if m.Username.IsNull() && m.Groups.IsNull() && m.UID.IsNull() && m.Extra.IsNull() {
+		return nil, diags
 	}
-	return m
+	return m, diags
 }
 
-func flattenPrefixedClaimOrExpression(api *v9.KubernetesPrefixedClaimOrExpression) *prefixedClaimOrExpressionModel {
+func setPrefixedClaimOrExpressionValues(api *v9.KubernetesPrefixedClaimOrExpression) *prefixedClaimOrExpressionModel {
 	if api == nil || (unsetString(api.Claim).IsNull() && unsetString(api.Expression).IsNull()) {
 		return nil
 	}
