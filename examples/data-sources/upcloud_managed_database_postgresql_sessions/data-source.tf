@@ -2,10 +2,13 @@
 
 # Create a Managed PostgreSQL resource
 resource "upcloud_managed_database_postgresql" "example" {
-  name  = "mysql-example1"
-  title = "mysql-example1"
-  plan  = "1x1xCPU-2GB-25GB"
-  zone  = "fi-hel1"
+  name             = "postgresql-example1"
+  title            = "postgresql-example1"
+  plan_compute     = "rdb.standard.2CPU-8GB"
+  plan_node_count  = 2
+  plan_storage_gib = 120
+  plan_backups     = "regular"
+  zone             = "fi-hel1"
 }
 
 # Read the active sessions of the newly created service

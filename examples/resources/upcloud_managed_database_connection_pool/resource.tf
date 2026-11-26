@@ -2,7 +2,10 @@ resource "upcloud_managed_database_postgresql" "example" {
   maintenance_window_time = "10:00:00"
   maintenance_window_dow  = "friday"
   name                    = "postgres"
-  plan                    = "1x1xCPU-2GB-25GB"
+  plan_compute            = "rdb.standard.2CPU-8GB"
+  plan_node_count         = 2
+  plan_storage_gib        = 120
+  plan_backups            = "regular"
   powered                 = true
   title                   = "postgres"
   zone                    = "pl-waw1"
