@@ -8,7 +8,6 @@ terraform {
 }
 
 provider "upcloud" {
-  username = "<Your username>"
-  password = "<Your password>"
+  token = "<Your API token>"
 }
 

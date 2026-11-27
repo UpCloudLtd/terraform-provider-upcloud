@@ -4,4 +4,4 @@ page_title: Tutorials (upcloud.com)
 
 # Tutorials (upcloud.com)
 
-For tutorials on how to use UpCloud Terraform provider, see [Guides and instructions tagged with Terraform category](https://upcloud.com/resources/tutorials?cat=terraform) in [upcloud.com](https://upcloud.com/).
+For guides on how to use the UpCloud Terraform provider, see the Terraform section of [Tooling Guides](https://upcloud.com/docs/guides/tooling/#terraform) in the UpCloud documentation.
