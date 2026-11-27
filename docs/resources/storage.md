@@ -38,7 +38,7 @@ resource "upcloud_storage" "example_storage_backup" {
 
 # Storage resource with the optional import block. 
 # This storage resource will have its content imported from an accessible website:
-resource "upcloud_storage" "example_storage_backup" {
+resource "upcloud_storage" "example_storage_http_import" {
   size  = 10
   tier  = "maxiops"
   title = "My imported data"
@@ -46,13 +46,13 @@ resource "upcloud_storage" "example_storage_backup" {
 
   import {
     source          = "http_import"
-    source_location = "http://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86/alpine-standard-3.12.0-x86.iso"
+    source_location = "http://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86/alpine-standard-3.24.4-x86.iso"
   }
 }
 
 # Storage resource with the optional import block. 
 # This storage resource will have its content imported from a local file:
-resource "upcloud_storage" "example_storage_backup" {
+resource "upcloud_storage" "example_storage_direct_upload" {
   size  = 10
   tier  = "maxiops"
   title = "My imported data"
@@ -81,7 +81,7 @@ resource "upcloud_storage" "example_storage_clone" {
 }
 
 # Storage resource with the creation of a server resource which will attach the created storage resource.
-resource "upcloud_storage" "example_storage" {
+resource "upcloud_storage" "example_storage_attached" {
   size  = 20
   tier  = "maxiops"
   title = "My storage"
@@ -90,7 +90,7 @@ resource "upcloud_storage" "example_storage" {
 
 resource "upcloud_server" "example_server" {
   zone     = "fi-hel1"
-  plan     = "1xCPU-1GB"
+  plan     = "PREMIUM-1xCPU-1GB"
   hostname = "terraform.example.tld"
 
   network_interface {
@@ -98,7 +98,7 @@ resource "upcloud_server" "example_server" {
   }
 
   storage_devices {
-    storage = upcloud_storage.example_storage[0].id
+    storage = upcloud_storage.example_storage_attached.id
   }
 }
 ```

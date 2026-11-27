@@ -19,7 +19,7 @@ The UpCloud server resource allows the creation, update and deletion of [cloud s
 resource "upcloud_server" "example" {
   hostname = "terraform.example.tld"
   zone     = "de-fra1"
-  plan     = "1xCPU-1GB"
+  plan     = "PREMIUM-1xCPU-1GB"
 
   # The metadata service must be enabled when using recent cloud-init based templates.
   metadata = true

@@ -13,21 +13,27 @@ This resource represents a [Managed Kubernetes](https://upcloud.com/products/man
 ## Example Usage
 
 ```terraform
-# Create a network for the Kubernetes cluster
+# Create a network and a router for the Kubernetes cluster
+resource "upcloud_router" "example" {
+  name = "example-router"
+}
+
 resource "upcloud_network" "example" {
-  name = "example-network"
-  zone = "de-fra1"
+  name   = "example-network"
+  zone   = "de-fra1"
+  router = upcloud_router.example.id
+
   ip_network {
     address = "172.16.1.0/24"
     dhcp    = true
     family  = "IPv4"
   }
 
-  # UpCloud Kubernetes Service will add a router to this network to ensure cluster networking is working as intended.
-  # You need to ignore changes to it, otherwise TF will attempt to detach the router on subsequent applies
-  lifecycle {
-    ignore_changes = [router]
-  }
+  # If you do not specify a router, UpCloud Kubernetes Service will add a router to this network to ensure cluster networking is working as intended.
+  # In that case, you need to ignore changes to it, otherwise TF will attempt to detach the router on subsequent applies:
+  # lifecycle {
+  #   ignore_changes = [router]
+  # }
 }
 
 # Create a Kubernetes cluster
@@ -72,7 +78,7 @@ resource "upcloud_kubernetes_cluster" "example2" {
   name                    = "example2-cluster"
   network                 = upcloud_network.example2.id
   zone                    = "de-fra1"
-  plan                    = "prod-md"
+  plan                    = "prod-md-ha"
   private_node_groups     = true
 }
 ```
@@ -95,7 +101,7 @@ resource "upcloud_kubernetes_cluster" "example2" {
 - `private_node_groups` (Boolean) Enable private node groups. Private node groups requires a network that is routed through NAT gateway.
 - `storage_encryption` (String) Set default storage encryption strategy for all nodes in the cluster. Valid values are `data-at-rest` and `none`.
 - `upgrade_strategy_type` (String) The upgrade strategy to use when changing the cluster `version`. If not set, `manual` strategy will be used by default. When using `manual` strategy, you must replace the existing node-groups to update them.
-- `version` (String) Kubernetes version ID, e.g. `1.31`. You can list available version IDs with `upctl kubernetes versions`.
+- `version` (String) Kubernetes version ID, e.g. `1.36`. You can list available version IDs with `upctl kubernetes versions`.
 
     Note that when changing the cluster version, `upgrade_strategy` will be taken into account.
 
