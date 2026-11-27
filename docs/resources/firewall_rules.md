@@ -23,7 +23,7 @@ resource "upcloud_server" "example" {
   firewall = true
   hostname = "terraform.example.tld"
   zone     = "de-fra1"
-  plan     = "1xCPU-1GB"
+  plan     = "PREMIUM-1xCPU-1GB"
   metadata = true
 
   login {
